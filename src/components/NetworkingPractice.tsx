@@ -269,7 +269,7 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
   );
 
   const innerClasses = cn(
-    'mx-auto max-w-6xl px-4 pb-20',
+    'mx-auto w-full max-w-6xl px-4 pb-20',
     showHeader ? 'pt-12 space-y-10' : 'pt-10 space-y-8'
   );
 
@@ -291,15 +291,22 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
           </header>
         )}
 
-        <section className="grid gap-6 p-6 mb-10 rounded-3xl bg-[hsl(var(--overlay)/0.3)] shadow-xl">
+        <section className="w-full grid gap-6 p-4 mb-10 rounded-3xl bg-[hsl(var(--overlay)/0.3)] shadow-xl sm:p-6 overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-wrap gap-3">{scenarioPills}</div>
-            <div className="flex items-center gap-2">
-              <Button onClick={createNewVersion} className="bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.8)]">
+            <div className="flex w-full flex-wrap gap-3 sm:w-auto">{scenarioPills}</div>
+            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap sm:justify-end">
+              <Button
+                onClick={createNewVersion}
+                className="w-full bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.8)] sm:w-auto"
+              >
                 New Version
               </Button>
               {versions.length > 1 ? (
-                <Button variant="outline" className="border-[hsl(var(--border)/0.6)] text-[hsl(var(--foreground))]" onClick={deleteCurrentVersion}>
+                <Button
+                  variant="outline"
+                  className="w-full border-[hsl(var(--border)/0.6)] text-[hsl(var(--foreground))] sm:w-auto"
+                  onClick={deleteCurrentVersion}
+                >
                   Delete Version
                 </Button>
               ) : null}
@@ -387,7 +394,7 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
           </div>
         </section>
 
-        <section className="grid gap-6 mb-10 md:grid-cols-[minmax(0,_320px)_1fr]">
+        <section className="w-full grid gap-6 mb-10 md:grid-cols-[minmax(0,_320px)_1fr]">
           <Card className="border-[hsl(var(--primary)/0.6)] bg-[hsl(var(--overlay)/0.3)]">
             <CardHeader className="text-center">
               <CardTitle className="text-[hsl(var(--primary))]">Two-Minute Timer</CardTitle>
@@ -498,8 +505,8 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
           </Card>
         </section>
 
-        <section className="space-y-6">
-          <div className="flex items-center justify-between">
+        <section className="w-full space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-2xl font-semibold text-[hsl(var(--gold))]">Recent Sessions</h2>
             <span className="text-sm text-[hsl(var(--muted-foreground))]">Stored locally in your browser</span>
           </div>
@@ -535,14 +542,14 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
                       ) : null}
                     </div>
 
-                    <div className="flex items-center gap-6">
-                      <div className="text-center">
+                    <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                      <div className="min-w-[120px] flex-1 text-center">
                         <div className="text-3xl font-bold text-[#9CCFD8]">
                           {(session.attempts[0]?.durationSeconds ? (session.attempts[0].durationSeconds / 60).toFixed(1) : '0.0')}m
                         </div>
                         <div className="text-xs uppercase tracking-[0.2em] text-[#908CAA]">Time</div>
                       </div>
-                      <div className="text-center">
+                      <div className="min-w-[120px] flex-1 text-center">
                         <div className="text-3xl font-bold text-[#F6C177]">
                           {(
                             (session.ratings.confidence +
@@ -556,7 +563,7 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
                       </div>
                       <Button
                         variant="outline"
-                        className="border-[#6E6A86] text-[#E0DEF4]"
+                        className="w-full border-[#6E6A86] text-[#E0DEF4] sm:w-auto"
                         onClick={() => removeSession(session.id)}
                       >
                         Delete

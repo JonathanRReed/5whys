@@ -111,10 +111,141 @@
 
   html {
     background-color: hsl(var(--background));
+    overflow-x: hidden;
   }
 
   body {
     @apply bg-background text-foreground antialiased transition-colors duration-300;
+    accent-color: hsl(var(--foam));
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+  .nav-pill-group {
+    container-type: inline-size;
+  }
+
+  @container (max-width: 36rem) {
+    .nav-pill {
+      gap: 0.5rem;
+      padding-inline: 0.75rem;
+      font-size: 0.875rem;
+    }
+  }
+
+  @container (max-width: 28rem) {
+    .nav-pill {
+      font-size: 0.8125rem;
+      padding-inline: 0.65rem;
+    }
+  }
+
+  .theme-popover {
+    border: 1px solid color-mix(in oklch, hsl(var(--border)) 70%, transparent);
+    background:
+      linear-gradient(
+        145deg,
+        color-mix(in oklch, hsl(var(--overlay)) 85%, hsl(var(--background)) 15%) 0%,
+        color-mix(in oklch, hsl(var(--overlay)) 65%, hsl(var(--background)) 35%) 100%
+      );
+    border-radius: 1.5rem;
+    padding: 0.9rem;
+    display: grid;
+    gap: 0.4rem;
+    box-shadow:
+      0 32px 68px -44px color-mix(in srgb, hsl(var(--background)) 75%, transparent),
+      inset 0 1px 0 0 color-mix(in oklch, hsl(var(--foam)) 15%, transparent);
+    min-width: clamp(220px, 17vw, 260px);
+    animation: popover-fade 160ms ease-out;
+  }
+
+  .theme-option {
+    --option-shadow: color-mix(in oklch, hsl(var(--background)) 60%, transparent);
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 0.75rem;
+    border-radius: 1.25rem;
+    padding: 0.65rem 0.8rem;
+    border: 1px solid color-mix(in srgb, hsl(var(--border)) 65%, transparent);
+    color: hsl(var(--foreground));
+    background: color-mix(in srgb, hsl(var(--overlay)) 78%, hsl(var(--background)) 22%);
+    transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+    box-shadow: 0 14px 34px -28px var(--option-shadow);
+  }
+
+  .theme-option[data-active="true"] {
+    border-color: color-mix(in oklch, hsl(var(--foam)) 70%, hsl(var(--border)) 30%);
+    background:
+      linear-gradient(
+        120deg,
+        color-mix(in oklch, hsl(var(--foam)) 45%, hsl(var(--overlay)) 55%) 0%,
+        color-mix(in oklch, hsl(var(--foam)) 25%, hsl(var(--overlay)) 75%) 100%
+      );
+    transform: translateY(-2px);
+  }
+
+  .theme-option:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, hsl(var(--accent)) 50%, hsl(var(--border)) 50%);
+    background: color-mix(in srgb, hsl(var(--overlay)) 70%, hsl(var(--background)) 30%);
+  }
+
+  .theme-option__dot {
+    inline-size: 2.2rem;
+    block-size: 2.2rem;
+    border-radius: 999px;
+    background-size: 180% 180%;
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, hsl(var(--background)) 40%, transparent),
+      0 0 0 1px color-mix(in srgb, hsl(var(--foam)) 25%, transparent);
+  }
+
+  .theme-option__content {
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  .theme-option__label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .theme-option__description {
+    font-size: 0.78rem;
+    color: hsl(var(--muted-foreground));
+  }
+
+  .theme-popover-trigger {
+    background: color-mix(in srgb, hsl(var(--overlay)) 62%, hsl(var(--background)) 38%);
+    box-shadow:
+      inset 0 1px 0 0 color-mix(in srgb, hsl(var(--foam)) 18%, transparent),
+      0 18px 36px -26px color-mix(in srgb, hsl(var(--background)) 75%, transparent);
+  }
+
+  .theme-popover-trigger:hover {
+    background: color-mix(in srgb, hsl(var(--overlay)) 55%, hsl(var(--background)) 45%);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+  }
+}
+
+@keyframes popover-fade {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 

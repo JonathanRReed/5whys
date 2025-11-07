@@ -16,6 +16,8 @@ type ThemeOption = {
 };
 
 const THEME_STORAGE_KEY = 'career-tools-theme';
+const THEME_COOKIE = 'career-tools-theme';
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
 
 const themeOptions: ThemeOption[] = [
   {
@@ -48,11 +50,28 @@ const navLinks = [
 export default function Navigation({ currentPath = '/' }: NavigationProps) {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [activeTheme, setActiveTheme] = React.useState<Theme>(() => {
+    // Check if we're on the client
     if (typeof window === 'undefined') {
       return 'night';
     }
 
     try {
+      // First check the current DOM theme (set by server-side script)
+      const currentDatasetTheme = document.documentElement.dataset.theme;
+      if (currentDatasetTheme === 'moon' || currentDatasetTheme === 'dawn') {
+        return currentDatasetTheme;
+      }
+      
+      // If no dataset theme, check cookies
+      const cookieMatch = document.cookie.match(new RegExp('(^|; )' + THEME_COOKIE + '=([^;]*)'));
+      if (cookieMatch?.[2]) {
+        const cookieValue = cookieMatch[2];
+        if (cookieValue === 'night' || cookieValue === 'moon' || cookieValue === 'dawn') {
+          return cookieValue;
+        }
+      }
+
+      // Fall back to localStorage
       const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
       if (stored === 'night' || stored === 'moon' || stored === 'dawn') {
         return stored;
@@ -61,13 +80,31 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
       // ignore storage access issues
     }
 
-    const datasetTheme = document.documentElement.dataset.theme;
-    if (datasetTheme === 'moon' || datasetTheme === 'dawn') {
-      return datasetTheme;
-    }
-
     return 'night';
   });
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      // Use the same improved cookie parsing logic
+      const cookieMatch = document.cookie.match(new RegExp('(^|; )' + THEME_COOKIE + '=([^;]*)'));
+      let theme = null;
+      
+      if (cookieMatch?.[2]) {
+        const cookieValue = cookieMatch[2];
+        if (cookieValue === 'night' || cookieValue === 'moon' || cookieValue === 'dawn') {
+          theme = cookieValue;
+        }
+      }
+      
+      const stored = theme ?? window.localStorage.getItem(THEME_STORAGE_KEY);
+      if (stored === 'night' || stored === 'moon' || stored === 'dawn') {
+        setActiveTheme(stored);
+      }
+    } catch (_) {
+      // ignore hydration sync issues
+    }
+  }, []);
 
   React.useEffect(() => {
     if (typeof window === 'undefined') {
@@ -85,6 +122,12 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
       window.localStorage.setItem(THEME_STORAGE_KEY, activeTheme);
     } catch (_) {
       // storage might be unavailable; fail silently
+    }
+
+    try {
+      document.cookie = `${THEME_COOKIE}=${activeTheme};path=/;max-age=${COOKIE_MAX_AGE};SameSite=Lax`;
+    } catch (_) {
+      // ignore cookie issues
     }
   }, [activeTheme]);
 
@@ -115,8 +158,11 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-[hsl(var(--border)/0.35)] bg-[hsl(var(--background)/0.92)]/95 backdrop-blur-xl transition-colors duration-300">
-      <nav aria-label="Primary" className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:py-4">
-        <div className="flex items-center gap-4">
+      <nav
+        aria-label="Primary"
+        className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-3 sm:py-4 md:flex-row md:items-center md:justify-between"
+      >
+        <div className="flex w-full flex-wrap items-center justify-between gap-4 md:w-auto md:flex-nowrap md:justify-start">
           <a href="/" className="flex items-center gap-3 text-foreground transition-transform hover:scale-[1.02]">
             <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[radial-gradient(circle_at_top_right,hsl(var(--foam)/0.32)_0%,hsl(var(--iris)/0.4)_55%,hsl(var(--love)/0.28)_100%)] shadow-[0_10px_24px_-18px_hsl(var(--background)/0.8)]">
               <img
@@ -232,10 +278,10 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
         <div
           id="primary-navigation"
           className={cn(
-            'flex flex-col gap-4 border-t border-[hsl(var(--border)/0.35)] py-4 md:hidden',
+            'w-full flex-col gap-4 border-t border-[hsl(var(--border)/0.35)] py-4 md:hidden',
             menuOpen
-              ? 'visible translate-y-0 opacity-100'
-              : 'invisible -translate-y-2 opacity-0'
+              ? 'flex translate-y-0 opacity-100'
+              : 'hidden -translate-y-2 opacity-0'
           )}
         >
           <div className="flex flex-col gap-3">

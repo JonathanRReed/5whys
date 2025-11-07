@@ -5,28 +5,65 @@ const {
   theme = "night",
 } = Astro.props;
 
+const cookieTheme = Astro.cookies.get('career-tools-theme')?.value;
+const validatedTheme =
+  cookieTheme === 'moon' || cookieTheme === 'dawn' || cookieTheme === 'night'
+    ? cookieTheme
+    : undefined;
+const resolvedTheme = validatedTheme ?? theme;
+const htmlTheme = resolvedTheme === 'moon' ? 'moon' : resolvedTheme === 'dawn' ? 'dawn' : undefined;
+
+
+import { ClientRouter } from 'astro:transitions';
 import Navigation from '../components/Navigation';
 import "../styles/globals.css";
 ---
-<html lang="en" class="h-full" data-theme={theme === 'moon' ? 'moon' : theme === 'dawn' ? 'dawn' : undefined}>
+<html lang="en" class="h-full" data-theme={htmlTheme}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="icon" href="/favicon.webp" type="image/webp" />
+    <ClientRouter />
     <script is:inline>
       const storageKey = 'career-tools-theme';
-      try {
-        const root = document.documentElement;
-        const stored = window.localStorage.getItem(storageKey);
-        if (stored === 'moon' || stored === 'dawn') {
-          root.dataset.theme = stored;
+      const cookieKey = 'career-tools-theme';
+      const root = document.documentElement;
+      const applyTheme = (nextTheme) => {
+        if (nextTheme === 'moon' || nextTheme === 'dawn') {
+          root.dataset.theme = nextTheme;
         } else {
           root.removeAttribute('data-theme');
         }
+      };
+
+      try {
+        // First try to get theme from cookie (server-side preference)
+        const cookieMatch = document.cookie.match(new RegExp('(^|; )' + cookieKey + '=([^;]*)'));
+        let theme = null;
+        
+        if (cookieMatch?.[2]) {
+          const cookieValue = cookieMatch[2];
+          if (cookieValue === 'night' || cookieValue === 'moon' || cookieValue === 'dawn') {
+            theme = cookieValue;
+          }
+        }
+        
+        // If no valid cookie, fall back to localStorage
+        if (!theme) {
+          const stored = window.localStorage.getItem(storageKey);
+          if (stored === 'night' || stored === 'moon' || stored === 'dawn') {
+            theme = stored;
+          }
+        }
+        
+        // Apply the theme if we found one
+        if (theme) {
+          applyTheme(theme);
+        }
       } catch (_) {
-        // no-op: storage might be unavailable
+        // storage might be unavailable
       }
     </script>
   </head>
@@ -38,10 +75,10 @@ import "../styles/globals.css";
       Skip to main content
     </a>
     <div class="relative flex min-h-screen flex-col">
-      <Navigation client:load currentPath={Astro.url.pathname} />
-      <main id="main-content" class="relative z-10 flex-1">
+      <Navigation client:load currentPath={Astro.url.pathname} transition:persist />
+      <main id="main-content" class="relative z-10 flex-1" transition:name="page-content">
         <slot />
       </main>
-          </div>
+    </div>
   </body>
 </html>
