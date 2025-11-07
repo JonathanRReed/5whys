@@ -1,16 +1,44 @@
 ---
-const { title = "5 Whys" } = Astro.props;
+const {
+  title = "5 Whys",
+  description = "Interactive career growth tools built with intention",
+  theme = "night",
+} = Astro.props;
+
 import Navigation from '../components/Navigation';
 import "../styles/globals.css";
 ---
-<html lang="en" class="h-full">
+<html lang="en" class="h-full" data-theme={theme === 'moon' ? 'moon' : theme === 'dawn' ? 'dawn' : undefined}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
+    <meta name="description" content={description} />
+    <script is:inline>
+      const storageKey = 'career-tools-theme';
+      try {
+        const root = document.documentElement;
+        const stored = window.localStorage.getItem(storageKey);
+        if (stored === 'moon' || stored === 'dawn') {
+          root.dataset.theme = stored;
+        } else {
+          root.removeAttribute('data-theme');
+        }
+      } catch (_) {
+        // no-op: storage might be unavailable
+      }
+    </script>
   </head>
-  <body class="min-h-screen bg-white">
-    <Navigation client:load />
-    <slot />
+  <body class="min-h-screen bg-gradient-to-br from-background via-[hsl(var(--overlay))] to-[hsl(var(--background))] text-foreground transition-colors duration-300">
+    <div class="relative flex min-h-screen flex-col">
+      <Navigation client:load />
+      <main class="relative z-10 flex-1">
+        <slot />
+      </main>
+      <div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden opacity-60">
+        <div class="absolute -top-32 -right-16 h-96 w-96 rounded-full bg-gradient-to-br from-[hsl(var(--love)/0.18)] via-[hsl(var(--pine)/0.16)] to-transparent blur-3xl" />
+        <div class="absolute -bottom-24 -left-8 h-80 w-80 rounded-full bg-gradient-to-br from-[hsl(var(--foam)/0.2)] via-[hsl(var(--gold)/0.18)] to-transparent blur-3xl" />
+      </div>
+    </div>
   </body>
 </html>

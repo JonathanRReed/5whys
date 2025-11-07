@@ -5,16 +5,108 @@
 /* eslint-disable-next-line at-rule-no-unknown */
 @tailwind utilities;
 
-:root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-}
+@layer base {
+  :root {
+    --background: 249 22% 12%;
+    --foreground: 245 50% 91%;
+    --card: 247 23% 15%;
+    --card-foreground: 245 50% 91%;
+    --popover: 245 25% 18%;
+    --popover-foreground: 245 50% 91%;
+    --primary: 189 43% 73%;
+    --primary-foreground: 249 22% 12%;
+    --secondary: 245 25% 18%;
+    --secondary-foreground: 245 50% 91%;
+    --muted: 249 12% 47%;
+    --muted-foreground: 248 15% 61%;
+    --accent: 267 57% 78%;
+    --accent-foreground: 249 22% 12%;
+    --destructive: 343 76% 68%;
+    --destructive-foreground: 249 22% 12%;
+    --love: 343 76% 68%;
+    --gold: 35 88% 72%;
+    --rose: 2 55% 83%;
+    --pine: 197 49% 38%;
+    --foam: 189 43% 73%;
+    --iris: 267 57% 78%;
+    --border: 248 21% 26%;
+    --input: 248 21% 26%;
+    --ring: 189 43% 73%;
+    --radius: 0.75rem;
+    color-scheme: dark;
+  }
 
-html, body, #root { height: 100%; }
+  [data-theme='moon'] {
+    --background: 246 24% 17%;
+    --foreground: 245 50% 91%;
+    --card: 248 24% 20%;
+    --card-foreground: 245 50% 91%;
+    --popover: 248 21% 26%;
+    --popover-foreground: 245 50% 91%;
+    --primary: 197 48% 47%;
+    --primary-foreground: 245 50% 91%;
+    --secondary: 248 24% 20%;
+    --secondary-foreground: 245 50% 91%;
+    --muted: 249 12% 47%;
+    --muted-foreground: 248 15% 61%;
+    --accent: 267 57% 78%;
+    --accent-foreground: 245 50% 91%;
+    --destructive: 343 76% 68%;
+    --destructive-foreground: 246 24% 17%;
+    --love: 343 76% 68%;
+    --gold: 35 88% 72%;
+    --rose: 2 66% 75%;
+    --pine: 197 48% 47%;
+    --foam: 189 43% 73%;
+    --iris: 267 57% 78%;
+    --border: 248 21% 26%;
+    --input: 248 21% 26%;
+    --ring: 197 48% 47%;
+    color-scheme: dark;
+  }
 
-body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  [data-theme='dawn'] {
+    --background: 32 57% 95%;
+    --foreground: 248 19% 32%;
+    --card: 35 100% 98%;
+    --card-foreground: 248 19% 32%;
+    --popover: 25 36% 92%;
+    --popover-foreground: 248 19% 32%;
+    --primary: 197 53% 34%;
+    --primary-foreground: 32 57% 95%;
+    --secondary: 35 100% 98%;
+    --secondary-foreground: 248 19% 32%;
+    --muted: 254 9% 61%;
+    --muted-foreground: 248 19% 32%;
+    --accent: 267 22% 57%;
+    --accent-foreground: 32 57% 95%;
+    --destructive: 343 35% 55%;
+    --destructive-foreground: 32 57% 95%;
+    --love: 343 35% 55%;
+    --gold: 35 81% 56%;
+    --rose: 2 55% 67%;
+    --pine: 197 53% 34%;
+    --foam: 189 30% 48%;
+    --iris: 267 22% 57%;
+    --border: 25 36% 84%;
+    --input: 25 36% 84%;
+    --ring: 197 53% 34%;
+    color-scheme: light;
+  }
+
+  *,
+  *::before,
+  *::after {
+    @apply border-border;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased transition-colors duration-300;
+  }
 }
