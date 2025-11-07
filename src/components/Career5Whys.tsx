@@ -21,20 +21,6 @@ function usePersistedState<T>(key: Id, initial: T) {
   return [value, setValue] as const;
 }
 
-function synthesizeRoot(whys: string[]) {
-  const text = whys.join(' ').toLowerCase();
-  if (!text.trim()) return '';
-  const motifs = [
-    { k: ['help','serve','support','care'], t: 'I want to help people meaningfully and make a positive impact on their lives.' },
-    { k: ['discover','research','curious'], t: 'I want to discover and understand how things work to expand human knowledge.' },
-    { k: ['create','build','design','make'], t: 'I want to create useful things that didn\'t exist before.' },
-    { k: ['teach','mentor','educat'], t: 'I want to teach and empower others to grow and reach their potential.' },
-    { k: ['fair','justice','equity'], t: 'I want to improve fairness and equity in the world.' },
-    { k: ['health','medicine','well-being'], t: 'I want to improve human health and well‑being through innovation.' },
-  ];
-  const hit = motifs.find(m => m.k.some(w => text.includes(w)));
-  return hit ? hit.t : 'I want to contribute to something bigger than myself and leave a meaningful legacy.';
-}
 
 export default function Career5Whys() {
   const [profession, setProfession] = usePersistedState('profession','');
@@ -46,7 +32,6 @@ export default function Career5Whys() {
   const [root, setRoot] = usePersistedState('root','');
 
   const whys = [why1, why2, why3, why4, why5];
-  const allWhysFilled = whys.every(w => w.trim().length > 0);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -150,13 +135,6 @@ export default function Career5Whys() {
             </div>
             
             <div className="flex flex-wrap gap-3">
-              <Button 
-                onClick={()=>setRoot(synthesizeRoot(whys))}
-                disabled={!allWhysFilled}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm px-4 py-2 disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                {root ? 'Update Root' : 'Generate Root'}
-              </Button>
               
               <Button 
                 variant="outline"
@@ -191,11 +169,6 @@ export default function Career5Whys() {
               </Button>
             </div>
             
-            {!allWhysFilled && (
-              <p className="text-sm text-gray-600 mt-3">
-                Complete all 5 "Why?" questions to enable root generation
-              </p>
-            )}
           </section>
         </div>
 

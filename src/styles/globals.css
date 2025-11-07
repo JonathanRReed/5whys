@@ -1,5 +1,8 @@
+/* eslint-disable-next-line at-rule-no-unknown */
 @tailwind base;
+/* eslint-disable-next-line at-rule-no-unknown */
 @tailwind components;
+/* eslint-disable-next-line at-rule-no-unknown */
 @tailwind utilities;
 
 :root {
@@ -10,5 +13,8 @@
 html, body, #root { height: 100%; }
 
 body {
-  @apply bg-background text-foreground antialiased;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }

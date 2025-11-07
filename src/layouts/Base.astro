@@ -1,5 +1,6 @@
 ---
 const { title = "5 Whys" } = Astro.props;
+import Navigation from '../components/Navigation';
 import "../styles/globals.css";
 ---
 <html lang="en" class="h-full">
@@ -9,6 +10,7 @@ import "../styles/globals.css";
     <title>{title}</title>
   </head>
   <body class="min-h-screen bg-white">
+    <Navigation client:load />
     <slot />
   </body>
 </html>
