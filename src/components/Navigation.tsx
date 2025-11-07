@@ -32,6 +32,12 @@ export default function Navigation() {
             >
               Resume Game
             </a>
+            <a 
+              href="/networking-practice"
+              className="text-gray-600 hover:text-gray-900 font-medium text-sm transition-colors"
+            >
+              Networking Practice
+            </a>
           </div>
         </div>
       </div>
