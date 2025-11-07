@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
+import { cn } from '../lib/utils';
 import scenarioData from '../data/networking-scenarios.json';
 import {
   deleteSession,
@@ -19,6 +20,11 @@ import type { NetworkingPracticeSession, NetworkingPracticeVersion } from '../ut
 const TOTAL_SECONDS = 120;
 
 type Scenario = (typeof scenarioData)[number];
+
+type NetworkingPracticeProps = {
+  showHeader?: boolean;
+  className?: string;
+};
 
 type TimerState = {
   remaining: number;
@@ -75,7 +81,7 @@ function useHydratedState<T>(initial: T, loader: () => T) {
   return [state, setState] as const;
 }
 
-export default function NetworkingPractice() {
+export default function NetworkingPractice({ showHeader = true, className }: NetworkingPracticeProps) {
   const scenarios: Scenario[] = scenarioData;
   const fallbackVersion = React.useMemo(() => scenarioToVersion(scenarios[0] ?? {
     id: 'default',
@@ -257,21 +263,34 @@ export default function NetworkingPractice() {
     );
   });
 
+  const containerClasses = cn(
+    'text-[hsl(var(--foreground))]',
+    showHeader && 'min-h-screen',
+    className
+  );
+
+  const innerClasses = cn(
+    'mx-auto max-w-6xl px-4 pb-20',
+    showHeader ? 'pt-12 space-y-10' : 'pt-10 space-y-8'
+  );
+
   return (
-    <div className="min-h-screen text-[hsl(var(--foreground))]">
-      <div className="max-w-6xl px-4 py-12 mx-auto">
-        <header className="mb-10 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 mb-6 rounded-3xl bg-gradient-to-br from-[hsl(var(--love))] to-[hsl(var(--iris))]">
-            <svg className="w-9 h-9 text-[hsl(var(--background))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M5.121 17.804A3 3 0 017 17h10a3 3 0 012.879 2.804L20 21H4l1.121-3.196zM12 14a5 5 0 100-10 5 5 0 000 10z" />
-            </svg>
-          </div>
-          <p className="text-sm uppercase tracking-[0.4em] text-[hsl(var(--muted-foreground))]">Career Tools Suite</p>
-          <h1 className="mt-4 text-4xl font-bold text-[hsl(var(--gold))]">Networking Practice Studio</h1>
-          <p className="max-w-3xl mx-auto mt-4 text-base text-[hsl(var(--muted-foreground))]">
-            Craft confident introductions for career fairs, conferences, and outreach. Practice your Who / Where / What openings, pace yourself with a two-minute timer, and capture reflections to keep improving.
-          </p>
-        </header>
+    <div className={containerClasses}>
+      <div className={innerClasses}>
+        {showHeader && (
+          <header className="text-center space-y-4">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-[hsl(var(--love))] to-[hsl(var(--iris))]">
+              <svg className="h-9 w-9 text-[hsl(var(--background))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M5.121 17.804A3 3 0 017 17h10a3 3 0 012.879 2.804L20 21H4l1.121-3.196zM12 14a5 5 0 100-10 5 5 0 000 10z" />
+              </svg>
+            </div>
+            <p className="text-sm uppercase tracking-[0.4em] text-[hsl(var(--muted-foreground))]">Career Tools Suite</p>
+            <h1 className="text-4xl font-bold text-[hsl(var(--gold))]">Networking Practice Studio</h1>
+            <p className="mx-auto max-w-3xl text-base text-[hsl(var(--muted-foreground))]">
+              Craft confident introductions for career fairs, conferences, and outreach. Practice your Who / Where / What openings, pace yourself with a two-minute timer, and capture reflections to keep improving.
+            </p>
+          </header>
+        )}
 
         <section className="grid gap-6 p-6 mb-10 rounded-3xl bg-[hsl(var(--overlay)/0.3)] shadow-xl">
           <div className="flex flex-wrap items-center justify-between gap-4">

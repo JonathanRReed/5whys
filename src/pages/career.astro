@@ -1,13 +1,28 @@
 ---
 import Base from '../layouts/Base.astro';
 import Career5Whys from '../components/Career5Whys';
+import PageHero from '../components/PageHero.astro';
 ---
 <Base title="Career 5 Whys">
-  <div class="relative flex min-h-screen flex-col gap-10 px-4 pb-20 pt-24 sm:pt-28">
-    <div class="flex-1">
-      <Career5Whys client:load />
-    </div>
-    <footer class="text-center text-xs text-muted-foreground">
+  <div class="relative space-y-24 px-4 pb-24 pt-24 sm:pt-32">
+    <section class="mx-auto max-w-6xl">
+      <PageHero
+        eyebrow="Deep Reflection"
+        title="Discover your underlying career motivations."
+        description="Journal through five guided layers of reasoning to articulate the values and impact guiding your next role. Save snapshots, export insights, and revisit your why whenever the path shifts."
+      />
+    </section>
+
+    <section id="why-flow" class="mx-auto max-w-6xl">
+      <Career5Whys
+        client:load
+        showHeader={false}
+        showFooter={false}
+        className="rounded-[2.5rem] border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] pb-14"
+      />
+    </section>
+
+    <footer class="mx-auto max-w-6xl rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.2)] px-8 py-6 text-center text-sm text-muted-foreground">
       Crafted by Jonathan Reed —
       <a href="https://www.jonathanrreed.com" class="font-medium text-foreground transition-colors hover:text-accent">
         jonathanrreed.com

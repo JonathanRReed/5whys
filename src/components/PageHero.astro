@@ -1,0 +1,92 @@
+---
+import { cn } from '../lib/utils';
+
+interface Cta {
+  href: string;
+  label: string;
+}
+
+interface Props {
+  eyebrow: string;
+  title: string;
+  description: string;
+  accent?: 'foam' | 'gold' | 'love' | 'iris' | 'pine';
+  primaryCta?: Cta;
+  secondaryCta?: Cta;
+}
+
+const {
+  eyebrow,
+  title,
+  description,
+  accent = 'foam',
+  primaryCta,
+  secondaryCta,
+} = Astro.props as Props;
+
+const hasMeta = Astro.slots.has('meta');
+const hasExtra = Astro.slots.has('extra');
+---
+<section
+  class={cn(
+    'relative',
+    hasMeta
+      ? 'grid gap-16 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)]'
+      : 'mx-auto max-w-4xl space-y-8'
+  )}
+  style={`--hero-accent: var(--${accent});`}
+>
+  <div class={cn('space-y-8', hasMeta && 'max-w-xl lg:space-y-10')}>
+    <div class="inline-flex items-center gap-3 rounded-full border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.4)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground">
+      {eyebrow}
+      <span class="inline-flex h-2 w-2 rounded-full bg-[hsl(var(--hero-accent))]" />
+    </div>
+
+    <div class="space-y-6">
+      <h1 class="text-balance text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+        {title}
+      </h1>
+      <p class="text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
+        {description}
+      </p>
+    </div>
+
+    {(primaryCta || secondaryCta) && (
+      <div class="flex flex-wrap items-center gap-4">
+        {primaryCta && (
+          <a
+            href={primaryCta.href}
+            class="inline-flex items-center gap-2 rounded-full bg-[hsl(var(--primary))] px-6 py-3 text-sm font-semibold text-[hsl(var(--primary-foreground))] shadow-[0_20px_40px_-24px_hsl(var(--primary))] transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_26px_52px_-30px_hsl(var(--primary))]"
+          >
+            {primaryCta.label}
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
+        )}
+        {secondaryCta && (
+          <a
+            href={secondaryCta.href}
+            class="inline-flex items-center gap-2 rounded-full border border-[hsl(var(--border)/0.55)] px-6 py-3 text-sm font-semibold text-foreground transition-colors duration-200 hover:border-[hsl(var(--accent)/0.4)] hover:text-[hsl(var(--accent))]"
+          >
+            {secondaryCta.label}
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 12h16" />
+            </svg>
+          </a>
+        )}
+      </div>
+    )}
+
+    {hasExtra && <slot name="extra" />}
+  </div>
+
+  {hasMeta && (
+    <div class="relative">
+      <div class="absolute -inset-6 rounded-[2.75rem] border border-[hsl(var(--border)/0.25)] bg-[hsl(var(--card)/0.6)] blur-sm" aria-hidden="true" />
+      <div class="relative space-y-6 rounded-[2.5rem] border border-[hsl(var(--border)/0.45)] bg-[hsl(var(--card)/0.86)] p-10 shadow-[0_30px_80px_-50px_hsl(var(--background)/0.95)]">
+        <slot name="meta" />
+      </div>
+    </div>
+  )}
+</section>

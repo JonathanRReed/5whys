@@ -1,14 +1,28 @@
 ---
 import Base from '../layouts/Base.astro';
 import RoleDecoderApp from '../components/role-decoder/RoleDecoderApp';
+import PageHero from '../components/PageHero.astro';
 ---
 <Base title="Role Decoder Pro">
-  <div class="relative flex min-h-screen flex-col gap-10 px-4 pb-20 pt-24 sm:pt-28">
-    <div class="flex-1">
-      <RoleDecoderApp client:load />
-    </div>
-    <footer class="text-center text-xs text-muted-foreground">
-      Fully offline — paste a job description to decode the skills it requires.
+  <div class="relative space-y-24 px-4 pb-24 pt-24 sm:pt-32">
+    <section class="mx-auto max-w-6xl">
+      <PageHero
+        eyebrow="Flagship Module"
+        title="Decode roles into skills and evidence coverage."
+        description="Paste job descriptions to segment responsibilities, surface skill frequency, and align your experience without relying on external APIs."
+      />
+    </section>
+
+    <section class="mx-auto max-w-6xl">
+      <RoleDecoderApp
+        client:load
+        showHeader={false}
+        className="rounded-[2.5rem] border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] px-6 pb-16 pt-10"
+      />
+    </section>
+
+    <footer class="mx-auto max-w-6xl rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.2)] px-8 py-6 text-center text-sm text-muted-foreground">
+      Fully offline — paste a role, decode the skills, and export your evidence map.
     </footer>
   </div>
 </Base>
