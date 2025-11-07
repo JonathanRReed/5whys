@@ -51,6 +51,10 @@ type ExperienceDraft = {
   confidence: number;
 };
 
+const BASE_PATH = import.meta.env.BASE_URL ?? '/';
+const NORMALIZED_BASE_PATH = BASE_PATH.endsWith('/') ? BASE_PATH.slice(0, -1) : BASE_PATH;
+const SKILLS_DICTIONARY_URL = `${NORMALIZED_BASE_PATH || ''}/data/skills.json`;
+
 const ACTION_VERBS = [
   'Accelerated',
   'Built',
@@ -99,7 +103,7 @@ export default function RoleDecoderApp({ showHeader = true, className }: RoleDec
     async function loadDictionary() {
       try {
         setDictionaryState('loading');
-        const response = await fetch('/data/skills.json');
+        const response = await fetch(SKILLS_DICTIONARY_URL);
         if (!response.ok) {
           throw new Error(`Failed to load skills dictionary (${response.status})`);
         }
@@ -1012,7 +1016,12 @@ function buildBullet(inputs: BulletDraftInputs) {
     sentence += needsSeparator ? ` — ${impact}` : ` ${impact}`;
   }
 
-  return `• ${sentence.replace(/\s+/g, ' ').trim()}.`;
+  const normalized = sentence.replace(/\s+/g, ' ').trim();
+  if (!normalized) return '';
+  const needsPeriod = !/[.!?)]$/.test(normalized);
+  const finalSentence = needsPeriod ? `${normalized}.` : normalized;
+
+  return `• ${finalSentence}`;
 }
 
 function capitalize(value: string) {

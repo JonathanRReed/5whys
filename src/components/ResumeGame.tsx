@@ -177,9 +177,18 @@ function usePersistedState<T>(key: string, initial: T) {
   return [value, setValue] as const;
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function highlightResume(text: string) {
   if (!text) return '';
-  let highlighted = text;
+  let highlighted = escapeHtml(text);
   highlighted = highlighted.replace(/\d+\.?\d*%?/g, '<mark class="bg-[hsl(var(--primary)/0.3)] text-[hsl(var(--primary-foreground))] px-1 rounded">$&</mark>');
   POWER_WORDS.forEach((word) => {
     const regex = new RegExp(`\\b${word}\\b`, 'gi');
