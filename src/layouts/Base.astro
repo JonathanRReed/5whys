@@ -29,16 +29,18 @@ import "../styles/globals.css";
       }
     </script>
   </head>
-  <body class="min-h-screen bg-gradient-to-br from-background via-[hsl(var(--overlay))] to-[hsl(var(--background))] text-foreground transition-colors duration-300">
+  <body class="min-h-screen bg-background text-foreground transition-colors duration-300">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-[hsl(var(--primary))] focus:px-4 focus:py-2 focus:text-[hsl(var(--primary-foreground))]"
+    >
+      Skip to main content
+    </a>
     <div class="relative flex min-h-screen flex-col">
       <Navigation client:load />
-      <main class="relative z-10 flex-1">
+      <main id="main-content" class="relative z-10 flex-1">
         <slot />
       </main>
-      <div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden opacity-60">
-        <div class="absolute -top-32 -right-16 h-96 w-96 rounded-full bg-gradient-to-br from-[hsl(var(--love)/0.18)] via-[hsl(var(--pine)/0.16)] to-transparent blur-3xl" />
-        <div class="absolute -bottom-24 -left-8 h-80 w-80 rounded-full bg-gradient-to-br from-[hsl(var(--foam)/0.2)] via-[hsl(var(--gold)/0.18)] to-transparent blur-3xl" />
-      </div>
-    </div>
+          </div>
   </body>
 </html>

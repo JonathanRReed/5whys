@@ -29,11 +29,11 @@ type TimerState = {
 type Ratings = {
   confidence: number;
   clarity: number;
-  flow: number;
-  conciseness: number;
+  rapport: number;
+  authenticity: number;
 };
 
-const defaultRatings: Ratings = { confidence: 3, clarity: 3, flow: 3, conciseness: 3 };
+const defaultRatings: Ratings = { confidence: 3, clarity: 3, rapport: 3, authenticity: 3 };
 
 function formatTime(seconds: number) {
   const mins = Math.floor(seconds / 60)
@@ -60,9 +60,9 @@ function scenarioToVersion(scenario: Scenario, title?: string): NetworkingPracti
 }
 
 function computeFeedbackColor(value: number) {
-  if (value >= 4) return 'text-[#50FA7B]';
-  if (value >= 3) return 'text-[#FAD85D]';
-  return 'text-[#D84B4B]';
+  if (value >= 4) return 'text-[hsl(var(--love))]';
+  if (value >= 3) return 'text-[hsl(var(--gold))]';
+  return 'text-[hsl(var(--destructive))]';
 }
 
 function useHydratedState<T>(initial: T, loader: () => T) {
@@ -131,7 +131,7 @@ export default function NetworkingPractice() {
 
   const progress = (TOTAL_SECONDS - timer.remaining) / TOTAL_SECONDS;
   const ringStyle = {
-    background: `conic-gradient(#57D9A3 ${progress * 360}deg, rgba(255,255,255,0.08) 0deg)`,
+    background: `conic-gradient(hsl(var(--primary)) ${progress * 360}deg, hsl(var(--border)/0.3) 0deg)`,
   };
 
   const handleScenarioChange = (scenarioId: string) => {
@@ -201,7 +201,7 @@ export default function NetworkingPractice() {
   };
 
   const averageRating = React.useMemo(() => {
-    const total = ratings.confidence + ratings.clarity + ratings.flow + ratings.conciseness;
+    const total = ratings.confidence + ratings.clarity + ratings.rapport + ratings.authenticity;
     return total / 4;
   }, [ratings]);
 
@@ -214,12 +214,20 @@ export default function NetworkingPractice() {
       versionId: currentVersion.id,
       scenarioId: currentVersion.scenarioId,
       scenarioTitle: scenario?.title ?? currentVersion.title,
-      who: currentVersion.who,
-      where: currentVersion.where,
-      what: currentVersion.what,
-      durationSeconds: TOTAL_SECONDS - timer.remaining,
+      attempts: [{
+        id: generateId(),
+        label: 'Round 1',
+        script: currentVersion.what,
+        durationSeconds: TOTAL_SECONDS - timer.remaining,
+        createdAt: new Date().toISOString(),
+      }],
       ratings,
-      reflection,
+      reflection: {
+        humanNote: reflection,
+        nervesNote: '',
+        nextFocus: '',
+        wins: '',
+      },
       createdAt: new Date().toISOString(),
     };
 
@@ -240,40 +248,40 @@ export default function NetworkingPractice() {
         key={scenario.id}
         onClick={() => handleScenarioChange(scenario.id)}
         className={`rounded-xl border px-4 py-3 text-left shadow-sm transition ${
-          isActive ? 'border-[#FF7F7F] bg-[#2E1F47] text-white' : 'border-transparent bg-[#26233A] text-[#E0DEF4] hover:border-[#FF7F7F]'
+          isActive ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.2)] text-[hsl(var(--primary-foreground))]' : 'border-transparent bg-[hsl(var(--overlay)/0.3)] text-[hsl(var(--foreground))] hover:border-[hsl(var(--primary))]'
         }`}
       >
         <div className="text-sm font-semibold">{scenario.title}</div>
-        <div className="mt-1 text-xs text-[#908CAA]">{scenario.where}</div>
+        <div className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">{scenario.where}</div>
       </button>
     );
   });
 
   return (
-    <div className="min-h-screen bg-[#1F1D2E] text-[#E0DEF4]">
+    <div className="min-h-screen text-[hsl(var(--foreground))]">
       <div className="max-w-6xl px-4 py-12 mx-auto">
         <header className="mb-10 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 mb-6 rounded-3xl bg-gradient-to-br from-[#EA9A97] to-[#C4A7E7]">
-            <svg className="w-9 h-9 text-[#1F1D2E]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="inline-flex items-center justify-center w-16 h-16 mb-6 rounded-3xl bg-gradient-to-br from-[hsl(var(--love))] to-[hsl(var(--iris))]">
+            <svg className="w-9 h-9 text-[hsl(var(--background))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M5.121 17.804A3 3 0 017 17h10a3 3 0 012.879 2.804L20 21H4l1.121-3.196zM12 14a5 5 0 100-10 5 5 0 000 10z" />
             </svg>
           </div>
-          <p className="text-sm uppercase tracking-[0.4em] text-[#908CAA]">Career Tools Suite</p>
-          <h1 className="mt-4 text-4xl font-bold text-[#F6C177]">Networking Practice Studio</h1>
-          <p className="max-w-3xl mx-auto mt-4 text-base text-[#908CAA]">
+          <p className="text-sm uppercase tracking-[0.4em] text-[hsl(var(--muted-foreground))]">Career Tools Suite</p>
+          <h1 className="mt-4 text-4xl font-bold text-[hsl(var(--gold))]">Networking Practice Studio</h1>
+          <p className="max-w-3xl mx-auto mt-4 text-base text-[hsl(var(--muted-foreground))]">
             Craft confident introductions for career fairs, conferences, and outreach. Practice your Who / Where / What openings, pace yourself with a two-minute timer, and capture reflections to keep improving.
           </p>
         </header>
 
-        <section className="grid gap-6 p-6 mb-10 rounded-3xl bg-[#26233A] shadow-xl">
+        <section className="grid gap-6 p-6 mb-10 rounded-3xl bg-[hsl(var(--overlay)/0.3)] shadow-xl">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-wrap gap-3">{scenarioPills}</div>
             <div className="flex items-center gap-2">
-              <Button onClick={createNewVersion} className="bg-[#31748F] hover:bg-[#286480]">
+              <Button onClick={createNewVersion} className="bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.8)]">
                 New Version
               </Button>
               {versions.length > 1 ? (
-                <Button variant="outline" className="border-[#6E6A86] text-[#E0DEF4]" onClick={deleteCurrentVersion}>
+                <Button variant="outline" className="border-[hsl(var(--border)/0.6)] text-[hsl(var(--foreground))]" onClick={deleteCurrentVersion}>
                   Delete Version
                 </Button>
               ) : null}
@@ -287,10 +295,10 @@ export default function NetworkingPractice() {
                 id="version"
                 value={currentVersion?.id ?? ''}
                 onChange={(event) => setCurrentVersionId(event.target.value)}
-                className="w-full rounded-lg border border-[#524F67] bg-[#1F1D2E] px-3 py-2 text-sm text-[#E0DEF4] focus:border-[#C4A7E7] focus:outline-none"
+                className="w-full rounded-lg border border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm text-[hsl(var(--foreground))] focus:border-[hsl(var(--primary))] focus:outline-none"
               >
                 {versions.map((version) => (
-                  <option key={version.id} value={version.id} className="bg-[#1F1D2E]">
+                  <option key={version.id} value={version.id} className="bg-[hsl(var(--overlay)/0.3)]">
                     {version.title}
                   </option>
                 ))}
@@ -299,20 +307,20 @@ export default function NetworkingPractice() {
                 value={currentVersion?.title ?? ''}
                 onChange={(event) => handleFieldChange('title', event.target.value)}
                 placeholder="Version title"
-                className="bg-[#1F1D2E] border-[#524F67] text-[#E0DEF4] focus:border-[#C4A7E7]"
+                className="bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--border)/0.6)] text-[hsl(var(--foreground))] focus:border-[hsl(var(--primary))]"
               />
               <Textarea
                 value={currentVersion?.notes ?? ''}
                 onChange={(event) => handleFieldChange('notes', event.target.value)}
                 placeholder="Session notes or goals"
-                className="h-24 bg-[#1F1D2E] border-[#524F67] text-sm text-[#E0DEF4] focus:border-[#C4A7E7]"
+                className="h-24 bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--border)/0.6)] text-sm text-[hsl(var(--foreground))] focus:border-[hsl(var(--primary))]"
               />
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
-              <Card className="border-[#FFD700]/60 bg-[#28253B] text-[#E0DEF4]">
+              <Card className="border-[hsl(var(--gold)/0.6)] bg-[hsl(var(--overlay)/0.4)] text-[hsl(var(--foreground))]">
                 <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-[#FFD700]">
+                  <CardTitle className="flex items-center gap-2 text-[hsl(var(--gold))]">
                     <span className="text-2xl">🧑‍💼</span>
                     WHO
                   </CardTitle>
@@ -321,14 +329,14 @@ export default function NetworkingPractice() {
                   <Textarea
                     value={currentVersion?.who ?? ''}
                     onChange={(event) => handleFieldChange('who', event.target.value)}
-                    className="min-h-[140px] bg-[#1F1D2E] border-[#FFD700]/40 text-sm text-[#E0DEF4] focus:border-[#FFD700]"
+                    className="min-h-[140px] bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--gold)/0.4)] text-sm text-[hsl(var(--foreground))] focus:border-[hsl(var(--gold))]"
                   />
                 </CardContent>
               </Card>
 
-              <Card className="border-[#FF7F7F]/60 bg-[#28253B] text-[#E0DEF4]">
+              <Card className="border-[hsl(var(--love)/0.6)] bg-[hsl(var(--overlay)/0.4)] text-[hsl(var(--foreground))]">
                 <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-[#FF7F7F]">
+                  <CardTitle className="flex items-center gap-2 text-[hsl(var(--love))]">
                     <span className="text-2xl">📍</span>
                     WHERE
                   </CardTitle>
@@ -337,14 +345,14 @@ export default function NetworkingPractice() {
                   <Textarea
                     value={currentVersion?.where ?? ''}
                     onChange={(event) => handleFieldChange('where', event.target.value)}
-                    className="min-h-[140px] bg-[#1F1D2E] border-[#FF7F7F]/40 text-sm text-[#E0DEF4] focus:border-[#FF7F7F]"
+                    className="min-h-[140px] bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--love)/0.4)] text-sm text-[hsl(var(--foreground))] focus:border-[hsl(var(--love))]"
                   />
                 </CardContent>
               </Card>
 
-              <Card className="border-[#57D9A3]/60 bg-[#28253B] text-[#E0DEF4]">
+              <Card className="border-[hsl(var(--foam)/0.6)] bg-[hsl(var(--overlay)/0.4)] text-[hsl(var(--foreground))]">
                 <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-[#57D9A3]">
+                  <CardTitle className="flex items-center gap-2 text-[hsl(var(--foam))]">
                     <span className="text-2xl">⏳</span>
                     WHAT
                   </CardTitle>
@@ -353,7 +361,7 @@ export default function NetworkingPractice() {
                   <Textarea
                     value={currentVersion?.what ?? ''}
                     onChange={(event) => handleFieldChange('what', event.target.value)}
-                    className="min-h-[140px] bg-[#1F1D2E] border-[#57D9A3]/40 text-sm text-[#E0DEF4] focus:border-[#57D9A3]"
+                    className="min-h-[140px] bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--foam)/0.4)] text-sm text-[hsl(var(--foreground))] focus:border-[hsl(var(--foam))]"
                   />
                 </CardContent>
               </Card>
@@ -362,50 +370,50 @@ export default function NetworkingPractice() {
         </section>
 
         <section className="grid gap-6 mb-10 md:grid-cols-[minmax(0,_320px)_1fr]">
-          <Card className="border-[#31748F] bg-[#26233A]">
+          <Card className="border-[hsl(var(--primary)/0.6)] bg-[hsl(var(--overlay)/0.3)]">
             <CardHeader className="text-center">
-              <CardTitle className="text-[#9CCFD8]">Two-Minute Timer</CardTitle>
+              <CardTitle className="text-[hsl(var(--primary))]">Two-Minute Timer</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4">
-              <div className="relative flex items-center justify-center w-48 h-48 rounded-full border border-[#524F67]">
+              <div className="relative flex items-center justify-center w-48 h-48 rounded-full border border-[hsl(var(--border)/0.6)]">
                 <div
                   className="absolute inset-1 rounded-full"
                   style={ringStyle as React.CSSProperties}
                 />
-                <div className="relative flex flex-col items-center justify-center w-40 h-40 rounded-full bg-[#1F1D2E] text-3xl font-semibold">
+                <div className="relative flex flex-col items-center justify-center w-40 h-40 rounded-full bg-[hsl(var(--overlay)/0.3)] text-3xl font-semibold">
                   {formatTime(timer.remaining)}
-                  <span className="mt-1 text-xs font-normal text-[#908CAA]">remaining</span>
+                  <span className="mt-1 text-xs font-normal text-[hsl(var(--muted-foreground))]">remaining</span>
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button onClick={startTimer} className="bg-[#31748F] hover:bg-[#286480]">
+                <Button onClick={startTimer} className="bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.8)]">
                   {timer.isRunning ? 'Running' : 'Start'}
                 </Button>
-                <Button onClick={pauseTimer} variant="outline" className="border-[#6E6A86] text-[#E0DEF4]">
+                <Button onClick={pauseTimer} variant="outline" className="border-[hsl(var(--border)/0.6)] text-[hsl(var(--foreground))]">
                   Pause
                 </Button>
-                <Button onClick={resetTimer} variant="outline" className="border-[#6E6A86] text-[#E0DEF4]">
+                <Button onClick={resetTimer} variant="outline" className="border-[hsl(var(--border)/0.6)] text-[hsl(var(--foreground))]">
                   Reset
                 </Button>
               </div>
-              <p className="text-sm text-center text-[#908CAA]">
+              <p className="text-sm text-center text-[hsl(var(--muted-foreground))]">
                 Practice aloud or time your typed intro. Aim for a confident 90–120 second pitch.
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border-[#6E6A86] bg-[#26233A]">
+          <Card className="border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.3)]">
             <CardHeader>
-              <CardTitle className="text-[#C4A7E7]">Self-Review</CardTitle>
-              <p className="mt-2 text-sm text-[#908CAA]">Slide to score this round. Target green across the board.</p>
+              <CardTitle className="text-[hsl(var(--iris))]">Self-Review</CardTitle>
+              <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">Slide to score this round. Target green across the board.</p>
             </CardHeader>
             <CardContent className="grid gap-6">
               {(
                 [
                   { key: 'confidence', label: 'Confidence' },
                   { key: 'clarity', label: 'Clarity' },
-                  { key: 'flow', label: 'Flow' },
-                  { key: 'conciseness', label: 'Conciseness' },
+                  { key: 'rapport', label: 'Rapport' },
+                  { key: 'authenticity', label: 'Authenticity' },
                 ] as const
               ).map(({ key, label }) => (
                 <div key={key} className="grid gap-2">
@@ -422,13 +430,13 @@ export default function NetworkingPractice() {
                     onChange={(event) =>
                       setRatings((prev) => ({ ...prev, [key]: Number(event.target.value) as Ratings[keyof Ratings] }))
                     }
-                    className="w-full accent-[#C4A7E7]"
+                    className="w-full accent-[hsl(var(--iris))]"
                   />
                 </div>
               ))}
 
-              <div className="rounded-xl bg-[#1F1D2E] p-4 text-sm text-[#908CAA]">
-                <div className="mb-1 text-xs uppercase tracking-[0.3em] text-[#C4A7E7]">Average</div>
+              <div className="rounded-xl bg-[hsl(var(--overlay)/0.3)] p-4 text-sm text-[hsl(var(--muted-foreground))]">
+                <div className="mb-1 text-xs uppercase tracking-[0.3em] text-[hsl(var(--iris))]">Average</div>
                 <div className={`text-2xl font-semibold ${computeFeedbackColor(averageRating)}`}>
                   {averageRating.toFixed(1)}/5
                 </div>
@@ -448,17 +456,17 @@ export default function NetworkingPractice() {
                   value={reflection}
                   onChange={(event) => setReflection(event.target.value)}
                   placeholder="Notes to future you…"
-                  className="min-h-[100px] bg-[#1F1D2E] border-[#524F67] text-sm text-[#E0DEF4] focus:border-[#C4A7E7]"
+                  className="min-h-[100px] bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--border)/0.6)] text-sm text-[hsl(var(--foreground))] focus:border-[hsl(var(--iris))]"
                 />
               </div>
 
               <div className="flex flex-wrap gap-3">
-                <Button onClick={saveCurrentSession} className="bg-[#F6C177] text-[#1F1D2E] hover:bg-[#E0B065]">
+                <Button onClick={saveCurrentSession} className="bg-[hsl(var(--gold))] text-[hsl(var(--background))] hover:bg-[hsl(var(--gold)/0.8)]">
                   Save Session
                 </Button>
                 <Button
                   variant="outline"
-                  className="border-[#6E6A86] text-[#E0DEF4]"
+                  className="border-[hsl(var(--border)/0.6)] text-[hsl(var(--foreground))]"
                   onClick={() => {
                     resetTimer();
                     setRatings(defaultRatings);
@@ -474,23 +482,23 @@ export default function NetworkingPractice() {
 
         <section className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold text-[#F6C177]">Recent Sessions</h2>
-            <span className="text-sm text-[#908CAA]">Stored locally in your browser</span>
+            <h2 className="text-2xl font-semibold text-[hsl(var(--gold))]">Recent Sessions</h2>
+            <span className="text-sm text-[hsl(var(--muted-foreground))]">Stored locally in your browser</span>
           </div>
 
           {sessions.length === 0 ? (
-            <Card className="border-[#6E6A86] bg-[#26233A]">
-              <CardContent className="py-10 text-center text-[#908CAA]">
-                No saved sessions yet. Finish a practice round and tap <strong className="font-semibold text-[#E0DEF4]">Save Session</strong> to start your streak.
+            <Card className="border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.3)]">
+              <CardContent className="py-10 text-center text-[hsl(var(--muted-foreground))]">
+                No saved sessions yet. Finish a practice round and tap <strong className="font-semibold text-[hsl(var(--foreground))]">Save Session</strong> to start your streak.
               </CardContent>
             </Card>
           ) : (
             <div className="grid gap-4">
               {sessions.map((session) => (
-                <Card key={session.id} className="border-[#524F67] bg-[#26233A]">
+                <Card key={session.id} className="border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.3)]">
                   <CardContent className="flex flex-col gap-4 py-4 md:flex-row md:items-center md:justify-between">
                     <div>
-                      <div className="text-sm uppercase tracking-[0.3em] text-[#908CAA]">
+                      <div className="text-sm uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
                         {new Date(session.createdAt).toLocaleString(undefined, {
                           month: 'short',
                           day: 'numeric',
@@ -498,21 +506,21 @@ export default function NetworkingPractice() {
                           minute: '2-digit',
                         })}
                       </div>
-                      <div className="mt-1 text-lg font-semibold text-[#E0DEF4]">{session.scenarioTitle}</div>
-                      <div className="mt-2 text-sm text-[#908CAA]">
-                        {session.what.split('\n').map((line, index) => (
+                      <div className="mt-1 text-lg font-semibold text-[hsl(var(--foreground))]">{session.scenarioTitle}</div>
+                      <div className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">
+                        {session.attempts[0]?.script.split('\n').map((line: string, index: number) => (
                           <div key={index}>• {line}</div>
                         ))}
                       </div>
-                      {session.reflection ? (
-                        <p className="mt-3 text-sm text-[#C4A7E7]">“{session.reflection}”</p>
+                      {session.reflection?.humanNote ? (
+                        <p className="mt-3 text-sm text-[#C4A7E7]">"{session.reflection.humanNote}"</p>
                       ) : null}
                     </div>
 
                     <div className="flex items-center gap-6">
                       <div className="text-center">
                         <div className="text-3xl font-bold text-[#9CCFD8]">
-                          {(session.durationSeconds / 60).toFixed(1)}m
+                          {(session.attempts[0]?.durationSeconds ? (session.attempts[0].durationSeconds / 60).toFixed(1) : '0.0')}m
                         </div>
                         <div className="text-xs uppercase tracking-[0.2em] text-[#908CAA]">Time</div>
                       </div>
@@ -521,8 +529,8 @@ export default function NetworkingPractice() {
                           {(
                             (session.ratings.confidence +
                               session.ratings.clarity +
-                              session.ratings.flow +
-                              session.ratings.conciseness) /
+                              session.ratings.rapport +
+                              session.ratings.authenticity) /
                             4
                           ).toFixed(1)}
                         </div>

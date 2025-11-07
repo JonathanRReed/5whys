@@ -201,25 +201,24 @@ export default function Career5Whys() {
   const handleReset = () => updateSession(createEmptySession(session.track));
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0b0f15] via-[#15121f] to-[#1e1a2a] text-slate-100">
+    <div className="min-h-screen text-[hsl(var(--foreground))]">
       <div className="relative">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.15),_transparent_55%)]" />
         <div className="relative max-w-6xl mx-auto px-4 py-12 space-y-10">
           <header className="text-center space-y-4">
-            <p className="text-cyan-300 uppercase tracking-[0.3em] text-xs">Career Lab</p>
+            <p className="text-[hsl(var(--foam))] uppercase tracking-[0.3em] text-xs">Career Lab</p>
             <h1 className="text-4xl font-semibold">Discover Your Why</h1>
-            <p className="text-slate-400 max-w-2xl mx-auto">
+            <p className="text-[hsl(var(--muted-foreground))] max-w-2xl mx-auto">
               Guided reasoning for uncovering the motivation behind your next career move. Choose a track,
               document five layers of reasoning, and leave with a statement you can reuse across resume, interview,
               and networking prep.
             </p>
           </header>
 
-          <Card className="bg-white/5 border-white/10 text-slate-100 backdrop-blur-md shadow-[0_20px_80px_rgba(15,23,42,0.35)]">
+          <Card className="bg-[hsl(var(--card)/0.5)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] backdrop-blur-md shadow-[0_20px_80px_hsl(var(--background)/0.35)]">
             <CardHeader className="space-y-6">
               <div>
                 <CardTitle className="text-2xl font-semibold">Select your track</CardTitle>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">
                   The prompts adapt to how defined your path currently is.
                 </p>
               </div>
@@ -237,41 +236,41 @@ export default function Career5Whys() {
                       }
                       className={cn(
                         'flex-1 rounded-2xl border px-4 py-5 text-left transition-all',
-                        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-400',
+                        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[hsl(var(--primary))]',
                         isActive
-                          ? 'border-cyan-400/80 bg-cyan-400/10 shadow-inner text-white'
-                          : 'border-white/10 bg-white/0 text-slate-300 hover:border-white/30'
+                          ? 'border-[hsl(var(--primary)/0.8)] bg-[hsl(var(--primary)/0.1)] shadow-inner text-[hsl(var(--primary-foreground))]'
+                          : 'border-[hsl(var(--border)/0.5)] bg-transparent text-[hsl(var(--foreground))] hover:border-[hsl(var(--border)/0.7)]'
                       )}
                     >
                       <p className="text-sm font-semibold">{config.label}</p>
-                      <p className="text-xs text-slate-400 mt-2">{config.description}</p>
+                      <p className="text-xs text-[hsl(var(--muted-foreground))] mt-2">{config.description}</p>
                     </button>
                   );
                 })}
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <Label className="text-xs uppercase tracking-[0.3em] text-slate-400">
+                  <Label className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
                     {activeTrack.topicLabel}
                   </Label>
                   <Input
                     value={session.topic}
                     onChange={(event) => updateSession({ topic: event.target.value })}
                     placeholder={activeTrack.topicPlaceholder}
-                    className="mt-2 bg-black/30 border-white/10 text-white placeholder:text-slate-500"
+                    className="mt-2 bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))]"
                   />
                 </div>
                 <div>
-                  <Label className="text-xs uppercase tracking-[0.3em] text-slate-400">Progress</Label>
-                  <div className="mt-2 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-cyan-400/50 bg-cyan-400/10 text-lg font-semibold text-white">
+                  <Label className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">Progress</Label>
+                  <div className="mt-2 flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] px-4 py-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[hsl(var(--primary)/0.5)] bg-[hsl(var(--primary)/0.1)] text-lg font-semibold text-[hsl(var(--primary-foreground))]">
                       {progress}
                     </div>
                     <div>
-                      <p className="text-sm text-slate-300">
+                      <p className="text-sm text-[hsl(var(--foreground))]">
                         {progress === WHY_COUNT ? 'Depth unlocked' : 'Reasoning depth'}
                       </p>
-                      <p className="text-xs text-slate-500">{progressPercent}% complete</p>
+                      <p className="text-xs text-[hsl(var(--muted-foreground))]">{progressPercent}% complete</p>
                     </div>
                   </div>
                 </div>
@@ -281,10 +280,10 @@ export default function Career5Whys() {
 
           <div className="grid gap-8 lg:grid-cols-[320px,minmax(0,1fr)]">
             <div className="space-y-6">
-              <Card className="bg-white/5 border-white/10 text-slate-100 backdrop-blur">
+              <Card className="bg-[hsl(var(--card)/0.5)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] backdrop-blur">
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-semibold text-white">Depth tracker</CardTitle>
-                  <p className="text-sm text-slate-400">Each layer validates the one above it.</p>
+                  <CardTitle className="text-lg font-semibold text-[hsl(var(--foreground))]">Depth tracker</CardTitle>
+                  <p className="text-sm text-[hsl(var(--muted-foreground))]">Each layer validates the one above it.</p>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-col items-center gap-3">
@@ -297,10 +296,10 @@ export default function Career5Whys() {
                             className={cn(
                               'flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors',
                               isFilled
-                                ? 'border-cyan-300 bg-cyan-400/20 text-white'
+                                ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.2)] text-[hsl(var(--primary-foreground))]'
                                 : isCurrent
-                                ? 'border-purple-300 text-purple-200'
-                                : 'border-white/10 text-slate-500'
+                                ? 'border-[hsl(var(--iris))] text-[hsl(var(--iris))]'
+                                : 'border-[hsl(var(--border)/0.5)] text-[hsl(var(--muted-foreground))]'
                             )}
                           >
                             {index + 1}
@@ -309,7 +308,7 @@ export default function Career5Whys() {
                             <div
                               className={cn(
                                 'w-px flex-1',
-                                isFilled ? 'bg-gradient-to-b from-cyan-300 via-cyan-500/50 to-transparent' : 'bg-white/10'
+                                isFilled ? 'bg-gradient-to-b from-[hsl(var(--primary))] via-[hsl(var(--primary)/0.5)] to-transparent' : 'bg-[hsl(var(--border)/0.5)]'
                               )}
                               style={{ minHeight: '32px' }}
                             />
@@ -321,10 +320,10 @@ export default function Career5Whys() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-white/5 border-white/10 text-slate-100 backdrop-blur">
+              <Card className="bg-[hsl(var(--card)/0.5)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] backdrop-blur">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg font-semibold">Logic tree</CardTitle>
-                  <p className="text-sm text-slate-400">See how each answer branches from the previous one.</p>
+                  <p className="text-sm text-[hsl(var(--muted-foreground))]">See how each answer branches from the previous one.</p>
                 </CardHeader>
                 <CardContent className="space-y-5">
                   {session.responses.map((response, index) => {
@@ -333,22 +332,22 @@ export default function Career5Whys() {
                     return (
                       <div key={index} className="relative pl-6">
                         {index !== 0 && (
-                          <span className="absolute left-2 top-0 h-full w-px bg-white/10" aria-hidden />
+                          <span className="absolute left-2 top-0 h-full w-px bg-[hsl(var(--border)/0.5)]" aria-hidden />
                         )}
-                        <div className="relative rounded-xl border border-white/10 bg-black/20 px-4 py-3">
-                          <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
+                        <div className="relative rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] px-4 py-3">
+                          <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
                             Why {index + 1}
                           </p>
-                          <p className="mt-2 text-sm text-slate-200">
+                          <p className="mt-2 text-sm text-[hsl(var(--foreground))]">
                             {response.trim().length ? response : 'Awaiting insight'}
                           </p>
                           {isFocus && (
-                            <span className="absolute -top-2 right-3 rounded-full border border-cyan-400/60 bg-cyan-400/20 px-3 py-0.5 text-[10px] uppercase tracking-widest text-cyan-200">
+                            <span className="absolute -top-2 right-3 rounded-full border border-[hsl(var(--primary)/0.6)] bg-[hsl(var(--primary)/0.2)] px-3 py-0.5 text-[10px] uppercase tracking-widest text-[hsl(var(--primary))]">
                               current node
                             </span>
                           )}
                           {previous && !response && (
-                            <span className="absolute -bottom-2 left-4 text-[10px] uppercase tracking-wide text-purple-200/80">
+                            <span className="absolute -bottom-2 left-4 text-[10px] uppercase tracking-wide text-[hsl(var(--iris))/0.8]">
                               add continuation
                             </span>
                           )}
@@ -368,14 +367,14 @@ export default function Career5Whys() {
                 return (
                   <Card
                     key={index}
-                    className="bg-white/5 border-white/10 text-slate-100 backdrop-blur-md shadow-inner shadow-black/20"
+                    className="bg-[hsl(var(--card)/0.5)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] backdrop-blur-md shadow-inner shadow-[hsl(var(--background)/0.2)]"
                   >
                     <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                       <div>
-                        <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Depth {index + 1}</p>
-                        <CardTitle className="text-lg text-white">{prompt}</CardTitle>
+                        <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">Depth {index + 1}</p>
+                        <CardTitle className="text-lg text-[hsl(var(--foreground))]">{prompt}</CardTitle>
                       </div>
-                      <span className="rounded-full border border-white/10 px-4 py-1 text-xs text-slate-400">
+                      <span className="rounded-full border border-[hsl(var(--border)/0.5)] px-4 py-1 text-xs text-[hsl(var(--muted-foreground))]">
                         {response.trim().length ? 'Captured' : 'Pending'}
                       </span>
                     </CardHeader>
@@ -384,7 +383,7 @@ export default function Career5Whys() {
                         value={response}
                         onChange={(event) => handleResponseChange(index, event.target.value)}
                         placeholder="Document your reasoning. Be specific and concrete."
-                        className="min-h-[120px] resize-none bg-black/30 border-white/10 text-slate-100 placeholder:text-slate-500"
+                        className="min-h-[120px] resize-none bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))]"
                       />
                       <Button
                         type="button"
@@ -395,13 +394,13 @@ export default function Career5Whys() {
                             [index]: !prev[index],
                           }))
                         }
-                        className="w-full justify-between border border-white/10 bg-white/0 text-slate-300 hover:bg-white/10"
+                        className="w-full justify-between border border-[hsl(var(--border)/0.5)] bg-transparent text-[hsl(var(--foreground))] hover:bg-[hsl(var(--overlay)/0.1)]"
                       >
                         Show example reasoning
                         <span aria-hidden>{isHintVisible ? '−' : '+'}</span>
                       </Button>
                       {isHintVisible && (
-                        <div className="rounded-xl border border-cyan-400/30 bg-cyan-400/5 p-4 text-sm text-slate-200">
+                        <div className="rounded-xl border border-[hsl(var(--primary)/0.3)] bg-[hsl(var(--primary)/0.05)] p-4 text-sm text-[hsl(var(--foreground))]">
                           {hint}
                         </div>
                       )}
@@ -410,33 +409,33 @@ export default function Career5Whys() {
                 );
               })}
 
-              <Card className="bg-gradient-to-br from-purple-600/20 via-transparent to-cyan-500/20 border-white/10 text-slate-100 backdrop-blur-lg">
+              <Card className="bg-gradient-to-br from-[hsl(var(--iris)/0.2)] via-transparent to-[hsl(var(--primary)/0.2)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] backdrop-blur-lg">
                 <CardHeader>
-                  <p className="text-xs uppercase tracking-[0.3em] text-slate-300">Completion summary</p>
-                  <CardTitle className="text-2xl font-semibold text-white">Why Statement</CardTitle>
+                  <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">Completion summary</p>
+                  <CardTitle className="text-2xl font-semibold text-[hsl(var(--foreground))]">Why Statement</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="rounded-2xl border border-white/10 bg-black/30 p-5 text-lg leading-relaxed text-white">
+                  <div className="rounded-2xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] p-5 text-lg leading-relaxed text-[hsl(var(--foreground))]">
                     {whyStatement}
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
-                      <Label className="text-xs uppercase tracking-[0.3em] text-slate-400">Theme</Label>
+                      <Label className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">Theme</Label>
                       <Input
                         value={session.theme}
                         onChange={(event) => updateSession({ theme: event.target.value })}
                         placeholder={derivedTheme}
-                        className="mt-2 bg-black/30 border-white/10 text-white placeholder:text-slate-500"
+                        className="mt-2 bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))]"
                       />
                     </div>
                     <div>
-                      <Label className="text-xs uppercase tracking-[0.3em] text-slate-400">Alignment</Label>
+                      <Label className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">Alignment</Label>
                       <Input
                         value={session.alignment}
                         onChange={(event) => updateSession({ alignment: event.target.value })}
                         placeholder={derivedAlignment}
-                        className="mt-2 bg-black/30 border-white/10 text-white placeholder:text-slate-500"
+                        className="mt-2 bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))]"
                       />
                     </div>
                   </div>
@@ -445,7 +444,7 @@ export default function Career5Whys() {
                     <Button
                       type="button"
                       onClick={handleSaveSnapshot}
-                      className="h-12 rounded-xl border border-cyan-400/60 bg-cyan-500/20 text-white hover:bg-cyan-500/40"
+                      className="h-12 rounded-xl border border-[hsl(var(--love)/0.6)] bg-[hsl(var(--love)/0.2)] text-[hsl(var(--love-foreground))] hover:bg-[hsl(var(--love)/0.4)]"
                     >
                       Save snapshot
                     </Button>
@@ -453,7 +452,7 @@ export default function Career5Whys() {
                       type="button"
                       variant="outline"
                       onClick={handleExport}
-                      className="h-12 rounded-xl border-white/30 bg-white/10 text-white hover:bg-white/20"
+                      className="h-12 rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.1)] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--overlay)/0.2)]"
                     >
                       Export JSON
                     </Button>
@@ -461,14 +460,14 @@ export default function Career5Whys() {
                       type="button"
                       variant="ghost"
                       onClick={handleReset}
-                      className="h-12 rounded-xl border border-white/5 text-slate-300 hover:bg-white/10"
+                      className="h-12 rounded-xl border border-[hsl(var(--border)/0.5)] bg-transparent text-[hsl(var(--foreground))] hover:bg-[hsl(var(--overlay)/0.1)]"
                     >
                       Reset session
                     </Button>
                   </div>
 
                   {status && (
-                    <p className="text-center text-sm text-cyan-200" role="status">
+                    <p className="text-center text-sm text-[hsl(var(--primary))]" role="status">
                       {status}
                     </p>
                   )}
@@ -477,7 +476,7 @@ export default function Career5Whys() {
             </div>
           </div>
 
-          <footer className="border-t border-white/10 pt-8 text-center text-sm text-slate-500">
+          <footer className="border-t border-[hsl(var(--border)/0.5)] pt-8 text-center text-sm text-[hsl(var(--muted-foreground))]">
             <p>Insight is cumulative. Revisit your entries whenever your path evolves.</p>
           </footer>
         </div>

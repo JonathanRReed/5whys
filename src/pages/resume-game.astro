@@ -1,16 +1,17 @@
 ---
 import Base from '../layouts/Base.astro';
-import ResumeGame from '../components/ResumeGame';
+import ResumeGameApp from '../components/ResumeGame';
 ---
 <Base title="Resume Game - Level Up Your Resume">
-  <div class="min-h-screen bg-gray-50 flex flex-col pt-16">
-    <div class="flex-1 py-6">
-      <ResumeGame client:load />
+  <div class="relative flex min-h-screen flex-col gap-10 px-4 pb-20 pt-24 sm:pt-28">
+    <div class="flex-1">
+      <ResumeGameApp client:load />
     </div>
-    <footer class="text-center py-6">
-      <p class="text-gray-400 text-xs">
-        Made by Jonathan Reed - <a href="https://www.JonathanRReed.com" class="hover:text-gray-600 transition-colors">www.JonathanRReed.com</a>
-      </p>
+    <footer class="text-center text-xs text-muted-foreground">
+      Crafted by Jonathan Reed —
+      <a href="https://www.jonathanrreed.com" class="font-medium text-foreground transition-colors hover:text-accent">
+        jonathanrreed.com
+      </a>
     </footer>
   </div>
 </Base>

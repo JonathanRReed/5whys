@@ -1,0 +1,14 @@
+---
+import Base from '../layouts/Base.astro';
+import RoleDecoderApp from '../components/role-decoder/RoleDecoderApp';
+---
+<Base title="Role Decoder Pro">
+  <div class="relative flex min-h-screen flex-col gap-10 px-4 pb-20 pt-24 sm:pt-28">
+    <div class="flex-1">
+      <RoleDecoderApp client:load />
+    </div>
+    <footer class="text-center text-xs text-muted-foreground">
+      Fully offline — paste a job description to decode the skills it requires.
+    </footer>
+  </div>
+</Base>
