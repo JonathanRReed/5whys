@@ -91,13 +91,12 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
     what: ['Introduce yourself', 'Share goal', 'Ask a question'],
   }), [scenarios]);
 
-  const [versions, setVersions] = useHydratedState<NetworkingPracticeVersion[]>(
-    [fallbackVersion],
-    () => {
-      const existing = loadVersions();
-      return existing.length ? existing : [fallbackVersion];
-    }
-  );
+  const loadVersionsFromStorage = React.useCallback(() => {
+    const existing = loadVersions();
+    return existing.length ? existing : [fallbackVersion];
+  }, [fallbackVersion]);
+
+  const [versions, setVersions] = useHydratedState<NetworkingPracticeVersion[]>([fallbackVersion], loadVersionsFromStorage);
 
   const [sessions, setSessions] = useHydratedState<NetworkingPracticeSession[]>([], loadSessions);
 

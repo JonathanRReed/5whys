@@ -119,8 +119,14 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
       <nav aria-label="Primary" className="mx-auto flex h-20 max-w-6xl items-center justify-between gap-4 px-4">
         <div className="flex items-center gap-4">
           <a href="/" className="flex items-center gap-3 text-foreground transition-transform hover:scale-[1.02]">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[radial-gradient(circle_at_top,#eb6f92_0%,#31748f_60%,transparent_100%)] text-sm font-semibold text-foreground shadow-inner shadow-[hsl(var(--background)/0.4)]">
-              CT
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[radial-gradient(circle_at_top_right,hsl(var(--foam)/0.32)_0%,hsl(var(--iris)/0.4)_55%,hsl(var(--love)/0.28)_100%)] shadow-[0_12px_28px_-18px_hsl(var(--background)/0.8)]">
+              <img
+                src="/favicon.webp"
+                alt="Career Tools Growth Studio icon"
+                width={32}
+                height={32}
+                className="h-8 w-8 object-contain"
+              />
             </div>
             <div className="flex flex-col text-left">
               <span className="text-sm font-medium uppercase tracking-[0.24em] text-muted-foreground">Career Tools</span>
@@ -128,7 +134,7 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
             </div>
           </a>
 
-          <div className="hidden items-center gap-8 md:flex">
+          <div className="hidden items-center gap-6 md:flex">
             {navLinks.map(({ href, label }) => {
               const active = isActive(href);
               return (
@@ -137,13 +143,22 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
                   href={href}
                   aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'inline-flex items-center rounded-full px-3 py-2 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]',
+                    'group inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]',
                     active
-                      ? 'bg-[hsl(var(--overlay)/0.45)] text-foreground shadow-[0_16px_32px_-28px_hsl(var(--background)/0.8)]'
-                      : 'text-muted-foreground hover:bg-[hsl(var(--overlay)/0.3)] hover:text-foreground'
+                      ? 'border-transparent bg-[radial-gradient(circle_at_top_left,hsl(var(--foam)/0.32)_0%,hsl(var(--overlay)/0.55)_55%,hsl(var(--overlay)/0.22)_100%)] text-foreground shadow-[0_18px_36px_-26px_hsl(var(--background)/0.9)]'
+                      : 'border-[hsl(var(--border)/0.45)] bg-[hsl(var(--overlay)/0.25)] text-muted-foreground hover:-translate-y-0.5 hover:border-[hsl(var(--accent)/0.4)] hover:text-foreground hover:shadow-[0_16px_30px_-24px_hsl(var(--background)/0.85)]'
                   )}
                 >
-                  {label}
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'h-1.5 w-1.5 rounded-full transition-colors duration-200',
+                      active
+                        ? 'bg-[hsl(var(--foam))]'
+                        : 'bg-[hsl(var(--muted-foreground)/0.4)] group-hover:bg-[hsl(var(--foam))]'
+                    )}
+                  />
+                  <span className="leading-none">{label}</span>
                 </a>
               );
             })}
@@ -157,15 +172,27 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
                   type="button"
                   onClick={() => setTheme(option.id)}
                   className={cn(
-                    'inline-flex items-center justify-center rounded-full border border-[hsl(var(--border)/0.7)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:text-foreground',
+                    'group inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]',
                     activeTheme === option.id &&
-                      'bg-[hsl(var(--overlay)/0.35)] text-foreground ring-2 ring-[hsl(var(--ring))] ring-offset-2 ring-offset-[hsl(var(--background))]'
+                      'border-transparent bg-[radial-gradient(circle_at_top_right,hsl(var(--overlay)/0.48)_0%,hsl(var(--overlay)/0.28)_55%,transparent_100%)] text-foreground shadow-[0_18px_36px_-26px_hsl(var(--background)/0.85)]'
+                  ,
+                    activeTheme !== option.id &&
+                      'border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.22)] text-muted-foreground hover:-translate-y-0.5 hover:border-[hsl(var(--accent)/0.4)] hover:text-foreground hover:shadow-[0_14px_28px_-24px_hsl(var(--background)/0.85)]'
                   )}
                   aria-pressed={activeTheme === option.id}
                   aria-label={`Activate ${option.label} theme`}
                   title={`${option.label} · ${option.description}`}
                 >
-                  {option.label}
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'h-1.5 w-1.5 rounded-full transition-colors duration-200',
+                      activeTheme === option.id
+                        ? 'bg-[hsl(var(--foam))]'
+                        : 'bg-[hsl(var(--muted-foreground)/0.45)] group-hover:bg-[hsl(var(--foam))]'
+                    )}
+                  />
+                  <span className="leading-none">{option.label}</span>
                 </button>
               ))}
             </div>
