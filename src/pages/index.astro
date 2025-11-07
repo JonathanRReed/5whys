@@ -117,66 +117,59 @@ const metrics = [
             Each experience is crafted to feel calm, focused, and actionable. Choose a tool below to explore guided flows, helpful prompts, and progress you can revisit.
           </p>
         </div>
-        <div class="flex gap-2">
-          <span class="rounded-full border border-[hsl(var(--border)/0.4)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2 text-xs font-medium uppercase tracking-[0.26em] text-muted-foreground">
-            Night · Moon · Dawn
-          </span>
+        <div class="grid gap-8 md:grid-cols-2">
+          <ToolCard
+            href="/career"
+            title="Career Reflection · 5 Whys"
+            description="Work through a structured reflection to uncover the root motivations behind your career moves—and translate them into confident language."
+            accent="foam"
+            cta="Start reflecting"
+            tag="Deep dive"
+          >
+            <svg slot="icon" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6" />
+            </svg>
+          </ToolCard>
+
+          <ToolCard
+            href="/resume-game"
+            title="Resume Momentum Game"
+            description="Gamify your bullet points with instant scoring across impact, clarity, and action. Track improvements and save your strongest lines."
+            accent="gold"
+            cta="Play & improve"
+            tag="Momentum"
+          >
+            <svg slot="icon" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v8m-4-4h8" />
+            </svg>
+          </ToolCard>
+
+          <ToolCard
+            href="/networking-practice"
+            title="Networking Practice Studio"
+            description="Rehearse intros, refine your story, and capture insight after every practice conversation with the guided timer and prompts."
+            accent="love"
+            cta="Start practicing"
+            tag="Rehearsal"
+          >
+            <svg slot="icon" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M18 8a6 6 0 11-12 0 6 6 0 0112 0zm-6 8c-6.075 0-11 2.686-11 6h22c0-3.314-4.925-6-11-6z" />
+            </svg>
+          </ToolCard>
+
+          <ToolCard
+            href="/role-decoder"
+            title="Role Decoder — Design Document"
+            description="Offline Astro + vanilla JS web app blueprint for parsing job posts, mapping skills, drafting résumé bullets, and exporting Markdown/JSON without any external APIs."
+            accent="iris"
+            cta="Review architecture"
+            tag="Design doc"
+          >
+            <svg slot="icon" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h10M4 18h8" />
+            </svg>
+          </ToolCard>
         </div>
-      </div>
-
-      <div class="grid gap-8 md:grid-cols-2">
-        <ToolCard
-          href="/career"
-          title="Career Reflection · 5 Whys"
-          description="Work through a structured reflection to uncover the root motivations behind your career moves—and translate them into confident language."
-          accent="foam"
-          cta="Start reflecting"
-          tag="Deep dive"
-        >
-          <svg slot="icon" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6" />
-          </svg>
-        </ToolCard>
-
-        <ToolCard
-          href="/resume-game"
-          title="Resume Momentum Game"
-          description="Gamify your bullet points with instant scoring across impact, clarity, and action. Track improvements and save your strongest lines."
-          accent="gold"
-          cta="Play & improve"
-          tag="Momentum"
-        >
-          <svg slot="icon" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v8m-4-4h8" />
-          </svg>
-        </ToolCard>
-
-        <ToolCard
-          href="/networking-practice"
-          title="Networking Practice Studio"
-          description="Rehearse intros, refine your story, and capture insight after every practice conversation with the guided timer and prompts."
-          accent="love"
-          cta="Start practicing"
-          tag="Rehearsal"
-        >
-          <svg slot="icon" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M18 8a6 6 0 11-12 0 6 6 0 0112 0zm-6 8c-6.075 0-11 2.686-11 6h22c0-3.314-4.925-6-11-6z" />
-          </svg>
-        </ToolCard>
-
-        <ToolCard
-          href="/role-decoder"
-          title="Role Decoder — Design Document"
-          description="Offline Astro + vanilla JS web app blueprint for parsing job posts, mapping skills, drafting résumé bullets, and exporting Markdown/JSON without any external APIs."
-          accent="iris"
-          cta="Review architecture"
-          tag="Design doc"
-        >
-          <svg slot="icon" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h10M4 18h8" />
-          </svg>
-        </ToolCard>
-      </div>
     </section>
 
     <section class="mx-auto max-w-6xl rounded-3xl border border-[hsl(var(--border)/0.4)] bg-[hsl(var(--overlay)/0.35)] p-10 md:p-14">

@@ -175,10 +175,10 @@ function usePersistedState<T>(key: string, initial: T) {
 function highlightResume(text: string) {
   if (!text) return '';
   let highlighted = text;
-  highlighted = highlighted.replace(/\d+\.?\d*%?/g, '<mark class="bg-cyan-500/30 text-cyan-100 px-1 rounded">$&</mark>');
+  highlighted = highlighted.replace(/\d+\.?\d*%?/g, '<mark class="bg-[hsl(var(--primary)/0.3)] text-[hsl(var(--primary-foreground))] px-1 rounded">$&</mark>');
   POWER_WORDS.forEach((word) => {
     const regex = new RegExp(`\\b${word}\\b`, 'gi');
-    highlighted = highlighted.replace(regex, `<mark class="bg-fuchsia-500/30 text-fuchsia-100 px-1 rounded">$&</mark>`);
+    highlighted = highlighted.replace(regex, `<mark class="bg-[hsl(var(--love)/0.3)] text-[hsl(var(--love-foreground))] px-1 rounded">$&</mark>`);
   });
   return highlighted;
 }
@@ -436,319 +436,316 @@ ${improved.join('\n')}
   const resumeOutOfDate = needsRescan && scanComplete && resumeText.trim().length > 0;
 
   return (
-    <div className="min-h-screen bg-[#050810] text-slate-100">
-      <div className="max-w-6xl mx-auto px-4 py-12 space-y-10">
-        <header className="text-center space-y-4">
-          <p className="text-xs uppercase tracking-[0.4em] text-cyan-300">Career Lab</p>
-          <h1 className="text-4xl font-semibold">Resume Game</h1>
-          <p className="text-slate-400 max-w-2xl mx-auto">
-            Simulate an eight-second recruiter scan, highlight signal words, and systematically rewrite every bullet into a
-            quantified, high-signal statement.
-          </p>
-        </header>
+    <div className="mx-auto max-w-6xl space-y-12 px-4 pb-20 pt-6 text-[hsl(var(--foreground))]">
+      <header className="space-y-4 text-center">
+        <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--foam))]">Career Lab</p>
+        <h1 className="text-4xl font-semibold tracking-tight">Resume Game</h1>
+        <p className="mx-auto max-w-2xl text-sm text-muted-foreground">
+          Simulate an eight-second recruiter scan, highlight signal words, and systematically rewrite every bullet into a quantified, high-signal statement.
+        </p>
+      </header>
 
-        <Card className="bg-white/5 border-white/10 backdrop-blur-xl">
-          <CardHeader className="space-y-4">
-            <CardTitle className="text-2xl text-white">Upload or paste resume</CardTitle>
-            <p className="text-sm text-slate-400">Markdown or plain text works best. Bullets starting with •, -, or * are auto-detected.</p>
-            <div className="flex flex-col gap-3 md:flex-row md:items-center">
-              <Label className="text-xs uppercase tracking-[0.3em] text-slate-400">Upload</Label>
+      <Card className="backdrop-blur-xl">
+        <CardHeader className="space-y-4">
+          <CardTitle className="text-2xl">Upload or paste resume</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Markdown or plain text works best. Bullets starting with •, -, or * are auto-detected.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col items-start gap-2">
+              <Label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Upload</Label>
               <Input
                 type="file"
                 accept=".txt,.md,.markdown,.text"
                 onChange={handleFileUpload}
-                className="md:max-w-sm bg-black/30 border-white/10 text-sm text-slate-200 file:text-slate-300 file:bg-transparent file:border-0"
+                className="w-full md:w-auto"
               />
-              <Button
-                type="button"
-                variant="ghost"
-                className="border border-white/10 bg-white/0 text-slate-300 hover:bg-white/10 md:ml-auto"
-                onClick={() => {
-                  setResumeText('');
-                  setBullets([]);
-                  setSelectedBulletId(null);
-                  setScanComplete(false);
-                  setSignalReport({ visible: 0, hidden: 100, numbers: 0, verbs: 0 });
-                }}
-              >
-                Clear workspace
-              </Button>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <Textarea
-              value={resumeText}
-              onChange={handleTextChange}
-              placeholder="• Led a cross-functional pod launching...\n• Built an internal dashboard that..."
-              className="min-h-[220px] resize-y border border-white/10 bg-black/30 text-slate-100 placeholder:text-slate-500"
-            />
-            <div className="flex flex-col gap-3 md:flex-row md:items-center">
-              <Button
-                type="button"
-                onClick={handleScan}
-                className="h-12 rounded-xl border border-cyan-400/60 bg-cyan-500/20 px-6 text-white hover:bg-cyan-500/40"
-                disabled={!resumeText.trim() || isScanning}
-              >
-                Simulate recruiter scan
-              </Button>
-              <p className="text-sm text-slate-400 md:ml-4">
-                {isScanning ? 'Scanning in progress...' : scanComplete ? 'Scan complete' : 'Ready when you are'}
+            <Button
+              type="button"
+              variant="ghost"
+              className="md:ml-auto"
+              onClick={() => {
+                setResumeText('');
+                setBullets([]);
+                setSelectedBulletId(null);
+                setScanComplete(false);
+              }}
+            >
+              Clear workspace
+            </Button>
+          </div>
+          <Textarea
+            value={resumeText}
+            onChange={handleTextChange}
+            placeholder="• Led a cross-functional pod launching...\n• Built an internal dashboard that..."
+            className="min-h-[220px]"
+          />
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            <Button
+              type="button"
+              onClick={handleScan}
+              className="h-12 rounded-xl px-6"
+              disabled={!resumeText.trim() || isScanning}
+            >
+              Simulate recruiter scan
+            </Button>
+            <p className="text-sm text-muted-foreground md:ml-4">
+              {isScanning ? 'Scanning in progress...' : scanComplete ? 'Scan complete' : 'Ready when you are'}
+            </p>
+          </div>
+          {(isScanning || scanProgress > 0) && (
+            <div className="space-y-2">
+              <div className="h-2 w-full overflow-hidden rounded-full border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)]">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[hsl(var(--foam))] via-[hsl(var(--iris))] to-[hsl(var(--love))] transition-all"
+                  style={{ width: `${scanProgress}%` }}
+                />
+              </div>
+              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                {isScanning ? `Scanning • ${scanProgress}%` : 'Scan ready'}
               </p>
             </div>
-            {(isScanning || scanProgress > 0) && (
+          )}
+        </CardContent>
+      </Card>
+
+      {scanComplete && (
+        <div className="grid gap-6 lg:grid-cols-[1.15fr,0.85fr]">
+          <Card className="backdrop-blur-lg">
+            <CardHeader>
+              <CardTitle className="text-xl">Scan visualization</CardTitle>
+              {resumeOutOfDate && (
+                <p className="text-xs text-[hsl(var(--gold))]">Resume updated — rerun scan to refresh metrics.</p>
+              )}
+            </CardHeader>
+            <CardContent>
+              <div
+                className="min-h-[200px] rounded-2xl border border-[hsl(var(--border)/0.4)] bg-[hsl(var(--card)/0.65)] p-6 text-sm leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: highlightedResume.replace(/\n/g, '<br/>') }}
+              />
+            </CardContent>
+          </Card>
+
+          <Card className="backdrop-blur-lg">
+            <CardHeader className="space-y-2">
+              <CardTitle className="text-xl">Signal report</CardTitle>
+              <p className="text-xs text-muted-foreground">Visible vs hidden value under an 8-second glance.</p>
+            </CardHeader>
+            <CardContent className="space-y-6">
               <div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+                <div className="mb-2 flex justify-between text-xs text-muted-foreground">
+                  <span>Visible value</span>
+                  <span>{signalReport.visible}%</span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)]">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 transition-all"
-                    style={{ width: `${scanProgress}%` }}
+                    className="h-full rounded-full bg-gradient-to-r from-[hsl(var(--foam))] via-[hsl(var(--iris))] to-[hsl(var(--love))]"
+                    style={{ width: `${signalReport.visible}%` }}
                   />
                 </div>
-                <p className="mt-2 text-xs uppercase tracking-[0.3em] text-slate-400">
-                  {isScanning ? `Scanning • ${scanProgress}%` : 'Scan ready'}
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-center text-sm">
+                <div className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.45)] p-4">
+                  <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Numbers surfaced</p>
+                  <p className="text-3xl font-semibold text-[hsl(var(--foam))]">{signalReport.numbers}</p>
+                </div>
+                <div className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.45)] p-4">
+                  <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Power verbs</p>
+                  <p className="text-3xl font-semibold text-[hsl(var(--iris))]">{signalReport.verbs}</p>
+                </div>
+              </div>
+              <div className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.3)] p-4 text-sm text-muted-foreground">
+                <p>
+                  Visible value blends quantification ({signalReport.numbers}) and power verbs ({signalReport.verbs}). Aim for 70%+ to stand out in a quick review.
                 </p>
               </div>
-            )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {scanComplete && bullets.length > 0 && (
+        <div className="grid gap-6 lg:grid-cols-[320px,minmax(0,1fr)]">
+          <Card className="backdrop-blur-lg">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-xl">Bullets</CardTitle>
+              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Select to rewrite</p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {bullets.map((bullet) => {
+                const delta = bullet.improvedScore - bullet.baselineScore;
+                const label = scoreLabel(bullet.improvedScore);
+                return (
+                  <button
+                    key={bullet.id}
+                    type="button"
+                    className={cn(
+                      'w-full rounded-2xl border px-4 py-3 text-left transition',
+                      bullet.id === selectedBulletId
+                        ? 'border-[hsl(var(--foam)/0.8)] bg-[hsl(var(--foam)/0.16)] shadow-[0_0_30px_hsl(var(--foam)/0.25)]'
+                        : 'border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.35)] hover:border-[hsl(var(--border)/0.5)]'
+                    )}
+                    onClick={() => setSelectedBulletId(bullet.id)}
+                  >
+                    <p
+                      className="text-sm text-[hsl(var(--foreground))] overflow-hidden"
+                      style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}
+                    >
+                      {bullet.original}
+                    </p>
+                    <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+                      <span className={label.color}>{label.label}</span>
+                      <span className={delta >= 0 ? 'text-[hsl(var(--love))]' : 'text-[hsl(var(--destructive))]'}>
+                        {delta >= 0 ? '+' : ''}
+                        {delta}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </CardContent>
+          </Card>
+
+          <Card className="backdrop-blur-lg">
+            <CardHeader>
+              <CardTitle className="text-xl">Structured rewrite</CardTitle>
+              {selectedBullet && (
+                <p className="text-xs text-muted-foreground">
+                  Baseline {selectedBullet.baselineScore}/100 → {selectedBullet.improvedScore}/100
+                </p>
+              )}
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {selectedBullet ? (
+                <>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <Label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Action verb</Label>
+                      <Input
+                        value={selectedBullet.fields.verb}
+                        onChange={(event) => updateBulletField(selectedBullet.id, 'verb', event.target.value)}
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Quantifier</Label>
+                      <Input
+                        value={selectedBullet.fields.quantifier}
+                        onChange={(event) => updateBulletField(selectedBullet.id, 'quantifier', event.target.value)}
+                        className="mt-2"
+                        placeholder="e.g., 32%, 120 users"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <Label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Task / What you did</Label>
+                      <Textarea
+                        value={selectedBullet.fields.task}
+                        onChange={(event) => updateBulletField(selectedBullet.id, 'task', event.target.value)}
+                        className="mt-2 min-h-[100px]"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Impact / Result</Label>
+                      <Textarea
+                        value={selectedBullet.fields.impact}
+                        onChange={(event) => updateBulletField(selectedBullet.id, 'impact', event.target.value)}
+                        className="mt-2 min-h-[100px]"
+                      />
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.3)] p-4">
+                    <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Live preview</p>
+                    <p className="mt-3 text-base">{selectedBullet.improved}</p>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">Select a bullet on the left to edit.</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {scanComplete && bullets.length > 0 && (
+        <Card className="backdrop-blur-lg">
+          <CardHeader className="space-y-2">
+            <CardTitle className="text-2xl">Before / After view</CardTitle>
+            <p className="text-xs text-muted-foreground">High-signal rewrite preview.</p>
+          </CardHeader>
+          <CardContent className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-3">
+              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Before</p>
+              <div className="space-y-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.35)] p-5 text-sm text-muted-foreground">
+                {bullets.map((bullet) => (
+                  <p key={`${bullet.id}-before`}>• {bullet.original}</p>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-3">
+              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">After</p>
+              <div className="space-y-3 rounded-2xl border border-[hsl(var(--foam)/0.5)] bg-[hsl(var(--foam)/0.1)] p-5 text-sm text-[hsl(var(--foreground))]">
+                {bullets.map((bullet) => (
+                  <p key={`${bullet.id}-after`}>{bullet.improved}</p>
+                ))}
+              </div>
+            </div>
           </CardContent>
         </Card>
+      )}
 
-        {scanComplete && (
-          <div className="grid gap-6 lg:grid-cols-[1.2fr,0.8fr]">
-            <Card className="bg-white/5 border-white/10 backdrop-blur">
-              <CardHeader>
-                <CardTitle className="text-xl text-white">Scan visualization</CardTitle>
-                {resumeOutOfDate && <p className="text-xs text-amber-300">Resume updated — rerun scan to refresh metrics.</p>}
-              </CardHeader>
-              <CardContent>
-                <div
-                  className="min-h-[200px] rounded-2xl border border-white/10 bg-black/25 p-6 text-sm leading-relaxed text-slate-100"
-                  dangerouslySetInnerHTML={{ __html: highlightedResume.replace(/\n/g, '<br/>') }}
-                />
-              </CardContent>
-            </Card>
+      {scanComplete && bullets.length > 0 && (
+        <Card className="backdrop-blur-lg">
+          <CardHeader>
+            <CardTitle className="text-xl">Scoreboard</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-4">
+            <div className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.35)] p-4 text-center">
+              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Avg score</p>
+              <p className="text-3xl font-semibold">{averageScore}</p>
+            </div>
+            <div className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.35)] p-4 text-center">
+              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Quantified bullets</p>
+              <p className="text-3xl font-semibold text-[hsl(var(--foam))]">
+                {quantifiedBullets}/{bullets.length}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.35)] p-4 text-center">
+              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Verb coverage</p>
+              <p className="text-3xl font-semibold text-[hsl(var(--iris))]">{verbCoverage}%</p>
+            </div>
+            <div className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.35)] p-4 text-center">
+              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Visible value</p>
+              <p className="text-3xl font-semibold text-[hsl(var(--love))]">{signalReport.visible}%</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-            <Card className="bg-white/5 border-white/10 backdrop-blur">
-              <CardHeader className="space-y-2">
-                <CardTitle className="text-xl text-white">Signal report</CardTitle>
-                <p className="text-xs text-slate-400">Visible vs hidden value under an 8-second glance.</p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <div className="mb-2 flex justify-between text-xs text-slate-400">
-                    <span>Visible value</span>
-                    <span>{signalReport.visible}%</span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-white/10">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500"
-                      style={{ width: `${signalReport.visible}%` }}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                    <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Numbers surfaced</p>
-                    <p className="text-3xl font-semibold text-cyan-300">{signalReport.numbers}</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                    <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Strong verbs</p>
-                    <p className="text-3xl font-semibold text-fuchsia-300">{signalReport.verbs}</p>
-                  </div>
-                </div>
-                <div className="rounded-2xl border border-white/5 bg-black/20 p-4 text-sm text-slate-300">
-                  <p>
-                    Visible value blends quantification ({signalReport.numbers}) and power verbs ({signalReport.verbs}). Aim for
-                    70%+ to stand out in a quick review.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {scanComplete && bullets.length > 0 && (
-          <div className="grid gap-6 lg:grid-cols-[320px,minmax(0,1fr)]">
-            <Card className="bg-white/5 border-white/10 backdrop-blur">
-              <CardHeader className="space-y-1">
-                <CardTitle className="text-xl text-white">Bullets</CardTitle>
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Select to rewrite</p>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {bullets.map((bullet) => {
-                  const delta = bullet.improvedScore - bullet.baselineScore;
-                  const label = scoreLabel(bullet.improvedScore);
-                  return (
-                    <button
-                      key={bullet.id}
-                      type="button"
-                      className={cn(
-                        'w-full rounded-2xl border px-4 py-3 text-left transition',
-                        bullet.id === selectedBulletId
-                          ? 'border-cyan-400/80 bg-cyan-500/10 shadow-[0_0_30px_rgba(6,182,212,0.3)]'
-                          : 'border-white/10 bg-black/20 hover:border-white/40'
-                      )}
-                      onClick={() => setSelectedBulletId(bullet.id)}
-                    >
-                      <p
-                        className="text-sm text-slate-200 overflow-hidden"
-                        style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}
-                      >
-                        {bullet.original}
-                      </p>
-                      <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
-                        <span className={label.color}>{label.label}</span>
-                        <span className={delta >= 0 ? 'text-emerald-300' : 'text-rose-300'}>
-                          {delta >= 0 ? '+' : ''}
-                          {delta}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/5 border-white/10 backdrop-blur-lg">
-              <CardHeader>
-                <CardTitle className="text-xl text-white">Structured rewrite</CardTitle>
-                {selectedBullet && (
-                  <p className="text-xs text-slate-400">
-                    Baseline {selectedBullet.baselineScore}/100 → {selectedBullet.improvedScore}/100
-                  </p>
-                )}
-              </CardHeader>
-              <CardContent className="space-y-5">
-                {selectedBullet ? (
-                  <>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div>
-                        <Label className="text-xs uppercase tracking-[0.3em] text-slate-400">Action verb</Label>
-                        <Input
-                          value={selectedBullet.fields.verb}
-                          onChange={(event) => updateBulletField(selectedBullet.id, 'verb', event.target.value)}
-                          className="mt-2 border-white/10 bg-black/30 text-white placeholder:text-slate-500"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs uppercase tracking-[0.3em] text-slate-400">Quantifier</Label>
-                        <Input
-                          value={selectedBullet.fields.quantifier}
-                          onChange={(event) => updateBulletField(selectedBullet.id, 'quantifier', event.target.value)}
-                          className="mt-2 border-white/10 bg-black/30 text-white placeholder:text-slate-500"
-                          placeholder="e.g., 32%, 120 users"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div>
-                        <Label className="text-xs uppercase tracking-[0.3em] text-slate-400">Task / What you did</Label>
-                        <Textarea
-                          value={selectedBullet.fields.task}
-                          onChange={(event) => updateBulletField(selectedBullet.id, 'task', event.target.value)}
-                          className="mt-2 min-h-[100px] border-white/10 bg-black/30 text-slate-100 placeholder:text-slate-500"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs uppercase tracking-[0.3em] text-slate-400">Impact / Result</Label>
-                        <Textarea
-                          value={selectedBullet.fields.impact}
-                          onChange={(event) => updateBulletField(selectedBullet.id, 'impact', event.target.value)}
-                          className="mt-2 min-h-[100px] border-white/10 bg-black/30 text-slate-100 placeholder:text-slate-500"
-                        />
-                      </div>
-                    </div>
-                    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                      <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Live preview</p>
-                      <p className="mt-3 text-base text-white">{selectedBullet.improved}</p>
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-sm text-slate-400">Select a bullet on the left to edit.</p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {scanComplete && bullets.length > 0 && (
-          <Card className="bg-white/5 border-white/10 backdrop-blur-lg">
-            <CardHeader className="space-y-2">
-              <CardTitle className="text-2xl text-white">Before / After view</CardTitle>
-              <p className="text-xs text-slate-400">High-signal rewrite preview.</p>
-            </CardHeader>
-            <CardContent className="grid gap-6 md:grid-cols-2">
-              <div className="space-y-3">
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Before</p>
-                <div className="space-y-3 rounded-2xl border border-white/10 bg-black/20 p-5 text-sm text-slate-300">
-                  {bullets.map((bullet) => (
-                    <p key={`${bullet.id}-before`}>• {bullet.original}</p>
-                  ))}
-                </div>
-              </div>
-              <div className="space-y-3">
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">After</p>
-                <div className="space-y-3 rounded-2xl border border-cyan-400/30 bg-cyan-500/5 p-5 text-sm text-white">
-                  {bullets.map((bullet) => (
-                    <p key={`${bullet.id}-after`}>{bullet.improved}</p>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {scanComplete && bullets.length > 0 && (
-          <Card className="bg-white/5 border-white/10 backdrop-blur">
-            <CardHeader>
-              <CardTitle className="text-xl text-white">Scoreboard</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-4">
-              <div className="rounded-2xl border border-white/10 bg-black/30 p-4 text-center">
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Avg score</p>
-                <p className="text-3xl font-semibold text-white">{averageScore}</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-black/30 p-4 text-center">
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Quantified bullets</p>
-                <p className="text-3xl font-semibold text-cyan-300">
-                  {quantifiedBullets}/{bullets.length}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-black/30 p-4 text-center">
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Verb coverage</p>
-                <p className="text-3xl font-semibold text-fuchsia-300">{verbCoverage}%</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-black/30 p-4 text-center">
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Visible value</p>
-                <p className="text-3xl font-semibold text-emerald-300">{signalReport.visible}%</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {scanComplete && bullets.length > 0 && (
-          <Card className="bg-white/5 border-white/10 backdrop-blur">
-            <CardHeader className="space-y-2">
-              <CardTitle className="text-xl text-white">Export & share</CardTitle>
-              <p className="text-xs text-slate-400">Download an artifact for portfolio, mentor review, or future editing.</p>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3 md:flex-row">
-              <Button
-                type="button"
-                onClick={exportMarkdown}
-                className="h-12 flex-1 rounded-xl border border-white/10 bg-white/10 text-white hover:bg-white/20"
-              >
-                Export Markdown
-              </Button>
-              <Button
-                type="button"
-                onClick={exportDoc}
-                className="h-12 flex-1 rounded-xl border border-cyan-400/60 bg-cyan-500/20 text-white hover:bg-cyan-500/40"
-              >
-                Export DOCX
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+      {scanComplete && bullets.length > 0 && (
+        <Card className="backdrop-blur-lg">
+          <CardHeader className="space-y-2">
+            <CardTitle className="text-xl">Export & share</CardTitle>
+            <p className="text-xs text-muted-foreground">Download an artifact for portfolio, mentor review, or future editing.</p>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3 md:flex-row">
+            <Button type="button" onClick={exportMarkdown} className="h-12 flex-1">
+              Export Markdown
+            </Button>
+            <Button
+              type="button"
+              onClick={exportDoc}
+              className="h-12 flex-1 bg-[hsl(var(--foam)/0.18)] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--foam)/0.28)]"
+            >
+              Export DOCX
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

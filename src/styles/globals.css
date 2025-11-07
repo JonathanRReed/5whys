@@ -11,6 +11,7 @@
     --foreground: 245 50% 91%;
     --card: 247 23% 15%;
     --card-foreground: 245 50% 91%;
+    --overlay: 248 22% 18%;
     --popover: 245 25% 18%;
     --popover-foreground: 245 50% 91%;
     --primary: 189 43% 73%;
@@ -41,6 +42,7 @@
     --foreground: 245 50% 91%;
     --card: 248 24% 20%;
     --card-foreground: 245 50% 91%;
+    --overlay: 247 22% 24%;
     --popover: 248 21% 26%;
     --popover-foreground: 245 50% 91%;
     --primary: 197 48% 47%;
@@ -70,6 +72,7 @@
     --foreground: 248 19% 32%;
     --card: 35 100% 98%;
     --card-foreground: 248 19% 32%;
+    --overlay: 29 58% 89%;
     --popover: 25 36% 92%;
     --popover-foreground: 248 19% 32%;
     --primary: 197 53% 34%;
@@ -106,7 +109,61 @@
     height: 100%;
   }
 
+  html {
+    background-color: hsl(var(--background));
+  }
+
   body {
     @apply bg-background text-foreground antialiased transition-colors duration-300;
+  }
+}
+
+@layer utilities {
+  .border-white\/10 {
+    border-color: hsl(var(--border)/0.45) !important;
+  }
+
+  .border-white\/5 {
+    border-color: hsl(var(--border)/0.3) !important;
+  }
+
+  .border-white\/30 {
+    border-color: hsl(var(--border)/0.6) !important;
+  }
+
+  .bg-white\/5 {
+    background-color: hsl(var(--overlay)/0.32) !important;
+  }
+
+  .bg-white\/10 {
+    background-color: hsl(var(--overlay)/0.45) !important;
+  }
+
+  .bg-white\/0 {
+    background-color: hsl(var(--overlay)/0.12) !important;
+  }
+
+  .bg-black\/20 {
+    background-color: hsl(var(--overlay)/0.38) !important;
+  }
+
+  .bg-black\/30 {
+    background-color: hsl(var(--overlay)/0.55) !important;
+  }
+
+  .text-slate-500 {
+    color: hsl(var(--muted-foreground)/0.9) !important;
+  }
+
+  .text-slate-400 {
+    color: hsl(var(--muted-foreground)) !important;
+  }
+
+  .text-slate-300 {
+    color: hsl(var(--foreground)/0.82) !important;
+  }
+
+  .text-slate-200 {
+    color: hsl(var(--foreground)/0.9) !important;
   }
 }

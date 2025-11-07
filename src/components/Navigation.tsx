@@ -44,6 +44,7 @@ const navLinks = [
   { href: '/career', label: 'Career 5 Whys' },
   { href: '/resume-game', label: 'Resume Game' },
   { href: '/networking-practice', label: 'Networking Studio' },
+  { href: '/role-decoder', label: 'Role Decoder Pro' },
 ];
 
 export default function Navigation({ currentPath = '/' }: NavigationProps) {
@@ -121,9 +122,9 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
   );
 
   return (
-    <header className="sticky top-0 z-40 px-4 pt-6">
-      <nav className="mx-auto max-w-6xl rounded-2xl border border-[hsl(var(--border)/0.55)] bg-[hsl(var(--overlay)/0.65)] px-4 shadow-lg shadow-[hsl(var(--background)/0.45)] backdrop-blur-xl transition-colors duration-300">
-        <div className="flex h-16 items-center justify-between gap-4">
+    <header className="sticky top-0 z-40 border-b border-[hsl(var(--border)/0.35)] bg-[hsl(var(--background)/0.92)]/95 backdrop-blur-xl transition-colors duration-300">
+      <nav aria-label="Primary" className="mx-auto flex h-20 max-w-6xl items-center justify-between gap-4 px-4">
+        <div className="flex items-center gap-4">
           <a href="/" className="flex items-center gap-3 text-foreground transition-transform hover:scale-[1.02]">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[radial-gradient(circle_at_top,#eb6f92_0%,#31748f_60%,transparent_100%)] text-sm font-semibold text-foreground shadow-inner shadow-[hsl(var(--background)/0.4)]">
               CT
@@ -180,7 +181,7 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
                     className="absolute inset-0"
                     style={{ backgroundImage: option.gradient }}
                   />
-                  <span className="relative text-[10px] font-semibold uppercase tracking-wide text-white drop-shadow-md">
+                  <span className="relative text-[10px] font-semibold uppercase tracking-wide text-[hsl(var(--foreground))] drop-shadow-md">
                     {option.label.slice(0, 2)}
                   </span>
                 </button>
