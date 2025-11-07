@@ -7,7 +7,6 @@ A modern collection of reflection, résumé, and networking practice tools built
 - **Career Reflection · 5 Whys**: Journal through layered prompts to uncover the motivations behind your next move and save snapshots for future review.
 - **Resume Momentum Game**: Rewrite résumé bullets with guidance on action, impact, and clarity while tracking improvements over time.
 - **Networking Practice Studio**: Cycle through guided scenarios, rehearse introductions with a built-in timer, and capture reflections after each rep.
-- **Role Decoder Pro**: Break down job descriptions into responsibilities and skills, map coverage, and draft artifacts without relying on external APIs.
 
 ## 🧰 Tech Stack
 
@@ -53,7 +52,6 @@ All commands run from the project root:
 │   └── favicon.svg
 ├── src/
 │   ├── components/
-│   │   ├── role-decoder/
 │   │   ├── ui/
 │   │   ├── Career5Whys.tsx
 │   │   └── NetworkingPractice.tsx
@@ -66,8 +64,7 @@ All commands run from the project root:
 │       ├── career.astro
 │       ├── index.astro
 │       ├── networking-practice.astro
-│       ├── resume-game.astro
-│       └── role-decoder.astro
+│       └── resume-game.astro
 ├── astro.config.mjs
 ├── bun.lock
 ├── package.json
@@ -80,7 +77,6 @@ All commands run from the project root:
 
 - `src/data` contains curated JSON for job skills and networking scenarios.
 - `public/data/skills.json` mirrors the skills dataset for static access.
-- `src/components/role-decoder` holds the Role Decoder Pro interface and supporting utilities.
 
 ## 🤝 Contributing
 
