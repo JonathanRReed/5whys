@@ -23,12 +23,12 @@ const metrics = [
   description="A modern studio of reflection, practice, and career storytelling tools built on the Rosé Pine palette."
   theme="night"
 >
-  <div class="relative space-y-20 px-4 pb-28 pt-24 sm:pt-32">
+  <div class="relative space-y-20 overflow-hidden px-4 pb-28 pt-24 sm:pt-32">
     <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
       <div class="absolute -top-24 right-0 h-72 w-72 rounded-full bg-[radial-gradient(circle_at_top_right,hsl(var(--foam)/0.18)_0%,transparent_60%)] blur-3xl" />
       <div class="absolute bottom-0 -left-10 h-80 w-80 rounded-full bg-[radial-gradient(circle_at_bottom_left,hsl(var(--iris)/0.16)_0%,transparent_65%)] blur-[64px]" />
     </div>
-    <section class="mx-auto max-w-6xl">
+    <section class="mx-auto w-full max-w-6xl">
       <PageHero
         eyebrow="Guided Career Studio"
         title="Modern tools to help you design a career story with intention."
@@ -37,7 +37,7 @@ const metrics = [
         secondaryCta={{ href: '#tools', label: 'Browse the toolkit' }}
       >
         <fragment slot="extra">
-          <div class="grid gap-4 sm:grid-cols-3">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {metrics.map((metric) => (
               <div class="group rounded-2xl border border-[hsl(var(--border)/0.4)] bg-[hsl(var(--overlay)/0.35)] p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-[hsl(var(--accent)/0.35)] hover:shadow-[0_18px_40px_-28px_hsl(var(--background)/0.9)]">
                 <div class="relative">
@@ -51,7 +51,7 @@ const metrics = [
         </fragment>
 
         <fragment slot="meta">
-          <div class="flex items-center justify-between">
+          <div class="flex flex-wrap items-center justify-between gap-3">
             <span class="text-sm font-semibold uppercase tracking-[0.3em] text-muted-foreground">This week’s focus</span>
             <span class="rounded-full bg-[hsl(var(--foam)/0.2)] px-3 py-1 text-xs font-medium text-[hsl(var(--foam))]">Intention</span>
           </div>
@@ -87,7 +87,7 @@ const metrics = [
       </PageHero>
     </section>
 
-    <section id="tools" class="mx-auto max-w-6xl space-y-8">
+    <section id="tools" class="mx-auto w-full max-w-6xl space-y-8">
       <div class="space-y-3">
         <h2 class="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">Build your toolkit</h2>
         <p class="max-w-2xl text-pretty text-base text-muted-foreground">
@@ -136,7 +136,7 @@ const metrics = [
         </div>
     </section>
 
-    <section class="mx-auto max-w-6xl rounded-3xl border border-[hsl(var(--border)/0.4)] bg-[hsl(var(--overlay)/0.35)] p-10 md:p-14">
+    <section class="mx-auto w-full max-w-6xl rounded-3xl border border-[hsl(var(--border)/0.4)] bg-[hsl(var(--overlay)/0.35)] p-6 sm:p-8 lg:p-12">
       <div class="grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(260px,1fr)] md:items-center">
         <div class="space-y-4">
           <h3 class="text-2xl font-semibold tracking-tight text-foreground">Designed for calm, confident progress</h3>

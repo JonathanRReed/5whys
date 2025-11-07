@@ -4,8 +4,8 @@ import NetworkingPracticeApp from '../components/NetworkingPractice';
 import PageHero from '../components/PageHero.astro';
 ---
 <Base title="Networking Practice Studio">
-  <div class="relative space-y-24 px-4 pb-24 pt-24 sm:pt-32">
-    <section class="mx-auto max-w-6xl">
+  <div class="relative space-y-24 overflow-hidden px-4 pb-24 pt-24 sm:pt-32">
+    <section class="mx-auto w-full max-w-6xl">
       <PageHero
         eyebrow="Career Lab"
         title="Rehearse confident introductions and follow-ups."
@@ -13,15 +13,15 @@ import PageHero from '../components/PageHero.astro';
       />
     </section>
 
-    <section class="mx-auto max-w-6xl">
+    <section class="mx-auto w-full max-w-6xl">
       <NetworkingPracticeApp
         client:load
         showHeader={false}
-        className="rounded-[2.5rem] border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] px-6 pb-16 pt-10"
+        className="rounded-[2.5rem] border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] px-4 pb-16 pt-10 sm:px-6 overflow-hidden"
       />
     </section>
 
-    <footer class="mx-auto max-w-6xl rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.2)] px-8 py-6 text-center text-sm text-muted-foreground">
+    <footer class="mx-auto w-full max-w-6xl rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.2)] px-8 py-6 text-center text-sm text-muted-foreground">
       Crafted by Jonathan Reed —
       <a href="https://www.jonathanrreed.com" class="font-medium text-foreground transition-colors hover:text-accent">
         jonathanrreed.com

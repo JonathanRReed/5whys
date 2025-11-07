@@ -452,7 +452,7 @@ ${improved.join('\n')}
   return (
     <div
       className={cn(
-        'mx-auto max-w-6xl space-y-12 px-4 pb-20 text-[hsl(var(--foreground))]',
+        'mx-auto w-full max-w-6xl space-y-12 px-4 pb-20 text-[hsl(var(--foreground))]',
         showHeader ? 'pt-12' : 'pt-8',
         className
       )}
@@ -569,7 +569,7 @@ ${improved.join('\n')}
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4 text-center text-sm">
+              <div className="grid grid-cols-1 gap-4 text-center text-sm sm:grid-cols-2">
                 <div className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.45)] p-4">
                   <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Numbers surfaced</p>
                   <p className="text-3xl font-semibold text-[hsl(var(--foam))]">{signalReport.numbers}</p>

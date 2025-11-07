@@ -208,7 +208,7 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
 
   return (
     <div className={cn('relative text-[hsl(var(--foreground))]', className)}>
-      <div className={cn('mx-auto max-w-6xl space-y-10 px-4 py-12', !showHeader && 'pt-6')}>
+      <div className={cn('mx-auto w-full max-w-6xl space-y-10 px-4 py-12', !showHeader && 'pt-6')}>
         {showHeader && (
           <header className="space-y-4 text-center">
             <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--foam))]">Career Lab</p>
