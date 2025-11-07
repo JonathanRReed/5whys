@@ -126,6 +126,11 @@ const ACTION_VERBS = [
 const SCAN_DURATION = 8000;
 const POWER_WORDS = ACTION_VERBS;
 
+type ResumeGameProps = {
+  showHeader?: boolean;
+  className?: string;
+};
+
 const CONTENT_TYPES_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
@@ -309,7 +314,7 @@ async function exportDocx(filename: string, content: string) {
   URL.revokeObjectURL(url);
 }
 
-export default function ResumeGame() {
+export default function ResumeGame({ showHeader = true, className }: ResumeGameProps) {
   const [resumeText, setResumeText] = usePersistedState('resume-game-text', '');
   const [bullets, setBullets] = React.useState<BulletRecord[]>([]);
   const [selectedBulletId, setSelectedBulletId] = React.useState<string | null>(null);
@@ -436,14 +441,22 @@ ${improved.join('\n')}
   const resumeOutOfDate = needsRescan && scanComplete && resumeText.trim().length > 0;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-12 px-4 pb-20 pt-6 text-[hsl(var(--foreground))]">
-      <header className="space-y-4 text-center">
-        <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--foam))]">Career Lab</p>
-        <h1 className="text-4xl font-semibold tracking-tight">Resume Game</h1>
-        <p className="mx-auto max-w-2xl text-sm text-muted-foreground">
-          Simulate an eight-second recruiter scan, highlight signal words, and systematically rewrite every bullet into a quantified, high-signal statement.
-        </p>
-      </header>
+    <div
+      className={cn(
+        'mx-auto max-w-6xl space-y-12 px-4 pb-20 text-[hsl(var(--foreground))]',
+        showHeader ? 'pt-12' : 'pt-8',
+        className
+      )}
+    >
+      {showHeader && (
+        <header className="space-y-4 text-center">
+          <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--foam))]">Career Lab</p>
+          <h1 className="text-4xl font-semibold tracking-tight">Resume Game</h1>
+          <p className="mx-auto max-w-2xl text-sm text-muted-foreground">
+            Simulate an eight-second recruiter scan, highlight signal words, and systematically rewrite every bullet into a quantified, high-signal statement.
+          </p>
+        </header>
+      )}
 
       <Card className="backdrop-blur-xl">
         <CardHeader className="space-y-4">

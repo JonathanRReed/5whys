@@ -10,6 +10,12 @@ const WHY_COUNT = 5;
 const SESSION_KEY = 'career-why-session-v2';
 const HISTORY_KEY = 'career-why-history';
 
+type Career5WhysProps = {
+  showHeader?: boolean;
+  showFooter?: boolean;
+  className?: string;
+};
+
 const TRACKS = {
   career: {
     label: 'Career Path',
@@ -110,7 +116,7 @@ function useStoredSession() {
   return [session, setSession] as const;
 }
 
-export default function Career5Whys() {
+export default function Career5Whys({ showHeader = true, showFooter = true, className }: Career5WhysProps) {
   const [session, setSession] = useStoredSession();
   const [hintOpen, setHintOpen] = React.useState<Record<number, boolean>>({});
   const [status, setStatus] = React.useState<string | null>(null);
@@ -201,21 +207,21 @@ export default function Career5Whys() {
   const handleReset = () => updateSession(createEmptySession(session.track));
 
   return (
-    <div className="min-h-screen text-[hsl(var(--foreground))]">
-      <div className="relative">
-        <div className="relative max-w-6xl mx-auto px-4 py-12 space-y-10">
-          <header className="text-center space-y-4">
-            <p className="text-[hsl(var(--foam))] uppercase tracking-[0.3em] text-xs">Career Lab</p>
+    <div className={cn('relative text-[hsl(var(--foreground))]', className)}>
+      <div className={cn('mx-auto max-w-6xl space-y-10 px-4 py-12', !showHeader && 'pt-6')}>
+        {showHeader && (
+          <header className="space-y-4 text-center">
+            <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--foam))]">Career Lab</p>
             <h1 className="text-4xl font-semibold">Discover Your Why</h1>
-            <p className="text-[hsl(var(--muted-foreground))] max-w-2xl mx-auto">
-              Guided reasoning for uncovering the motivation behind your next career move. Choose a track,
-              document five layers of reasoning, and leave with a statement you can reuse across resume, interview,
-              and networking prep.
+            <p className="mx-auto max-w-2xl text-[hsl(var(--muted-foreground))]">
+              Guided reasoning for uncovering the motivation behind your next career move. Choose a track, document five
+              layers of reasoning, and leave with a statement you can reuse across resume, interview, and networking prep.
             </p>
           </header>
+        )}
 
-          <Card className="bg-[hsl(var(--card)/0.5)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] backdrop-blur-md shadow-[0_20px_80px_hsl(var(--background)/0.35)]">
-            <CardHeader className="space-y-6">
+        <Card className="bg-[hsl(var(--card)/0.5)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] backdrop-blur-md shadow-[0_20px_80px_hsl(var(--background)/0.35)]">
+          <CardHeader className="space-y-6">
               <div>
                 <CardTitle className="text-2xl font-semibold">Select your track</CardTitle>
                 <p className="text-sm text-[hsl(var(--muted-foreground))]">
@@ -476,10 +482,11 @@ export default function Career5Whys() {
             </div>
           </div>
 
+        {showFooter && (
           <footer className="border-t border-[hsl(var(--border)/0.5)] pt-8 text-center text-sm text-[hsl(var(--muted-foreground))]">
             <p>Insight is cumulative. Revisit your entries whenever your path evolves.</p>
           </footer>
-        </div>
+        )}
       </div>
     </div>
   );

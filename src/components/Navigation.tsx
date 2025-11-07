@@ -1,6 +1,5 @@
 import * as React from 'react';
 
-import { Button } from './ui/button';
 import { cn } from '../lib/utils';
 
 type Theme = 'night' | 'moon' | 'dawn';
@@ -101,12 +100,6 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const toggleTheme = React.useCallback(() => {
-    const order: Theme[] = ['night', 'moon', 'dawn'];
-    const nextIndex = (order.indexOf(activeTheme) + 1) % order.length;
-    setActiveTheme(order[nextIndex]);
-  }, [activeTheme]);
-
   const setTheme = React.useCallback((theme: Theme) => {
     setActiveTheme(theme);
   }, []);
@@ -144,19 +137,13 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
                   href={href}
                   aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'relative inline-flex items-center text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]',
+                    'inline-flex items-center rounded-full px-3 py-2 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]',
                     active
-                      ? 'text-foreground'
-                      : 'text-muted-foreground hover:text-foreground'
+                      ? 'bg-[hsl(var(--overlay)/0.45)] text-foreground shadow-[0_16px_32px_-28px_hsl(var(--background)/0.8)]'
+                      : 'text-muted-foreground hover:bg-[hsl(var(--overlay)/0.3)] hover:text-foreground'
                   )}
                 >
                   {label}
-                  <span
-                    className={cn(
-                      'pointer-events-none absolute inset-x-2 -bottom-2 h-0.5 rounded-full bg-[hsl(var(--primary))] opacity-0 transition-opacity duration-200',
-                      active && 'opacity-100'
-                    )}
-                  />
                 </a>
               );
             })}
@@ -170,37 +157,18 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
                   type="button"
                   onClick={() => setTheme(option.id)}
                   className={cn(
-                    'group relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-[hsl(var(--border)/0.7)] transition-transform duration-200 hover:scale-[1.08]',
-                    activeTheme === option.id && 'ring-2 ring-[hsl(var(--ring))] ring-offset-2 ring-offset-[hsl(var(--background))]'
+                    'inline-flex items-center justify-center rounded-full border border-[hsl(var(--border)/0.7)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:text-foreground',
+                    activeTheme === option.id &&
+                      'bg-[hsl(var(--overlay)/0.35)] text-foreground ring-2 ring-[hsl(var(--ring))] ring-offset-2 ring-offset-[hsl(var(--background))]'
                   )}
                   aria-pressed={activeTheme === option.id}
                   aria-label={`Activate ${option.label} theme`}
                   title={`${option.label} · ${option.description}`}
                 >
-                  <span
-                    className="absolute inset-0"
-                    style={{ backgroundImage: option.gradient }}
-                  />
-                  <span className="relative text-[10px] font-semibold uppercase tracking-wide text-[hsl(var(--foreground))] drop-shadow-md">
-                    {option.label.slice(0, 2)}
-                  </span>
+                  {option.label}
                 </button>
               ))}
             </div>
-            <Button asChild className="hidden md:inline-flex">
-              <a href="/career" className="flex items-center gap-2">
-                Explore Tools
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1.8}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              </a>
-            </Button>
             <button
               type="button"
               className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[hsl(var(--border)/0.7)] text-foreground hover:bg-[hsl(var(--overlay)/0.35)] md:hidden"
@@ -257,29 +225,26 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
             })}
           </div>
           <div className="flex items-center gap-3">
-            <Button asChild className="flex-1">
-              <a href="/career" className="flex items-center justify-center gap-2">
-                Explore Tools
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1.8}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              </a>
-            </Button>
-            <button
-              type="button"
-              className="flex h-10 flex-1 items-center justify-center rounded-full border border-[hsl(var(--border)/0.7)] text-sm font-medium text-foreground transition hover:bg-[hsl(var(--overlay)/0.35)]"
-              onClick={toggleTheme}
-            >
-              {activeTheme === 'night' && 'Night' }
-              {activeTheme === 'moon' && 'Moon' }
-              {activeTheme === 'dawn' && 'Dawn' }
-            </button>
+            <div className="flex-1">
+              <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Theme</span>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                {themeOptions.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setTheme(option.id)}
+                    className={cn(
+                      'flex-1 min-w-[90px] rounded-full border border-[hsl(var(--border)/0.7)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.3)] hover:text-foreground',
+                      activeTheme === option.id && 'bg-[hsl(var(--overlay)/0.35)] text-foreground ring-1 ring-[hsl(var(--ring))]'
+                    )}
+                    aria-pressed={activeTheme === option.id}
+                    aria-label={`Activate ${option.label} theme`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </nav>

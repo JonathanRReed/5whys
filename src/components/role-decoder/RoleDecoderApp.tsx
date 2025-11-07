@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { cn } from '../../lib/utils';
 import { parseSections, type ParsedJobPost } from '../../lib/role-decoder/parser';
 import {
   detectSkills,
@@ -21,6 +22,11 @@ import {
 } from '../../lib/role-decoder/storage';
 
 type RequestState = 'idle' | 'loading' | 'success' | 'error';
+
+type RoleDecoderAppProps = {
+  showHeader?: boolean;
+  className?: string;
+};
 
 type BulletDraftInputs = {
   verb: string;
@@ -68,7 +74,7 @@ const EMPTY_EXPERIENCE_DRAFT: ExperienceDraft = {
   confidence: 3,
 };
 
-export default function RoleDecoderApp() {
+export default function RoleDecoderApp({ showHeader = true, className }: RoleDecoderAppProps) {
   const [input, setInput] = React.useState('');
   const [dictionary, setDictionary] = React.useState<SkillDictionary | null>(null);
   const [dictionaryState, setDictionaryState] = React.useState<RequestState>('idle');
@@ -472,16 +478,24 @@ export default function RoleDecoderApp() {
     return null;
   }, [dictionaryError, dictionaryState]);
 
+  const containerClasses = cn(
+    'mx-auto max-w-6xl px-4 pb-16 space-y-10 text-[hsl(var(--foreground))]',
+    showHeader ? 'pt-12' : 'pt-8',
+    className
+  );
+
   return (
-    <div className="max-w-6xl mx-auto px-4 pb-16 space-y-10">
-      <header className="text-center space-y-3">
-        <p className="text-xs uppercase tracking-[0.4em] text-[hsl(var(--foam))]">Flagship Module</p>
-        <h1 className="text-4xl font-semibold text-[hsl(var(--foreground))]">Role Decoder Pro</h1>
-        <p className="text-[hsl(var(--muted-foreground))] max-w-2xl mx-auto">
-          Paste a job description to segment responsibilities, extract skills, and map coverage across your evidence library —
-          all offline.
-        </p>
-      </header>
+    <div className={containerClasses}>
+      {showHeader && (
+        <header className="text-center space-y-3">
+          <p className="text-xs uppercase tracking-[0.4em] text-[hsl(var(--foam))]">Flagship Module</p>
+          <h1 className="text-4xl font-semibold text-[hsl(var(--foreground))]">Role Decoder Pro</h1>
+          <p className="mx-auto max-w-2xl text-[hsl(var(--muted-foreground))]">
+            Paste a job description to segment responsibilities, extract skills, and map coverage across your evidence library —
+            all offline.
+          </p>
+        </header>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,_1.1fr)_0.9fr]">
         <Card className="bg-[hsl(var(--card)/0.5)] border-[hsl(var(--border)/0.5)] backdrop-blur">
