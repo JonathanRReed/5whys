@@ -1,16 +1,76 @@
 ---
-
+import Base from '../layouts/Base.astro';
 ---
+<Base title="Career Tools">
+  <div class="min-h-screen bg-gray-50">
+    <div class="max-w-4xl mx-auto px-4 py-16">
+      <header class="text-center mb-16">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-6">
+          <svg class="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+          </svg>
+        </div>
+        <h1 class="text-4xl font-bold text-gray-900 mb-4">
+          Career Tools
+        </h1>
+        <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+          Interactive tools to help you reflect on your career path and improve your professional materials.
+        </p>
+      </header>
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+      <main class="grid md:grid-cols-2 gap-8">
+        <a href="/career" class="group block">
+          <div class="bg-white rounded-lg border border-gray-200 p-8 hover:shadow-lg transition-shadow duration-200">
+            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-200 transition-colors">
+              <svg class="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h2 class="text-xl font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+              Career Reflection: 5 Whys
+            </h2>
+            <p class="text-gray-600 mb-4">
+              Uncover the deeper motivation behind your career choice using the 5 Whys method. 
+              Dig deeper into your purpose and find your root motivation.
+            </p>
+            <div class="flex items-center text-blue-600 font-medium">
+              Start Reflection
+              <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
+        </a>
+
+        <a href="/resume-game" class="group block">
+          <div class="bg-white rounded-lg border border-gray-200 p-8 hover:shadow-lg transition-shadow duration-200">
+            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-purple-200 transition-colors">
+              <svg class="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h2 class="text-xl font-semibold text-gray-900 mb-2 group-hover:text-purple-600 transition-colors">
+              Resume Game
+            </h2>
+            <p class="text-gray-600 mb-4">
+              Level up your bullet points through the power of numbers, verbs, and structure. 
+              Get instant feedback on your resume with interactive scoring.
+            </p>
+            <div class="flex items-center text-purple-600 font-medium">
+              Play Game
+              <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
+        </a>
+      </main>
+
+      <footer class="mt-16 text-center">
+        <p class="text-gray-500 text-sm">
+          Built with ❤️ to help you navigate your career journey
+        </p>
+      </footer>
+    </div>
+  </div>
+</Base>

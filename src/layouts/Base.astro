@@ -1,0 +1,14 @@
+---
+const { title = "5 Whys" } = Astro.props;
+import "../styles/globals.css";
+---
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+  </head>
+  <body class="min-h-screen bg-white">
+    <slot />
+  </body>
+</html>
