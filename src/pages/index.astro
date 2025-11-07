@@ -23,7 +23,11 @@ const metrics = [
   description="A modern studio of reflection, practice, and career storytelling tools built on the Rosé Pine palette."
   theme="night"
 >
-  <div class="relative space-y-24 px-4 pb-32 pt-24 sm:pt-32">
+  <div class="relative space-y-20 px-4 pb-28 pt-24 sm:pt-32">
+    <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
+      <div class="absolute -top-24 right-0 h-72 w-72 rounded-full bg-[radial-gradient(circle_at_top_right,hsl(var(--foam)/0.18)_0%,transparent_60%)] blur-3xl" />
+      <div class="absolute bottom-0 -left-10 h-80 w-80 rounded-full bg-[radial-gradient(circle_at_bottom_left,hsl(var(--iris)/0.16)_0%,transparent_65%)] blur-[64px]" />
+    </div>
     <section class="mx-auto max-w-6xl">
       <PageHero
         eyebrow="Guided Career Studio"
@@ -35,7 +39,10 @@ const metrics = [
         <fragment slot="extra">
           <div class="grid gap-4 sm:grid-cols-3">
             {metrics.map((metric) => (
-              <div class="rounded-2xl border border-[hsl(var(--border)/0.4)] bg-[hsl(var(--overlay)/0.35)] p-4">
+              <div class="group rounded-2xl border border-[hsl(var(--border)/0.4)] bg-[hsl(var(--overlay)/0.35)] p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-[hsl(var(--accent)/0.35)] hover:shadow-[0_18px_40px_-28px_hsl(var(--background)/0.9)]">
+                <div class="relative">
+                  <div class="pointer-events-none absolute -inset-2 -z-10 rounded-[1.25rem] opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-100 bg-[radial-gradient(circle_at_top_left,hsl(var(--foam)/0.24),transparent_60%)]" />
+                </div>
                 <div class="text-2xl font-semibold text-foreground">{metric.value}</div>
                 <div class="text-sm text-muted-foreground">{metric.label}</div>
               </div>
@@ -67,7 +74,7 @@ const metrics = [
           </div>
           <a
             href="/career"
-            class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[hsl(var(--primary)/0.14)] px-6 py-3 text-sm font-semibold text-[hsl(var(--primary))] transition hover:bg-[hsl(var(--primary)/0.2)]"
+            class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[hsl(var(--primary)/0.14)] px-6 py-3 text-sm font-semibold text-[hsl(var(--primary))] transition hover:bg-[hsl(var(--primary)/0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]"
           >
             Continue reflection
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
@@ -78,15 +85,14 @@ const metrics = [
       </PageHero>
     </section>
 
-    <section id="tools" class="mx-auto max-w-6xl space-y-12">
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div class="space-y-3">
-          <h2 class="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">Build your toolkit</h2>
-          <p class="max-w-2xl text-pretty text-base text-muted-foreground">
-            Each experience is crafted to feel calm, focused, and actionable. Choose a tool below to explore guided flows, helpful prompts, and progress you can revisit.
-          </p>
-        </div>
-        <div class="grid gap-8 md:grid-cols-2">
+    <section id="tools" class="mx-auto max-w-6xl space-y-8">
+      <div class="space-y-3">
+        <h2 class="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">Build your toolkit</h2>
+        <p class="max-w-2xl text-pretty text-base text-muted-foreground">
+          Each experience is crafted to feel calm, focused, and actionable. Choose a tool below to explore guided flows, helpful prompts, and progress you can revisit.
+        </p>
+      </div>
+      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 auto-rows-fr">
           <ToolCard
             href="/career"
             title="Career Reflection · 5 Whys"

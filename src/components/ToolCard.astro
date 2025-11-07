@@ -19,7 +19,7 @@ const {
 ---
 <a
   href={href}
-  class="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--card)/0.72)] p-8 shadow-[0_28px_60px_-40px_hsl(var(--background)/0.85)] transition-transform duration-300 hover:-translate-y-2 hover:border-[hsl(var(--accent)/0.4)] hover:shadow-[0_32px_70px_-44px_hsl(var(--card)/0.95)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]"
+  class="group relative grid h-full grid-rows-[auto,1fr,auto] overflow-hidden rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--card)/0.72)] p-7 shadow-[0_28px_60px_-40px_hsl(var(--background)/0.85)] transition-transform duration-300 hover:-translate-y-2 hover:border-[hsl(var(--accent)/0.4)] hover:shadow-[0_32px_70px_-44px_hsl(var(--card)/0.95)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))] md:p-8"
   style={`--card-accent: var(--${accent});`}
 >
   <div class="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" aria-hidden="true">
@@ -27,24 +27,24 @@ const {
     <div class="absolute -bottom-12 -left-12 h-64 w-64 rounded-full bg-[radial-gradient(circle_at_bottom,var(--card-accent)_0%,transparent_75%)] blur-[72px]" />
   </div>
 
-  <div class="relative flex flex-col gap-6">
-    <div class="flex items-start gap-4">
+  <div class="relative flex flex-col gap-5">
+    <div class="flex items-start justify-between gap-4">
       <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-[hsl(var(--card-accent)/0.18)] text-[hsl(var(--card-accent))] shadow-inner shadow-[hsl(var(--background)/0.38)]">
         <slot name="icon" />
       </div>
       {tag && (
-        <span class="inline-flex items-center rounded-full bg-[hsl(var(--card-accent)/0.22)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[hsl(var(--card-accent))]">
+        <span class="inline-flex items-center rounded-full bg-[hsl(var(--card-accent)/0.22)] px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-[hsl(var(--card-accent))]">
           {tag}
         </span>
       )}
     </div>
 
-    <div class="space-y-3">
-      <h2 class="text-2xl font-semibold tracking-tight text-foreground">{title}</h2>
+    <div class="space-y-2">
+      <h2 class="text-2xl font-semibold leading-snug tracking-tight text-foreground">{title}</h2>
       <p class="text-[0.95rem] leading-relaxed text-muted-foreground">{description}</p>
     </div>
 
-    <div class="mt-auto flex items-center gap-2 text-sm font-medium text-[hsl(var(--card-accent))]">
+    <div class="flex items-center gap-2 text-sm font-medium text-[hsl(var(--card-accent))]">
       {cta}
       <svg
         class="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1"
