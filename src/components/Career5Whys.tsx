@@ -89,29 +89,32 @@ function cryptoRandom() {
 }
 
 function useStoredSession() {
-  const [session, setSession] = React.useState<Session>(() => {
-    const fallback = createEmptySession();
-    if (typeof window === 'undefined') return fallback;
+  const [session, setSession] = React.useState<Session>(() => createEmptySession());
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
     try {
       const stored = localStorage.getItem(SESSION_KEY);
       if (stored) {
+        const fallback = createEmptySession();
         const parsed = JSON.parse(stored) as Session;
-        return { ...fallback, ...parsed };
+        setSession({ ...fallback, ...parsed });
       }
     } catch (err) {
       console.warn('Unable to load saved 5 Whys session', err);
     }
-    return fallback;
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   React.useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (!mounted) return;
     try {
       localStorage.setItem(SESSION_KEY, JSON.stringify(session));
     } catch (err) {
       console.warn('Unable to persist 5 Whys session', err);
     }
-  }, [session]);
+  }, [session, mounted]);
 
   return [session, setSession] as const;
 }
@@ -121,28 +124,82 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
   const [hintOpen, setHintOpen] = React.useState<Record<number, boolean>>({});
   const [status, setStatus] = React.useState<string | null>(null);
 
-  const progress = session.responses.filter((response) => response.trim().length > 0).length;
-  const progressPercent = Math.round((progress / WHY_COUNT) * 100);
+  const totalFilled = session.responses.filter((response) => response.trim().length > 0).length;
+  const firstEmptyIndex = session.responses.findIndex((r) => r.trim().length === 0);
+  const sequentialCount = firstEmptyIndex === -1 ? WHY_COUNT : firstEmptyIndex;
+  const progressPercent = Math.round((sequentialCount / WHY_COUNT) * 100);
   const activeTrack = TRACKS[session.track];
 
-  const derivedTheme =
-    session.theme.trim() ||
-    session.responses
-      .slice()
-      .reverse()
-      .find((response) => response.trim().length > 0) ||
-    session.topic ||
-    'earning clarity on the work that matters';
+  // Lightweight keyword synthesis to consider ALL steps
+  const STOPWORDS = React.useMemo(
+    () =>
+      new Set([
+        'the','and','for','with','that','this','from','into','your','you','are','our','was','were','will','would','could','should','about','when','what','how','why','who','whom','to','of','in','on','at','by','as','it','its','is','be','an','a','or','but','if','than','then','so','we','i','me','my','mine','their','theirs','them','they','us','we','do','did','done','doing','because'
+      ]),
+    []
+  );
 
-  const derivedAlignment =
-    session.alignment.trim() ||
-    session.responses
-      .slice(0, WHY_COUNT - 1)
-      .reverse()
-      .find((response) => response.trim().length > 0) ||
-    'how you want to invest your focus';
+  const extractKeywords = React.useCallback(
+    (text: string, max = 5) => {
+      const counts = new Map<string, number>();
+      text
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .split(/\s+/)
+        .filter((w) => w.length >= 3 && !STOPWORDS.has(w))
+        .forEach((w) => counts.set(w, (counts.get(w) || 0) + 1));
+      return Array.from(counts.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, max)
+        .map(([w]) => w);
+    },
+    [STOPWORDS]
+  );
 
-  const whyStatement = `You’re motivated by ${derivedTheme.trim()} because it aligns with ${derivedAlignment.trim()}.`;
+  const computeSynthesis = React.useCallback(
+    (responses: string[], topic: string, track: Track) => {
+      const cleaned = responses.map((r) => r.trim()).filter(Boolean);
+      const coverage = Math.min(100, Math.round((cleaned.length / WHY_COUNT) * 100));
+
+      // If no answers yet, do not manufacture theme/alignment from topic for both sides
+      if (cleaned.length === 0) {
+        return { theme: '', alignment: '', confidence: coverage } as const;
+      }
+
+      const mid = Math.max(1, Math.floor(cleaned.length / 2));
+      const early = cleaned.slice(0, mid).join(' ');
+      const late = cleaned.slice(mid).join(' ');
+      const lateKeys = extractKeywords(late, 3);
+      const earlyKeys = extractKeywords(early, 3);
+      const title = (arr: string[]) => arr.map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(', ');
+
+      // Defaults from responses, not topic
+      let theme = title(lateKeys) || cleaned[cleaned.length - 1] || '';
+      let alignment = title(earlyKeys) || cleaned[0] || '';
+
+      // Track-specific topic fallback (only for one side to avoid identical outputs)
+      if (!theme && track === 'interest') theme = topic || theme;
+      if (!alignment && track === 'career') alignment = topic || alignment;
+
+      return { theme, alignment, confidence: coverage } as const;
+    },
+    [extractKeywords]
+  );
+
+  const synthesized = computeSynthesis(session.responses, session.topic, session.track);
+  const sequentialConfidence = Math.round((sequentialCount / WHY_COUNT) * 100);
+
+  const derivedTheme = session.theme.trim() || synthesized.theme;
+  const derivedAlignment = session.alignment.trim() || synthesized.alignment;
+
+  const t = session.track;
+  const themeText = derivedTheme.trim();
+  const alignText = derivedAlignment.trim();
+  const topicText = session.topic.trim();
+  const whyStatement =
+    t === 'career'
+      ? `You’re pursuing ${topicText || 'this path'} because it aligns with ${alignText || 'what matters to you'} — driven by ${themeText || 'a clear theme you are uncovering'}.`
+      : `You’re motivated by ${themeText || 'this interest'} because it aligns with ${alignText || 'your values'} in the context of ${topicText || 'your core interest'}.`;
 
   React.useEffect(() => {
     if (!status) return;
@@ -235,11 +292,10 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
                     <button
                       key={key}
                       type="button"
-                      onClick={() =>
-                        updateSession({
-                          track: key as Track,
-                        })
-                      }
+                      onClick={() => {
+                        setHintOpen({});
+                        updateSession(createEmptySession(key as Track));
+                      }}
                       className={cn(
                         'flex-1 rounded-2xl border px-4 py-5 text-left transition-all',
                         'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[hsl(var(--primary))]',
@@ -270,12 +326,10 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
                   <Label className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">Progress</Label>
                   <div className="mt-2 flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] px-4 py-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[hsl(var(--primary)/0.5)] bg-[hsl(var(--primary)/0.1)] text-lg font-semibold text-[hsl(var(--primary-foreground))]">
-                      {progress}
+                      {sequentialCount}
                     </div>
                     <div>
-                      <p className="text-sm text-[hsl(var(--foreground))]">
-                        {progress === WHY_COUNT ? 'Depth unlocked' : 'Reasoning depth'}
-                      </p>
+                      <p className="text-sm text-[hsl(var(--foreground))]">{sequentialCount === WHY_COUNT ? 'Depth unlocked' : 'Reasoning depth'}</p>
                       <p className="text-xs text-[hsl(var(--muted-foreground))]">{progressPercent}% complete</p>
                     </div>
                   </div>
@@ -294,8 +348,8 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
                 <CardContent>
                   <div className="flex flex-col items-center gap-3">
                     {Array.from({ length: WHY_COUNT }).map((_, index) => {
-                      const isFilled = index < progress;
-                      const isCurrent = index === progress;
+                      const isFilled = index < sequentialCount;
+                      const isCurrent = index === sequentialCount;
                       return (
                         <React.Fragment key={index}>
                           <div
@@ -334,7 +388,7 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
                 <CardContent className="space-y-5">
                   {session.responses.map((response, index) => {
                     const previous = session.responses[index - 1];
-                    const isFocus = index === progress - 1 && response.trim().length > 0;
+                    const isFocus = index === sequentialCount - 1 && response.trim().length > 0;
                     return (
                       <div key={index} className="relative pl-6">
                         {index !== 0 && (
@@ -353,7 +407,7 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
                             </span>
                           )}
                           {previous && !response && (
-                            <span className="absolute -bottom-2 left-4 text-[10px] uppercase tracking-wide text-[hsl(var(--iris))/0.8]">
+                            <span className="mt-2 block text-[10px] uppercase tracking-wide text-[hsl(var(--iris))/0.8]">
                               add continuation
                             </span>
                           )}
@@ -370,6 +424,7 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
                 const hint = activeTrack.hints[index];
                 const prompt = activeTrack.prompts[index];
                 const isHintVisible = hintOpen[index];
+                const locked = index > sequentialCount;
                 return (
                   <Card
                     key={index}
@@ -385,12 +440,19 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
                       </span>
                     </CardHeader>
                     <CardContent className="space-y-4">
+                      {index > 0 && session.responses[index - 1].trim().length > 0 && (
+                        <p className="text-xs text-[hsl(var(--muted-foreground))]">Build on: {session.responses[index - 1]}</p>
+                      )}
                       <Textarea
                         value={response}
                         onChange={(event) => handleResponseChange(index, event.target.value)}
                         placeholder="Document your reasoning. Be specific and concrete."
-                        className="min-h-[120px] resize-none bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))]"
+                        disabled={locked}
+                        className="min-h-[120px] resize-none bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] disabled:opacity-60"
                       />
+                      {locked && (
+                        <p className="text-xs text-[hsl(var(--muted-foreground))]">Complete the previous depth before continuing.</p>
+                      )}
                       <Button
                         type="button"
                         variant="ghost"
@@ -419,6 +481,7 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
                 <CardHeader>
                   <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">Completion summary</p>
                   <CardTitle className="text-2xl font-semibold text-[hsl(var(--foreground))]">Why Statement</CardTitle>
+                  <div className="text-sm text-[hsl(var(--muted-foreground))]">Confidence {sequentialConfidence}%</div>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="rounded-2xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] p-5 text-lg leading-relaxed text-[hsl(var(--foreground))]">
@@ -450,6 +513,7 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
                     <Button
                       type="button"
                       onClick={handleSaveSnapshot}
+                      disabled={sequentialCount < 4}
                       className="h-12 rounded-xl border border-[hsl(var(--love)/0.6)] bg-[hsl(var(--love)/0.2)] text-[hsl(var(--love-foreground))] hover:bg-[hsl(var(--love)/0.4)]"
                     >
                       Save snapshot
@@ -458,6 +522,7 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
                       type="button"
                       variant="outline"
                       onClick={handleExport}
+                      disabled={sequentialCount < 4}
                       className="h-12 rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.1)] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--overlay)/0.2)]"
                     >
                       Export JSON
