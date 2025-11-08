@@ -4,14 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
+import QuickStartTiles from './QuickStartTiles';
 import { cn } from '../lib/utils';
 import scenarioData from '../data/networking-scenarios.json';
 import {
   deleteSession,
   deleteVersion,
+  clearSessions,
   generateId,
   loadSessions,
   loadVersions,
+  SESSION_LIMIT,
   saveSession,
   saveVersion,
 } from '../utils/storage';
@@ -48,6 +51,7 @@ const PILLAR_DETAILS = [
   { key: 'question', label: 'Curious ask', accent: 'text-[hsl(var(--iris))]' },
 ] as const satisfies Array<{ key: PillarKey; label: string; accent: string }>;
 const COPY_RESET_MS = 2000;
+const NOTICE_RESET_MS = 3500;
 
 function formatTime(seconds: number) {
   const mins = Math.floor(seconds / 60)
@@ -107,6 +111,7 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
   const [versions, setVersions] = useHydratedState<NetworkingPracticeVersion[]>([fallbackVersion], loadVersionsFromStorage);
 
   const [sessions, setSessions] = useHydratedState<NetworkingPracticeSession[]>([], loadSessions);
+  const [storageNotice, setStorageNotice] = React.useState<string | null>(null);
 
   const [currentVersionId, setCurrentVersionId] = React.useState<string>(fallbackVersion.id);
   const currentVersion = React.useMemo(
@@ -151,6 +156,12 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
     },
     []
   );
+
+  React.useEffect(() => {
+    if (!storageNotice) return;
+    const timeout = window.setTimeout(() => setStorageNotice(null), NOTICE_RESET_MS);
+    return () => window.clearTimeout(timeout);
+  }, [storageNotice]);
 
   React.useEffect(() => {
     if (!timer.isRunning) return;
@@ -303,15 +314,53 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
       createdAt: new Date().toISOString(),
     };
 
-    saveSession(session);
-    setSessions((prev) => [session, ...prev]);
+    const success = saveSession(session);
+    if (!success) {
+      setStorageNotice('Browser storage is full—export or clear past sessions to keep saving.');
+      return;
+    }
+
+    setSessions((prev) => [session, ...prev].slice(0, SESSION_LIMIT));
     setReflection('');
+    setStorageNotice('Session saved to your local history.');
   };
 
   const removeSession = (id: string) => {
-    deleteSession(id);
+    const success = deleteSession(id);
+    if (!success) {
+      setStorageNotice('Unable to update session history. Check storage permissions and try again.');
+      return;
+    }
     setSessions((prev) => prev.filter((session) => session.id !== id));
   };
+
+  const exportSessions = React.useCallback(() => {
+    if (sessions.length === 0) {
+      setStorageNotice('No sessions to export yet. Record a practice round first.');
+      return;
+    }
+    const filename = `networking-practice-sessions-${new Date().toISOString().slice(0, 10)}.json`;
+    const blob = new Blob([JSON.stringify(sessions, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    setStorageNotice('Sessions exported—check your downloads.');
+  }, [sessions]);
+
+  const clearSessionHistory = React.useCallback(() => {
+    if (sessions.length === 0) return;
+    if (!window.confirm('Clear all saved networking practice sessions from this device?')) return;
+    const success = clearSessions();
+    if (!success) {
+      setStorageNotice('Unable to clear history. Check storage permissions and try again.');
+      return;
+    }
+    setSessions([]);
+    setStorageNotice('Session history cleared.');
+  }, [sessions]);
 
   const scenarioPills = scenarios.map((scenario) => {
     const isActive = scenario.id === currentVersion?.scenarioId;
@@ -335,6 +384,8 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
     className
   );
 
+  const sessionsAtCapacity = sessions.length >= SESSION_LIMIT;
+
   const innerClasses = cn(
     'mx-auto w-full max-w-6xl px-4 pb-20',
     showHeader ? 'pt-12 space-y-10' : 'pt-10 space-y-8'
@@ -355,10 +406,32 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
             <p className="mx-auto max-w-3xl text-base text-[hsl(var(--muted-foreground))]">
               Craft confident introductions for career fairs, conferences, and outreach. Practice your Who / Where / What openings, pace yourself with a two-minute timer, and capture reflections to keep improving.
             </p>
+            <QuickStartTiles
+              className="max-w-3xl"
+              items={[
+                {
+                  title: 'Choose a scenario',
+                  body: 'Pick a built-in prompt or clone it for your own event so the notes stay contextual.'
+                },
+                {
+                  title: 'Run a timed rep',
+                  body: 'Start the two-minute timer, talk aloud, and jot quick reflections while the energy is fresh.'
+                },
+                {
+                  title: 'Save + export',
+                  body: 'Log each run to see progress over time—export the JSON bundle when you want to archive or share.'
+                }
+              ]}
+            />
           </header>
         )}
 
         <section className="w-full grid gap-6 p-4 mb-10 rounded-3xl bg-[hsl(var(--overlay)/0.3)] shadow-xl sm:p-6 overflow-hidden">
+          {storageNotice ? (
+            <div className="rounded-2xl border border-[hsl(var(--gold)/0.4)] bg-[hsl(var(--gold)/0.1)] px-4 py-3 text-sm text-[hsl(var(--gold))]">
+              {storageNotice}
+            </div>
+          ) : null}
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex w-full flex-col gap-2 sm:w-auto">
               <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">Scenario library</p>
@@ -736,6 +809,11 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
                 >
                   Reset Review
                 </Button>
+                {sessionsAtCapacity ? (
+                  <span className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
+                    History at capacity—new saves replace the oldest ({SESSION_LIMIT} max).
+                  </span>
+                ) : null}
               </div>
             </CardContent>
           </Card>
@@ -744,13 +822,31 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
         <section className="w-full space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-2xl font-semibold text-[hsl(var(--gold))]">Recent Sessions</h2>
-            <span className="text-sm text-[hsl(var(--muted-foreground))]">Stored locally in your browser</span>
+            <div className="flex flex-wrap items-center gap-3 text-sm text-[hsl(var(--muted-foreground))]">
+              <span>Stored locally in your browser</span>
+              <Button
+                type="button"
+                variant="outline"
+                className="border-[hsl(var(--border)/0.6)] text-[hsl(var(--foreground))]"
+                onClick={exportSessions}
+              >
+                Export sessions JSON
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="text-[hsl(var(--destructive))] hover:text-[hsl(var(--destructive))]"
+                onClick={clearSessionHistory}
+              >
+                Clear history
+              </Button>
+            </div>
           </div>
 
           {sessions.length === 0 ? (
             <Card className="border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.3)]">
               <CardContent className="py-10 text-center text-[hsl(var(--muted-foreground))]">
-                No saved sessions yet. Finish a practice round and tap <strong className="font-semibold text-[hsl(var(--foreground))]">Save Session</strong> to start your streak.
+                No saved sessions yet. Run a practice rep and tap <strong className="font-semibold text-[hsl(var(--foreground))]">Save Session</strong> to begin your history. Revisit saved runs to spot growth over time.
               </CardContent>
             </Card>
           ) : (

@@ -48,6 +48,7 @@ export type NetworkingPracticeSession = {
 
 const VERSION_KEY = 'networking-practice-versions';
 const SESSION_KEY = 'networking-practice-sessions';
+export const SESSION_LIMIT = 60;
 const TITLE_FIXES = new Map([['Career Fair – Recruiter Chatt', 'Career Fair – Recruiter Chat']]);
 const SCENARIO_TITLE_BY_ID = new Map((scenarioData as { id: string; title: string }[]).map((scenario) => [scenario.id, scenario.title]));
 
@@ -171,17 +172,26 @@ function upgradeSession(session: unknown): NetworkingPracticeSession | null {
 }
 
 function persist<T>(key: string, payload: T) {
-  if (!isBrowser()) return;
+  if (!isBrowser()) return true;
   try {
     window.localStorage.setItem(key, JSON.stringify(payload));
-  } catch {}
+    return true;
+  } catch (err) {
+    console.warn(`Unable to persist key "${key}"`, err);
+    return false;
+  }
 }
 
 function loadCollection<T>(key: string): T[] {
   if (!isBrowser()) return [];
-  const raw = window.localStorage.getItem(key);
-  const parsed = parseJson<T[]>(raw, []);
-  return Array.isArray(parsed) ? parsed : [];
+  try {
+    const raw = window.localStorage.getItem(key);
+    const parsed = parseJson<T[]>(raw, []);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    console.warn(`Unable to load collection for key "${key}"`, err);
+    return [];
+  }
 }
 
 export function loadVersions(): NetworkingPracticeVersion[] {
@@ -216,7 +226,7 @@ export function loadSessions(): NetworkingPracticeSession[] {
     .filter(Boolean) as NetworkingPracticeSession[];
 }
 
-export function saveSession(session: NetworkingPracticeSession) {
+export function saveSession(session: NetworkingPracticeSession, limit = SESSION_LIMIT) {
   const sessions = loadSessions();
   const existingIndex = sessions.findIndex((item) => item.id === session.id);
   if (existingIndex >= 0) {
@@ -224,12 +234,17 @@ export function saveSession(session: NetworkingPracticeSession) {
   } else {
     sessions.unshift(session);
   }
-  persist(SESSION_KEY, sessions);
+  const trimmed = sessions.slice(0, Math.max(1, limit));
+  return persist(SESSION_KEY, trimmed);
 }
 
 export function deleteSession(id: string) {
   const sessions = loadSessions().filter((session) => session.id !== id);
-  persist(SESSION_KEY, sessions);
+  return persist(SESSION_KEY, sessions);
+}
+
+export function clearSessions() {
+  return persist(SESSION_KEY, []);
 }
 
 export function generateId() {
