@@ -2,8 +2,43 @@
 import Base from '../layouts/Base.astro';
 import NetworkingPracticeApp from '../components/NetworkingPractice';
 import PageHero from '../components/PageHero.astro';
+import { siteConfig } from '../config/site';
+
+const pageUrl = new URL('/networking-practice', siteConfig.siteUrl).toString();
+const networkingSchemas = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    '@id': `${pageUrl}#app`,
+    name: 'Networking Practice Studio',
+    url: pageUrl,
+    applicationCategory: 'ProductivityApplication',
+    operatingSystem: 'Web',
+    description:
+      'Guided scenarios, prompts, and a built-in two minute timer that make networking reps intentional and reflective.',
+    creator: {
+      '@type': 'Person',
+      name: siteConfig.author.name,
+      url: siteConfig.author.url,
+    },
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+    image: new URL(siteConfig.ogImage, siteConfig.siteUrl).toString(),
+  },
+];
 ---
-<Base title="Networking Practice Studio">
+<Base
+  title="Networking Practice Studio"
+  description="Rehearse confident intros, cycle through curated prompts, & log takeaways after every networking rep."
+  breadcrumbs={[
+    { label: 'Home', href: '/' },
+    { label: 'Networking Practice', href: '/networking-practice' },
+  ]}
+  structuredData={networkingSchemas}
+>
   <div class="relative space-y-24 overflow-hidden px-4 pb-24 pt-24 sm:pt-32">
     <section class="mx-auto w-full max-w-6xl">
       <PageHero

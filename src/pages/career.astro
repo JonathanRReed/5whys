@@ -2,8 +2,37 @@
 import Base from '../layouts/Base.astro';
 import Career5Whys from '../components/Career5Whys';
 import PageHero from '../components/PageHero.astro';
+import { siteConfig } from '../config/site';
+
+const pageUrl = new URL('/career', siteConfig.siteUrl).toString();
+const careerSchemas = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CreativeWork',
+    '@id': `${pageUrl}#creativework`,
+    url: pageUrl,
+    name: 'Career Reflection · Five Whys',
+    description:
+      'Guided journaling exercise that helps you dig through five layers of reasoning to articulate your next career move.',
+    inLanguage: 'en-US',
+    author: {
+      '@type': 'Person',
+      name: siteConfig.author.name,
+      url: siteConfig.author.url,
+    },
+    image: new URL(siteConfig.ogImage, siteConfig.siteUrl).toString(),
+  },
+];
 ---
-<Base title="Career 5 Whys">
+<Base
+  title="Career Reflection · Five Whys"
+  description="Work through five guided layers of why to uncover the values & impact fueling your next career move."
+  breadcrumbs={[
+    { label: 'Home', href: '/' },
+    { label: 'Career Reflection', href: '/career' },
+  ]}
+  structuredData={careerSchemas}
+>
   <div class="relative space-y-24 overflow-hidden px-4 pb-24 pt-24 sm:pt-32">
     <section class="mx-auto w-full max-w-6xl">
       <PageHero
