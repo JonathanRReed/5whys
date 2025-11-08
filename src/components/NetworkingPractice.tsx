@@ -40,6 +40,14 @@ type Ratings = {
 };
 
 const defaultRatings: Ratings = { confidence: 3, clarity: 3, rapport: 3, authenticity: 3 };
+type PillarKey = 'rapport' | 'identity' | 'value' | 'question';
+const PILLAR_DETAILS = [
+  { key: 'rapport', label: 'Rapport spark', accent: 'text-[hsl(var(--foam))]' },
+  { key: 'identity', label: 'Identity line', accent: 'text-[hsl(var(--gold))]' },
+  { key: 'value', label: 'Value proof', accent: 'text-[hsl(var(--love))]' },
+  { key: 'question', label: 'Curious ask', accent: 'text-[hsl(var(--iris))]' },
+] as const satisfies Array<{ key: PillarKey; label: string; accent: string }>;
+const COPY_RESET_MS = 2000;
 
 function formatTime(seconds: number) {
   const mins = Math.floor(seconds / 60)
@@ -105,6 +113,25 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
     () => versions.find((version) => version.id === currentVersionId) ?? versions[0],
     [currentVersionId, versions]
   );
+  const currentScenario = React.useMemo(
+    () => scenarios.find((scenario) => scenario.id === currentVersion?.scenarioId) ?? scenarios[0],
+    [currentVersion?.scenarioId, scenarios]
+  );
+  const scenarioSteps = currentScenario?.what ?? [];
+  const rapportSamples = currentScenario?.rapportSamples ?? [];
+  const questionTemplates = currentScenario?.questionTemplates ?? [];
+  const pillarEntries = React.useMemo(
+    () =>
+      currentScenario?.pillars
+        ? PILLAR_DETAILS.map(({ key, label, accent }) => ({
+            key,
+            label,
+            accent,
+            value: currentScenario.pillars?.[key] ?? '',
+          })).filter((entry) => entry.value.trim().length > 0)
+        : [],
+    [currentScenario]
+  );
 
   React.useEffect(() => {
     if (!currentVersion && versions.length) {
@@ -115,6 +142,15 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
   const [timer, setTimer] = React.useState<TimerState>({ remaining: TOTAL_SECONDS, isRunning: false, startedAt: null });
   const [ratings, setRatings] = React.useState<Ratings>(defaultRatings);
   const [reflection, setReflection] = React.useState('');
+  const [copiedKey, setCopiedKey] = React.useState<string | null>(null);
+  const copyResetRef = React.useRef<number | null>(null);
+
+  React.useEffect(
+    () => () => {
+      if (copyResetRef.current) window.clearTimeout(copyResetRef.current);
+    },
+    []
+  );
 
   React.useEffect(() => {
     if (!timer.isRunning) return;
@@ -138,6 +174,29 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
   const ringStyle = {
     background: `conic-gradient(hsl(var(--primary)) ${progress * 360}deg, hsl(var(--border)/0.3) 0deg)`,
   };
+  const handleCopy = React.useCallback(async (value: string, key: string) => {
+    if (!value?.trim()) return;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value);
+      } else {
+        throw new Error('Clipboard API unavailable');
+      }
+    } catch {
+      const textarea = document.createElement('textarea');
+      textarea.value = value;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
+    setCopiedKey(key);
+    if (copyResetRef.current) window.clearTimeout(copyResetRef.current);
+    copyResetRef.current = window.setTimeout(() => setCopiedKey(null), COPY_RESET_MS);
+  }, []);
 
   const handleScenarioChange = (scenarioId: string) => {
     if (!currentVersion) return;
@@ -175,7 +234,7 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
   }
 
   const createNewVersion = () => {
-    const scenario = scenarios[0];
+    const scenario = currentScenario ?? scenarios[0];
     if (!scenario) return;
     const title = window.prompt('Name this practice version', `${scenario.title} Intro`);
     if (!title) return;
@@ -189,8 +248,16 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
   const deleteCurrentVersion = () => {
     if (!currentVersion) return;
     if (!window.confirm('Delete this practice version?')) return;
-    deleteVersion(currentVersion.id);
-    setVersions((prev) => prev.filter((version) => version.id !== currentVersion.id));
+    const idToDelete = currentVersion.id;
+    deleteVersion(idToDelete);
+    setVersions((prev) => {
+      const filtered = prev.filter((version) => version.id !== idToDelete);
+      const next = filtered.length ? filtered : [fallbackVersion];
+      if (idToDelete === currentVersionId) {
+        setCurrentVersionId(next[0].id);
+      }
+      return next;
+    });
   };
 
   const resetTimer = () => {
@@ -293,7 +360,10 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
 
         <section className="w-full grid gap-6 p-4 mb-10 rounded-3xl bg-[hsl(var(--overlay)/0.3)] shadow-xl sm:p-6 overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex w-full flex-wrap gap-3 sm:w-auto">{scenarioPills}</div>
+            <div className="flex w-full flex-col gap-2 sm:w-auto">
+              <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">Scenario library</p>
+              <div className="flex flex-wrap gap-3">{scenarioPills}</div>
+            </div>
             <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap sm:justify-end">
               <Button
                 onClick={createNewVersion}
@@ -315,7 +385,7 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
 
           <div className="grid gap-4 md:grid-cols-[minmax(0,_200px)_1fr]">
             <div className="space-y-3">
-              <Label htmlFor="version">Practice Version</Label>
+              <Label htmlFor="version">Practice version</Label>
               <select
                 id="version"
                 value={currentVersion?.id ?? ''}
@@ -328,18 +398,30 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
                   </option>
                 ))}
               </select>
-              <Input
-                value={currentVersion?.title ?? ''}
-                onChange={(event) => handleFieldChange('title', event.target.value)}
-                placeholder="Version title"
-                className="bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--border)/0.6)] text-[hsl(var(--foreground))] focus:border-[hsl(var(--primary))]"
-              />
-              <Textarea
-                value={currentVersion?.notes ?? ''}
-                onChange={(event) => handleFieldChange('notes', event.target.value)}
-                placeholder="Session notes or goals"
-                className="h-24 bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--border)/0.6)] text-sm text-[hsl(var(--foreground))] focus:border-[hsl(var(--primary))]"
-              />
+              <div className="space-y-1">
+                <Label htmlFor="version-title" className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
+                  Custom name
+                </Label>
+                <Input
+                  id="version-title"
+                  value={currentVersion?.title ?? ''}
+                  onChange={(event) => handleFieldChange('title', event.target.value)}
+                  placeholder="Give this practice run a nickname"
+                  className="bg-[hsl(var(--overlay)/0.35)] border-[hsl(var(--border)/0.6)] text-[hsl(var(--foreground))] focus:border-[hsl(var(--primary))]"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="version-notes" className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
+                  Session notes
+                </Label>
+                <Textarea
+                  id="version-notes"
+                  value={currentVersion?.notes ?? ''}
+                  onChange={(event) => handleFieldChange('notes', event.target.value)}
+                  placeholder="Session notes or goals"
+                  className="h-24 bg-[hsl(var(--overlay)/0.35)] border-[hsl(var(--border)/0.6)] text-sm text-[hsl(var(--foreground))] focus:border-[hsl(var(--primary))]"
+                />
+              </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
@@ -393,6 +475,160 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
             </div>
           </div>
         </section>
+
+        {currentScenario && (
+          <section className="grid gap-6 mb-10 lg:grid-cols-[1.1fr,0.9fr]">
+            <Card className="border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.28)]">
+              <CardHeader className="space-y-2">
+                <CardTitle className="text-[hsl(var(--foam))]">Scenario blueprint</CardTitle>
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">Stay anchored on the intent, environment, and sequence.</p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-[hsl(var(--foam)/0.4)] bg-[hsl(var(--overlay)/0.3)] p-4">
+                    <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--foam))]">Focus</p>
+                    <p className="mt-2 text-base font-semibold text-[hsl(var(--foreground))]">{currentScenario.focus}</p>
+                  </div>
+                  <div className="rounded-2xl border border-[hsl(var(--gold)/0.4)] bg-[hsl(var(--overlay)/0.3)] p-4">
+                    <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--gold))]">Setting</p>
+                    <p className="mt-2 text-base font-semibold text-[hsl(var(--foreground))]">{currentScenario.mode}</p>
+                    <p className="text-sm text-[hsl(var(--muted-foreground))]">{currentScenario.where}</p>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">Opening flow</p>
+                  <ol className="mt-3 space-y-2">
+                    {scenarioSteps.map((step, index) => (
+                      <li
+                        key={`${currentScenario.id}-step-${index}`}
+                        className="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--background)/0.6)] px-4 py-3 text-sm"
+                      >
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[hsl(var(--overlay)/0.4)] text-xs font-semibold text-[hsl(var(--foam))]">
+                          {index + 1}
+                        </span>
+                        <span className="flex-1 text-[hsl(var(--foreground))]">{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.28)]">
+              <CardHeader className="space-y-2">
+                <CardTitle className="text-[hsl(var(--love))]">Conversation ingredients</CardTitle>
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">Use these as starter lines or mix them into your script.</p>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {pillarEntries.length ? (
+                  pillarEntries.map((pillar) => {
+                    const key = `pillar-${pillar.key}-${currentScenario.id}`;
+                    const isCopied = copiedKey === key;
+                    return (
+                      <div
+                        key={pillar.key}
+                        className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--background)/0.6)] p-4"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="flex-1">
+                            <p className={`text-xs uppercase tracking-[0.3em] ${pillar.accent}`}>{pillar.label}</p>
+                            <p className="mt-2 text-sm text-[hsl(var(--foreground))]">{pillar.value}</p>
+                          </div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))]"
+                            onClick={() => handleCopy(pillar.value, key)}
+                          >
+                            {isCopied ? 'Copied' : 'Copy'}
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-sm text-[hsl(var(--muted-foreground))]">Add a few custom lines to reuse later.</p>
+                )}
+              </CardContent>
+            </Card>
+          </section>
+        )}
+
+        {currentScenario && (
+          <section className="grid gap-6 mb-10 lg:grid-cols-2">
+            <Card className="border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.28)]">
+              <CardHeader className="space-y-2">
+                <CardTitle className="text-[hsl(var(--gold))]">Rapport warm-ups</CardTitle>
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">Steal a line or tweak it for your voice.</p>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {rapportSamples.length ? (
+                  rapportSamples.map((sample, index) => {
+                    const key = `rapport-${currentScenario.id}-${index}`;
+                    const isCopied = copiedKey === key;
+                    return (
+                      <div
+                        key={key}
+                        className="flex items-start justify-between gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--background)/0.6)] p-4"
+                      >
+                        <p className="text-sm text-[hsl(var(--foreground))]">{sample}</p>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="text-[hsl(var(--gold))] hover:text-[hsl(var(--gold))]"
+                          onClick={() => handleCopy(sample, key)}
+                        >
+                          {isCopied ? 'Copied' : 'Copy'}
+                        </Button>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-sm text-[hsl(var(--muted-foreground))]">Drop your favorite opener ideas here.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.28)]">
+              <CardHeader className="space-y-2">
+                <CardTitle className="text-[hsl(var(--iris))]">Question prompts</CardTitle>
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">End every rep with a thoughtful ask.</p>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {questionTemplates.length ? (
+                  questionTemplates.map((template) => {
+                    const key = `question-${template.id}-${currentScenario.id}`;
+                    const isCopied = copiedKey === key;
+                    return (
+                      <div
+                        key={template.id}
+                        className="flex items-start justify-between gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--background)/0.6)] p-4"
+                      >
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--iris))]">{template.label}</p>
+                          <p className="mt-2 text-sm text-[hsl(var(--foreground))]">{template.prompt}</p>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="text-[hsl(var(--iris))] hover:text-[hsl(var(--iris))]"
+                          onClick={() => handleCopy(template.prompt, key)}
+                        >
+                          {isCopied ? 'Copied' : 'Copy'}
+                        </Button>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-sm text-[hsl(var(--muted-foreground))]">Document your go-to questions.</p>
+                )}
+              </CardContent>
+            </Card>
+          </section>
+        )}
 
         <section className="w-full grid gap-6 mb-10 md:grid-cols-[minmax(0,_320px)_1fr]">
           <Card className="border-[hsl(var(--primary)/0.6)] bg-[hsl(var(--overlay)/0.3)]">

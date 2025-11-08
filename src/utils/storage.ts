@@ -1,3 +1,5 @@
+import scenarioData from '../data/networking-scenarios.json';
+
 export type NetworkingPracticeVersion = {
   id: string;
   title: string;
@@ -46,6 +48,8 @@ export type NetworkingPracticeSession = {
 
 const VERSION_KEY = 'networking-practice-versions';
 const SESSION_KEY = 'networking-practice-sessions';
+const TITLE_FIXES = new Map([['Career Fair – Recruiter Chatt', 'Career Fair – Recruiter Chat']]);
+const SCENARIO_TITLE_BY_ID = new Map((scenarioData as { id: string; title: string }[]).map((scenario) => [scenario.id, scenario.title]));
 
 function isBrowser() {
   return typeof window !== 'undefined';
@@ -89,6 +93,35 @@ function normalizeReflection(raw: unknown): PracticeReflection {
     nervesNote: typeof input.nervesNote === 'string' ? input.nervesNote : '',
     nextFocus: typeof input.nextFocus === 'string' ? input.nextFocus : '',
     wins: typeof input.wins === 'string' ? input.wins : '',
+  };
+}
+
+function normalizeVersionTitle(value: unknown, scenarioId: string) {
+  const fallback = SCENARIO_TITLE_BY_ID.get(scenarioId) ?? 'Practice Version';
+  if (typeof value !== 'string') return fallback;
+  const trimmed = value.trim();
+  if (!trimmed) return fallback;
+  return TITLE_FIXES.get(trimmed) ?? trimmed;
+}
+
+function normalizeStringField(value: unknown, fallback = '') {
+  if (typeof value !== 'string') return fallback;
+  return value;
+}
+
+function normalizeVersion(raw: unknown): NetworkingPracticeVersion | null {
+  if (!raw) return null;
+  const data = raw as Record<string, unknown>;
+  const scenarioId = typeof data.scenarioId === 'string' ? data.scenarioId : 'custom';
+  return {
+    id: typeof data.id === 'string' ? data.id : generateId(),
+    title: normalizeVersionTitle(data.title, scenarioId),
+    scenarioId,
+    who: normalizeStringField(data.who),
+    where: normalizeStringField(data.where),
+    what: normalizeStringField(data.what),
+    notes: normalizeStringField(data.notes),
+    updatedAt: typeof data.updatedAt === 'string' ? data.updatedAt : new Date().toISOString(),
   };
 }
 
@@ -152,16 +185,21 @@ function loadCollection<T>(key: string): T[] {
 }
 
 export function loadVersions(): NetworkingPracticeVersion[] {
-  return loadCollection<NetworkingPracticeVersion>(VERSION_KEY);
+  const raw = loadCollection<unknown>(VERSION_KEY);
+  return raw
+    .map((version) => normalizeVersion(version))
+    .filter(Boolean) as NetworkingPracticeVersion[];
 }
 
 export function saveVersion(version: NetworkingPracticeVersion) {
+  const normalized = normalizeVersion(version);
+  if (!normalized) return;
   const versions = loadVersions();
-  const existingIndex = versions.findIndex((item) => item.id === version.id);
+  const existingIndex = versions.findIndex((item) => item.id === normalized.id);
   if (existingIndex >= 0) {
-    versions[existingIndex] = version;
+    versions[existingIndex] = normalized;
   } else {
-    versions.unshift(version);
+    versions.unshift(normalized);
   }
   persist(VERSION_KEY, versions);
 }

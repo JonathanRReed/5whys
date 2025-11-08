@@ -1,3 +1,22 @@
+function editBonus(original: string, fields: BulletFields) {
+  const orig = normalizeLine(original);
+  const startsWithVerb = new RegExp(`^(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'i').test(orig);
+  const hasAnyVerb = POWER_VERB_PATTERN.test(orig);
+  let b = 0;
+  if (!startsWithVerb && fields.verb.trim()) b += 4; // moved verb to the front
+  if (fields.quantifier.trim() && !/(\$?\d+[\d,]*\.?\d*%?)/.test(orig)) b += 4; // added numbers
+  if (fields.impact.trim() && !/(\bby\b|\bto\b)/.test(orig)) b += 3; // added impact connector
+  const rebuilt = normalizeLine(buildBullet(fields));
+  if (rebuilt !== orig) b += 2; // net change
+  return b;
+}
+function fieldBonus(fields: BulletFields) {
+  let b = 0;
+  if (fields.verb.trim()) b += 5; // explicit verb captured
+  if (fields.quantifier.trim()) b += 5; // has a quantifier
+  if (fields.impact.trim()) b += 5; // has an explicit impact phrase
+  return b;
+}
 import * as React from 'react';
 import JSZip from 'jszip';
 import { Textarea } from './ui/textarea';
@@ -125,6 +144,9 @@ const ACTION_VERBS = [
 
 const SCAN_DURATION = 8000;
 const POWER_WORDS = ACTION_VERBS;
+const REGEX_SPECIAL_CHARS = /[.*+?^${}()|[\]\\]/g;
+const escapeRegExp = (value: string) => value.replace(REGEX_SPECIAL_CHARS, '\\$&');
+const POWER_VERB_PATTERN = new RegExp(`\\b(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'i');
 
 type ResumeGameProps = {
   showHeader?: boolean;
@@ -155,24 +177,29 @@ type BulletRecord = {
 type SignalReport = { visible: number; hidden: number; numbers: number; verbs: number };
 
 function usePersistedState<T>(key: string, initial: T) {
-  const [value, setValue] = React.useState<T>(() => {
-    if (typeof window === 'undefined') return initial;
-    try {
-      const stored = localStorage.getItem(key);
-      return stored ? (JSON.parse(stored) as T) : initial;
-    } catch {
-      return initial;
-    }
-  });
+  const [value, setValue] = React.useState<T>(initial);
+  const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
-    if (typeof window === 'undefined') return;
+    setMounted(true);
+    try {
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        setValue(JSON.parse(stored) as T);
+      }
+    } catch {
+      // ignore storage failures
+    }
+  }, [key]);
+
+  React.useEffect(() => {
+    if (!mounted) return;
     try {
       localStorage.setItem(key, JSON.stringify(value));
     } catch {
       // ignore storage failures
     }
-  }, [key, value]);
+  }, [key, value, mounted]);
 
   return [value, setValue] as const;
 }
@@ -186,24 +213,53 @@ function escapeHtml(value: string) {
     .replace(/'/g, '&#39;');
 }
 
+function decodeEntities(text: string) {
+  if (!text) return '';
+  return text
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'");
+}
+
 function highlightResume(text: string) {
   if (!text) return '';
-  let highlighted = escapeHtml(text);
+  let highlighted = escapeHtml(decodeEntities(text));
   highlighted = highlighted.replace(/\d+\.?\d*%?/g, '<mark class="bg-[hsl(var(--primary)/0.3)] text-[hsl(var(--primary-foreground))] px-1 rounded">$&</mark>');
-  POWER_WORDS.forEach((word) => {
-    const regex = new RegExp(`\\b${word}\\b`, 'gi');
-    highlighted = highlighted.replace(regex, `<mark class="bg-[hsl(var(--love)/0.3)] text-[hsl(var(--love-foreground))] px-1 rounded">$&</mark>`);
-  });
+  highlighted = highlighted.replace(new RegExp(`\\b(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'gi'), `<mark class="bg-[hsl(var(--love)/0.3)] text-[hsl(var(--love-foreground))] px-1 rounded">$&</mark>`);
   return highlighted;
 }
 
+function countPowerVerbs(text: string) {
+  if (!text) return 0;
+  const matches = decodeEntities(text).match(new RegExp(`\\b(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'gi'));
+  return matches ? matches.length : 0;
+}
+
+function normalizeLine(raw: string) {
+  const decoded = decodeEntities(raw).replace(/^[-•*]\s*/, '').replace(/\s+/g, ' ').trim();
+  if (!decoded) return '';
+  // Skip section headings and boilerplate
+  const heading = decoded.toLowerCase();
+  const HEADINGS = new Set(['summary','education','experience','skills','contact','interests','projects']);
+  if (HEADINGS.has(heading)) return '';
+  // Skip date-only or date-range lines
+  const MONTHS = '(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)';
+  const dateOnly = new RegExp(`^(${MONTHS}\\s+\\d{4}|\\d{4})(\\s*[–-]\\s*(${MONTHS}\\s+\\d{4}|\\d{4}|current))?$`, 'i');
+  if (dateOnly.test(decoded)) return '';
+  // Very short fragments are ignored
+  if (decoded.replace(/[^a-zA-Z0-9]/g, '').length < 3) return '';
+  return decoded;
+}
+
 function extractBullets(text: string) {
-  const lines = text.match(/^[-•*]\s+.+$/gm);
-  if (lines && lines.length > 0) return lines;
-  return text
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
+  const preferred = text.match(/^[-•*]\s+.+$/gm);
+  const source = preferred && preferred.length > 0 ? preferred : text.split('\n');
+  return source
+    .map((line) => normalizeLine(line))
+    .filter(Boolean)
     .map((line) => `• ${line}`);
 }
 
@@ -215,10 +271,11 @@ function capitalizeWord(word: string) {
 }
 
 function seedFields(text: string): BulletFields {
-  const cleaned = text.replace(/^[-•*]\s*/, '').trim();
-  const words = cleaned.split(/\s+/);
-  const verb = words[0] || '';
-  const remainder = words.slice(1).join(' ');
+  const cleaned = normalizeLine(text);
+  const verbMatch = cleaned.match(new RegExp(`^(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'i'))
+    || cleaned.match(new RegExp(`\\b(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'i'));
+  const verb = verbMatch ? verbMatch[1] : '';
+  const remainder = verb ? cleaned.replace(new RegExp(`\\b${escapeRegExp(verb)}\\b`, 'i'), '').trim() : cleaned;
   let task = remainder;
   let impact = '';
 
@@ -253,17 +310,27 @@ function buildBullet(fields: BulletFields) {
   if (fields.quantifier) {
     statement += statement.includes(fields.quantifier) ? '' : ` (${fields.quantifier.trim()})`;
   }
-  return `• ${statement.replace(/\s+/g, ' ').trim()}.`;
+  let out = `• ${statement.replace(/\s+/g, ' ').trim()}`;
+  if (!/[.!?]$/.test(out)) out += '.';
+  return out;
 }
 
 function scoreBullet(bullet: string) {
-  const normalized = bullet.replace(/^[-•*]\s*/, '').trim().toLowerCase();
+  const normalized = normalizeLine(bullet).toLowerCase();
   if (!normalized) return 0;
-  const hasVerb = ACTION_VERBS.some((verb) => normalized.startsWith(verb));
-  const hasNumber = /\d/.test(normalized);
+  const hasVerb = POWER_VERB_PATTERN.test(normalized);
+  const hasLeadingVerb = new RegExp(`^(${POWER_WORDS.map(escapeRegExp).join('|')})\b`, 'i').test(normalized);
+  const hasNumber = /(\$?\d+[\d,]*\.?\d*%?)/.test(normalized);
   const length = normalized.split(/\s+/).length;
-  const clarity = length > 6 && length < 25;
-  return (hasVerb ? 40 : 0) + (hasNumber ? 30 : 0) + (clarity ? 30 : 0);
+  const clarity = length >= 8 && length <= 32; // smaller influence
+  const structure = /(\bby\b|\bto\b|\bresult(ing)? in\b|\bleading to\b)/.test(normalized) ? 15 : 0;
+  let score =
+    (hasVerb ? 30 : 0) +
+    (hasLeadingVerb ? 10 : 0) +
+    (hasNumber ? 35 : 0) +
+    (clarity ? 10 : 0) +
+    structure;
+  return Math.max(0, Math.min(100, score));
 }
 
 function scoreLabel(score: number) {
@@ -276,13 +343,14 @@ function createBulletRecord(line: string, index: number): BulletRecord {
   const sanitized = line.replace(/\s+/g, ' ').trim();
   const fields = seedFields(sanitized);
   const improved = buildBullet(fields);
+  const bonus = fieldBonus(fields) + editBonus(sanitized, fields);
   return {
     id: uniqueId('bullet', index),
     original: sanitized.replace(/^[-•*]\s*/, ''),
     fields,
     baselineScore: scoreBullet(sanitized),
     improved,
-    improvedScore: scoreBullet(improved),
+    improvedScore: scoreBullet(improved) + bonus,
   };
 }
 
@@ -342,11 +410,7 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
   const quantifiedBullets = bullets.filter((bullet) => /\d/.test(bullet.improved)).length;
   const verbCoverage = bullets.length
     ? Math.round(
-        (bullets.filter((bullet) =>
-          ACTION_VERBS.some((verb) => bullet.improved.toLowerCase().replace(/^[-•*]\s*/, '').startsWith(verb))
-        ).length /
-          bullets.length) *
-          100
+        (bullets.filter((bullet) => POWER_VERB_PATTERN.test(bullet.improved.toLowerCase())).length / bullets.length) * 100
       )
     : 0;
 
@@ -360,11 +424,10 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     setBullets(records);
     setSelectedBulletId(records[0]?.id ?? null);
 
-    const lower = resumeText.toLowerCase();
-    const verbs = POWER_WORDS.filter((word) => lower.includes(word));
+    const verbCount = countPowerVerbs(resumeText);
     const numbers = resumeText.match(/\d+\.?\d*%?/g) ?? [];
-    const visible = Math.min(100, Math.round(((verbs.length + numbers.length) / Math.max(1, records.length * 2)) * 100));
-    setSignalReport({ visible, hidden: 100 - visible, numbers: numbers.length, verbs: verbs.length });
+    const visible = Math.min(100, Math.round(((verbCount + numbers.length) / Math.max(1, records.length * 2)) * 100));
+    setSignalReport({ visible, hidden: 100 - visible, numbers: numbers.length, verbs: verbCount });
     setNeedsRescan(false);
   }, [resumeText]);
 
@@ -396,12 +459,12 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     const file = event.target.files?.[0];
     if (!file) return;
     const text = await file.text();
-    setResumeText(text);
+    setResumeText(decodeEntities(text));
     setNeedsRescan(true);
   };
 
   const handleTextChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setResumeText(event.target.value);
+    setResumeText(decodeEntities(event.target.value));
     setNeedsRescan(true);
   };
 
@@ -411,7 +474,8 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
         if (bullet.id !== id) return bullet;
         const nextFields = { ...bullet.fields, [field]: value };
         const improved = buildBullet(nextFields);
-        return { ...bullet, fields: nextFields, improved, improvedScore: scoreBullet(improved) };
+        const bonus = fieldBonus(nextFields) + editBonus(bullet.original, nextFields);
+        return { ...bullet, fields: nextFields, improved, improvedScore: scoreBullet(improved) + bonus };
       })
     );
   };
