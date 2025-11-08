@@ -18,6 +18,7 @@ type ThemeOption = {
 const THEME_STORAGE_KEY = 'career-tools-theme';
 const THEME_COOKIE = 'career-tools-theme';
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
+const THEME_CHANNEL_NAME = 'career-tools-theme';
 
 const themeOptions: ThemeOption[] = [
   {
@@ -47,41 +48,81 @@ const navLinks = [
   { href: '/networking-practice', label: 'Networking Studio' },
 ];
 
+const isValidTheme = (value: unknown): value is Theme => value === 'night' || value === 'moon' || value === 'dawn';
+
+const readDatasetTheme = (): Theme | null => {
+  if (typeof document === 'undefined') return null;
+  const datasetTheme = document.documentElement?.dataset?.theme;
+  return isValidTheme(datasetTheme) ? datasetTheme : null;
+};
+
+const readCookieTheme = (): Theme | null => {
+  if (typeof document === 'undefined') return null;
+  try {
+    const cookie = document.cookie
+      .split('; ')
+      .find((entry) => entry.startsWith(`${THEME_COOKIE}=`));
+    if (!cookie) return null;
+    const [, value] = cookie.split('=');
+    return isValidTheme(value) ? value : null;
+  } catch {
+    return null;
+  }
+};
+
+const readStorageTheme = (): Theme | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+    return isValidTheme(stored) ? stored : null;
+  } catch {
+    return null;
+  }
+};
+
+const applyThemeToDom = (theme: Theme) => {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  if (theme === 'night') {
+    root.removeAttribute('data-theme');
+  } else {
+    root.dataset.theme = theme;
+  }
+};
+
+const writeStorageTheme = (theme: Theme) => {
+  if (typeof window === 'undefined') return;
+  try {
+    const existing = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (existing !== theme) {
+      window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+    }
+  } catch {
+    // ignore storage failures
+  }
+};
+
+const writeCookieTheme = (theme: Theme) => {
+  if (typeof document === 'undefined') return;
+  try {
+    const current = readCookieTheme();
+    if (current === theme) return;
+    const secureToken = typeof window !== 'undefined' && window.location.protocol === 'https:' ? ';Secure' : '';
+    document.cookie = `${THEME_COOKIE}=${theme};path=/;max-age=${COOKIE_MAX_AGE};SameSite=Lax${secureToken}`;
+  } catch {
+    // ignore cookie failures
+  }
+};
+
+const resolveInitialTheme = (): Theme => {
+  if (typeof window === 'undefined') return 'night';
+  return readDatasetTheme() ?? readCookieTheme() ?? readStorageTheme() ?? 'night';
+};
+
 export default function Navigation({ currentPath = '/' }: NavigationProps) {
   const [menuOpen, setMenuOpen] = React.useState(false);
-  const [activeTheme, setActiveTheme] = React.useState<Theme>(() => {
-    // Check if we're on the client
-    if (typeof window === 'undefined') {
-      return 'night';
-    }
-
-    try {
-      // First check the current DOM theme (set by server-side script)
-      const currentDatasetTheme = document.documentElement.dataset.theme;
-      if (currentDatasetTheme === 'moon' || currentDatasetTheme === 'dawn') {
-        return currentDatasetTheme;
-      }
-      
-      // If no dataset theme, check cookies
-      const cookieMatch = document.cookie.match(new RegExp('(^|; )' + THEME_COOKIE + '=([^;]*)'));
-      if (cookieMatch?.[2]) {
-        const cookieValue = cookieMatch[2];
-        if (cookieValue === 'night' || cookieValue === 'moon' || cookieValue === 'dawn') {
-          return cookieValue;
-        }
-      }
-
-      // Fall back to localStorage
-      const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-      if (stored === 'night' || stored === 'moon' || stored === 'dawn') {
-        return stored;
-      }
-    } catch (_) {
-      // ignore storage access issues
-    }
-
-    return 'night';
-  });
+  const [activeTheme, setActiveTheme] = React.useState<Theme>(resolveInitialTheme);
+  const broadcastRef = React.useRef<BroadcastChannel | null>(null);
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -119,17 +160,62 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
     }
 
     try {
-      window.localStorage.setItem(THEME_STORAGE_KEY, activeTheme);
+      const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+      if (stored !== activeTheme) {
+        window.localStorage.setItem(THEME_STORAGE_KEY, activeTheme);
+      }
     } catch (_) {
       // storage might be unavailable; fail silently
     }
 
     try {
-      document.cookie = `${THEME_COOKIE}=${activeTheme};path=/;max-age=${COOKIE_MAX_AGE};SameSite=Lax`;
+      const secureToken = window.location.protocol === 'https:' ? ';Secure' : '';
+      const cookieMatch = document.cookie.match(new RegExp('(^|; )' + THEME_COOKIE + '=([^;]*)'));
+      if (cookieMatch?.[2] !== activeTheme) {
+        document.cookie = `${THEME_COOKIE}=${activeTheme};path=/;max-age=${COOKIE_MAX_AGE};SameSite=Lax${secureToken}`;
+      }
     } catch (_) {
       // ignore cookie issues
     }
+
+    broadcastRef.current?.postMessage({ theme: activeTheme });
   }, [activeTheme]);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== THEME_STORAGE_KEY || !event.newValue) return;
+      if (event.newValue === 'night' || event.newValue === 'moon' || event.newValue === 'dawn') {
+        setActiveTheme((previous) => (previous === event.newValue ? previous : (event.newValue as Theme)));
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined' || !('BroadcastChannel' in window)) {
+      return;
+    }
+    try {
+      const channel = new BroadcastChannel(THEME_CHANNEL_NAME);
+      broadcastRef.current = channel;
+      const handleMessage = (event: MessageEvent<{ theme?: Theme }>) => {
+        const incoming = event.data?.theme;
+        if (incoming === 'night' || incoming === 'moon' || incoming === 'dawn') {
+          setActiveTheme((previous) => (previous === incoming ? previous : incoming));
+        }
+      };
+      channel.addEventListener('message', handleMessage);
+      return () => {
+        channel.removeEventListener('message', handleMessage);
+        channel.close();
+        broadcastRef.current = null;
+      };
+    } catch (_) {
+      broadcastRef.current = null;
+    }
+  }, []);
 
   React.useEffect(() => {
     const handleResize = () => {
@@ -142,9 +228,13 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const setTheme = React.useCallback((theme: Theme) => {
-    setActiveTheme(theme);
-  }, []);
+  const setTheme = React.useCallback(
+    (theme: Theme) => {
+      if (theme === activeTheme) return;
+      setActiveTheme(theme);
+    },
+    [activeTheme]
+  );
 
   const isActive = React.useCallback(
     (href: string) => {

@@ -1,409 +1,125 @@
-function editBonus(original: string, fields: BulletFields) {
-  const orig = normalizeLine(original);
-  const startsWithVerb = new RegExp(`^(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'i').test(orig);
-  const hasAnyVerb = POWER_VERB_PATTERN.test(orig);
-  let b = 0;
-  if (!startsWithVerb && fields.verb.trim()) b += 4; // moved verb to the front
-  if (fields.quantifier.trim() && !/(\$?\d+[\d,]*\.?\d*%?)/.test(orig)) b += 4; // added numbers
-  if (fields.impact.trim() && !/(\bby\b|\bto\b)/.test(orig)) b += 3; // added impact connector
-  const rebuilt = normalizeLine(buildBullet(fields));
-  if (rebuilt !== orig) b += 2; // net change
-  return b;
-}
-function fieldBonus(fields: BulletFields) {
-  let b = 0;
-  if (fields.verb.trim()) b += 5; // explicit verb captured
-  if (fields.quantifier.trim()) b += 5; // has a quantifier
-  if (fields.impact.trim()) b += 5; // has an explicit impact phrase
-  return b;
-}
 import * as React from 'react';
-import JSZip from 'jszip';
 import { Textarea } from './ui/textarea';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
+import QuickStartTiles from './QuickStartTiles';
 import { cn } from '../lib/utils';
-
-const ACTION_VERBS = [
-  'achieved',
-  'accelerated',
-  'advanced',
-  'advised',
-  'advocated',
-  'analyzed',
-  'architected',
-  'authored',
-  'automated',
-  'built',
-  'boosted',
-  'brokered',
-  'captained',
-  'chaired',
-  'championed',
-  'charted',
-  'coached',
-  'collaborated',
-  'communicated',
-  'completed',
-  'conceived',
-  'conducted',
-  'consolidated',
-  'constructed',
-  'consulted',
-  'coordinated',
-  'created',
-  'cultivated',
-  'decreased',
-  'delivered',
-  'demonstrated',
-  'designed',
-  'developed',
-  'devised',
-  'directed',
-  'doubled',
-  'drove',
-  'earned',
-  'edited',
-  'eliminated',
-  'established',
-  'evaluated',
-  'executed',
-  'expanded',
-  'expedited',
-  'facilitated',
-  'founded',
-  'generated',
-  'grew',
-  'guided',
-  'headed',
-  'helped',
-  'identified',
-  'implemented',
-  'improved',
-  'inaugurated',
-  'increased',
-  'influenced',
-  'initiated',
-  'innovated',
-  'inspected',
-  'installed',
-  'instituted',
-  'instructed',
-  'integrated',
-  'launched',
-  'led',
-  'managed',
-  'mastered',
-  'mentored',
-  'moderated',
-  'monitored',
-  'negotiated',
-  'obtained',
-  'operated',
-  'organized',
-  'originated',
-  'oversaw',
-  'performed',
-  'pioneered',
-  'planned',
-  'presented',
-  'produced',
-  'programmed',
-  'promoted',
-  'proposed',
-  'published',
-  'reduced',
-  'refined',
-  'reorganized',
-  'replaced',
-  'resolved',
-  'revamped',
-  'reversed',
-  'revitalized',
-  'saved',
-  'scheduled',
-  'secured',
-  'spearheaded',
-  'standardized',
-  'streamlined',
-  'strengthened',
-  'structured',
-  'succeeded',
-  'supervised',
-  'supported',
-  'taught',
-  'tested',
-  'trained',
-  'transformed',
-  'troubleshot',
-  'upgraded',
-  'won',
-];
+import {
+  extractBullets,
+  createBulletRecord,
+  buildBullet,
+  fieldBonus,
+  editBonus,
+  scoreBullet,
+  scoreLabel,
+  highlightResume,
+  countPowerVerbs,
+  decodeEntities,
+  POWER_VERB_PATTERN,
+  exportDocx,
+  downloadTextFile,
+  useResumeSession,
+  EMPTY_SESSION,
+  EMPTY_SIGNAL_REPORT,
+} from '../lib/resume-game';
+import type { BulletFields, BulletRecord, SignalReport, StoredResumeSession } from '../lib/resume-game';
 
 const SCAN_DURATION = 8000;
-const POWER_WORDS = ACTION_VERBS;
-const REGEX_SPECIAL_CHARS = /[.*+?^${}()|[\]\\]/g;
-const escapeRegExp = (value: string) => value.replace(REGEX_SPECIAL_CHARS, '\\$&');
-const POWER_VERB_PATTERN = new RegExp(`\\b(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'i');
 
 type ResumeGameProps = {
   showHeader?: boolean;
   className?: string;
 };
 
-const CONTENT_TYPES_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-  <Default Extension="xml" ContentType="application/xml"/>
-  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
-</Types>`;
+const STATUS_RESET_MS = 3500;
+const SAMPLE_RESUME_TEXT = `• Led a 6-person product pod launching a pricing diagnostics dashboard adopted by 4 global regions within the first quarter.
+• Automated weekly revenue reporting with Python + Airflow, trimming manual analysis time by 9 hours per analyst.
+• Mentored three new hires, coaching them on stakeholder narrative reviews that helped lift NPS by 14 points.`;
 
-const RELS_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="R1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
-</Relationships>`;
-
-type BulletFields = { verb: string; task: string; impact: string; quantifier: string };
-type BulletRecord = {
-  id: string;
-  original: string;
-  fields: BulletFields;
-  baselineScore: number;
-  improved: string;
-  improvedScore: number;
-};
-type SignalReport = { visible: number; hidden: number; numbers: number; verbs: number };
-
-function usePersistedState<T>(key: string, initial: T) {
-  const [value, setValue] = React.useState<T>(initial);
-  const [mounted, setMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setMounted(true);
-    try {
-      const stored = localStorage.getItem(key);
-      if (stored) {
-        setValue(JSON.parse(stored) as T);
-      }
-    } catch {
-      // ignore storage failures
-    }
-  }, [key]);
-
-  React.useEffect(() => {
-    if (!mounted) return;
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-    } catch {
-      // ignore storage failures
-    }
-  }, [key, value, mounted]);
-
-  return [value, setValue] as const;
-}
-
-function escapeHtml(value: string) {
+function slugify(value: string) {
+  if (!value) return '';
   return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-function decodeEntities(text: string) {
-  if (!text) return '';
-  return text
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;/gi, "'");
-}
-
-function highlightResume(text: string) {
-  if (!text) return '';
-  let highlighted = escapeHtml(decodeEntities(text));
-  highlighted = highlighted.replace(/\d+\.?\d*%?/g, '<mark class="bg-[hsl(var(--primary)/0.3)] text-[hsl(var(--primary-foreground))] px-1 rounded">$&</mark>');
-  highlighted = highlighted.replace(new RegExp(`\\b(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'gi'), `<mark class="bg-[hsl(var(--love)/0.3)] text-[hsl(var(--love-foreground))] px-1 rounded">$&</mark>`);
-  return highlighted;
-}
-
-function countPowerVerbs(text: string) {
-  if (!text) return 0;
-  const matches = decodeEntities(text).match(new RegExp(`\\b(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'gi'));
-  return matches ? matches.length : 0;
-}
-
-function normalizeLine(raw: string) {
-  const decoded = decodeEntities(raw).replace(/^[-•*]\s*/, '').replace(/\s+/g, ' ').trim();
-  if (!decoded) return '';
-  // Skip section headings and boilerplate
-  const heading = decoded.toLowerCase();
-  const HEADINGS = new Set(['summary','education','experience','skills','contact','interests','projects']);
-  if (HEADINGS.has(heading)) return '';
-  // Skip date-only or date-range lines
-  const MONTHS = '(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)';
-  const dateOnly = new RegExp(`^(${MONTHS}\\s+\\d{4}|\\d{4})(\\s*[–-]\\s*(${MONTHS}\\s+\\d{4}|\\d{4}|current))?$`, 'i');
-  if (dateOnly.test(decoded)) return '';
-  // Very short fragments are ignored
-  if (decoded.replace(/[^a-zA-Z0-9]/g, '').length < 3) return '';
-  return decoded;
-}
-
-function extractBullets(text: string) {
-  const preferred = text.match(/^[-•*]\s+.+$/gm);
-  const source = preferred && preferred.length > 0 ? preferred : text.split('\n');
-  return source
-    .map((line) => normalizeLine(line))
-    .filter(Boolean)
-    .map((line) => `• ${line}`);
-}
-
-const uniqueId = (prefix: string, index: number) => `${prefix}-${index}-${Math.random().toString(36).slice(2, 7)}`;
-
-function capitalizeWord(word: string) {
-  if (!word) return '';
-  return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-}
-
-function seedFields(text: string): BulletFields {
-  const cleaned = normalizeLine(text);
-  const verbMatch = cleaned.match(new RegExp(`^(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'i'))
-    || cleaned.match(new RegExp(`\\b(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'i'));
-  const verb = verbMatch ? verbMatch[1] : '';
-  const remainder = verb ? cleaned.replace(new RegExp(`\\b${escapeRegExp(verb)}\\b`, 'i'), '').trim() : cleaned;
-  let task = remainder;
-  let impact = '';
-
-  const byIndex = remainder.toLowerCase().indexOf(' by ');
-  const toIndex = remainder.toLowerCase().indexOf(' to ');
-  const splitIndex = byIndex >= 0 ? byIndex : toIndex;
-  if (splitIndex >= 0) {
-    task = remainder.slice(0, splitIndex).trim();
-    impact = remainder.slice(splitIndex).trim();
-  }
-
-  const quantifier = cleaned.match(/\d+\.?\d*%?/g)?.[0] ?? '';
-
-  return {
-    verb: capitalizeWord(verb),
-    task: task.trim(),
-    impact,
-    quantifier,
-  };
-}
-
-function buildBullet(fields: BulletFields) {
-  const parts = [] as string[];
-  if (fields.verb) parts.push(capitalizeWord(fields.verb));
-  if (fields.task) parts.push(fields.task.trim());
-  let statement = parts.join(' ');
-  if (fields.impact) {
-    const normalized = fields.impact.trim();
-    const needsConnector = !normalized.toLowerCase().startsWith('to') && !normalized.toLowerCase().startsWith('by');
-    statement += needsConnector ? ` to ${normalized}` : ` ${normalized}`;
-  }
-  if (fields.quantifier) {
-    statement += statement.includes(fields.quantifier) ? '' : ` (${fields.quantifier.trim()})`;
-  }
-  let out = `• ${statement.replace(/\s+/g, ' ').trim()}`;
-  if (!/[.!?]$/.test(out)) out += '.';
-  return out;
-}
-
-function scoreBullet(bullet: string) {
-  const normalized = normalizeLine(bullet).toLowerCase();
-  if (!normalized) return 0;
-  const hasVerb = POWER_VERB_PATTERN.test(normalized);
-  const hasLeadingVerb = new RegExp(`^(${POWER_WORDS.map(escapeRegExp).join('|')})\b`, 'i').test(normalized);
-  const hasNumber = /(\$?\d+[\d,]*\.?\d*%?)/.test(normalized);
-  const length = normalized.split(/\s+/).length;
-  const clarity = length >= 8 && length <= 32; // smaller influence
-  const structure = /(\bby\b|\bto\b|\bresult(ing)? in\b|\bleading to\b)/.test(normalized) ? 15 : 0;
-  let score =
-    (hasVerb ? 30 : 0) +
-    (hasLeadingVerb ? 10 : 0) +
-    (hasNumber ? 35 : 0) +
-    (clarity ? 10 : 0) +
-    structure;
-  return Math.max(0, Math.min(100, score));
-}
-
-function scoreLabel(score: number) {
-  if (score >= 80) return { label: 'High signal', color: 'text-emerald-300' };
-  if (score >= 50) return { label: 'Moderate', color: 'text-amber-300' };
-  return { label: 'Hidden value', color: 'text-rose-300' };
-}
-
-function createBulletRecord(line: string, index: number): BulletRecord {
-  const sanitized = line.replace(/\s+/g, ' ').trim();
-  const fields = seedFields(sanitized);
-  const improved = buildBullet(fields);
-  const bonus = fieldBonus(fields) + editBonus(sanitized, fields);
-  return {
-    id: uniqueId('bullet', index),
-    original: sanitized.replace(/^[-•*]\s*/, ''),
-    fields,
-    baselineScore: scoreBullet(sanitized),
-    improved,
-    improvedScore: scoreBullet(improved) + bonus,
-  };
-}
-
-function escapeXml(value: string) {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function documentXml(content: string) {
-  const paragraphs = content
-    .split('\n')
-    .map((line) => line.trimEnd())
-    .map((line) =>
-      line.length
-        ? `<w:p><w:r><w:t xml:space="preserve">${escapeXml(line)}</w:t></w:r></w:p>`
-        : '<w:p/>'
-    )
-    .join('');
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-  <w:body>
-    ${paragraphs}
-    <w:sectPr/>
-  </w:body>
-</w:document>`;
-}
-
-async function exportDocx(filename: string, content: string) {
-  const zip = new JSZip();
-  zip.file('[Content_Types].xml', CONTENT_TYPES_XML);
-  zip.folder('_rels')?.file('.rels', RELS_XML);
-  zip.folder('word')?.file('document.xml', documentXml(content));
-  const blob = await zip.generateAsync({ type: 'blob' });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = filename;
-  anchor.click();
-  URL.revokeObjectURL(url);
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
 }
 
 export default function ResumeGame({ showHeader = true, className }: ResumeGameProps) {
-  const [resumeText, setResumeText] = usePersistedState('resume-game-text', '');
-  const [bullets, setBullets] = React.useState<BulletRecord[]>([]);
-  const [selectedBulletId, setSelectedBulletId] = React.useState<string | null>(null);
+  const { session, setSession, storageNotice } = useResumeSession();
   const [isScanning, setIsScanning] = React.useState(false);
   const [scanProgress, setScanProgress] = React.useState(0);
   const [scanComplete, setScanComplete] = React.useState(false);
   const [needsRescan, setNeedsRescan] = React.useState(false);
-  const [signalReport, setSignalReport] = React.useState<SignalReport>({ visible: 0, hidden: 100, numbers: 0, verbs: 0 });
+  const [status, setStatus] = React.useState<string | null>(null);
   const frameRef = React.useRef<number | null>(null);
 
+  const setSessionState = React.useCallback(
+    (mutator: (previous: StoredResumeSession) => StoredResumeSession) => {
+      setSession((previous) => mutator(previous));
+    },
+    [setSession]
+  );
+
+  const updateSessionPartial = React.useCallback(
+    (partial: Partial<StoredResumeSession>) => {
+      setSessionState((previous) => ({ ...previous, ...partial }));
+    },
+    [setSessionState]
+  );
+
+  const setResumeTextValue = React.useCallback(
+    (value: string) => {
+      updateSessionPartial({ resumeText: value });
+    },
+    [updateSessionPartial]
+  );
+
+  const setBullets = React.useCallback(
+    (updater: BulletRecord[] | ((previous: BulletRecord[]) => BulletRecord[])) => {
+      setSessionState((previous) => {
+        const nextBullets =
+          typeof updater === 'function' ? (updater as (list: BulletRecord[]) => BulletRecord[])(previous.bullets) : updater;
+        const nextSelected = nextBullets.length
+          ? nextBullets.find((bullet) => bullet.id === previous.selectedBulletId)?.id ?? nextBullets[0].id
+          : null;
+        return {
+          ...previous,
+          bullets: nextBullets,
+          selectedBulletId: nextSelected,
+        };
+      });
+    },
+    [setSessionState]
+  );
+
+  const setSelectedBulletId = React.useCallback(
+    (id: string | null) => {
+      updateSessionPartial({ selectedBulletId: id });
+    },
+    [updateSessionPartial]
+  );
+
+  const setSignalReportValue = React.useCallback(
+    (report: SignalReport) => {
+      updateSessionPartial({ signalReport: report });
+    },
+    [updateSessionPartial]
+  );
+
+  const setLastAnalyzed = React.useCallback(() => {
+    updateSessionPartial({ lastAnalyzedAt: new Date().toISOString() });
+  }, [updateSessionPartial]);
+
+  const resumeText = session.resumeText;
+  const bullets = session.bullets;
+  const selectedBulletId = session.selectedBulletId;
+  const selectedBullet = bullets.find((bullet) => bullet.id === selectedBulletId) ?? null;
+  const signalReport = session.signalReport ?? EMPTY_SIGNAL_REPORT;
+
   const highlightedResume = React.useMemo(() => highlightResume(resumeText), [resumeText]);
-  const selectedBullet = bullets.find((bullet) => bullet.id === selectedBulletId);
   const averageScore = bullets.length
     ? Math.round(bullets.reduce((sum, bullet) => sum + bullet.improvedScore, 0) / bullets.length)
     : 0;
@@ -413,6 +129,17 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
         (bullets.filter((bullet) => POWER_VERB_PATTERN.test(bullet.improved.toLowerCase())).length / bullets.length) * 100
       )
     : 0;
+
+  React.useEffect(() => {
+    if (!storageNotice) return;
+    setStatus(storageNotice);
+  }, [storageNotice]);
+
+  React.useEffect(() => {
+    if (!status) return;
+    const timeout = window.setTimeout(() => setStatus(null), STATUS_RESET_MS);
+    return () => window.clearTimeout(timeout);
+  }, [status]);
 
   React.useEffect(() => () => {
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
@@ -427,9 +154,11 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     const verbCount = countPowerVerbs(resumeText);
     const numbers = resumeText.match(/\d+\.?\d*%?/g) ?? [];
     const visible = Math.min(100, Math.round(((verbCount + numbers.length) / Math.max(1, records.length * 2)) * 100));
-    setSignalReport({ visible, hidden: 100 - visible, numbers: numbers.length, verbs: verbCount });
+    setSignalReportValue({ visible, hidden: 100 - visible, numbers: numbers.length, verbs: verbCount });
+    setLastAnalyzed();
     setNeedsRescan(false);
-  }, [resumeText]);
+    setStatus('Scan complete. Review the insights below.');
+  }, [resumeText, setBullets, setLastAnalyzed, setSelectedBulletId, setSignalReportValue]);
 
   const handleScan = () => {
     if (!resumeText.trim() || isScanning) return;
@@ -459,18 +188,18 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     const file = event.target.files?.[0];
     if (!file) return;
     const text = await file.text();
-    setResumeText(decodeEntities(text));
+    setResumeTextValue(decodeEntities(text));
     setNeedsRescan(true);
   };
 
   const handleTextChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setResumeText(decodeEntities(event.target.value));
+    setResumeTextValue(decodeEntities(event.target.value));
     setNeedsRescan(true);
   };
 
   const updateBulletField = (id: string, field: keyof BulletFields, value: string) => {
     setBullets((previous) =>
-      previous.map((bullet) => {
+      previous.map((bullet: BulletRecord) => {
         if (bullet.id !== id) return bullet;
         const nextFields = { ...bullet.fields, [field]: value };
         const improved = buildBullet(nextFields);
@@ -478,16 +207,6 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
         return { ...bullet, fields: nextFields, improved, improvedScore: scoreBullet(improved) + bonus };
       })
     );
-  };
-
-  const downloadTextFile = (filename: string, content: string) => {
-    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = filename;
-    anchor.click();
-    URL.revokeObjectURL(url);
   };
 
   const markdownReport = () => {
@@ -508,8 +227,33 @@ ${improved.join('\n')}
 `;
   };
 
-  const exportMarkdown = () => downloadTextFile('resume-game-report.md', markdownReport());
-  const exportDoc = () => exportDocx('resume-game-report.docx', markdownReport());
+  const exportBase = React.useMemo(() => {
+    const headline = bullets[0]?.improved || bullets[0]?.original || resumeText.split('\n').find((line) => line.trim()) || 'resume-session';
+    const slug = slugify(headline).slice(0, 60) || 'resume-session';
+    const stamped = (session.lastAnalyzedAt ?? new Date().toISOString()).slice(0, 10);
+    return `resume-game-${slug}-${stamped}`;
+  }, [bullets, resumeText, session.lastAnalyzedAt]);
+
+  const exportMarkdown = React.useCallback(async () => {
+    downloadTextFile(`${exportBase}.md`, markdownReport());
+  }, [exportBase, markdownReport]);
+
+  const exportDoc = React.useCallback(async () => {
+    await exportDocx(`${exportBase}.docx`, markdownReport());
+  }, [exportBase, markdownReport]);
+
+  const exportWithStatus = React.useCallback(
+    async (action: () => Promise<void>, successMessage: string, failureMessage: string) => {
+      try {
+        await action();
+        setStatus(successMessage);
+      } catch (error) {
+        console.error('Export failed', error);
+        setStatus(failureMessage);
+      }
+    },
+    []
+  );
 
   const resumeOutOfDate = needsRescan && scanComplete && resumeText.trim().length > 0;
 
@@ -528,6 +272,23 @@ ${improved.join('\n')}
           <p className="mx-auto max-w-2xl text-sm text-muted-foreground">
             Simulate an eight-second recruiter scan, highlight signal words, and systematically rewrite every bullet into a quantified, high-signal statement.
           </p>
+          <QuickStartTiles
+            className="max-w-4xl"
+            items={[
+              {
+                title: 'Drop your draft',
+                body: 'Paste bullets or upload a .txt file—use the sample resume if you need a quick demo.'
+              },
+              {
+                title: 'Run the scan',
+                body: 'Watch the 8-second pass surface verbs and numbers. Edit fields to experiment with stronger phrasing.'
+              },
+              {
+                title: 'Export the wins',
+                body: 'Download the improved set as Markdown or DOCX once the scores feel interview-ready.'
+              }
+            ]}
+          />
         </header>
       )}
 
@@ -554,13 +315,25 @@ ${improved.join('\n')}
               variant="ghost"
               className="md:ml-auto"
               onClick={() => {
-                setResumeText('');
-                setBullets([]);
-                setSelectedBulletId(null);
+                setSessionState(() => ({ ...EMPTY_SESSION }));
                 setScanComplete(false);
+                setNeedsRescan(false);
+                setStatus('Workspace cleared. Paste a fresh resume to begin.');
               }}
             >
               Clear workspace
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full md:w-auto"
+              onClick={() => {
+                setResumeTextValue(SAMPLE_RESUME_TEXT);
+                setNeedsRescan(true);
+                setStatus('Sample resume loaded. Run the scan to see suggestions.');
+              }}
+            >
+              Try sample resume
             </Button>
           </div>
           <Textarea
@@ -595,6 +368,14 @@ ${improved.join('\n')}
               </p>
             </div>
           )}
+          {status ? (
+            <p className="text-sm text-[hsl(var(--foam))]" role="status">
+              {status}
+            </p>
+          ) : null}
+          {storageNotice && !status ? (
+            <p className="text-sm text-[hsl(var(--gold))]">{storageNotice}</p>
+          ) : null}
         </CardContent>
       </Card>
 
@@ -819,16 +600,28 @@ ${improved.join('\n')}
             <p className="text-xs text-muted-foreground">Download an artifact for portfolio, mentor review, or future editing.</p>
           </CardHeader>
           <CardContent className="flex flex-col gap-3 md:flex-row">
-            <Button type="button" onClick={exportMarkdown} className="h-12 flex-1">
+            <Button
+              type="button"
+              onClick={() => exportWithStatus(exportMarkdown, 'Markdown download ready in your files.', 'Unable to export Markdown. Try again soon.')}
+              className="h-12 flex-1"
+            >
               Export Markdown
             </Button>
             <Button
               type="button"
-              onClick={exportDoc}
+              onClick={() => exportWithStatus(exportDoc, 'DOCX download ready in your files.', 'Unable to export DOCX. Try again soon.')}
               className="h-12 flex-1 bg-[hsl(var(--foam)/0.18)] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--foam)/0.28)]"
             >
               Export DOCX
             </Button>
+          </CardContent>
+        </Card>
+      )}
+      {!scanComplete && (
+        <Card className="border-[hsl(var(--border)/0.45)] bg-[hsl(var(--overlay)/0.26)]">
+          <CardContent className="flex flex-col gap-3 py-8 text-center text-sm text-muted-foreground">
+            <p>Paste a few bullets and tap <strong className="text-[hsl(var(--foreground))]">Simulate recruiter scan</strong> to see suggestions here.</p>
+            <p>If you’re just exploring, load the sample resume to preview the full workflow.</p>
           </CardContent>
         </Card>
       )}

@@ -4,11 +4,15 @@ import { Textarea } from './ui/textarea';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Label } from './ui/label';
+import QuickStartTiles from './QuickStartTiles';
 import { cn } from '../lib/utils';
 
 const WHY_COUNT = 5;
 const SESSION_KEY = 'career-why-session-v2';
 const HISTORY_KEY = 'career-why-history';
+const HISTORY_LIMIT_KEY = 'career-why-history-limit';
+const HISTORY_LIMIT_OPTIONS = [6, 12, 24] as const;
+const DEFAULT_HISTORY_LIMIT = 12;
 
 type Career5WhysProps = {
   showHeader?: boolean;
@@ -61,6 +65,20 @@ const TRACKS = {
 
 type Track = keyof typeof TRACKS;
 
+type WhySnapshot = {
+  id: string;
+  timestamp: string;
+  whyStatement: string;
+  track: Track;
+  topic: string;
+  responses: string[];
+  theme: string;
+  alignment: string;
+  updatedAt: string;
+  version: number;
+  userId?: string;
+};
+
 type Session = {
   id: string;
   track: Track;
@@ -88,12 +106,80 @@ function cryptoRandom() {
   return window.crypto.randomUUID().split('-')[0];
 }
 
+function isBrowser() {
+  return typeof window !== 'undefined';
+}
+
+function ensureResponsesLength(responses: unknown): string[] {
+  const sanitized = Array.isArray(responses)
+    ? responses.map((response) => (typeof response === 'string' ? response : '')).slice(0, WHY_COUNT)
+    : [];
+  while (sanitized.length < WHY_COUNT) {
+    sanitized.push('');
+  }
+  return sanitized;
+}
+
+function toSlug(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
+}
+
+function downloadJson(filename: string, payload: unknown) {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: 'application/json;charset=utf-8',
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+function formatSnapshotTime(value: string) {
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    }).format(new Date(value));
+  } catch {
+    return value;
+  }
+}
+
+function normalizeSnapshot(entry: unknown): WhySnapshot | null {
+  if (!entry || typeof entry !== 'object') return null;
+  const data = entry as Record<string, unknown>;
+  const track = data.track === 'career' || data.track === 'interest' ? (data.track as Track) : 'career';
+  return {
+    id: typeof data.id === 'string' ? data.id : `snapshot_${cryptoRandom()}`,
+    timestamp: typeof data.timestamp === 'string' ? data.timestamp : new Date().toISOString(),
+    whyStatement: typeof data.whyStatement === 'string' ? data.whyStatement : '',
+    track,
+    topic: typeof data.topic === 'string' ? data.topic : '',
+    responses: ensureResponsesLength((data.responses as unknown) ?? []),
+    theme: typeof data.theme === 'string' ? data.theme : '',
+    alignment: typeof data.alignment === 'string' ? data.alignment : '',
+    updatedAt: typeof data.updatedAt === 'string' ? data.updatedAt : new Date().toISOString(),
+    version: typeof data.version === 'number' ? data.version : 1,
+    userId: typeof data.userId === 'string' ? data.userId : undefined,
+  } satisfies WhySnapshot;
+}
+
 function useStoredSession() {
   const [session, setSession] = React.useState<Session>(() => createEmptySession());
   const [mounted, setMounted] = React.useState(false);
+  const [storageNotice, setStorageNotice] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     setMounted(true);
+    if (!isBrowser()) return;
     try {
       const stored = localStorage.getItem(SESSION_KEY);
       if (stored) {
@@ -103,32 +189,104 @@ function useStoredSession() {
       }
     } catch (err) {
       console.warn('Unable to load saved 5 Whys session', err);
+      setStorageNotice('Previous progress could not be restored from storage.');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   React.useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || !isBrowser()) return;
     try {
       localStorage.setItem(SESSION_KEY, JSON.stringify(session));
     } catch (err) {
       console.warn('Unable to persist 5 Whys session', err);
+      setStorageNotice('Auto-save is paused because browser storage is unavailable.');
     }
   }, [session, mounted]);
 
-  return [session, setSession] as const;
+  return { session, setSession, storageNotice } as const;
 }
 
 export default function Career5Whys({ showHeader = true, showFooter = true, className }: Career5WhysProps) {
-  const [session, setSession] = useStoredSession();
+  const { session, setSession, storageNotice } = useStoredSession();
   const [hintOpen, setHintOpen] = React.useState<Record<number, boolean>>({});
   const [status, setStatus] = React.useState<string | null>(null);
+  const [history, setHistory] = React.useState<WhySnapshot[]>([]);
+  const [historyLimit, setHistoryLimit] = React.useState<number>(DEFAULT_HISTORY_LIMIT);
 
   const totalFilled = session.responses.filter((response) => response.trim().length > 0).length;
   const firstEmptyIndex = session.responses.findIndex((r) => r.trim().length === 0);
   const sequentialCount = firstEmptyIndex === -1 ? WHY_COUNT : firstEmptyIndex;
   const progressPercent = Math.round((sequentialCount / WHY_COUNT) * 100);
   const activeTrack = TRACKS[session.track];
+
+  const persistHistory = React.useCallback(
+    (entries: WhySnapshot[]) => {
+      if (!isBrowser()) return true;
+      try {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(entries));
+        return true;
+      } catch (err) {
+        console.warn('Unable to persist why snapshot history', err);
+        setStatus('Storage is full—manage or export snapshots to continue saving.');
+        return false;
+      }
+    },
+    [setStatus]
+  );
+
+  React.useEffect(() => {
+    if (!storageNotice) return;
+    setStatus(storageNotice);
+  }, [storageNotice]);
+
+  React.useEffect(() => {
+    if (!isBrowser()) return;
+    try {
+      const savedLimit = window.localStorage.getItem(HISTORY_LIMIT_KEY);
+      if (!savedLimit) return;
+      const parsed = Number(savedLimit);
+      if (HISTORY_LIMIT_OPTIONS.includes(parsed as (typeof HISTORY_LIMIT_OPTIONS)[number])) {
+        setHistoryLimit(parsed);
+      }
+    } catch (err) {
+      console.warn('Unable to load snapshot preference', err);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (!isBrowser()) return;
+    try {
+      const stored = window.localStorage.getItem(HISTORY_KEY);
+      if (!stored) return;
+      const parsed = JSON.parse(stored);
+      if (!Array.isArray(parsed)) return;
+      const normalized = parsed.map((entry) => normalizeSnapshot(entry)).filter(Boolean) as WhySnapshot[];
+      setHistory(normalized);
+    } catch (err) {
+      console.warn('Unable to load why snapshot history', err);
+      setHistory([]);
+      setStatus('Unable to load snapshot history.');
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (!isBrowser()) return;
+    try {
+      window.localStorage.setItem(HISTORY_LIMIT_KEY, String(historyLimit));
+    } catch (err) {
+      console.warn('Unable to persist snapshot limit preference', err);
+    }
+  }, [historyLimit]);
+
+  React.useEffect(() => {
+    setHistory((previous) => {
+      if (previous.length <= historyLimit) return previous;
+      const trimmed = previous.slice(0, historyLimit);
+      persistHistory(trimmed);
+      return trimmed;
+    });
+  }, [historyLimit, persistHistory]);
 
   // Lightweight keyword synthesis to consider ALL steps
   const STOPWORDS = React.useMemo(
@@ -224,23 +382,24 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
   };
 
   const handleSaveSnapshot = () => {
-    if (typeof window === 'undefined') return;
-    const payload = {
+    if (!isBrowser()) return;
+    const payload: WhySnapshot = {
       id: session.id,
       userId: 'local-user',
       timestamp: new Date().toISOString(),
       whyStatement,
       track: session.track,
       topic: session.topic,
-      responses: session.responses,
+      responses: [...session.responses],
+      theme: session.theme,
+      alignment: session.alignment,
+      updatedAt: session.updatedAt,
+      version: 1,
     };
-    try {
-      const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]') as typeof payload[];
-      localStorage.setItem(HISTORY_KEY, JSON.stringify([payload, ...history].slice(0, 12)));
+    const nextHistory = [payload, ...history].slice(0, historyLimit);
+    if (persistHistory(nextHistory)) {
+      setHistory(nextHistory);
       setStatus('Saved to local dashboard');
-    } catch (err) {
-      console.warn('Unable to store why session history', err);
-      setStatus('Storage unavailable');
     }
   };
 
@@ -250,18 +409,63 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
       whyStatement,
       createdAt: new Date().toISOString(),
     };
-    const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
-      type: 'application/json;charset=utf-8',
+    const topicSlug = toSlug(session.topic || TRACKS[session.track].label) || session.track;
+    const filename = `career-why-${topicSlug}-${new Date().toISOString().slice(0, 10)}.json`;
+    downloadJson(filename, exportPayload);
+    setStatus('Export ready. Check your downloads.');
+  };
+
+  const handleExportSnapshot = (snapshot: WhySnapshot) => {
+    const topicSlug = toSlug(snapshot.topic || TRACKS[snapshot.track].label) || snapshot.track;
+    const filename = `career-why-snapshot-${topicSlug}-${snapshot.timestamp.slice(0, 10)}.json`;
+    downloadJson(filename, snapshot);
+  };
+
+  const handleExportHistory = () => {
+    if (history.length === 0) {
+      setStatus('No snapshots to export yet.');
+      return;
+    }
+    const filename = `career-why-history-${new Date().toISOString().slice(0, 10)}.json`;
+    downloadJson(filename, history);
+    setStatus('History exported.');
+  };
+
+  const handleDeleteSnapshot = (id: string) => {
+    const nextHistory = history.filter((entry) => entry.id !== id);
+    if (persistHistory(nextHistory)) {
+      setHistory(nextHistory);
+      setStatus('Snapshot removed.');
+    }
+  };
+
+  const handleClearHistory = () => {
+    if (history.length === 0) return;
+    if (!window.confirm('Clear all saved snapshots from this device?')) return;
+    if (persistHistory([])) {
+      setHistory([]);
+      setStatus('Snapshot history cleared.');
+    }
+  };
+
+  const handleRestoreSnapshot = (snapshot: WhySnapshot) => {
+    const restored = createEmptySession(snapshot.track);
+    setSession({
+      ...restored,
+      id: snapshot.id,
+      topic: snapshot.topic,
+      responses: ensureResponsesLength(snapshot.responses),
+      theme: snapshot.theme,
+      alignment: snapshot.alignment,
+      updatedAt: new Date().toISOString(),
     });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = `${session.id}.json`;
-    anchor.click();
-    URL.revokeObjectURL(url);
+    setHintOpen({});
+    setStatus('Snapshot loaded into the editor.');
   };
 
   const handleReset = () => updateSession(createEmptySession(session.track));
+
+  const historyIsFull = history.length >= historyLimit;
 
   return (
     <div className={cn('relative text-[hsl(var(--foreground))]', className)}>
@@ -274,6 +478,23 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
               Guided reasoning for uncovering the motivation behind your next career move. Choose a track, document five
               layers of reasoning, and leave with a statement you can reuse across resume, interview, and networking prep.
             </p>
+            <QuickStartTiles
+              className="max-w-4xl"
+              items={[
+                {
+                  title: 'Pick your lens',
+                  body: 'Select “Career” when you’re validating a defined role, or “Interest” when you’re still exploring themes.'
+                },
+                {
+                  title: 'Answer sequentially',
+                  body: 'Move down the prompts in order—the sidebar tracks depth so you can spot gaps quickly.'
+                },
+                {
+                  title: 'Save or export',
+                  body: 'Capture snapshots as you go, then export a JSON bundle once you land on language that resonates.'
+                }
+              ]}
+            />
           </header>
         )}
 
@@ -541,6 +762,120 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
                     <p className="text-center text-sm text-[hsl(var(--primary))]" role="status">
                       {status}
                     </p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="bg-[hsl(var(--card)/0.4)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] backdrop-blur">
+                <CardHeader className="space-y-4">
+                  <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">Snapshots</p>
+                    <CardTitle className="text-xl">History dashboard</CardTitle>
+                    <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                      Stored locally on this device. Up to {historyLimit} entries are kept. New saves will replace the oldest entries
+                      automatically.
+                    </p>
+                    {historyIsFull ? (
+                      <p className="text-xs text-[hsl(var(--gold))]">History is at capacity. Export or clear older snapshots to keep space free.</p>
+                    ) : null}
+                  </div>
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div className="flex items-center gap-2">
+                      <label htmlFor="history-limit" className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
+                        History limit
+                      </label>
+                      <select
+                        id="history-limit"
+                        value={historyLimit}
+                        onChange={(event) => {
+                          const nextLimit = Number(event.target.value);
+                          if (HISTORY_LIMIT_OPTIONS.includes(nextLimit as (typeof HISTORY_LIMIT_OPTIONS)[number])) {
+                            setHistoryLimit(nextLimit);
+                          }
+                        }}
+                        className="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] px-3 py-2 text-xs uppercase tracking-[0.3em] text-[hsl(var(--foreground))]"
+                      >
+                        {HISTORY_LIMIT_OPTIONS.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex flex-wrap gap-2 md:justify-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleExportHistory}
+                        disabled={history.length === 0}
+                        className="h-10 rounded-xl border-[hsl(var(--border)/0.5)] bg-transparent text-[hsl(var(--foreground))] hover:bg-[hsl(var(--overlay)/0.1)]"
+                      >
+                        Export all snapshots
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={handleClearHistory}
+                        disabled={history.length === 0}
+                        className="h-10 rounded-xl border border-transparent text-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.08)]"
+                      >
+                        Clear history
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {history.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.1)] p-5 text-sm text-[hsl(var(--muted-foreground))]">
+                      Save a completed reflection to populate your personal archive. Snapshots stay on this browser only.
+                    </div>
+                  ) : (
+                    history.map((entry) => (
+                      <div
+                        key={`${entry.id}-${entry.timestamp}`}
+                        className="rounded-2xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] p-5"
+                      >
+                        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
+                              {formatSnapshotTime(entry.timestamp)} • {TRACKS[entry.track].label}
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-[hsl(var(--foreground))]">
+                              {entry.topic || 'Untitled session'}
+                            </p>
+                            <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">{entry.whyStatement || 'Snapshot saved without a summary.'}</p>
+                          </div>
+                          <div className="flex flex-wrap gap-2 md:justify-end">
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => handleRestoreSnapshot(entry)}
+                              className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.1)] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--overlay)/0.2)]"
+                            >
+                              Load snapshot
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleExportSnapshot(entry)}
+                              className="rounded-lg border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--overlay)/0.1)]"
+                            >
+                              Export
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDeleteSnapshot(entry.id)}
+                              className="rounded-lg border border-transparent text-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.08)]"
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
                   )}
                 </CardContent>
               </Card>
