@@ -228,7 +228,7 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
         return true;
       } catch (err) {
         console.warn('Unable to persist why snapshot history', err);
-        setStatus('Storage is full—manage or export snapshots to continue saving.');
+        setStatus('Storage is full-manage or export snapshots to continue saving.');
         return false;
       }
     },
@@ -356,8 +356,8 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
   const topicText = session.topic.trim();
   const whyStatement =
     t === 'career'
-      ? `You’re pursuing ${topicText || 'this path'} because it aligns with ${alignText || 'what matters to you'} — driven by ${themeText || 'a clear theme you are uncovering'}.`
-      : `You’re motivated by ${themeText || 'this interest'} because it aligns with ${alignText || 'your values'} in the context of ${topicText || 'your core interest'}.`;
+      ? `You're pursuing ${topicText || 'this path'} because it aligns with ${alignText || 'what matters to you'} you're driven by ${themeText || 'a clear theme you are uncovering'}.`
+      : `You're motivated by ${themeText || 'this interest'} because it aligns with ${alignText || 'your values'} in the context of ${topicText || 'your core interest'}.`;
 
   React.useEffect(() => {
     if (!status) return;
@@ -487,7 +487,7 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
                 },
                 {
                   title: 'Answer sequentially',
-                  body: 'Move down the prompts in order—the sidebar tracks depth so you can spot gaps quickly.'
+                  body: 'Move down the prompts in order-the sidebar tracks depth so you can spot gaps quickly.'
                 },
                 {
                   title: 'Save or export',
