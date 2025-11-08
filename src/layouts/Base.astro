@@ -1,16 +1,138 @@
 ---
-const { title = "5 Whys" } = Astro.props;
+import { siteConfig, baseSchemas } from '../config/site';
+import Seo from '../components/Seo.astro';
+import { ClientRouter } from 'astro:transitions';
 import Navigation from '../components/Navigation';
 import "../styles/globals.css";
+
+const {
+  title = siteConfig.siteName,
+  description = siteConfig.description,
+  theme = "night",
+  image = siteConfig.ogImage,
+  noindex = false,
+  canonical,
+  type = 'website',
+  structuredData = [],
+  breadcrumbs = [{ label: 'Home', href: '/' }],
+} = Astro.props;
+
+const cookieTheme = Astro.cookies.get('career-tools-theme')?.value;
+const validatedTheme =
+  cookieTheme === 'moon' || cookieTheme === 'dawn' || cookieTheme === 'night'
+    ? cookieTheme
+    : undefined;
+const resolvedTheme = validatedTheme ?? theme;
+const htmlTheme = resolvedTheme === 'moon' ? 'moon' : resolvedTheme === 'dawn' ? 'dawn' : undefined;
+
+
+const canonicalUrl = canonical ?? new URL(Astro.url.pathname, siteConfig.siteUrl).toString();
+const breadcrumbList = breadcrumbs.map((crumb, index) => ({
+  '@type': 'ListItem',
+  position: index + 1,
+  name: crumb.label,
+  item: new URL(crumb.href, siteConfig.siteUrl).toString(),
+}));
+
+const breadcrumbSchema =
+  breadcrumbList.length > 1
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: breadcrumbList,
+      }
+    : null;
+
+const pageSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  '@id': `${canonicalUrl}#webpage`,
+  url: canonicalUrl,
+  name: title,
+  description,
+  inLanguage: 'en-US',
+  isPartOf: {
+    '@id': baseSchemas.website['@id'],
+  },
+};
+
+const additionalSchemas = Array.isArray(structuredData) ? structuredData : [structuredData];
+const schemaPayload = [
+  baseSchemas.website,
+  baseSchemas.creator,
+  pageSchema,
+  ...(breadcrumbSchema ? [breadcrumbSchema] : []),
+  ...additionalSchemas.filter(Boolean),
+];
 ---
-<html lang="en" class="h-full">
+<html lang="en" class="h-full" data-theme={htmlTheme}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
+    <Seo
+      title={title}
+      description={description}
+      image={image}
+      noindex={noindex}
+      canonical={canonicalUrl}
+      type={type}
+      structuredData={schemaPayload}
+    />
+    <link rel="icon" href="/favicon.webp" type="image/webp" />
+    <ClientRouter />
+    <script is:inline>
+      const storageKey = 'career-tools-theme';
+      const cookieKey = 'career-tools-theme';
+      const root = document.documentElement;
+      const applyTheme = (nextTheme) => {
+        if (nextTheme === 'moon' || nextTheme === 'dawn') {
+          root.dataset.theme = nextTheme;
+        } else {
+          root.removeAttribute('data-theme');
+        }
+      };
+
+      try {
+        // First try to get theme from cookie (server-side preference)
+        const cookieMatch = document.cookie.match(new RegExp('(^|; )' + cookieKey + '=([^;]*)'));
+        let theme = null;
+        
+        if (cookieMatch?.[2]) {
+          const cookieValue = cookieMatch[2];
+          if (cookieValue === 'night' || cookieValue === 'moon' || cookieValue === 'dawn') {
+            theme = cookieValue;
+          }
+        }
+        
+        // If no valid cookie, fall back to localStorage
+        if (!theme) {
+          const stored = window.localStorage.getItem(storageKey);
+          if (stored === 'night' || stored === 'moon' || stored === 'dawn') {
+            theme = stored;
+          }
+        }
+        
+        // Apply the theme if we found one
+        if (theme) {
+          applyTheme(theme);
+        }
+      } catch (_) {
+        // storage might be unavailable
+      }
+    </script>
   </head>
-  <body class="min-h-screen bg-white">
-    <Navigation client:load />
-    <slot />
+  <body class="min-h-screen bg-background text-foreground transition-colors duration-300">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-[hsl(var(--primary))] focus:px-4 focus:py-2 focus:text-[hsl(var(--primary-foreground))]"
+    >
+      Skip to main content
+    </a>
+    <div class="relative flex min-h-screen flex-col">
+      <Navigation client:load currentPath={Astro.url.pathname} transition:persist />
+      <main id="main-content" class="relative z-10 flex-1" transition:name="page-content">
+        <slot />
+      </main>
+    </div>
   </body>
 </html>
