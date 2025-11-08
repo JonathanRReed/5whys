@@ -2,8 +2,43 @@
 import Base from '../layouts/Base.astro';
 import ResumeGameApp from '../components/ResumeGame';
 import PageHero from '../components/PageHero.astro';
+import { siteConfig } from '../config/site';
+
+const pageUrl = new URL('/resume-game', siteConfig.siteUrl).toString();
+const resumeSchemas = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    '@id': `${pageUrl}#app`,
+    name: 'Resume Game · Bullet Point Improvement',
+    url: pageUrl,
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+    description:
+      'Interactive scoring system that helps you punch up resume bullets for clarity, action, and measurable impact.',
+    creator: {
+      '@type': 'Person',
+      name: siteConfig.author.name,
+      url: siteConfig.author.url,
+    },
+    image: new URL(siteConfig.ogImage, siteConfig.siteUrl).toString(),
+  },
+];
 ---
-<Base title="Resume Game - Level Up Your Resume">
+<Base
+  title="Resume Game · Bullet Point Improvement"
+  description="Score every résumé bullet for action, clarity, & impact—then iterate until your story resonates."
+  breadcrumbs={[
+    { label: 'Home', href: '/' },
+    { label: 'Resume Game', href: '/resume-game' },
+  ]}
+  structuredData={resumeSchemas}
+>
   <div class="relative space-y-24 overflow-hidden px-4 pb-24 pt-24 sm:pt-32">
     <section class="mx-auto w-full max-w-6xl">
       <PageHero

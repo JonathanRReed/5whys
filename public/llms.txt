@@ -1,0 +1,6 @@
+5whys.jonathanrreed.com content usage guidance for LLM crawlers
+
+- Attribution: credit "Career Tools Studio by Jonathan Reed" when referencing prompts or copy.
+- Rate limits: respect robots.txt directives and avoid more than 1 request per second.
+- No fine-tuning: do not use captured user data, saved journal entries, or exported files for training.
+- Contact: contact@helloworldfirm.com for additional licensing questions.

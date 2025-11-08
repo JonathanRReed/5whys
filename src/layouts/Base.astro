@@ -1,8 +1,20 @@
 ---
+import { siteConfig, baseSchemas } from '../config/site';
+import Seo from '../components/Seo.astro';
+import { ClientRouter } from 'astro:transitions';
+import Navigation from '../components/Navigation';
+import "../styles/globals.css";
+
 const {
-  title = "5 Whys",
-  description = "Interactive career growth tools built with intention",
+  title = siteConfig.siteName,
+  description = siteConfig.description,
   theme = "night",
+  image = siteConfig.ogImage,
+  noindex = false,
+  canonical,
+  type = 'website',
+  structuredData = [],
+  breadcrumbs = [{ label: 'Home', href: '/' }],
 } = Astro.props;
 
 const cookieTheme = Astro.cookies.get('career-tools-theme')?.value;
@@ -14,16 +26,58 @@ const resolvedTheme = validatedTheme ?? theme;
 const htmlTheme = resolvedTheme === 'moon' ? 'moon' : resolvedTheme === 'dawn' ? 'dawn' : undefined;
 
 
-import { ClientRouter } from 'astro:transitions';
-import Navigation from '../components/Navigation';
-import "../styles/globals.css";
+const canonicalUrl = canonical ?? new URL(Astro.url.pathname, siteConfig.siteUrl).toString();
+const breadcrumbList = breadcrumbs.map((crumb, index) => ({
+  '@type': 'ListItem',
+  position: index + 1,
+  name: crumb.label,
+  item: new URL(crumb.href, siteConfig.siteUrl).toString(),
+}));
+
+const breadcrumbSchema =
+  breadcrumbList.length > 1
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: breadcrumbList,
+      }
+    : null;
+
+const pageSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  '@id': `${canonicalUrl}#webpage`,
+  url: canonicalUrl,
+  name: title,
+  description,
+  inLanguage: 'en-US',
+  isPartOf: {
+    '@id': baseSchemas.website['@id'],
+  },
+};
+
+const additionalSchemas = Array.isArray(structuredData) ? structuredData : [structuredData];
+const schemaPayload = [
+  baseSchemas.website,
+  baseSchemas.creator,
+  pageSchema,
+  ...(breadcrumbSchema ? [breadcrumbSchema] : []),
+  ...additionalSchemas.filter(Boolean),
+];
 ---
 <html lang="en" class="h-full" data-theme={htmlTheme}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
-    <meta name="description" content={description} />
+    <Seo
+      title={title}
+      description={description}
+      image={image}
+      noindex={noindex}
+      canonical={canonicalUrl}
+      type={type}
+      structuredData={schemaPayload}
+    />
     <link rel="icon" href="/favicon.webp" type="image/webp" />
     <ClientRouter />
     <script is:inline>

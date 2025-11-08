@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import ToolCard from '../components/ToolCard.astro';
 import PageHero from '../components/PageHero.astro';
+import { siteConfig } from '../config/site';
 
 const metrics = [
   {
@@ -17,11 +18,53 @@ const metrics = [
     value: '24',
   },
 ];
+
+const toolkitItems = [
+  {
+    name: 'Career Reflection · Five Whys',
+    description: 'Structured journaling prompts to uncover the motivations behind your next move.',
+    url: '/career',
+  },
+  {
+    name: 'Resume Game · Bullet Point Improvement',
+    description: 'Score résumé bullets for impact, clarity, and action verbs before sending applications.',
+    url: '/resume-game',
+  },
+  {
+    name: 'Networking Practice · Social Rehearsal',
+    description: 'Guided scenarios, timers, and debriefs to make networking reps intentional.',
+    url: '/networking-practice',
+  },
+];
+
+const homeStructuredData = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Career Tools Studio',
+    url: siteConfig.siteUrl,
+    description:
+      'Career reflection, resume refinement, and networking practice experiences crafted to feel calm and intentional.',
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Career toolkit experiences',
+    itemListElement: toolkitItems.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      description: item.description,
+      url: new URL(item.url, siteConfig.siteUrl).toString(),
+    })),
+  },
+];
 ---
 <Base
-  title="Career Tools"
-  description="A modern studio of reflection, practice, & career storytelling tools built on the Rosé Pine palette."
+  title="Career Tools Studio"
+  description="Reflection prompts, resume polish flows, & networking practice labs designed for calm, intentional career growth."
   theme="night"
+  structuredData={homeStructuredData}
 >
   <div class="relative space-y-20 overflow-hidden px-4 pb-28 pt-24 sm:pt-32">
     <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
