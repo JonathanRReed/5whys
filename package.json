@@ -9,9 +9,12 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/node": "^9.5.0",
+    "@astrojs/sitemap": "^3.6.0",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-slot": "^1.2.4",
     "astro": "^5.15.4",
+    "jszip": "^3.10.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

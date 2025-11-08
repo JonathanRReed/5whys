@@ -1,79 +1,207 @@
 ---
 import Base from '../layouts/Base.astro';
+import ToolCard from '../components/ToolCard.astro';
+import PageHero from '../components/PageHero.astro';
+import { siteConfig } from '../config/site';
+
+const metrics = [
+  {
+    label: 'Deep reflection prompts',
+    value: '35+',
+  },
+  {
+    label: 'Resume scoring heuristics',
+    value: '18',
+  },
+  {
+    label: 'Guided networking scenarios',
+    value: '24',
+  },
+];
+
+const toolkitItems = [
+  {
+    name: 'Career Reflection · Five Whys',
+    description: 'Structured journaling prompts to uncover the motivations behind your next move.',
+    url: '/career',
+  },
+  {
+    name: 'Resume Game · Bullet Point Improvement',
+    description: 'Score résumé bullets for impact, clarity, and action verbs before sending applications.',
+    url: '/resume-game',
+  },
+  {
+    name: 'Networking Practice · Social Rehearsal',
+    description: 'Guided scenarios, timers, and debriefs to make networking reps intentional.',
+    url: '/networking-practice',
+  },
+];
+
+const homeStructuredData = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Career Tools Studio',
+    url: siteConfig.siteUrl,
+    description:
+      'Career reflection, resume refinement, and networking practice experiences crafted to feel calm and intentional.',
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Career toolkit experiences',
+    itemListElement: toolkitItems.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      description: item.description,
+      url: new URL(item.url, siteConfig.siteUrl).toString(),
+    })),
+  },
+];
 ---
-<Base title="Career Tools">
-  <div class="min-h-screen bg-gray-50 pt-16">
-    <div class="max-w-4xl mx-auto px-4 py-16">
-      <header class="text-center mb-16">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-6">
-          <svg class="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-          </svg>
-        </div>
-        <h1 class="text-4xl font-bold text-gray-900 mb-4">
-          Career Tools
-        </h1>
-        <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-          Interactive tools to help you reflect on your career path and improve your professional materials.
-        </p>
-      </header>
-
-      <main class="grid md:grid-cols-2 gap-8">
-        <a href="/career" class="group block">
-          <div class="bg-white rounded-lg border border-gray-200 p-8 hover:shadow-lg transition-shadow duration-200">
-            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-200 transition-colors">
-              <svg class="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h2 class="text-xl font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
-              Career Reflection: 5 Whys
-            </h2>
-            <p class="text-gray-600 mb-4">
-              Uncover the deeper motivation behind your career choice using the 5 Whys method. 
-              Dig deeper into your purpose and find your root motivation.
-            </p>
-            <div class="flex items-center text-blue-600 font-medium">
-              Start Reflection
-              <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
-          </div>
-        </a>
-
-        <a href="/resume-game" class="group block">
-          <div class="bg-white rounded-lg border border-gray-200 p-8 hover:shadow-lg transition-shadow duration-200">
-            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-purple-200 transition-colors">
-              <svg class="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h2 class="text-xl font-semibold text-gray-900 mb-2 group-hover:text-purple-600 transition-colors">
-              Resume Game
-            </h2>
-            <p class="text-gray-600 mb-4">
-              Level up your bullet points through the power of numbers, verbs, and structure. 
-              Get instant feedback on your resume with interactive scoring.
-            </p>
-            <div class="flex items-center text-purple-600 font-medium">
-              Play Game
-              <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
-          </div>
-        </a>
-      </main>
-
-      <footer class="mt-16 text-center">
-        <p class="text-gray-500 text-sm">
-          Built with ❤️ to help you navigate your career journey
-        </p>
-        <p class="text-gray-400 text-xs mt-2">
-          Made by Jonathan Reed - <a href="https://www.JonathanRReed.com" class="hover:text-gray-600 transition-colors">www.JonathanRReed.com</a>
-        </p>
-      </footer>
+<Base
+  title="Career Tools Studio"
+  description="Reflection prompts, resume polish flows, & networking practice labs designed for calm, intentional career growth."
+  theme="night"
+  structuredData={homeStructuredData}
+>
+  <div class="relative space-y-20 overflow-hidden px-4 pb-28 pt-24 sm:pt-32">
+    <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
+      <div class="absolute -top-24 right-0 h-72 w-72 rounded-full bg-[radial-gradient(circle_at_top_right,hsl(var(--foam)/0.18)_0%,transparent_60%)] blur-3xl" />
+      <div class="absolute bottom-0 -left-10 h-80 w-80 rounded-full bg-[radial-gradient(circle_at_bottom_left,hsl(var(--iris)/0.16)_0%,transparent_65%)] blur-[64px]" />
     </div>
+    <section class="mx-auto w-full max-w-6xl">
+      <PageHero
+        eyebrow="Guided Career Studio"
+        title="Modern tools to help you design a career story with intention."
+        description="Explore reflective exercises, interactive resume polish, & networking practice studios all crafted to feel calm, cohesive, & focused on your next professional chapter."
+        primaryCta={{ href: '/career', label: 'Start with 5 Whys' }}
+        secondaryCta={{ href: '#tools', label: 'Browse the toolkit' }}
+      >
+        <fragment slot="extra">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {metrics.map((metric) => (
+              <div class="group rounded-2xl border border-[hsl(var(--border)/0.4)] bg-[hsl(var(--overlay)/0.35)] p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-[hsl(var(--accent)/0.35)] hover:shadow-[0_18px_40px_-28px_hsl(var(--background)/0.9)]">
+                <div class="relative">
+                  <div class="pointer-events-none absolute -inset-2 -z-10 rounded-[1.25rem] opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-100 bg-[radial-gradient(circle_at_top_left,hsl(var(--foam)/0.24),transparent_60%)]" />
+                </div>
+                <div class="text-2xl font-semibold text-foreground">{metric.value}</div>
+                <div class="text-sm text-muted-foreground">{metric.label}</div>
+              </div>
+            ))}
+          </div>
+        </fragment>
+
+        <fragment slot="meta">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <span class="text-sm font-semibold uppercase tracking-[0.3em] text-muted-foreground">This week’s focus</span>
+            <span class="rounded-full bg-[hsl(var(--foam)/0.2)] px-3 py-1 text-xs font-medium text-[hsl(var(--foam))]">Intention</span>
+          </div>
+          <p class="text-lg font-medium leading-relaxed text-foreground">
+            "The clearer your why, the more courageous your next step becomes."
+          </p>
+          <div class="space-y-4 rounded-[1.75rem] border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.32)] p-4 sm:p-6 shadow-[0_30px_70px_-48px_hsl(var(--background)/0.9)]">
+            <div class="space-y-3 text-sm text-muted-foreground">
+              <div class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.4)] px-4 py-3">
+                <svg class="h-5 w-5 text-[hsl(var(--foam))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h10m-5 4h5" />
+                </svg>
+                Journal through five layers of "why" to reach your core motivation.
+              </div>
+              <div class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.4)] px-4 py-3">
+                <svg class="h-5 w-5 text-[hsl(var(--gold))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6" />
+                </svg>
+                Capture personal stories that reinforce your next career conversation.
+              </div>
+            </div>
+            <a
+              href="/career"
+              class="inline-flex w-full items-center justify-between gap-3 rounded-2xl bg-[radial-gradient(circle_at_left,hsl(var(--primary)/0.28)_0%,hsl(var(--foam)/0.2)_45%,hsl(var(--primary)/0.16)_100%)] px-6 py-4 text-base font-semibold text-[hsl(var(--foam))] shadow-[0_28px_64px_-36px_hsl(var(--background)/0.92)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_32px_72px_-34px_hsl(var(--background)/0.88)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]"
+            >
+              <span>Continue reflection</span>
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
+          </div>
+        </fragment>
+      </PageHero>
+    </section>
+
+    <section id="tools" class="mx-auto w-full max-w-6xl space-y-8">
+      <div class="space-y-3">
+        <h2 class="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">Build your toolkit</h2>
+        <p class="max-w-2xl text-pretty text-base text-muted-foreground">
+          Each experience is crafted to feel calm, focused, & actionable. Choose a tool below to explore guided flows, helpful prompts, & progress you can revisit.
+        </p>
+      </div>
+      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 auto-rows-fr">
+          <ToolCard
+            href="/career"
+            title="Career Reflection · Five Whys"
+            description="Work through a structured reflection to uncover the root motivations behind your career moves & translate them into confident language."
+            accent="foam"
+            cta="Start reflecting"
+            tag="Deep dive"
+          >
+            <svg slot="icon" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6" />
+            </svg>
+          </ToolCard>
+
+          <ToolCard
+            href="/resume-game"
+            title="Resume Game · Bullet Point Improvement"
+            description="Gamify your bullet points with instant scoring across impact, clarity, & action. Track improvements & save your strongest lines."
+            accent="gold"
+            cta="Play & improve"
+            tag="Momentum"
+          >
+            <svg slot="icon" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v8m-4-4h8" />
+            </svg>
+          </ToolCard>
+
+          <ToolCard
+            href="/networking-practice"
+            title="Networking Practice · Social Rehearsal"
+            description="Rehearse intros, refine your story, & capture insight after every practice conversation with the guided timer & prompts."
+            accent="love"
+            cta="Start practicing"
+            tag="Rehearsal"
+          >
+            <svg slot="icon" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M18 8a6 6 0 11-12 0 6 6 0 0112 0zm-6 8c-6.075 0-11 2.686-11 6h22c0-3.314-4.925-6-11-6z" />
+            </svg>
+          </ToolCard>
+        </div>
+    </section>
+
+    <section class="mx-auto w-full max-w-6xl rounded-3xl border border-[hsl(var(--border)/0.4)] bg-[hsl(var(--overlay)/0.35)] p-6 sm:p-8 lg:p-12">
+      <div class="grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(260px,1fr)] md:items-center">
+        <div class="space-y-4">
+          <h3 class="text-2xl font-semibold tracking-tight text-foreground">Designed for calm, confident progress</h3>
+          <p class="text-pretty text-base text-muted-foreground">
+            Whether you’re deep in reflection or prepping for interviews, the Career Tools studio keeps your focus on what matters. Gentle animations, Rosé Pine colorways, & structured flows help every session feel grounded.
+          </p>
+        </div>
+        <div class="grid gap-3 text-sm text-muted-foreground">
+          <div class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--card)/0.6)] px-4 py-3">
+            <span class="h-2.5 w-2.5 rounded-full bg-[hsl(var(--foam))]" />
+            Seamless theming across Night, Moon, & Dawn palettes.
+          </div>
+          <div class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--card)/0.6)] px-4 py-3">
+            <span class="h-2.5 w-2.5 rounded-full bg-[hsl(var(--iris))]" />
+            Guided prompts, timers, & feedback loops built for momentum.
+          </div>
+          <div class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--card)/0.6)] px-4 py-3">
+            <span class="h-2.5 w-2.5 rounded-full bg-[hsl(var(--love))]" />
+            Accessible typography, focus states, & keyboard-friendly interactions.
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 </Base>

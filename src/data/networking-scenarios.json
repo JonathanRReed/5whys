@@ -1,0 +1,123 @@
+[
+  {
+    "id": "career-fair",
+    "title": "Career Fair – Recruiter Chat",
+    "mode": "Career Fair",
+    "focus": "Confidence + clarity",
+    "who": "You (Student) + Abby (Recruiter)",
+    "where": "Career Fair – Recruiter @ Google",
+    "what": [
+      "Rapport",
+      "Who you are",
+      "What you bring",
+      "Thoughtful question"
+    ],
+    "pillars": {
+      "rapport": "Hi Abby! How's the fair treating you today?",
+      "identity": "I'm Kevin, a neuroscience student at UTD exploring human centered AI.",
+      "value": "I love building tools that help people feel confident in fast paced environments recently I led a team automating onboarding for 200+ volunteers.",
+      "question": "What qualities make a campus candidate memorable for you after the fair?"
+    },
+    "rapportSamples": [
+      "Hi Abby! How's your day at the Google booth going?",
+      "Thanks for making time to chat what's been the standout conversation so far?"
+    ],
+    "questionTemplates": [
+      {
+        "id": "company",
+        "label": "Company",
+        "prompt": "I noticed Google's new health AI initiative. What sparked that direction for the team?"
+      },
+      {
+        "id": "role",
+        "label": "Role",
+        "prompt": "How do new grads on your team get to experiment with different projects in their first year?"
+      },
+      {
+        "id": "growth",
+        "label": "Growth",
+        "prompt": "What skill surprised you by being essential once you joined Google?"
+      }
+    ]
+  },
+  {
+    "id": "conference",
+    "title": "Conference Networking",
+    "mode": "Conference",
+    "focus": "Curiosity + rapport",
+    "who": "You (Neuroscience Student) + Dr. Kim (Speaker)",
+    "where": "Neuroscience Conference",
+    "what": [
+      "Express interest",
+      "Share background",
+      "Ask for insight"
+    ],
+    "pillars": {
+      "rapport": "Dr. Kim, your keynote on neuroplasticity had everyone buzzing thanks for such a clear explainer.",
+      "identity": "I'm Stephanie, a neuroscience student digging into how cognition meets behavior change.",
+      "value": "This semester I partnered with a rehab clinic to pilot a biofeedback tool that increased patient adherence by 18%.",
+      "question": "Where do you see students contributing meaningfully to your research area in the next year?"
+    },
+    "rapportSamples": [
+      "I appreciated how you broke down complex neuroplasticity concepts thank you for that talk.",
+      "Loved your story about the clinical trial pivot; it felt so relatable."
+    ],
+    "questionTemplates": [
+      {
+        "id": "project",
+        "label": "Project",
+        "prompt": "What experiment or data point are you most excited to explore next?"
+      },
+      {
+        "id": "collaboration",
+        "label": "Collaboration",
+        "prompt": "Is there a way for students to contribute to the longitudinal study you mentioned?"
+      },
+      {
+        "id": "growth",
+        "label": "Growth",
+        "prompt": "What would you tell your earlier self about staying curious during grad school?"
+      }
+    ]
+  },
+  {
+    "id": "linkedin",
+    "title": "LinkedIn Outreach",
+    "mode": "Online Outreach",
+    "focus": "Brevity + personalization",
+    "who": "You (Student) + Industry Professional",
+    "where": "Online via LinkedIn Message",
+    "what": [
+      "Short intro",
+      "Goal",
+      "Ask for advice"
+    ],
+    "pillars": {
+      "rapport": "Hi Maya your post about ethical AI in healthcare really resonated with me.",
+      "identity": "I'm Philip, a neuroscience major exploring how data storytelling can improve care decisions.",
+      "value": "I recently co-led a campus project mapping patient journeys for our student clinic to reduce wait times.",
+      "question": "Would you be open to a 15 minute chat about how you transitioned from research to product strategy?"
+    },
+    "rapportSamples": [
+      "Hi Maya, I enjoyed your recent article on patient centered AI rollouts.",
+      "Thanks for sharing the behind the scenes of your hackathon project super insightful."
+    ],
+    "questionTemplates": [
+      {
+        "id": "caree-path",
+        "label": "Career Path",
+        "prompt": "How did you decide the timing was right to move from academia into industry?"
+      },
+      {
+        "id": "advice",
+        "label": "Advice",
+        "prompt": "What early project taught you the most about communicating research to stakeholders?"
+      },
+      {
+        "id": "project",
+        "label": "Project",
+        "prompt": "Is there a recent initiative you're proud of where students contributed meaningfully?"
+      }
+    ]
+  }
+]
