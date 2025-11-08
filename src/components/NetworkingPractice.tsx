@@ -316,7 +316,7 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
 
     const success = saveSession(session);
     if (!success) {
-      setStorageNotice('Browser storage is full—export or clear past sessions to keep saving.');
+      setStorageNotice('Browser storage is full-export or clear past sessions to keep saving.');
       return;
     }
 
@@ -347,7 +347,7 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
     anchor.download = filename;
     anchor.click();
     URL.revokeObjectURL(url);
-    setStorageNotice('Sessions exported—check your downloads.');
+    setStorageNotice('Sessions exported-check your downloads.');
   }, [sessions]);
 
   const clearSessionHistory = React.useCallback(() => {
@@ -419,7 +419,7 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
                 },
                 {
                   title: 'Save + export',
-                  body: 'Log each run to see progress over time—export the JSON bundle when you want to archive or share.'
+                  body: 'Log each run to see progress over time-export the JSON bundle when you want to archive or share.'
                 }
               ]}
             />
@@ -778,7 +778,7 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
                   {averageRating >= 4
                     ? 'Polished! Consider experimenting with different openers.'
                     : averageRating >= 3
-                    ? 'Solid foundation—refine pacing and emphasis next round.'
+                    ? 'Solid foundation-refine pacing and emphasis next round.'
                     : 'Revisit your structure and energy. Try one more round while it’s fresh.'}
                 </p>
               </div>
@@ -811,7 +811,7 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
                 </Button>
                 {sessionsAtCapacity ? (
                   <span className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
-                    History at capacity—new saves replace the oldest ({SESSION_LIMIT} max).
+                    History at capacity-new saves replace the oldest ({SESSION_LIMIT} max).
                   </span>
                 ) : null}
               </div>

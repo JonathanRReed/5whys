@@ -277,7 +277,7 @@ ${improved.join('\n')}
             items={[
               {
                 title: 'Drop your draft',
-                body: 'Paste bullets or upload a .txt file—use the sample resume if you need a quick demo.'
+                body: 'Paste bullets or upload a .txt file-use the sample resume if you need a quick demo.'
               },
               {
                 title: 'Run the scan',
@@ -385,7 +385,7 @@ ${improved.join('\n')}
             <CardHeader>
               <CardTitle className="text-xl">Scan visualization</CardTitle>
               {resumeOutOfDate && (
-                <p className="text-xs text-[hsl(var(--gold))]">Resume updated — rerun scan to refresh metrics.</p>
+                <p className="text-xs text-[hsl(var(--gold))]">Resume updated - rerun scan to refresh metrics.</p>
               )}
             </CardHeader>
             <CardContent>
