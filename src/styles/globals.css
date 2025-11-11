@@ -37,7 +37,8 @@
     color-scheme: dark;
   }
 
-  [data-theme='moon'] {
+  :root[data-theme='moon'],
+  body[data-theme='moon'] {
     --background: 246 24% 17%;
     --foreground: 245 50% 91%;
     --card: 248 24% 20%;
@@ -67,7 +68,8 @@
     color-scheme: dark;
   }
 
-  [data-theme='dawn'] {
+  :root[data-theme='dawn'],
+  body[data-theme='dawn'] {
     --background: 32 57% 95%;
     --foreground: 248 19% 32%;
     --card: 35 100% 98%;

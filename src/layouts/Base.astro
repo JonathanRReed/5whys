@@ -17,17 +17,11 @@ const {
   breadcrumbs = [{ label: 'Home', href: '/' }],
 } = Astro.props;
 
-const cookieTheme = Astro.cookies.get('career-tools-theme')?.value;
-const validatedTheme =
-  cookieTheme === 'moon' || cookieTheme === 'dawn' || cookieTheme === 'night'
-    ? cookieTheme
-    : undefined;
-const resolvedTheme = validatedTheme ?? theme;
-const htmlTheme = resolvedTheme === 'moon' ? 'moon' : resolvedTheme === 'dawn' ? 'dawn' : undefined;
+const htmlTheme = theme === 'moon' ? 'moon' : theme === 'dawn' ? 'dawn' : undefined;
 
 
 const canonicalUrl = canonical ?? new URL(Astro.url.pathname, siteConfig.siteUrl).toString();
-const breadcrumbList = breadcrumbs.map((crumb, index) => ({
+const breadcrumbList = breadcrumbs.map((crumb: { label: string; href: string }, index: number) => ({
   '@type': 'ListItem',
   position: index + 1,
   name: crumb.label,
@@ -65,10 +59,69 @@ const schemaPayload = [
   ...additionalSchemas.filter(Boolean),
 ];
 ---
-<html lang="en" class="h-full" data-theme={htmlTheme}>
+<html lang="en" class="h-full">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline>
+      const storageKey = 'career-tools-theme';
+      const root = document.documentElement;
+      const applyThemeEarly = (nextTheme) => {
+        if (nextTheme === 'moon' || nextTheme === 'dawn') {
+          root.dataset.theme = nextTheme;
+          if (document.body) document.body.dataset.theme = nextTheme;
+          // Ensure UA widgets (scrollbars, form controls) match
+          try { root.style.colorScheme = 'light'; } catch {}
+        } else {
+          root.removeAttribute('data-theme');
+          if (document.body) document.body.removeAttribute('data-theme');
+          try { root.style.colorScheme = 'dark'; } catch {}
+        }
+      };
+
+      const getTheme = () => {
+        try {
+          const cookieMatch = document.cookie.match(new RegExp('(^|; )' + storageKey + '=([^;]*)'));
+          const fromCookie = cookieMatch?.[2];
+          if (fromCookie === 'night' || fromCookie === 'moon' || fromCookie === 'dawn') return fromCookie;
+        } catch {}
+        try {
+          const stored = window.localStorage.getItem(storageKey);
+          if (stored === 'night' || stored === 'moon' || stored === 'dawn') return stored;
+        } catch {}
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        return prefersDark ? 'night' : 'dawn';
+      };
+
+      const syncTheme = () => {
+        // Temporarily disable transitions to avoid flashing during theme apply
+        let styleEl;
+        try {
+          styleEl = document.createElement('style');
+          styleEl.id = 'theme-transitions-off';
+          styleEl.textContent = '*{transition: none !important}';
+          document.head.appendChild(styleEl);
+        } catch {}
+
+        applyThemeEarly(getTheme());
+
+        // Re-enable transitions on next frame
+        try {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              if (styleEl && styleEl.parentNode) styleEl.parentNode.removeChild(styleEl);
+            });
+          });
+        } catch {}
+      };
+
+      // Apply before paint
+      try { syncTheme(); } catch {}
+      // Ensure correct theme after transitions/prefetch swaps
+      document.addEventListener('astro:before-swap', syncTheme);
+      document.addEventListener('astro:after-swap', syncTheme);
+      document.addEventListener('astro:page-load', syncTheme);
+    </script>
     <Seo
       title={title}
       description={description}
@@ -80,46 +133,6 @@ const schemaPayload = [
     />
     <link rel="icon" href="/favicon.webp" type="image/webp" />
     <ClientRouter />
-    <script is:inline>
-      const storageKey = 'career-tools-theme';
-      const cookieKey = 'career-tools-theme';
-      const root = document.documentElement;
-      const applyTheme = (nextTheme) => {
-        if (nextTheme === 'moon' || nextTheme === 'dawn') {
-          root.dataset.theme = nextTheme;
-        } else {
-          root.removeAttribute('data-theme');
-        }
-      };
-
-      try {
-        // First try to get theme from cookie (server-side preference)
-        const cookieMatch = document.cookie.match(new RegExp('(^|; )' + cookieKey + '=([^;]*)'));
-        let theme = null;
-        
-        if (cookieMatch?.[2]) {
-          const cookieValue = cookieMatch[2];
-          if (cookieValue === 'night' || cookieValue === 'moon' || cookieValue === 'dawn') {
-            theme = cookieValue;
-          }
-        }
-        
-        // If no valid cookie, fall back to localStorage
-        if (!theme) {
-          const stored = window.localStorage.getItem(storageKey);
-          if (stored === 'night' || stored === 'moon' || stored === 'dawn') {
-            theme = stored;
-          }
-        }
-        
-        // Apply the theme if we found one
-        if (theme) {
-          applyTheme(theme);
-        }
-      } catch (_) {
-        // storage might be unavailable
-      }
-    </script>
   </head>
   <body class="min-h-screen bg-background text-foreground transition-colors duration-300">
     <a
