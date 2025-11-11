@@ -6,6 +6,7 @@ type Theme = 'night' | 'moon' | 'dawn';
 
 type NavigationProps = {
   currentPath?: string;
+  initialTheme?: Theme;
 };
 
 type ThemeOption = {
@@ -83,10 +84,13 @@ const readStorageTheme = (): Theme | null => {
 const applyThemeToDom = (theme: Theme) => {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
+  const body = document.body;
   if (theme === 'night') {
     root.removeAttribute('data-theme');
+    if (body) body.removeAttribute('data-theme');
   } else {
     root.dataset.theme = theme;
+    if (body) body.dataset.theme = theme;
   }
 };
 
@@ -119,10 +123,16 @@ const resolveInitialTheme = (): Theme => {
   return readDatasetTheme() ?? readCookieTheme() ?? readStorageTheme() ?? 'night';
 };
 
-export default function Navigation({ currentPath = '/' }: NavigationProps) {
+export default function Navigation({ currentPath = '/', initialTheme }: NavigationProps) {
   const [menuOpen, setMenuOpen] = React.useState(false);
-  const [activeTheme, setActiveTheme] = React.useState<Theme>(resolveInitialTheme);
+  const [activeTheme, setActiveTheme] = React.useState<Theme>(initialTheme ?? resolveInitialTheme);
+  const [isHydrated, setIsHydrated] = React.useState(false);
   const broadcastRef = React.useRef<BroadcastChannel | null>(null);
+
+  React.useEffect(() => {
+    // mark hydrated to allow applying active UI states
+    setIsHydrated(true);
+  }, []);
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -152,12 +162,7 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
       return;
     }
 
-    const root = document.documentElement;
-    if (activeTheme === 'night') {
-      root.removeAttribute('data-theme');
-    } else {
-      root.dataset.theme = activeTheme;
-    }
+    applyThemeToDom(activeTheme);
 
     try {
       const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
@@ -186,6 +191,8 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
     const handleStorage = (event: StorageEvent) => {
       if (event.key !== THEME_STORAGE_KEY || !event.newValue) return;
       if (event.newValue === 'night' || event.newValue === 'moon' || event.newValue === 'dawn') {
+        // Apply DOM immediately, then update state
+        applyThemeToDom(event.newValue as Theme);
         setActiveTheme((previous) => (previous === event.newValue ? previous : (event.newValue as Theme)));
       }
     };
@@ -203,6 +210,8 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
       const handleMessage = (event: MessageEvent<{ theme?: Theme }>) => {
         const incoming = event.data?.theme;
         if (incoming === 'night' || incoming === 'moon' || incoming === 'dawn') {
+          // Apply DOM immediately, then update state
+          applyThemeToDom(incoming);
           setActiveTheme((previous) => (previous === incoming ? previous : incoming));
         }
       };
@@ -231,6 +240,13 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
   const setTheme = React.useCallback(
     (theme: Theme) => {
       if (theme === activeTheme) return;
+      // Optimistically apply immediately to avoid waiting for effects
+      try {
+        applyThemeToDom(theme);
+        writeStorageTheme(theme);
+        writeCookieTheme(theme);
+        broadcastRef.current?.postMessage({ theme });
+      } catch {}
       setActiveTheme(theme);
     },
     [activeTheme]
@@ -310,20 +326,22 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
 
           <div className="flex items-center gap-3">
             <div className="hidden items-center gap-2 md:flex">
-              {themeOptions.map((option) => (
+              {themeOptions.map((option) => {
+                const isActiveUi = isHydrated && activeTheme === option.id;
+                return (
                 <button
                   key={option.id}
                   type="button"
                   onClick={() => setTheme(option.id)}
                   className={cn(
                     'group inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]',
-                    activeTheme === option.id &&
+                    isActiveUi &&
                       'border-transparent bg-[radial-gradient(circle_at_top_right,hsl(var(--overlay)/0.48)_0%,hsl(var(--overlay)/0.28)_55%,transparent_100%)] text-foreground shadow-[0_18px_36px_-26px_hsl(var(--background)/0.85)]'
                   ,
-                    activeTheme !== option.id &&
+                    !isActiveUi &&
                       'border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.22)] text-muted-foreground hover:-translate-y-0.5 hover:border-[hsl(var(--accent)/0.4)] hover:text-foreground hover:shadow-[0_14px_28px_-24px_hsl(var(--background)/0.85)]'
                   )}
-                  aria-pressed={activeTheme === option.id}
+                  aria-pressed={isHydrated ? activeTheme === option.id : undefined}
                   aria-label={`Activate ${option.label} theme`}
                   title={`${option.label} · ${option.description}`}
                 >
@@ -331,14 +349,14 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
                     aria-hidden
                     className={cn(
                       'h-1.5 w-1.5 rounded-full transition-colors duration-200',
-                      activeTheme === option.id
+                      isActiveUi
                         ? 'bg-[hsl(var(--foam))]'
                         : 'bg-[hsl(var(--muted-foreground)/0.45)] group-hover:bg-[hsl(var(--foam))]'
                     )}
                   />
                   <span className="leading-none">{option.label}</span>
                 </button>
-              ))}
+              );})}
             </div>
             <button
               type="button"
@@ -399,21 +417,23 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
             <div className="flex-1">
               <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Theme</span>
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                {themeOptions.map((option) => (
+                {themeOptions.map((option) => {
+                  const isActiveUi = isHydrated && activeTheme === option.id;
+                  return (
                   <button
                     key={option.id}
                     type="button"
                     onClick={() => setTheme(option.id)}
                     className={cn(
                       'flex-1 min-w-[90px] rounded-full border border-[hsl(var(--border)/0.7)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.3)] hover:text-foreground',
-                      activeTheme === option.id && 'bg-[hsl(var(--overlay)/0.35)] text-foreground ring-1 ring-[hsl(var(--ring))]'
+                      isActiveUi && 'bg-[hsl(var(--overlay)/0.35)] text-foreground ring-1 ring-[hsl(var(--ring))]'
                     )}
-                    aria-pressed={activeTheme === option.id}
+                    aria-pressed={isHydrated ? activeTheme === option.id : undefined}
                     aria-label={`Activate ${option.label} theme`}
                   >
                     {option.label}
                   </button>
-                ))}
+                );})}
               </div>
             </div>
           </div>
