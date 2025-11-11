@@ -270,13 +270,13 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
       >
         <div className="flex w-full flex-wrap items-center justify-between gap-4 md:w-auto md:flex-nowrap md:justify-start">
           <a href="/" className="flex items-center gap-3 text-foreground transition-transform hover:scale-[1.02]">
-            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[radial-gradient(circle_at_top_right,hsl(var(--foam)/0.32)_0%,hsl(var(--iris)/0.4)_55%,hsl(var(--love)/0.28)_100%)] shadow-[0_10px_24px_-18px_hsl(var(--background)/0.8)]">
+            <div className="nav-logo flex h-10 w-10 items-center justify-center rounded-2xl">
               <img
                 src="/favicon.webp"
                 alt="Career Tools Growth Studio icon"
-                width={28}
-                height={28}
-                className="h-7 w-7 object-contain"
+                width={26}
+                height={26}
+                className="nav-logo__icon h-7 w-7 object-contain"
               />
             </div>
             <div className="flex flex-col text-left">

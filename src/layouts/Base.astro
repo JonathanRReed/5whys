@@ -146,6 +146,15 @@ const schemaPayload = [
       <main id="main-content" class="relative z-10 flex-1" transition:name="page-content">
         <slot />
       </main>
+      <footer class="relative z-10 mx-auto mt-12 w-full max-w-6xl rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.2)] px-6 py-5 text-center text-sm text-muted-foreground shadow-[0_20px_60px_-34px_hsl(var(--background)/0.92)] transition-colors duration-300">
+        Made by <span class="font-medium text-foreground">Jonathan R Reed</span>. For more visit
+        <a
+          href="https://jonathanrreed.com/"
+          class="font-semibold text-foreground transition-colors hover:text-accent"
+        >
+          jonathanrreed.com
+        </a>
+      </footer>
     </div>
   </body>
 </html>
