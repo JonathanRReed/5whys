@@ -1,7 +1,7 @@
 export const siteConfig = {
   siteUrl: 'https://5whys.jonathanrreed.com',
-  siteName: 'Career Tools Studio',
-  titleTemplate: '%s · Career Tools Studio',
+  siteName: '5 Whys Career Reflection Tools',
+  titleTemplate: '%s · 5 Whys Career Reflection Tools',
   description:
     'Interactive career reflection, resume polishing, and networking practice tools crafted for calm, intentional professional growth.',
   keywords: [
@@ -21,7 +21,6 @@ export const siteConfig = {
     url: 'https://www.jonathanrreed.com',
     twitter: '@jonathanrreed',
     linkedin: 'https://www.linkedin.com/in/jonathanrreed/',
-    email: 'hello@jonathanrreed.com'
   }
 };
 
@@ -31,7 +30,7 @@ export const baseSchemas = {
     '@type': 'WebSite',
     '@id': 'https://5whys.jonathanrreed.com/#website',
     url: 'https://5whys.jonathanrreed.com',
-    name: 'Career Tools Studio',
+    name: '5 Whys Career Reflection Tools',
     description:
       'Interactive career reflection, resume polishing, and networking practice tools crafted for calm, intentional professional growth.',
     inLanguage: 'en-US'

@@ -1,8 +1,8 @@
 ---
-import { siteConfig, baseSchemas } from '../config/site';
-import Seo from '../components/Seo.astro';
-import { ClientRouter } from 'astro:transitions';
-import Navigation from '../components/Navigation';
+import { siteConfig, baseSchemas } from "../config/site";
+import Seo from "../components/Seo.astro";
+import { ClientRouter } from "astro:transitions";
+import Navigation from "../components/Navigation";
 import "../styles/globals.css";
 
 const {
@@ -12,45 +12,50 @@ const {
   image = siteConfig.ogImage,
   noindex = false,
   canonical,
-  type = 'website',
+  type = "website",
   structuredData = [],
-  breadcrumbs = [{ label: 'Home', href: '/' }],
+  breadcrumbs = [{ label: "Home", href: "/" }],
 } = Astro.props;
 
-const htmlTheme = theme === 'moon' ? 'moon' : theme === 'dawn' ? 'dawn' : undefined;
+const htmlTheme =
+  theme === "moon" ? "moon" : theme === "dawn" ? "dawn" : undefined;
 
-
-const canonicalUrl = canonical ?? new URL(Astro.url.pathname, siteConfig.siteUrl).toString();
-const breadcrumbList = breadcrumbs.map((crumb: { label: string; href: string }, index: number) => ({
-  '@type': 'ListItem',
-  position: index + 1,
-  name: crumb.label,
-  item: new URL(crumb.href, siteConfig.siteUrl).toString(),
-}));
+const canonicalUrl =
+  canonical ?? new URL(Astro.url.pathname, siteConfig.siteUrl).toString();
+const breadcrumbList = breadcrumbs.map(
+  (crumb: { label: string; href: string }, index: number) => ({
+    "@type": "ListItem",
+    position: index + 1,
+    name: crumb.label,
+    item: new URL(crumb.href, siteConfig.siteUrl).toString(),
+  }),
+);
 
 const breadcrumbSchema =
   breadcrumbList.length > 1
     ? {
-        '@context': 'https://schema.org',
-        '@type': 'BreadcrumbList',
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
         itemListElement: breadcrumbList,
       }
     : null;
 
 const pageSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'WebPage',
-  '@id': `${canonicalUrl}#webpage`,
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "@id": `${canonicalUrl}#webpage`,
   url: canonicalUrl,
   name: title,
   description,
-  inLanguage: 'en-US',
+  inLanguage: "en-US",
   isPartOf: {
-    '@id': baseSchemas.website['@id'],
+    "@id": baseSchemas.website["@id"],
   },
 };
 
-const additionalSchemas = Array.isArray(structuredData) ? structuredData : [structuredData];
+const additionalSchemas = Array.isArray(structuredData)
+  ? structuredData
+  : [structuredData];
 const schemaPayload = [
   baseSchemas.website,
   baseSchemas.creator,
@@ -59,47 +64,62 @@ const schemaPayload = [
   ...additionalSchemas.filter(Boolean),
 ];
 ---
+
 <html lang="en" class="h-full">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script is:inline>
-      const storageKey = 'career-tools-theme';
+      const storageKey = "career-tools-theme";
       const root = document.documentElement;
       const applyThemeEarly = (nextTheme) => {
-        if (nextTheme === 'moon' || nextTheme === 'dawn') {
+        if (nextTheme === "moon" || nextTheme === "dawn") {
           root.dataset.theme = nextTheme;
           if (document.body) document.body.dataset.theme = nextTheme;
           // Ensure UA widgets (scrollbars, form controls) match
-          try { root.style.colorScheme = 'light'; } catch {}
+          try {
+            root.style.colorScheme = "light";
+          } catch {}
         } else {
-          root.removeAttribute('data-theme');
-          if (document.body) document.body.removeAttribute('data-theme');
-          try { root.style.colorScheme = 'dark'; } catch {}
+          root.removeAttribute("data-theme");
+          if (document.body) document.body.removeAttribute("data-theme");
+          try {
+            root.style.colorScheme = "dark";
+          } catch {}
         }
       };
 
       const getTheme = () => {
         try {
-          const cookieMatch = document.cookie.match(new RegExp('(^|; )' + storageKey + '=([^;]*)'));
+          const cookieMatch = document.cookie.match(
+            new RegExp("(^|; )" + storageKey + "=([^;]*)"),
+          );
           const fromCookie = cookieMatch?.[2];
-          if (fromCookie === 'night' || fromCookie === 'moon' || fromCookie === 'dawn') return fromCookie;
+          if (
+            fromCookie === "night" ||
+            fromCookie === "moon" ||
+            fromCookie === "dawn"
+          )
+            return fromCookie;
         } catch {}
         try {
           const stored = window.localStorage.getItem(storageKey);
-          if (stored === 'night' || stored === 'moon' || stored === 'dawn') return stored;
+          if (stored === "night" || stored === "moon" || stored === "dawn")
+            return stored;
         } catch {}
-        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        return prefersDark ? 'night' : 'dawn';
+        const prefersDark =
+          window.matchMedia &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches;
+        return prefersDark ? "night" : "dawn";
       };
 
       const syncTheme = () => {
         // Temporarily disable transitions to avoid flashing during theme apply
         let styleEl;
         try {
-          styleEl = document.createElement('style');
-          styleEl.id = 'theme-transitions-off';
-          styleEl.textContent = '*{transition: none !important}';
+          styleEl = document.createElement("style");
+          styleEl.id = "theme-transitions-off";
+          styleEl.textContent = "*{transition: none !important}";
           document.head.appendChild(styleEl);
         } catch {}
 
@@ -109,18 +129,21 @@ const schemaPayload = [
         try {
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-              if (styleEl && styleEl.parentNode) styleEl.parentNode.removeChild(styleEl);
+              if (styleEl && styleEl.parentNode)
+                styleEl.parentNode.removeChild(styleEl);
             });
           });
         } catch {}
       };
 
       // Apply before paint
-      try { syncTheme(); } catch {}
+      try {
+        syncTheme();
+      } catch {}
       // Ensure correct theme after transitions/prefetch swaps
-      document.addEventListener('astro:before-swap', syncTheme);
-      document.addEventListener('astro:after-swap', syncTheme);
-      document.addEventListener('astro:page-load', syncTheme);
+      document.addEventListener("astro:before-swap", syncTheme);
+      document.addEventListener("astro:after-swap", syncTheme);
+      document.addEventListener("astro:page-load", syncTheme);
     </script>
     <Seo
       title={title}
@@ -134,7 +157,9 @@ const schemaPayload = [
     <link rel="icon" href="/favicon.webp" type="image/webp" />
     <ClientRouter />
   </head>
-  <body class="min-h-screen bg-background text-foreground transition-colors duration-300">
+  <body
+    class="min-h-screen bg-background text-foreground transition-colors duration-300"
+  >
     <a
       href="#main-content"
       class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-[hsl(var(--primary))] focus:px-4 focus:py-2 focus:text-[hsl(var(--primary-foreground))]"
@@ -142,18 +167,47 @@ const schemaPayload = [
       Skip to main content
     </a>
     <div class="relative flex min-h-screen flex-col">
-      <Navigation client:load currentPath={Astro.url.pathname} transition:persist />
-      <main id="main-content" class="relative z-10 flex-1" transition:name="page-content">
+      <Navigation
+        client:load
+        currentPath={Astro.url.pathname}
+        transition:persist
+      />
+      <main
+        id="main-content"
+        class="relative z-10 flex-1"
+        transition:name="page-content"
+      >
         <slot />
       </main>
-      <footer class="relative z-10 mx-auto mt-12 w-full max-w-6xl rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.2)] px-6 py-5 text-center text-sm text-muted-foreground shadow-[0_20px_60px_-34px_hsl(var(--background)/0.92)] transition-colors duration-300">
-        Made by <span class="font-medium text-foreground">Jonathan R Reed</span>. For more visit
-        <a
-          href="https://jonathanrreed.com/"
-          class="font-semibold text-foreground transition-colors hover:text-accent"
+      <footer
+        class="relative z-10 mx-auto mt-12 w-full max-w-6xl rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.2)] px-6 py-5 text-center text-sm text-muted-foreground shadow-[0_20px_60px_-34px_hsl(var(--background)/0.92)] transition-colors duration-300"
+      >
+        <div>
+          Made by <span class="font-medium text-foreground"
+            >Jonathan R Reed</span>
+        </div>
+        <nav
+          aria-label="Related projects"
+          class="mt-2 flex flex-wrap items-center justify-center gap-x-1 gap-y-1"
         >
-          jonathanrreed.com
-        </a>
+          <a
+            href="https://jonathanrreed.com/"
+            class="font-semibold text-foreground transition-colors hover:text-accent"
+            >Jonathan Reed's Portfolio</a
+          >
+          <span class="text-muted-foreground/60">·</span>
+          <a
+            href="https://semesterbuild.jonathanrreed.com/"
+            class="font-semibold text-foreground transition-colors hover:text-accent"
+            >Semester Build</a
+          >
+          <span class="text-muted-foreground/60">·</span>
+          <a
+            href="https://dev-tools.helloworldfirm.com/"
+            class="font-semibold text-foreground transition-colors hover:text-accent"
+            >Simple Dev Tools</a
+          >
+        </nav>
       </footer>
     </div>
   </body>
