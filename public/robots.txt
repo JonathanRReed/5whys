@@ -9,7 +9,7 @@ Allow: /*.css$
 Disallow: /search/
 Disallow: /*?s=
 Disallow: /*?q=
-Sitemap: https://5whys.jonathanrreed.com/sitemap-index.xml
+Sitemap: https://5whys.jonathanrreed.com/sitemap.xml
 
 User-agent: Bingbot
 Allow: /*.js$
