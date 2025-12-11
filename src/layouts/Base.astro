@@ -184,16 +184,17 @@ const schemaPayload = [
       >
         <div>
           Made by <span class="font-medium text-foreground"
-            >Jonathan R Reed</span>
+            >Jonathan R Reed</span
+          > · Cybersecurity & AI developer, red team specialist.
         </div>
         <nav
           aria-label="Related projects"
           class="mt-2 flex flex-wrap items-center justify-center gap-x-1 gap-y-1"
         >
           <a
-            href="https://jonathanrreed.com/"
+            href="https://jonathanrreed.com/projects/"
             class="font-semibold text-foreground transition-colors hover:text-accent"
-            >Jonathan Reed's Portfolio</a
+            >Jonathan Reed portfolio</a
           >
           <span class="text-muted-foreground/60">·</span>
           <a
@@ -209,6 +210,29 @@ const schemaPayload = [
           >
         </nav>
       </footer>
+      <script is:inline>
+        (function () {
+          if (typeof window === "undefined") return;
+
+          const ascii = `
+    ___  ________  ________     
+   |\\  \\|\\   __  \\|\\   __  \\    
+   \\ \\  \\ \\  \\|\\  \\ \\  \\|\\  \\   
+ __ \\ \\  \\ \\   _  _\\ \\   _  _\\  
+|\\  \\\\_\\  \\ \\  \\\\  \\\\ \\  \\\\  \\|
+\\ \\________\\ \\__\\\\ _\\\\ \\__\\\\ _\\
+ \\|________|\\|__|\\|__|\\|__|\\|__|
+                                
+                                
+                                
+          `;
+
+          console.log(ascii);
+          console.log("Hey there. Interested in code");
+          console.log("Check out my GitHub: https://github.com/JonathanRReed");
+          console.log("Most of my sites repos are open source.");
+        })();
+      </script>
     </div>
   </body>
 </html>

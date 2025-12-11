@@ -1,5 +1,9 @@
 # robots.txt – https://5whys.jonathanrreed.com
 
+# LLM-friendly content guide
+# See https://llmstxt.org for specification
+# llms.txt: https://5whys.jonathanrreed.com/llms.txt
+
 # Generated 2025‑05‑07 · SEO‑optimised, AI‑scraper‑aware
 # ------------------------------------------------------------------
 # ███ 1. MAJOR SEARCH ENGINES (full access) ███
@@ -99,4 +103,4 @@ Disallow: /*?q=
 Allow: /
 
 # Global sitemap reference
-Sitemap: https://5whys.jonathanrreed.com/sitemap-index.xml
+Sitemap: https://5whys.jonathanrreed.com/sitemap.xml
