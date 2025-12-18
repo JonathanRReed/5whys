@@ -1,0 +1,53 @@
+---
+import Base from "../../../layouts/Base.astro";
+import InterviewGlowUpAdvice from "../../../components/InterviewGlowUp/InterviewGlowUpAdvice";
+import PageHero from "../../../components/PageHero.astro";
+import { siteConfig } from "../../../config/site";
+
+const pageUrl = new URL(
+    "/5whys/interview-glow-up",
+    siteConfig.siteUrl,
+).toString();
+const glowUpSchemas = [
+    {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "@id": `${pageUrl}#howto`,
+        url: pageUrl,
+        name: "Interview Glow Up - Prepare for Interviews with Confidence",
+        description:
+            "Transform interview anxiety into confidence. Learn the Play + Proof method, decode job descriptions, and build a panic-proof interview packet.",
+        inLanguage: "en-US",
+        author: {
+            "@type": "Person",
+            name: siteConfig.author.name,
+            url: siteConfig.author.url,
+        },
+        image: new URL(siteConfig.ogImage, siteConfig.siteUrl).toString(),
+    },
+];
+---
+
+<Base
+    title="Interview Glow Up · Prepare with Confidence"
+    description="Transform interview anxiety into confidence. Decode job descriptions, build proof-based stories, and create a panic-proof interview packet in 20 minutes."
+    breadcrumbs={[
+        { label: "Home", href: "/" },
+        { label: "Interview Glow Up", href: "/5whys/interview-glow-up" },
+    ]}
+    structuredData={glowUpSchemas}
+>
+    <div class="relative space-y-24 overflow-hidden px-4 pb-24 pt-24 sm:pt-32">
+        <section class="mx-auto w-full max-w-6xl">
+            <PageHero
+                eyebrow="Interview Prep"
+                title="Turn interview anxiety into quiet confidence."
+                description="Decode the job description, build proof-based stories, and create a panic-proof packet you can use under pressure. Get ready in 20 minutes."
+            />
+        </section>
+
+        <section class="mx-auto w-full max-w-6xl">
+            <InterviewGlowUpAdvice client:load />
+        </section>
+    </div>
+</Base>

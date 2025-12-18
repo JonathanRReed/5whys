@@ -371,3 +371,106 @@
     color: hsl(var(--foreground)/0.9) !important;
   }
 }
+
+/* ============================================================================
+   Print Stylesheet for Interview Glow Up
+   ============================================================================ */
+@media print {
+  /* Reset colors for print */
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
+    --muted-foreground: 0 0% 40%;
+    --border: 0 0% 85%;
+    --overlay: 0 0% 95%;
+  }
+
+  /* Hide non-essential elements */
+  header,
+  footer,
+  nav,
+  .print\\:hidden,
+  button,
+  [role="button"] {
+    display: none !important;
+  }
+
+  /* Reset backgrounds */
+  body,
+  main,
+  section,
+  article,
+  div {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Ensure content is visible */
+  .print\\:relative {
+    position: relative !important;
+  }
+
+  .print\\:bg-white {
+    background: white !important;
+  }
+
+  .print\\:text-black {
+    color: black !important;
+  }
+
+  /* Page setup */
+  @page {
+    margin: 0.75in;
+    size: letter;
+  }
+
+  /* Story cards for print */
+  [class*="rounded-xl"],
+  [class*="rounded-2xl"] {
+    border: 1px solid #ddd !important;
+    border-radius: 8px !important;
+    page-break-inside: avoid;
+    margin-bottom: 12px;
+    padding: 12px !important;
+  }
+
+  /* Ensure text is readable */
+  p, li, span {
+    color: #333 !important;
+    line-height: 1.5;
+  }
+
+  /* Skill badges */
+  [class*="bg-cyan"],
+  [class*="bg-\\[hsl\\(var\\(--foam"] {
+    background: #e0f7fa !important;
+    color: #006064 !important;
+    border: 1px solid #00acc1 !important;
+  }
+
+  /* Proof text */
+  [class*="text-cyan"] {
+    color: #00838f !important;
+    font-weight: 600;
+  }
+
+  /* Hide decorative elements */
+  [class*="shadow"],
+  [class*="backdrop"] {
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+
+  /* Ensure links are visible */
+  a {
+    color: #1976d2 !important;
+    text-decoration: underline;
+  }
+
+  /* Panic answer styling */
+  [class*="border-amber"] {
+    border-color: #f9a825 !important;
+    background: #fffde7 !important;
+  }
+}
+

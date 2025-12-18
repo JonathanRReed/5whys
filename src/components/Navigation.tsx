@@ -43,10 +43,11 @@ const themeOptions: ThemeOption[] = [
 ];
 
 const navLinks = [
-  { href: '/', label: 'Overview' },
+  { href: '/', label: 'Home' },
   { href: '/career', label: 'Career 5 Whys' },
   { href: '/resume-game', label: 'Resume Game' },
   { href: '/networking-practice', label: 'Networking Studio' },
+  { href: '/5whys/interview-glow-up', label: 'Interview Glow Up' },
 ];
 
 const isValidTheme = (value: unknown): value is Theme => value === 'night' || value === 'moon' || value === 'dawn';
@@ -140,14 +141,14 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
       // Use the same improved cookie parsing logic
       const cookieMatch = document.cookie.match(new RegExp('(^|; )' + THEME_COOKIE + '=([^;]*)'));
       let theme = null;
-      
+
       if (cookieMatch?.[2]) {
         const cookieValue = cookieMatch[2];
         if (cookieValue === 'night' || cookieValue === 'moon' || cookieValue === 'dawn') {
           theme = cookieValue;
         }
       }
-      
+
       const stored = theme ?? window.localStorage.getItem(THEME_STORAGE_KEY);
       if (stored === 'night' || stored === 'moon' || stored === 'dawn') {
         setActiveTheme(stored);
@@ -246,7 +247,7 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
         writeStorageTheme(theme);
         writeCookieTheme(theme);
         broadcastRef.current?.postMessage({ theme });
-      } catch {}
+      } catch { }
       setActiveTheme(theme);
     },
     [activeTheme]
@@ -285,7 +286,7 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
             </div>
           </a>
 
-          <div className="hidden items-center gap-6 md:flex">
+          <div className="hidden items-center gap-2 lg:flex xl:gap-4">
             {navLinks.map(({ href, label }) => {
               const active = isActive(href);
               return (
@@ -294,7 +295,7 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
                   href={href}
                   aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'group relative inline-flex items-center overflow-hidden rounded-full border border-[hsl(var(--border)/0.38)] bg-[linear-gradient(135deg,hsl(var(--overlay)/0.26)_0%,hsl(var(--overlay)/0.16)_100%)] px-4 py-2 text-sm font-semibold tracking-tight text-muted-foreground transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))] hover:-translate-y-0.5 hover:border-[hsl(var(--accent)/0.45)] hover:text-foreground hover:shadow-[0_18px_36px_-24px_hsl(var(--background)/0.88)]',
+                    'group relative inline-flex flex-shrink-0 items-center whitespace-nowrap rounded-full border border-[hsl(var(--border)/0.38)] bg-[linear-gradient(135deg,hsl(var(--overlay)/0.26)_0%,hsl(var(--overlay)/0.16)_100%)] px-3 py-1.5 text-xs font-semibold tracking-tight text-muted-foreground transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))] hover:-translate-y-0.5 hover:border-[hsl(var(--accent)/0.45)] hover:text-foreground hover:shadow-[0_18px_36px_-24px_hsl(var(--background)/0.88)] xl:px-4 xl:py-2 xl:text-sm',
                     active
                       ? 'border-transparent bg-[linear-gradient(130deg,hsl(var(--overlay)/0.72)_0%,hsl(var(--overlay)/0.36)_60%,hsl(var(--overlay)/0.22)_100%)] text-foreground shadow-[0_22px_44px_-26px_hsl(var(--background)/0.95)]'
                       : 'shadow-[0_6px_20px_-16px_hsl(var(--background)/0.85)]'
@@ -307,11 +308,11 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
                       active ? 'opacity-100' : 'group-hover:opacity-75'
                     )}
                   />
-                  <span className="relative z-10 flex items-center gap-3">
+                  <span className="relative z-10 flex items-center gap-2 lg:gap-3">
                     <span
                       aria-hidden
                       className={cn(
-                        'h-2.5 w-2.5 flex-none rounded-full transition-all duration-300',
+                        'hidden h-2 w-2 flex-none rounded-full transition-all duration-300 xl:block xl:h-2.5 xl:w-2.5',
                         active
                           ? 'bg-[radial-gradient(circle,hsl(var(--foam))_0%,hsl(var(--foam)/0.25)_100%)] shadow-[0_0_0_1px_hsl(var(--foam)/0.7)]'
                           : 'bg-[radial-gradient(circle,hsl(var(--foam)/0.6)_0%,hsl(var(--foam)/0.08)_100%)] opacity-80 group-hover:opacity-100'
@@ -325,38 +326,39 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="hidden items-center gap-2 md:flex">
+            <div className="hidden items-center gap-2 lg:flex">
               {themeOptions.map((option) => {
                 const isActiveUi = isHydrated && activeTheme === option.id;
                 return (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() => setTheme(option.id)}
-                  className={cn(
-                    'group inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]',
-                    isActiveUi &&
-                      'border-transparent bg-[radial-gradient(circle_at_top_right,hsl(var(--overlay)/0.48)_0%,hsl(var(--overlay)/0.28)_55%,transparent_100%)] text-foreground shadow-[0_18px_36px_-26px_hsl(var(--background)/0.85)]'
-                  ,
-                    !isActiveUi &&
-                      'border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.22)] text-muted-foreground hover:-translate-y-0.5 hover:border-[hsl(var(--accent)/0.4)] hover:text-foreground hover:shadow-[0_14px_28px_-24px_hsl(var(--background)/0.85)]'
-                  )}
-                  aria-pressed={isHydrated ? activeTheme === option.id : undefined}
-                  aria-label={`Activate ${option.label} theme`}
-                  title={`${option.label} · ${option.description}`}
-                >
-                  <span
-                    aria-hidden
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setTheme(option.id)}
                     className={cn(
-                      'h-1.5 w-1.5 rounded-full transition-colors duration-200',
-                      isActiveUi
-                        ? 'bg-[hsl(var(--foam))]'
-                        : 'bg-[hsl(var(--muted-foreground)/0.45)] group-hover:bg-[hsl(var(--foam))]'
+                      'group inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]',
+                      isActiveUi &&
+                      'border-transparent bg-[radial-gradient(circle_at_top_right,hsl(var(--overlay)/0.48)_0%,hsl(var(--overlay)/0.28)_55%,transparent_100%)] text-foreground shadow-[0_18px_36px_-26px_hsl(var(--background)/0.85)]'
+                      ,
+                      !isActiveUi &&
+                      'border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.22)] text-muted-foreground hover:-translate-y-0.5 hover:border-[hsl(var(--accent)/0.4)] hover:text-foreground hover:shadow-[0_14px_28px_-24px_hsl(var(--background)/0.85)]'
                     )}
-                  />
-                  <span className="leading-none">{option.label}</span>
-                </button>
-              );})}
+                    aria-pressed={isHydrated ? activeTheme === option.id : undefined}
+                    aria-label={`Activate ${option.label} theme`}
+                    title={`${option.label} · ${option.description}`}
+                  >
+                    <span
+                      aria-hidden
+                      className={cn(
+                        'h-1.5 w-1.5 rounded-full transition-colors duration-200',
+                        isActiveUi
+                          ? 'bg-[hsl(var(--foam))]'
+                          : 'bg-[hsl(var(--muted-foreground)/0.45)] group-hover:bg-[hsl(var(--foam))]'
+                      )}
+                    />
+                    <span className="leading-none">{option.label}</span>
+                  </button>
+                );
+              })}
             </div>
             <button
               type="button"
@@ -420,20 +422,21 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
                 {themeOptions.map((option) => {
                   const isActiveUi = isHydrated && activeTheme === option.id;
                   return (
-                  <button
-                    key={option.id}
-                    type="button"
-                    onClick={() => setTheme(option.id)}
-                    className={cn(
-                      'flex-1 min-w-[90px] rounded-full border border-[hsl(var(--border)/0.7)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.3)] hover:text-foreground',
-                      isActiveUi && 'bg-[hsl(var(--overlay)/0.35)] text-foreground ring-1 ring-[hsl(var(--ring))]'
-                    )}
-                    aria-pressed={isHydrated ? activeTheme === option.id : undefined}
-                    aria-label={`Activate ${option.label} theme`}
-                  >
-                    {option.label}
-                  </button>
-                );})}
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => setTheme(option.id)}
+                      className={cn(
+                        'flex-1 min-w-[90px] rounded-full border border-[hsl(var(--border)/0.7)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.3)] hover:text-foreground',
+                        isActiveUi && 'bg-[hsl(var(--overlay)/0.35)] text-foreground ring-1 ring-[hsl(var(--ring))]'
+                      )}
+                      aria-pressed={isHydrated ? activeTheme === option.id : undefined}
+                      aria-label={`Activate ${option.label} theme`}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
