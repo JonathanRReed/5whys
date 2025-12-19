@@ -128,11 +128,21 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [activeTheme, setActiveTheme] = React.useState<Theme>(initialTheme ?? resolveInitialTheme);
   const [isHydrated, setIsHydrated] = React.useState(false);
+  const [isScrolled, setIsScrolled] = React.useState(false);
   const broadcastRef = React.useRef<BroadcastChannel | null>(null);
 
   React.useEffect(() => {
     // mark hydrated to allow applying active UI states
     setIsHydrated(true);
+  }, []);
+
+  // Scroll-aware navigation
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onScroll = () => setIsScrolled(window.scrollY > 24);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll(); // Check initial state
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   React.useEffect(() => {
@@ -264,10 +274,18 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
   );
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[hsl(var(--border)/0.35)] bg-[hsl(var(--background)/0.92)]/95 backdrop-blur-xl transition-colors duration-300">
+    <header className={cn(
+      "sticky top-0 z-40 border-b transition-all duration-300",
+      isScrolled
+        ? "border-[hsl(var(--border)/0.5)] bg-[hsl(var(--background)/0.88)] backdrop-blur-2xl shadow-[0_4px_24px_-8px_hsl(var(--background)/0.5)]"
+        : "border-[hsl(var(--border)/0.35)] bg-[hsl(var(--background)/0.92)]/95 backdrop-blur-xl"
+    )}>
       <nav
         aria-label="Primary"
-        className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-3 sm:py-4 md:flex-row md:items-center md:justify-between"
+        className={cn(
+          "mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 md:flex-row md:items-center md:justify-between transition-all duration-300",
+          isScrolled ? "py-2 sm:py-2.5" : "py-3 sm:py-4"
+        )}
       >
         <div className="flex w-full flex-wrap items-center justify-between gap-4 md:w-auto md:flex-nowrap md:justify-start">
           <a href="/" className="flex items-center gap-3 text-foreground transition-transform hover:scale-[1.02]">

@@ -135,12 +135,47 @@
   html {
     background-color: hsl(var(--background));
     overflow-x: hidden;
+    scroll-behavior: smooth;
   }
 
   body {
     @apply bg-background text-foreground antialiased transition-colors duration-300;
     accent-color: hsl(var(--foam));
     overflow-x: hidden;
+  }
+
+  /* Premium Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 999px;
+    border: 2px solid hsl(var(--background));
+    transition: background 0.2s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+
+  /* Firefox scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) hsl(var(--background));
+  }
+
+  /* Enhanced focus states for accessibility */
+  :focus-visible {
+    outline: 2px solid hsl(var(--foam));
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 }
 
@@ -217,11 +252,9 @@
   .theme-popover {
     border: 1px solid color-mix(in oklch, hsl(var(--border)) 70%, transparent);
     background:
-      linear-gradient(
-        145deg,
+      linear-gradient(145deg,
         color-mix(in oklch, hsl(var(--overlay)) 85%, hsl(var(--background)) 15%) 0%,
-        color-mix(in oklch, hsl(var(--overlay)) 65%, hsl(var(--background)) 35%) 100%
-      );
+        color-mix(in oklch, hsl(var(--overlay)) 65%, hsl(var(--background)) 35%) 100%);
     border-radius: 1.5rem;
     padding: 0.9rem;
     display: grid;
@@ -251,11 +284,9 @@
   .theme-option[data-active="true"] {
     border-color: color-mix(in oklch, hsl(var(--foam)) 70%, hsl(var(--border)) 30%);
     background:
-      linear-gradient(
-        120deg,
+      linear-gradient(120deg,
         color-mix(in oklch, hsl(var(--foam)) 45%, hsl(var(--overlay)) 55%) 0%,
-        color-mix(in oklch, hsl(var(--foam)) 25%, hsl(var(--overlay)) 75%) 100%
-      );
+        color-mix(in oklch, hsl(var(--foam)) 25%, hsl(var(--overlay)) 75%) 100%);
     transform: translateY(-2px);
   }
 
@@ -316,6 +347,7 @@
     opacity: 0;
     transform: translateY(-4px) scale(0.98);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -373,9 +405,225 @@
 }
 
 /* ============================================================================
+   Premium Polish: Scroll Reveal Animations
+   ============================================================================ */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Staggered reveal for children */
+.reveal-stagger>* {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal-stagger.visible>*:nth-child(1) {
+  transition-delay: 0ms;
+}
+
+.reveal-stagger.visible>*:nth-child(2) {
+  transition-delay: 75ms;
+}
+
+.reveal-stagger.visible>*:nth-child(3) {
+  transition-delay: 150ms;
+}
+
+.reveal-stagger.visible>*:nth-child(4) {
+  transition-delay: 225ms;
+}
+
+.reveal-stagger.visible>*:nth-child(5) {
+  transition-delay: 300ms;
+}
+
+.reveal-stagger.visible>*:nth-child(6) {
+  transition-delay: 375ms;
+}
+
+.reveal-stagger.visible>* {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================================================================
+   Premium Polish: Hero Text Shimmer
+   ============================================================================ */
+.shimmer-text {
+  background: linear-gradient(110deg,
+      hsl(var(--foreground)) 30%,
+      hsl(var(--foam)) 45%,
+      hsl(var(--iris)) 55%,
+      hsl(var(--foreground)) 70%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 20s ease-in-out forwards;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ============================================================================
+   Premium Polish: Animated Gradient Mesh (Hero Background)
+   ============================================================================ */
+@keyframes float-slow {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  33% {
+    transform: translate(15px, -10px) scale(1.02);
+  }
+
+  66% {
+    transform: translate(-10px, 8px) scale(0.98);
+  }
+}
+
+@keyframes float-slow-reverse {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  33% {
+    transform: translate(-12px, 12px) scale(0.98);
+  }
+
+  66% {
+    transform: translate(10px, -8px) scale(1.03);
+  }
+}
+
+.gradient-orb-animated {
+  animation: float-slow 12s ease-in-out infinite;
+}
+
+.gradient-orb-animated-reverse {
+  animation: float-slow-reverse 14s ease-in-out infinite;
+}
+
+/* ============================================================================
+   Premium Polish: Micro-Interactions
+   ============================================================================ */
+/* Button press state */
+button:active:not(:disabled),
+a[role="button"]:active,
+.btn:active:not(:disabled),
+[class*="rounded-full"][class*="px-"]:active {
+  transform: scale(0.97);
+  transition: transform 0.1s ease;
+}
+
+/* Subtle icon bounce on card hover */
+.card-icon-bounce {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.group:hover .card-icon-bounce {
+  transform: translateY(-3px);
+}
+
+/* Link underline reveal */
+.link-underline {
+  position: relative;
+}
+
+.link-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: currentColor;
+  transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.link-underline:hover::after {
+  width: 100%;
+}
+
+/* Cursor spotlight for cards */
+.cursor-spotlight {
+  --mouse-x: 50%;
+  --mouse-y: 50%;
+}
+
+.cursor-spotlight::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at var(--mouse-x) var(--mouse-y),
+      hsl(var(--foam) / 0.12) 0%,
+      transparent 50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cursor-spotlight:hover::before {
+  opacity: 1;
+}
+
+/* ============================================================================
+   Reduced Motion: Respect User Preferences
+   ============================================================================ */
+@media (prefers-reduced-motion: reduce) {
+
+  .reveal,
+  .reveal-stagger>* {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .shimmer-text {
+    animation: none;
+    background: none;
+    color: hsl(var(--foreground));
+  }
+
+  .gradient-orb-animated,
+  .gradient-orb-animated-reverse {
+    animation: none;
+  }
+
+  button:active:not(:disabled),
+  a[role="button"]:active {
+    transform: none;
+  }
+}
+
+/* ============================================================================
    Print Stylesheet for Interview Glow Up
    ============================================================================ */
 @media print {
+
   /* Reset colors for print */
   :root {
     --background: 0 0% 100%;
@@ -435,7 +683,9 @@
   }
 
   /* Ensure text is readable */
-  p, li, span {
+  p,
+  li,
+  span {
     color: #333 !important;
     line-height: 1.5;
   }
@@ -473,4 +723,3 @@
     background: #fffde7 !important;
   }
 }
-

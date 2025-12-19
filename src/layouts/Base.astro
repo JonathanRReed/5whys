@@ -166,6 +166,13 @@ const schemaPayload = [
     >
       Skip to main content
     </a>
+    <!-- Subtle grain texture overlay for premium matte finish -->
+    <div
+      aria-hidden="true"
+      class="pointer-events-none fixed inset-0 z-50 opacity-[0.015]"
+      style="background-image: url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noise%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noise)%22/%3E%3C/svg%3E');"
+    >
+    </div>
     <div class="relative flex min-h-screen flex-col">
       <Navigation
         client:load
@@ -210,6 +217,73 @@ const schemaPayload = [
           >
         </nav>
       </footer>
+      <script is:inline>
+        // Scroll Reveal Observer
+        (function () {
+          if (
+            typeof window === "undefined" ||
+            typeof IntersectionObserver === "undefined"
+          )
+            return;
+
+          const initReveal = () => {
+            const observer = new IntersectionObserver(
+              (entries) => {
+                entries.forEach((entry) => {
+                  if (entry.isIntersecting) {
+                    entry.target.classList.add("visible");
+                  }
+                });
+              },
+              {
+                threshold: 0.1,
+                rootMargin: "0px 0px -50px 0px",
+              },
+            );
+
+            document
+              .querySelectorAll(".reveal, .reveal-stagger")
+              .forEach((el) => {
+                observer.observe(el);
+              });
+          };
+
+          // Run on initial load
+          if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initReveal);
+          } else {
+            initReveal();
+          }
+
+          // Re-run after Astro page transitions
+          document.addEventListener("astro:page-load", initReveal);
+        })();
+
+        // Cursor Spotlight Tracking
+        (function () {
+          if (typeof window === "undefined") return;
+
+          const initSpotlight = () => {
+            document.querySelectorAll(".cursor-spotlight").forEach((el) => {
+              el.addEventListener("mousemove", (e) => {
+                const rect = el.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                el.style.setProperty("--mouse-x", x + "%");
+                el.style.setProperty("--mouse-y", y + "%");
+              });
+            });
+          };
+
+          if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initSpotlight);
+          } else {
+            initSpotlight();
+          }
+
+          document.addEventListener("astro:page-load", initSpotlight);
+        })();
+      </script>
       <script is:inline>
         (function () {
           if (typeof window === "undefined") return;
