@@ -1,31 +1,35 @@
 ---
-import { siteConfig } from '../config/site';
+import { siteConfig } from "../config/site";
 
 const {
   title = siteConfig.siteName,
   description = siteConfig.description,
   image = siteConfig.ogImage,
   canonical,
-  type = 'website',
+  type = "website",
   noindex = false,
   structuredData = [],
 } = Astro.props;
 
 const computedTitle =
   title && title !== siteConfig.siteName
-    ? siteConfig.titleTemplate.replace('%s', title)
+    ? siteConfig.titleTemplate.replace("%s", title)
     : siteConfig.siteName;
 
-const canonicalUrl = canonical ?? new URL(Astro.url.pathname, siteConfig.siteUrl).toString();
-const ogImage = image?.startsWith('http') ? image : new URL(image ?? siteConfig.ogImage, siteConfig.siteUrl).toString();
-const robotsValue = noindex ? 'noindex, nofollow' : 'index, follow';
+const canonicalUrl =
+  canonical ?? new URL(Astro.url.pathname, siteConfig.siteUrl).toString();
+const ogImage = image?.startsWith("http")
+  ? image
+  : new URL(image ?? siteConfig.ogImage, siteConfig.siteUrl).toString();
+const robotsValue = noindex ? "noindex, nofollow" : "index, follow";
 const schemaList = Array.isArray(structuredData)
   ? structuredData.filter(Boolean)
   : [structuredData].filter(Boolean);
 ---
+
 <title>{computedTitle}</title>
 <meta name="description" content={description} />
-<meta name="keywords" content={siteConfig.keywords.join(', ')} />
+<meta name="keywords" content={siteConfig.keywords.join(", ")} />
 <meta name="author" content={siteConfig.author.name} />
 <meta name="robots" content={robotsValue} />
 <meta name="theme-color" content={siteConfig.themeColor} />
@@ -46,8 +50,8 @@ const schemaList = Array.isArray(structuredData)
 <meta name="twitter:title" content={computedTitle} />
 <meta name="twitter:description" content={description} />
 <meta name="twitter:image" content={ogImage} />
-{schemaList.map((schema) => (
-  <script type="application/ld+json">
-    {JSON.stringify(schema)}
-  </script>
-))}
+{
+  schemaList.map((schema) => (
+    <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+  ))
+}
