@@ -44,44 +44,6 @@
     color-scheme: dark;
   }
 
-  :root[data-theme='moon'],
-  body[data-theme='moon'] {
-    --background: 246 24% 17%;
-    --foreground: 245 50% 91%;
-    --card: 248 24% 20%;
-    --card-foreground: 245 50% 91%;
-    --overlay: 247 22% 24%;
-    --popover: 248 21% 26%;
-    --popover-foreground: 245 50% 91%;
-    --primary: 197 48% 47%;
-    --primary-foreground: 245 50% 91%;
-    --secondary: 248 24% 20%;
-    --secondary-foreground: 245 50% 91%;
-    --muted: 249 12% 47%;
-    --muted-foreground: 248 15% 61%;
-    --accent: 267 57% 78%;
-    --accent-foreground: 245 50% 91%;
-    --destructive: 343 76% 68%;
-    --destructive-foreground: 246 24% 17%;
-    --love: 343 76% 68%;
-    --gold: 35 88% 72%;
-    --rose: 2 66% 75%;
-    --pine: 197 48% 47%;
-    --foam: 189 43% 73%;
-    --iris: 267 57% 78%;
-    --border: 248 21% 26%;
-    --input: 248 21% 26%;
-    --ring: 197 48% 47%;
-    --logo-stop-1: color-mix(in srgb, #3e8fb0 54%, transparent);
-    --logo-stop-2: color-mix(in srgb, #c4a7e7 48%, transparent);
-    --logo-stop-3: color-mix(in srgb, #2a273f 64%, transparent);
-    --logo-base-fill: color-mix(in srgb, #2a273f 65%, #1c172b 35%);
-    --logo-border-color: hsla(250, 32%, 62%, 0.4);
-    --logo-shadow-color: rgba(18, 13, 32, 0.5);
-    --logo-icon-shadow: rgba(32, 24, 48, 0.4);
-    color-scheme: dark;
-  }
-
   :root[data-theme='dawn'],
   body[data-theme='dawn'] {
     --background: 32 57% 95%;
