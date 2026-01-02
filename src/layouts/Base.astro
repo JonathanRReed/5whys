@@ -18,7 +18,7 @@ const {
 } = Astro.props;
 
 const htmlTheme =
-  theme === "moon" ? "moon" : theme === "dawn" ? "dawn" : undefined;
+  theme === "dawn" ? "dawn" : undefined;
 
 const canonicalUrl =
   canonical ?? new URL(Astro.url.pathname, siteConfig.siteUrl).toString();
@@ -73,7 +73,7 @@ const schemaPayload = [
       const storageKey = "career-tools-theme";
       const root = document.documentElement;
       const applyThemeEarly = (nextTheme) => {
-        if (nextTheme === "moon" || nextTheme === "dawn") {
+        if (nextTheme === "dawn") {
           root.dataset.theme = nextTheme;
           if (document.body) document.body.dataset.theme = nextTheme;
           // Ensure UA widgets (scrollbars, form controls) match
@@ -97,14 +97,13 @@ const schemaPayload = [
           const fromCookie = cookieMatch?.[2];
           if (
             fromCookie === "night" ||
-            fromCookie === "moon" ||
             fromCookie === "dawn"
           )
             return fromCookie;
         } catch {}
         try {
           const stored = window.localStorage.getItem(storageKey);
-          if (stored === "night" || stored === "moon" || stored === "dawn")
+          if (stored === "night" || stored === "dawn")
             return stored;
         } catch {}
         const prefersDark =

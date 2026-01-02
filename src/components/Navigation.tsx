@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import { cn } from '../lib/utils';
 
-type Theme = 'night' | 'moon' | 'dawn';
+type Theme = 'night' | 'dawn';
 
 type NavigationProps = {
   currentPath?: string;
@@ -29,12 +29,6 @@ const themeOptions: ThemeOption[] = [
     gradient: 'linear-gradient(135deg,#26233a 0%,#31748f 55%,#eb6f92 100%)',
   },
   {
-    id: 'moon',
-    label: 'Moon',
-    description: 'Cool twilight tones',
-    gradient: 'linear-gradient(135deg,#2a273f 0%,#3e8fb0 55%,#c4a7e7 100%)',
-  },
-  {
     id: 'dawn',
     label: 'Dawn',
     description: 'Soft sunrise warmth',
@@ -50,7 +44,7 @@ const navLinks = [
   { href: '/5whys/interview-glow-up', label: 'Interview Glow Up' },
 ];
 
-const isValidTheme = (value: unknown): value is Theme => value === 'night' || value === 'moon' || value === 'dawn';
+const isValidTheme = (value: unknown): value is Theme => value === 'night' || value === 'dawn';
 
 const readDatasetTheme = (): Theme | null => {
   if (typeof document === 'undefined') return null;
@@ -152,15 +146,15 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
       const cookieMatch = document.cookie.match(new RegExp('(^|; )' + THEME_COOKIE + '=([^;]*)'));
       let theme = null;
 
-      if (cookieMatch?.[2]) {
-        const cookieValue = cookieMatch[2];
-        if (cookieValue === 'night' || cookieValue === 'moon' || cookieValue === 'dawn') {
-          theme = cookieValue;
+        if (cookieMatch?.[2]) {
+          const cookieValue = cookieMatch[2];
+          if (cookieValue === 'night' || cookieValue === 'dawn') {
+            theme = cookieValue;
+          }
         }
-      }
 
-      const stored = theme ?? window.localStorage.getItem(THEME_STORAGE_KEY);
-      if (stored === 'night' || stored === 'moon' || stored === 'dawn') {
+        const stored = theme ?? window.localStorage.getItem(THEME_STORAGE_KEY);
+        if (stored === 'night' || stored === 'dawn') {
         setActiveTheme(stored);
       }
     } catch (_) {
@@ -201,7 +195,7 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
     if (typeof window === 'undefined') return;
     const handleStorage = (event: StorageEvent) => {
       if (event.key !== THEME_STORAGE_KEY || !event.newValue) return;
-      if (event.newValue === 'night' || event.newValue === 'moon' || event.newValue === 'dawn') {
+      if (event.newValue === 'night' || event.newValue === 'dawn') {
         // Apply DOM immediately, then update state
         applyThemeToDom(event.newValue as Theme);
         setActiveTheme((previous) => (previous === event.newValue ? previous : (event.newValue as Theme)));
@@ -220,7 +214,7 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
       broadcastRef.current = channel;
       const handleMessage = (event: MessageEvent<{ theme?: Theme }>) => {
         const incoming = event.data?.theme;
-        if (incoming === 'night' || incoming === 'moon' || incoming === 'dawn') {
+        if (incoming === 'night' || incoming === 'dawn') {
           // Apply DOM immediately, then update state
           applyThemeToDom(incoming);
           setActiveTheme((previous) => (previous === incoming ? previous : incoming));
@@ -275,7 +269,7 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
 
   return (
     <header className={cn(
-      "sticky top-0 z-40 border-b transition-all duration-300",
+      "sticky top-0 z-40 w-full max-w-6xl mx-auto border-b transition-all duration-300",
       isScrolled
         ? "border-[hsl(var(--border)/0.5)] bg-[hsl(var(--background)/0.88)] backdrop-blur-2xl shadow-[0_4px_24px_-8px_hsl(var(--background)/0.5)]"
         : "border-[hsl(var(--border)/0.35)] bg-[hsl(var(--background)/0.92)]/95 backdrop-blur-xl"
