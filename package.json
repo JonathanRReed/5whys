@@ -10,10 +10,10 @@
   },
   "dependencies": {
     "@astrojs/node": "^9.5.1",
-    "@astrojs/sitemap": "^3.6.0",
+    "@astrojs/sitemap": "^3.6.1",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-slot": "^1.2.4",
-    "astro": "^5.16.6",
+    "astro": "^5.16.7",
     "jszip": "^3.10.1",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
