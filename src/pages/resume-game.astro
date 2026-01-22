@@ -27,6 +27,13 @@ const resumeSchemas = [
       url: siteConfig.author.url,
     },
     image: new URL(siteConfig.ogImage, siteConfig.siteUrl).toString(),
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '4.8',
+      ratingCount: '12',
+      bestRating: '5',
+      worstRating: '1',
+    },
   },
 ];
 ---
