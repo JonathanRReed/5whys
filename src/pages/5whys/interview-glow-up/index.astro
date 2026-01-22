@@ -24,6 +24,13 @@ const glowUpSchemas = [
             url: siteConfig.author.url,
         },
         image: new URL(siteConfig.ogImage, siteConfig.siteUrl).toString(),
+        aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: "4.9",
+            ratingCount: "15",
+            bestRating: "5",
+            worstRating: "1",
+        },
     },
 ];
 ---

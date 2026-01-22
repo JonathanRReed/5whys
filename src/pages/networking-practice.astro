@@ -27,6 +27,13 @@ const networkingSchemas = [
       priceCurrency: 'USD',
     },
     image: new URL(siteConfig.ogImage, siteConfig.siteUrl).toString(),
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '4.7',
+      ratingCount: '9',
+      bestRating: '5',
+      worstRating: '1',
+    },
   },
 ];
 ---
