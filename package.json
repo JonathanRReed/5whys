@@ -13,7 +13,7 @@
     "@astrojs/sitemap": "^3.7.0",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-slot": "^1.2.4",
-    "astro": "^5.16.15",
+    "astro": "^5.17.1",
     "jszip": "^3.10.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
@@ -21,7 +21,7 @@
   "devDependencies": {
     "@astrojs/react": "^4.4.2",
     "@astrojs/tailwind": "^6.0.2",
-    "autoprefixer": "^10.4.23",
+    "autoprefixer": "^10.4.24",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "postcss": "^8.5.6",
