@@ -211,7 +211,7 @@ export default function InterviewGlowUpAdvice() {
                     cheat sheet you can use during the interview.
                 </p>
                 <a
-                    href="/5whys/interview-glow-up/workspace"
+                    href="/5whys/interview-glow-up/workspace/"
                     className="mt-2 inline-flex items-center gap-2 rounded-full border border-transparent bg-[hsl(var(--foam))] px-6 py-3 text-sm font-semibold text-[hsl(var(--background))] shadow-lg shadow-[hsl(var(--foam)/0.25)] transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[hsl(var(--foam)/0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]"
                 >
                     Open the Workspace

@@ -1,0 +1,63 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import { siteConfig } from '../config/site';
+
+const pageUrl = new URL('/contact/', siteConfig.siteUrl).toString();
+const contactSchemas = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ContactPage',
+    '@id': `${pageUrl}#contact`,
+    url: pageUrl,
+    name: 'Contact 5 Whys Career Studio',
+    description:
+      'Contact page for 5 Whys Career Studio, including support and project inquiries.',
+    isPartOf: {
+      '@id': 'https://5whys.jonathanrreed.com/#website',
+    },
+    author: {
+      '@type': 'Person',
+      name: siteConfig.author.name,
+      url: siteConfig.author.url,
+    },
+  },
+];
+---
+
+<Base
+  title="Contact"
+  description="Contact 5 Whys Career Studio for project questions, tool feedback, privacy requests, or consulting context connected to the career tools."
+  breadcrumbs={[
+    { label: 'Home', href: '/' },
+    { label: 'Contact', href: '/contact/' },
+  ]}
+  structuredData={contactSchemas}
+>
+  <div class="relative space-y-16 overflow-hidden px-4 pb-24 pt-24 sm:pt-32">
+    <section class="mx-auto w-full max-w-6xl">
+      <PageHero
+        eyebrow="Contact"
+        title="Send feedback or project questions."
+        description="Use the contact routes below for tool feedback, privacy requests, consulting context, or issues with exported career materials."
+      />
+    </section>
+
+    <section class="mx-auto grid w-full max-w-4xl gap-6 md:grid-cols-2">
+      <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6">
+        <h2 class="text-xl font-semibold text-foreground">Email</h2>
+        <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+          For product feedback, privacy requests, or general questions, email
+          <a class="font-semibold text-foreground hover:text-accent" href="mailto:contact@helloworldfirm.com"> contact@helloworldfirm.com</a>.
+        </p>
+      </article>
+      <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6">
+        <h2 class="text-xl font-semibold text-foreground">Portfolio</h2>
+        <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+          For more projects from Jonathan R Reed, visit the
+          <a class="font-semibold text-foreground hover:text-accent" href="https://jonathanrreed.com/projects/"> portfolio</a>.
+        </p>
+      </article>
+    </section>
+  </div>
+</Base>

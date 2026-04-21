@@ -1,0 +1,68 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import { siteConfig } from '../config/site';
+
+const pageUrl = new URL('/about/', siteConfig.siteUrl).toString();
+const aboutSchemas = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'AboutPage',
+    '@id': `${pageUrl}#about`,
+    url: pageUrl,
+    name: 'About 5 Whys Career Studio',
+    description:
+      'About 5 Whys Career Studio, a set of practical career reflection and job search tools by Jonathan R Reed.',
+    isPartOf: {
+      '@id': 'https://5whys.jonathanrreed.com/#website',
+    },
+    primaryImageOfPage: new URL(siteConfig.ogImage, siteConfig.siteUrl).toString(),
+    author: {
+      '@type': 'Person',
+      name: siteConfig.author.name,
+      url: siteConfig.author.url,
+    },
+  },
+];
+---
+
+<Base
+  title="About 5 Whys"
+  description="Learn about 5 Whys Career Studio, a practical set of career reflection, resume, networking, and interview preparation tools by Jonathan R Reed."
+  breadcrumbs={[
+    { label: 'Home', href: '/' },
+    { label: 'About', href: '/about/' },
+  ]}
+  structuredData={aboutSchemas}
+>
+  <div class="relative space-y-16 overflow-hidden px-4 pb-24 pt-24 sm:pt-32">
+    <section class="mx-auto w-full max-w-6xl">
+      <PageHero
+        eyebrow="About"
+        title="Career tools for clearer decisions."
+        description="5 Whys Career Studio helps job seekers slow down, name what matters, and turn rough experience into stronger career stories."
+      />
+    </section>
+
+    <section class="mx-auto grid w-full max-w-6xl gap-6 md:grid-cols-3">
+      <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6">
+        <h2 class="text-xl font-semibold text-foreground">Purpose</h2>
+        <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+          The studio is built around practical reflection: five-layer career reasoning, resume bullet scoring, networking rehearsal, and proof-based interview prep.
+        </p>
+      </article>
+      <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6">
+        <h2 class="text-xl font-semibold text-foreground">Creator</h2>
+        <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+          Jonathan R Reed builds AI, cybersecurity, and developer tools. This project keeps the career workflow lightweight, private, and easy to revisit.
+        </p>
+      </article>
+      <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6">
+        <h2 class="text-xl font-semibold text-foreground">Approach</h2>
+        <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+          Each tool favors structured prompts, local drafting, and exportable outputs so your career evidence gets clearer without forcing a signup flow.
+        </p>
+      </article>
+    </section>
+  </div>
+</Base>

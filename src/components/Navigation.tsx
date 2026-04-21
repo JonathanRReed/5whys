@@ -38,10 +38,10 @@ const themeOptions: ThemeOption[] = [
 
 const navLinks = [
   { href: '/', label: 'Home' },
-  { href: '/career', label: 'Career 5 Whys' },
-  { href: '/resume-game', label: 'Resume Game' },
-  { href: '/networking-practice', label: 'Networking Studio' },
-  { href: '/5whys/interview-glow-up', label: 'Interview Glow Up' },
+  { href: '/career/', label: 'Career 5 Whys' },
+  { href: '/resume-game/', label: 'Resume Game' },
+  { href: '/networking-practice/', label: 'Networking Studio' },
+  { href: '/5whys/interview-glow-up/', label: 'Interview Glow Up' },
 ];
 
 const isValidTheme = (value: unknown): value is Theme => value === 'night' || value === 'dawn';

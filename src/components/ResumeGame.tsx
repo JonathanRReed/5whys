@@ -302,8 +302,9 @@ ${improved.join('\n')}
         <CardContent className="space-y-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-col items-start gap-2">
-              <Label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Upload</Label>
+              <Label htmlFor="resume-upload" className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Upload</Label>
               <Input
+                id="resume-upload"
                 type="file"
                 accept=".txt,.md,.markdown,.text"
                 onChange={handleFileUpload}
@@ -337,6 +338,7 @@ ${improved.join('\n')}
             </Button>
           </div>
           <Textarea
+            aria-label="Paste resume text"
             value={resumeText}
             onChange={handleTextChange}
             placeholder="• Led a cross-functional pod launching...\n• Built an internal dashboard that..."
@@ -490,16 +492,18 @@ ${improved.join('\n')}
                 <>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
-                      <Label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Action verb</Label>
+                      <Label htmlFor={`bullet-${selectedBullet.id}-verb`} className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Action verb</Label>
                       <Input
+                        id={`bullet-${selectedBullet.id}-verb`}
                         value={selectedBullet.fields.verb}
                         onChange={(event) => updateBulletField(selectedBullet.id, 'verb', event.target.value)}
                         className="mt-2"
                       />
                     </div>
                     <div>
-                      <Label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Quantifier</Label>
+                      <Label htmlFor={`bullet-${selectedBullet.id}-quantifier`} className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Quantifier</Label>
                       <Input
+                        id={`bullet-${selectedBullet.id}-quantifier`}
                         value={selectedBullet.fields.quantifier}
                         onChange={(event) => updateBulletField(selectedBullet.id, 'quantifier', event.target.value)}
                         className="mt-2"
@@ -509,16 +513,18 @@ ${improved.join('\n')}
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
-                      <Label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Task / What you did</Label>
+                      <Label htmlFor={`bullet-${selectedBullet.id}-task`} className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Task / What you did</Label>
                       <Textarea
+                        id={`bullet-${selectedBullet.id}-task`}
                         value={selectedBullet.fields.task}
                         onChange={(event) => updateBulletField(selectedBullet.id, 'task', event.target.value)}
                         className="mt-2 min-h-[100px]"
                       />
                     </div>
                     <div>
-                      <Label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Impact / Result</Label>
+                      <Label htmlFor={`bullet-${selectedBullet.id}-impact`} className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Impact / Result</Label>
                       <Textarea
+                        id={`bullet-${selectedBullet.id}-impact`}
                         value={selectedBullet.fields.impact}
                         onChange={(event) => updateBulletField(selectedBullet.id, 'impact', event.target.value)}
                         className="mt-2 min-h-[100px]"

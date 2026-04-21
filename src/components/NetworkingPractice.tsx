@@ -507,6 +507,7 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
                 </CardHeader>
                 <CardContent className="pt-0">
                   <Textarea
+                    aria-label="Who you are speaking with"
                     value={currentVersion?.who ?? ''}
                     onChange={(event) => handleFieldChange('who', event.target.value)}
                     className="min-h-[140px] bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--gold)/0.4)] text-sm text-[hsl(var(--foreground))] focus:border-[hsl(var(--gold))]"
@@ -523,6 +524,7 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
                 </CardHeader>
                 <CardContent className="pt-0">
                   <Textarea
+                    aria-label="Where the networking conversation happens"
                     value={currentVersion?.where ?? ''}
                     onChange={(event) => handleFieldChange('where', event.target.value)}
                     className="min-h-[140px] bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--love)/0.4)] text-sm text-[hsl(var(--foreground))] focus:border-[hsl(var(--love))]"
@@ -539,6 +541,7 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
                 </CardHeader>
                 <CardContent className="pt-0">
                   <Textarea
+                    aria-label="What you want to ask or share"
                     value={currentVersion?.what ?? ''}
                     onChange={(event) => handleFieldChange('what', event.target.value)}
                     className="min-h-[140px] bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--foam)/0.4)] text-sm text-[hsl(var(--foreground))] focus:border-[hsl(var(--foam))]"
@@ -752,10 +755,13 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
               ).map(({ key, label }) => (
                 <div key={key} className="grid gap-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span>{label}</span>
+                    <Label htmlFor={`rating-${key}`} className="text-sm font-normal">
+                      {label}
+                    </Label>
                     <span className={`font-semibold ${computeFeedbackColor(ratings[key])}`}>{ratings[key]}/5</span>
                   </div>
                   <input
+                    id={`rating-${key}`}
                     type="range"
                     min={1}
                     max={5}

@@ -4,7 +4,7 @@ import ResumeGameApp from '../components/ResumeGame';
 import PageHero from '../components/PageHero.astro';
 import { siteConfig } from '../config/site';
 
-const pageUrl = new URL('/resume-game', siteConfig.siteUrl).toString();
+const pageUrl = new URL('/resume-game/', siteConfig.siteUrl).toString();
 const resumeSchemas = [
   {
     '@context': 'https://schema.org',
@@ -38,11 +38,11 @@ const resumeSchemas = [
 ];
 ---
 <Base
-  title="Resume Game · Bullet Point Improvement"
-  description="Score every résumé bullet for action, clarity, & impact—then iterate until your story resonates."
+  title="Resume Bullet Game"
+  description="Score each resume bullet for action, clarity, and measurable impact, then rewrite weak lines into recruiter-ready career evidence."
   breadcrumbs={[
     { label: 'Home', href: '/' },
-    { label: 'Resume Game', href: '/resume-game' },
+    { label: 'Resume Game', href: '/resume-game/' },
   ]}
   structuredData={resumeSchemas}
 >
@@ -51,7 +51,7 @@ const resumeSchemas = [
       <PageHero
         eyebrow="Career Lab"
         title="Rewrite every bullet into a high signal résumé line."
-        description="Simulate an eight second recruiter scan, surface missing numbers & verbs, & draft stronger bullets with guided scoring."
+        description="Simulate an eight second recruiter scan, surface missing numbers and verbs, and draft stronger bullets with guided scoring."
       />
     </section>
 
