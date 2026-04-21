@@ -1,0 +1,68 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import { siteConfig } from '../config/site';
+
+const pageUrl = new URL('/privacy/', siteConfig.siteUrl).toString();
+const privacySchemas = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'PrivacyPolicy',
+    '@id': `${pageUrl}#privacy`,
+    url: pageUrl,
+    name: '5 Whys Career Studio Privacy Policy',
+    description:
+      'Privacy policy for 5 Whys Career Studio, covering local drafting, exports, and contact requests.',
+    isPartOf: {
+      '@id': 'https://5whys.jonathanrreed.com/#website',
+    },
+    author: {
+      '@type': 'Person',
+      name: siteConfig.author.name,
+      url: siteConfig.author.url,
+    },
+  },
+];
+---
+
+<Base
+  title="Privacy"
+  description="Read the 5 Whys Career Studio privacy policy, including how career drafts, browser storage, exports, and contact requests are handled."
+  breadcrumbs={[
+    { label: 'Home', href: '/' },
+    { label: 'Privacy', href: '/privacy/' },
+  ]}
+  structuredData={privacySchemas}
+>
+  <div class="relative space-y-16 overflow-hidden px-4 pb-24 pt-24 sm:pt-32">
+    <section class="mx-auto w-full max-w-6xl">
+      <PageHero
+        eyebrow="Privacy"
+        title="Your career drafts stay under your control."
+        description="5 Whys Career Studio is designed as a lightweight browser tool. It does not require accounts, payments, or a backend database for the core workflows."
+      />
+    </section>
+
+    <section class="mx-auto w-full max-w-4xl space-y-6">
+      <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6">
+        <h2 class="text-xl font-semibold text-foreground">What the tools store</h2>
+        <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+          Drafts, reflections, and practice notes are handled in your browser during normal use. Some tools may use local browser storage so you can continue a session later on the same device.
+        </p>
+      </article>
+      <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6">
+        <h2 class="text-xl font-semibold text-foreground">Exports and contact</h2>
+        <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+          Files you export are created for your use. If you contact the project by email, the message is used to respond to your request and improve the tools.
+        </p>
+      </article>
+      <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6">
+        <h2 class="text-xl font-semibold text-foreground">Requests</h2>
+        <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+          For privacy questions or deletion requests related to direct messages you sent, email
+          <a class="font-semibold text-foreground hover:text-accent" href="mailto:contact@helloworldfirm.com"> contact@helloworldfirm.com</a>.
+        </p>
+      </article>
+    </section>
+  </div>
+</Base>

@@ -3,7 +3,7 @@ export const siteConfig = {
   siteName: '5 Whys Career Studio | Reflection tools by Jonathan R Reed',
   titleTemplate: '%s · 5 Whys Career Studio',
   description:
-    '5 Whys is a small studio of career reflection tools by Jonathan R Reed designed to help you ask better questions about work, direction and tradeoffs.',
+    '5 Whys is a small studio of career reflection tools by Jonathan R Reed that helps job seekers clarify direction, improve resumes, and prepare stronger interview stories.',
   keywords: [
     'career reflection',
     'resume game',
@@ -21,7 +21,7 @@ export const siteConfig = {
   author: {
     name: 'Jonathan R Reed',
     alternateName: 'Jonathan Reed',
-    url: 'https://www.jonathanrreed.com',
+    url: 'https://jonathanrreed.com',
     twitter: '@jonathanrreed',
     linkedin: 'https://www.linkedin.com/in/jonathanrreed/',
   }
@@ -35,16 +35,19 @@ export const baseSchemas = {
     url: 'https://5whys.jonathanrreed.com',
     name: '5 Whys Career Studio',
     description:
-      '5 Whys is a small studio of career reflection tools by Jonathan R Reed designed to help you ask better questions about work, direction and tradeoffs.',
-    inLanguage: 'en-US'
+      '5 Whys is a small studio of career reflection tools by Jonathan R Reed that helps job seekers clarify direction, improve resumes, and prepare stronger interview stories.',
+    inLanguage: 'en-US',
+    publisher: {
+      '@id': 'https://jonathanrreed.com/#person',
+    },
   },
   creator: {
     '@context': 'https://schema.org',
     '@type': 'Person',
-    '@id': 'https://www.jonathanrreed.com/#person',
-    name: 'Jonathan Reed',
-    alternateName: 'Jonathan R Reed',
-    url: 'https://www.jonathanrreed.com',
+    '@id': 'https://jonathanrreed.com/#person',
+    name: 'Jonathan R Reed',
+    alternateName: ['Jonathan Reed', 'Jonathan Reed AI'],
+    url: 'https://jonathanrreed.com',
     jobTitle: ['AI Consultant', 'Cybersecurity Specialist', 'Red Teamer', 'Developer'],
     sameAs: [
       'https://www.linkedin.com/in/jonathanrreed/',

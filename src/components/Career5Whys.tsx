@@ -533,10 +533,11 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <Label className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
+                  <Label htmlFor="career-topic" className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
                     {activeTrack.topicLabel}
                   </Label>
                   <Input
+                    id="career-topic"
                     value={session.topic}
                     onChange={(event) => updateSession({ topic: event.target.value })}
                     placeholder={activeTrack.topicPlaceholder}
@@ -665,6 +666,7 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
                         <p className="text-xs text-[hsl(var(--muted-foreground))]">Build on: {session.responses[index - 1]}</p>
                       )}
                       <Textarea
+                        aria-label={`Depth ${index + 1} response`}
                         value={response}
                         onChange={(event) => handleResponseChange(index, event.target.value)}
                         placeholder="Document your reasoning. Be specific and concrete."
@@ -711,8 +713,9 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
-                      <Label className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">Theme</Label>
+                      <Label htmlFor="career-theme" className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">Theme</Label>
                       <Input
+                        id="career-theme"
                         value={session.theme}
                         onChange={(event) => updateSession({ theme: event.target.value })}
                         placeholder={derivedTheme}
@@ -720,8 +723,9 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
                       />
                     </div>
                     <div>
-                      <Label className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">Alignment</Label>
+                      <Label htmlFor="career-alignment" className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">Alignment</Label>
                       <Input
+                        id="career-alignment"
                         value={session.alignment}
                         onChange={(event) => updateSession({ alignment: event.target.value })}
                         placeholder={derivedAlignment}

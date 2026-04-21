@@ -4,7 +4,7 @@ import NetworkingPracticeApp from '../components/NetworkingPractice';
 import PageHero from '../components/PageHero.astro';
 import { siteConfig } from '../config/site';
 
-const pageUrl = new URL('/networking-practice', siteConfig.siteUrl).toString();
+const pageUrl = new URL('/networking-practice/', siteConfig.siteUrl).toString();
 const networkingSchemas = [
   {
     '@context': 'https://schema.org',
@@ -39,10 +39,10 @@ const networkingSchemas = [
 ---
 <Base
   title="Networking Practice Studio"
-  description="Rehearse confident intros, cycle through curated prompts, & log takeaways after every networking rep."
+  description="Rehearse confident intros, cycle through curated prompts, time each networking rep, and log takeaways for better follow-up."
   breadcrumbs={[
     { label: 'Home', href: '/' },
-    { label: 'Networking Practice', href: '/networking-practice' },
+    { label: 'Networking Practice', href: '/networking-practice/' },
   ]}
   structuredData={networkingSchemas}
 >
@@ -51,7 +51,7 @@ const networkingSchemas = [
       <PageHero
         eyebrow="Career Lab"
         title="Rehearse confident introductions & follow-ups."
-        description="Cycle through guided scenarios, pace yourself with the two minute timer, & capture reflections so every networking touchpoint feels intentional & grounded."
+        description="Cycle through guided scenarios, pace yourself with the two minute timer, and capture reflections so every networking touchpoint feels intentional and grounded."
       />
     </section>
 

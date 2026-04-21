@@ -1,6 +1,7 @@
 ---
 import Base from "../../../layouts/Base.astro";
 import InterviewGlowUpWorkspace from "../../../components/InterviewGlowUp/InterviewGlowUpWorkspace";
+import PageHero from "../../../components/PageHero.astro";
 import { siteConfig } from "../../../config/site";
 
 const pageUrl = new URL(
@@ -41,16 +42,23 @@ const workspaceSchemas = [
 ---
 
 <Base
-    title="Interview Workspace · Interview Glow Up"
-    description="Decode job descriptions, build proof-based stories, and create your interview packet with the panic-proof HUD mode."
+    title="Interview Workspace"
+    description="Decode job descriptions, build proof-based stories, manage a story vault, and create an interview packet with panic-proof HUD mode."
     breadcrumbs={[
         { label: "Home", href: "/" },
-        { label: "Interview Glow Up", href: "/5whys/interview-glow-up" },
-        { label: "Workspace", href: "/5whys/interview-glow-up/workspace" },
+        { label: "Interview Glow Up", href: "/5whys/interview-glow-up/" },
+        { label: "Workspace", href: "/5whys/interview-glow-up/workspace/" },
     ]}
     structuredData={workspaceSchemas}
 >
-    <div class="relative overflow-hidden px-4 pb-24 pt-20 sm:pt-24">
+    <div class="relative space-y-16 overflow-hidden px-4 pb-24 pt-24 sm:pt-32">
+        <section class="mx-auto w-full max-w-6xl">
+            <PageHero
+                eyebrow="Interview Workspace"
+                title="Build your proof-based interview packet."
+                description="Turn a job description into role signals, map your strongest stories to the requirements, and keep a compact HUD ready for the interview itself."
+            />
+        </section>
         <section class="mx-auto w-full max-w-7xl">
             <InterviewGlowUpWorkspace client:load />
         </section>
