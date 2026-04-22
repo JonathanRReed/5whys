@@ -81,12 +81,18 @@ const applyThemeToDom = (theme: Theme) => {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
   const body = document.body;
-  if (theme === 'night') {
-    root.removeAttribute('data-theme');
-    if (body) body.removeAttribute('data-theme');
-  } else {
-    root.dataset.theme = theme;
-    if (body) body.dataset.theme = theme;
+  root.dataset.theme = theme;
+  root.classList.toggle('theme-dawn', theme === 'dawn');
+  root.classList.toggle('theme-night', theme === 'night');
+  if (body) {
+    body.dataset.theme = theme;
+    body.classList.toggle('theme-dawn', theme === 'dawn');
+    body.classList.toggle('theme-night', theme === 'night');
+  }
+  try {
+    root.style.colorScheme = theme === 'dawn' ? 'light' : 'dark';
+  } catch {
+    // ignore unsupported style writes
   }
 };
 
@@ -245,17 +251,16 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
 
   const setTheme = React.useCallback(
     (theme: Theme) => {
-      if (theme === activeTheme) return;
-      // Optimistically apply immediately to avoid waiting for effects
       try {
         applyThemeToDom(theme);
         writeStorageTheme(theme);
         writeCookieTheme(theme);
         broadcastRef.current?.postMessage({ theme });
+        window.dispatchEvent(new CustomEvent('career-tools-theme-change', { detail: { theme } }));
       } catch { }
       setActiveTheme(theme);
     },
-    [activeTheme]
+    []
   );
 
   const isActive = React.useCallback(
@@ -347,6 +352,8 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
                     key={option.id}
                     type="button"
                     onClick={() => setTheme(option.id)}
+                    data-theme-toggle={option.id}
+                    data-active={String(isActiveUi)}
                     className={cn(
                       'group inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]',
                       isActiveUi &&
@@ -439,6 +446,8 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
                       key={option.id}
                       type="button"
                       onClick={() => setTheme(option.id)}
+                      data-theme-toggle={option.id}
+                      data-active={String(isActiveUi)}
                       className={cn(
                         'flex-1 min-w-[90px] rounded-full border border-[hsl(var(--border)/0.7)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.3)] hover:text-foreground',
                         isActiveUi && 'bg-[hsl(var(--overlay)/0.35)] text-foreground ring-1 ring-[hsl(var(--ring))]'

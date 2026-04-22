@@ -45,6 +45,9 @@
   }
 
   :root[data-theme='dawn'],
+  :root.theme-dawn,
+  html.theme-dawn,
+  body.theme-dawn,
   body[data-theme='dawn'] {
     --background: 220 32% 97%;
     --foreground: 232 24% 22%;
@@ -435,6 +438,9 @@
 }
 
 :root[data-theme='dawn'] .shimmer-text,
+:root.theme-dawn .shimmer-text,
+html.theme-dawn .shimmer-text,
+body.theme-dawn .shimmer-text,
 body[data-theme='dawn'] .shimmer-text {
   background: none;
   color: hsl(var(--foreground));
