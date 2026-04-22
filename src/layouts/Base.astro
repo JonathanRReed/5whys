@@ -73,6 +73,7 @@ const schemaPayload = [
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content={theme === "dawn" ? "only light" : "dark"} />
     <script is:inline>
       const storageKey = "career-tools-theme";
       const root = document.documentElement;
@@ -166,7 +167,11 @@ const schemaPayload = [
         });
 
         try {
-          root.style.colorScheme = nextTheme === "dawn" ? "light" : "dark";
+          const colorScheme = nextTheme === "dawn" ? "only light" : "dark";
+          root.style.colorScheme = colorScheme;
+          if (document.body) document.body.style.colorScheme = colorScheme;
+          const metaColorScheme = document.querySelector('meta[name="color-scheme"]');
+          if (metaColorScheme) metaColorScheme.setAttribute("content", colorScheme);
         } catch {}
 
         try {
