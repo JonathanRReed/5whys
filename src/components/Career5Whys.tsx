@@ -469,7 +469,7 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
 
   return (
     <div className={cn('relative text-[hsl(var(--foreground))]', className)}>
-      <div className={cn('mx-auto w-full max-w-6xl space-y-10 px-4 py-12', !showHeader && 'pt-6')}>
+      <div className={cn('mx-auto w-full max-w-6xl space-y-8 px-4 py-8', !showHeader && 'py-6')}>
         {showHeader && (
           <header className="space-y-4 text-center">
             <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--foam))]">Career Lab</p>
@@ -498,7 +498,7 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
           </header>
         )}
 
-        <Card className="bg-[hsl(var(--card)/0.5)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] backdrop-blur-md shadow-[0_20px_80px_hsl(var(--background)/0.35)]">
+        <Card className="bg-[hsl(var(--card)/0.98)] border-[hsl(var(--border)/0.55)] text-[hsl(var(--foreground))] shadow-[0_20px_80px_hsl(var(--background)/0.28)]">
           <CardHeader className="space-y-6">
               <div>
                 <CardTitle className="text-2xl font-semibold">Select your track</CardTitle>
@@ -521,7 +521,7 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
                         'flex-1 rounded-2xl border px-4 py-5 text-left transition-all',
                         'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[hsl(var(--primary))]',
                         isActive
-                          ? 'border-[hsl(var(--primary)/0.8)] bg-[hsl(var(--primary)/0.1)] shadow-inner text-[hsl(var(--primary-foreground))]'
+                          ? 'border-[hsl(var(--primary)/0.8)] bg-[hsl(var(--primary)/0.1)] shadow-inner text-[hsl(var(--foreground))]'
                           : 'border-[hsl(var(--border)/0.5)] bg-transparent text-[hsl(var(--foreground))] hover:border-[hsl(var(--border)/0.7)]'
                       )}
                     >
@@ -547,7 +547,7 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
                 <div>
                   <Label className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">Progress</Label>
                   <div className="mt-2 flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] px-4 py-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[hsl(var(--primary)/0.5)] bg-[hsl(var(--primary)/0.1)] text-lg font-semibold text-[hsl(var(--primary-foreground))]">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[hsl(var(--primary)/0.5)] bg-[hsl(var(--primary)/0.1)] text-lg font-semibold text-[hsl(var(--foreground))]">
                       {sequentialCount}
                     </div>
                     <div>
@@ -562,7 +562,7 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
 
           <div className="grid gap-8 lg:grid-cols-[320px,minmax(0,1fr)]">
             <div className="space-y-6">
-              <Card className="bg-[hsl(var(--card)/0.5)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] backdrop-blur">
+              <Card className="bg-[hsl(var(--card)/0.98)] border-[hsl(var(--border)/0.55)] text-[hsl(var(--foreground))]">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg font-semibold text-[hsl(var(--foreground))]">Depth tracker</CardTitle>
                   <p className="text-sm text-[hsl(var(--muted-foreground))]">Each layer validates the one above it.</p>
@@ -578,7 +578,7 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
                             className={cn(
                               'flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors',
                               isFilled
-                                ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.2)] text-[hsl(var(--primary-foreground))]'
+                                ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.2)] text-[hsl(var(--foreground))]'
                                 : isCurrent
                                 ? 'border-[hsl(var(--iris))] text-[hsl(var(--iris))]'
                                 : 'border-[hsl(var(--border)/0.5)] text-[hsl(var(--muted-foreground))]'
@@ -602,7 +602,7 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
                 </CardContent>
               </Card>
 
-              <Card className="bg-[hsl(var(--card)/0.5)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] backdrop-blur">
+              <Card className="bg-[hsl(var(--card)/0.98)] border-[hsl(var(--border)/0.55)] text-[hsl(var(--foreground))]">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg font-semibold">Logic tree</CardTitle>
                   <p className="text-sm text-[hsl(var(--muted-foreground))]">See how each answer branches from the previous one.</p>
@@ -650,7 +650,7 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
                 return (
                   <Card
                     key={index}
-                    className="bg-[hsl(var(--card)/0.5)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] backdrop-blur-md shadow-inner shadow-[hsl(var(--background)/0.2)]"
+                    className="bg-[hsl(var(--card)/0.98)] border-[hsl(var(--border)/0.55)] text-[hsl(var(--foreground))] shadow-inner shadow-[hsl(var(--background)/0.16)]"
                   >
                     <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                       <div>

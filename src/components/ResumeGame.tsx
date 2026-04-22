@@ -261,7 +261,7 @@ ${improved.join('\n')}
     <div
       className={cn(
         'mx-auto w-full max-w-6xl space-y-12 px-4 pb-20 text-[hsl(var(--foreground))]',
-        showHeader ? 'pt-12' : 'pt-8',
+        showHeader ? 'pt-12' : 'pt-4',
         className
       )}
     >

@@ -1,7 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
 import NetworkingPracticeApp from '../components/NetworkingPractice';
-import PageHero from '../components/PageHero.astro';
 import { siteConfig } from '../config/site';
 
 const pageUrl = new URL('/networking-practice/', siteConfig.siteUrl).toString();
@@ -46,20 +45,13 @@ const networkingSchemas = [
   ]}
   structuredData={networkingSchemas}
 >
-  <div class="relative space-y-24 overflow-hidden px-4 pb-24 pt-24 sm:pt-32">
-    <section class="mx-auto w-full max-w-6xl">
-      <PageHero
-        eyebrow="Career Lab"
-        title="Rehearse confident introductions & follow-ups."
-        description="Cycle through guided scenarios, pace yourself with the two minute timer, and capture reflections so every networking touchpoint feels intentional and grounded."
-      />
-    </section>
-
+  <div class="relative overflow-hidden px-4 pb-16 pt-4 sm:pt-6">
+    <h1 class="sr-only">Networking Practice Studio</h1>
     <section class="mx-auto w-full max-w-6xl">
       <NetworkingPracticeApp
         client:load
         showHeader={false}
-        className="rounded-[2.5rem] border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] px-4 pb-16 pt-10 sm:px-6 overflow-hidden"
+        className="pb-8"
       />
     </section>
   </div>

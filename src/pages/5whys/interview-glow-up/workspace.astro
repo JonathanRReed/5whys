@@ -1,7 +1,6 @@
 ---
 import Base from "../../../layouts/Base.astro";
 import InterviewGlowUpWorkspace from "../../../components/InterviewGlowUp/InterviewGlowUpWorkspace";
-import PageHero from "../../../components/PageHero.astro";
 import { siteConfig } from "../../../config/site";
 
 const pageUrl = new URL(
@@ -51,13 +50,10 @@ const workspaceSchemas = [
     ]}
     structuredData={workspaceSchemas}
 >
-    <div class="relative space-y-16 overflow-hidden px-4 pb-24 pt-24 sm:pt-32">
-        <section class="mx-auto w-full max-w-6xl">
-            <PageHero
-                eyebrow="Interview Workspace"
-                title="Build your proof-based interview packet."
-                description="Turn a job description into role signals, map your strongest stories to the requirements, and keep a compact HUD ready for the interview itself."
-            />
+    <div class="relative space-y-10 overflow-hidden px-4 pb-16 pt-4 sm:pt-6">
+        <h1 class="sr-only">Interview Workspace</h1>
+        <section class="mx-auto w-full max-w-7xl">
+            <InterviewGlowUpWorkspace client:load />
         </section>
         <section class="mx-auto grid w-full max-w-6xl gap-6 md:grid-cols-3">
             <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6">
@@ -82,9 +78,6 @@ const workspaceSchemas = [
                     calm reminder of the evidence you want to bring into the interview.
                 </p>
             </article>
-        </section>
-        <section class="mx-auto w-full max-w-7xl">
-            <InterviewGlowUpWorkspace client:load />
         </section>
     </div>
 </Base>

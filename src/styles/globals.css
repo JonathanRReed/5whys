@@ -7,32 +7,32 @@
 
 @layer base {
   :root {
-    --background: 249 22% 12%;
-    --foreground: 245 50% 91%;
-    --card: 247 23% 15%;
-    --card-foreground: 245 50% 91%;
-    --overlay: 248 22% 18%;
-    --popover: 245 25% 18%;
-    --popover-foreground: 245 50% 91%;
-    --primary: 189 43% 73%;
-    --primary-foreground: 249 22% 12%;
-    --secondary: 245 25% 18%;
-    --secondary-foreground: 245 50% 91%;
-    --muted: 249 12% 47%;
-    --muted-foreground: 248 15% 61%;
-    --accent: 267 57% 78%;
-    --accent-foreground: 249 22% 12%;
-    --destructive: 343 76% 68%;
-    --destructive-foreground: 249 22% 12%;
-    --love: 343 76% 68%;
-    --gold: 35 88% 72%;
+    --background: 230 18% 8%;
+    --foreground: 228 36% 94%;
+    --card: 228 16% 12%;
+    --card-foreground: 228 36% 94%;
+    --overlay: 228 15% 16%;
+    --popover: 228 16% 13%;
+    --popover-foreground: 228 36% 94%;
+    --primary: 188 58% 58%;
+    --primary-foreground: 230 18% 8%;
+    --secondary: 228 15% 17%;
+    --secondary-foreground: 228 36% 94%;
+    --muted: 228 10% 43%;
+    --muted-foreground: 226 15% 72%;
+    --accent: 260 64% 74%;
+    --accent-foreground: 230 18% 8%;
+    --destructive: 350 78% 66%;
+    --destructive-foreground: 230 18% 8%;
+    --love: 350 78% 66%;
+    --gold: 45 86% 64%;
     --rose: 2 55% 83%;
-    --pine: 197 49% 38%;
-    --foam: 189 43% 73%;
-    --iris: 267 57% 78%;
-    --border: 248 21% 26%;
-    --input: 248 21% 26%;
-    --ring: 189 43% 73%;
+    --pine: 188 58% 44%;
+    --foam: 188 58% 58%;
+    --iris: 260 64% 74%;
+    --border: 226 17% 26%;
+    --input: 226 17% 26%;
+    --ring: 188 58% 58%;
     --radius: 0.75rem;
     --logo-stop-1: color-mix(in srgb, #31748f 52%, transparent);
     --logo-stop-2: color-mix(in srgb, #eb6f92 46%, transparent);
@@ -46,39 +46,39 @@
 
   :root[data-theme='dawn'],
   body[data-theme='dawn'] {
-    --background: 32 57% 95%;
-    --foreground: 248 19% 32%;
-    --card: 35 100% 98%;
-    --card-foreground: 248 19% 32%;
-    --overlay: 29 58% 89%;
-    --popover: 25 36% 92%;
-    --popover-foreground: 248 19% 32%;
-    --primary: 197 53% 34%;
-    --primary-foreground: 32 57% 95%;
-    --secondary: 35 100% 98%;
-    --secondary-foreground: 248 19% 32%;
-    --muted: 254 9% 61%;
-    --muted-foreground: 248 19% 32%;
-    --accent: 267 22% 57%;
-    --accent-foreground: 32 57% 95%;
-    --destructive: 343 35% 55%;
-    --destructive-foreground: 32 57% 95%;
-    --love: 343 35% 55%;
-    --gold: 35 81% 56%;
+    --background: 220 32% 97%;
+    --foreground: 232 24% 22%;
+    --card: 0 0% 100%;
+    --card-foreground: 232 24% 22%;
+    --overlay: 220 30% 93%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 232 24% 22%;
+    --primary: 192 55% 34%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 30% 94%;
+    --secondary-foreground: 232 24% 22%;
+    --muted: 228 10% 61%;
+    --muted-foreground: 232 18% 34%;
+    --accent: 259 35% 48%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 350 56% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --love: 350 56% 45%;
+    --gold: 42 76% 45%;
     --rose: 2 55% 67%;
-    --pine: 197 53% 34%;
-    --foam: 189 30% 48%;
-    --iris: 267 22% 57%;
-    --border: 25 36% 84%;
-    --input: 25 36% 84%;
-    --ring: 197 53% 34%;
-    --logo-stop-1: color-mix(in srgb, #ea9d34 42%, transparent);
-    --logo-stop-2: color-mix(in srgb, #b4637a 36%, transparent);
-    --logo-stop-3: color-mix(in srgb, #faf4ed 65%, transparent);
-    --logo-base-fill: color-mix(in srgb, #faf4ed 86%, #f1d8c6 14%);
-    --logo-border-color: hsla(28, 52%, 68%, 0.35);
-    --logo-shadow-color: rgba(114, 92, 86, 0.16);
-    --logo-icon-shadow: rgba(118, 96, 90, 0.2);
+    --pine: 192 55% 34%;
+    --foam: 188 44% 42%;
+    --iris: 259 35% 48%;
+    --border: 222 24% 84%;
+    --input: 222 24% 84%;
+    --ring: 192 55% 34%;
+    --logo-stop-1: color-mix(in srgb, #31748f 36%, transparent);
+    --logo-stop-2: color-mix(in srgb, #7c6fce 28%, transparent);
+    --logo-stop-3: color-mix(in srgb, #f7f9fc 65%, transparent);
+    --logo-base-fill: color-mix(in srgb, #ffffff 88%, #e8eef7 12%);
+    --logo-border-color: hsla(222, 24%, 72%, 0.5);
+    --logo-shadow-color: rgba(45, 52, 74, 0.14);
+    --logo-icon-shadow: rgba(45, 52, 74, 0.18);
     color-scheme: light;
   }
 
@@ -432,6 +432,13 @@
   background-clip: text;
   color: transparent;
   animation: shimmer 20s ease-in-out forwards;
+}
+
+:root[data-theme='dawn'] .shimmer-text,
+body[data-theme='dawn'] .shimmer-text {
+  background: none;
+  color: hsl(var(--foreground));
+  animation: none;
 }
 
 @keyframes shimmer {

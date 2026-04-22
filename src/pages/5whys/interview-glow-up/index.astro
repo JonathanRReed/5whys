@@ -1,7 +1,6 @@
 ---
 import Base from "../../../layouts/Base.astro";
 import InterviewGlowUpAdvice from "../../../components/InterviewGlowUp/InterviewGlowUpAdvice";
-import PageHero from "../../../components/PageHero.astro";
 import { siteConfig } from "../../../config/site";
 
 const pageUrl = new URL(
@@ -66,15 +65,8 @@ const glowUpSchemas = [
     ]}
     structuredData={glowUpSchemas}
 >
-    <div class="relative space-y-24 overflow-hidden px-4 pb-24 pt-24 sm:pt-32">
-        <section class="mx-auto w-full max-w-6xl">
-            <PageHero
-                eyebrow="Interview Prep"
-                title="Turn interview anxiety into quiet confidence."
-                description="Decode the job description, build proof-based stories, and create a panic-proof packet you can use under pressure. Get ready in 20 minutes."
-            />
-        </section>
-
+    <div class="relative overflow-hidden px-4 pb-16 pt-4 sm:pt-6">
+        <h1 class="sr-only">Interview Glow Up</h1>
         <section class="mx-auto w-full max-w-6xl">
             <InterviewGlowUpAdvice client:load />
         </section>

@@ -32,12 +32,12 @@ const hasExtra = Astro.slots.has("extra");
   class={cn(
     "relative",
     hasMeta
-      ? "grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] lg:items-start"
-      : "mx-auto max-w-4xl space-y-6",
+      ? "grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] lg:items-start"
+      : "mx-auto max-w-3xl space-y-4",
   )}
   style={`--hero-accent: var(--${accent});`}
 >
-  <div class={cn("space-y-6 lg:space-y-8", hasMeta && "max-w-xl")}>
+  <div class={cn("space-y-4 lg:space-y-5", hasMeta && "max-w-xl")}>
     <div
       class="inline-flex items-center gap-3 rounded-full border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.4)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground"
     >
@@ -49,12 +49,12 @@ const hasExtra = Astro.slots.has("extra");
 
     <div class="space-y-5">
       <h1
-        class="shimmer-text text-balance text-4xl font-semibold leading-[1.15] tracking-tight sm:text-5xl"
+        class="shimmer-text text-balance text-3xl font-semibold leading-[1.12] tracking-tight sm:text-4xl lg:text-5xl"
       >
         {title}
       </h1>
       <p
-        class="max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg"
+        class="max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground"
       >
         {description}
       </p>
@@ -111,7 +111,7 @@ const hasExtra = Astro.slots.has("extra");
 
     {
       hasExtra && (
-        <div class="mt-6 sm:mt-7 lg:mt-8">
+        <div class="mt-4 sm:mt-5">
           <slot name="extra" />
         </div>
       )
@@ -122,10 +122,10 @@ const hasExtra = Astro.slots.has("extra");
     hasMeta && (
       <div class="relative">
         <div
-          class="absolute -inset-3 rounded-3xl border border-[hsl(var(--border)/0.2)] bg-[hsl(var(--card)/0.5)] blur-sm"
+          class="absolute -inset-3 rounded-[1.75rem] border border-[hsl(var(--border)/0.2)] bg-[hsl(var(--card)/0.5)] blur-sm"
           aria-hidden="true"
         />
-        <div class="relative space-y-6 rounded-3xl border border-[hsl(var(--border)/0.45)] bg-[hsl(var(--card)/0.86)] p-6 shadow-[0_30px_80px_-50px_hsl(var(--background)/0.95)] sm:p-8">
+        <div class="relative space-y-5 rounded-[1.75rem] border border-[hsl(var(--border)/0.45)] bg-[hsl(var(--card)/0.86)] p-5 shadow-[0_30px_80px_-50px_hsl(var(--background)/0.95)] sm:p-6">
           <slot name="meta" />
         </div>
       </div>
