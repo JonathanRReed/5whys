@@ -59,6 +59,30 @@ const workspaceSchemas = [
                 description="Turn a job description into role signals, map your strongest stories to the requirements, and keep a compact HUD ready for the interview itself."
             />
         </section>
+        <section class="mx-auto grid w-full max-w-6xl gap-6 md:grid-cols-3">
+            <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6">
+                <h2 class="text-xl font-semibold text-foreground">Decode the role</h2>
+                <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+                    Start by pulling signals from the job description: responsibilities, tools, risks, team context, and
+                    proof the interviewer will expect. That keeps prep tied to the actual role instead of generic
+                    practice questions.
+                </p>
+            </article>
+            <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6">
+                <h2 class="text-xl font-semibold text-foreground">Map your stories</h2>
+                <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+                    Add examples that show decisions, tradeoffs, results, and lessons learned. The workspace helps you
+                    connect each story to a role signal so you are not searching for evidence during the conversation.
+                </p>
+            </article>
+            <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6">
+                <h2 class="text-xl font-semibold text-foreground">Use the packet</h2>
+                <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+                    The final packet is meant to be compact. Keep the strongest points, trim filler, and use the HUD as a
+                    calm reminder of the evidence you want to bring into the interview.
+                </p>
+            </article>
+        </section>
         <section class="mx-auto w-full max-w-7xl">
             <InterviewGlowUpWorkspace client:load />
         </section>

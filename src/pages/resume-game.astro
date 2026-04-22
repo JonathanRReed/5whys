@@ -55,6 +55,25 @@ const resumeSchemas = [
       />
     </section>
 
+    <section class="mx-auto grid w-full max-w-6xl gap-6 md:grid-cols-[1.1fr_0.9fr]">
+      <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6">
+        <h2 class="text-xl font-semibold text-foreground">When to use it</h2>
+        <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+          Use the Resume Bullet Game when a line sounds busy but does not yet prove impact. Paste one bullet at a time,
+          check whether it has a clear action, audience, result, and measure, then rewrite it until the evidence is easy
+          to scan. It is built for early drafts, final polish, and quick reviews before applications.
+        </p>
+      </article>
+      <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6">
+        <h2 class="text-xl font-semibold text-foreground">What the score means</h2>
+        <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+          The score is a drafting aid, not a hiring prediction. Strong bullets usually name the work, show scale, explain
+          the result, and avoid vague verbs. A lower score points to the next rewrite target so you can improve the line
+          without guessing what feels weak.
+        </p>
+      </article>
+    </section>
+
     <section class="mx-auto w-full max-w-6xl">
       <ResumeGameApp client:load showHeader={false} className="rounded-[2.5rem] border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] px-4 pb-16 pt-10 sm:px-6 overflow-hidden" />
     </section>
