@@ -4,6 +4,12 @@ import { cn } from '../lib/utils';
 
 type Theme = 'night' | 'dawn';
 
+declare global {
+  interface Window {
+    __careerToolsSetTheme?: (theme: Theme) => void;
+  }
+}
+
 type NavigationProps = {
   currentPath?: string;
   initialTheme?: Theme;
@@ -78,6 +84,10 @@ const readStorageTheme = (): Theme | null => {
 };
 
 const applyThemeToDom = (theme: Theme) => {
+  if (typeof window !== 'undefined' && typeof window.__careerToolsSetTheme === 'function') {
+    window.__careerToolsSetTheme(theme);
+    return;
+  }
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
   const body = document.body;
