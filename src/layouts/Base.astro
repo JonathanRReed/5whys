@@ -65,29 +65,151 @@ const schemaPayload = [
 ];
 ---
 
-<html lang="en" class="h-full">
+<html
+  lang="en"
+  class={`h-full ${theme === "dawn" ? "theme-dawn" : "theme-night"}`}
+  data-theme={theme === "dawn" ? "dawn" : "night"}
+>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script is:inline>
       const storageKey = "career-tools-theme";
       const root = document.documentElement;
-      const applyThemeEarly = (nextTheme) => {
-        if (nextTheme === "dawn") {
-          root.dataset.theme = nextTheme;
-          if (document.body) document.body.dataset.theme = nextTheme;
-          // Ensure UA widgets (scrollbars, form controls) match
-          try {
-            root.style.colorScheme = "light";
-          } catch {}
-        } else {
-          root.removeAttribute("data-theme");
-          if (document.body) document.body.removeAttribute("data-theme");
-          try {
-            root.style.colorScheme = "dark";
-          } catch {}
-        }
+      const validThemes = new Set(["night", "dawn"]);
+      const themeTokens = {
+        night: {
+          "--background": "230 18% 8%",
+          "--foreground": "228 36% 94%",
+          "--card": "228 16% 12%",
+          "--card-foreground": "228 36% 94%",
+          "--overlay": "228 15% 16%",
+          "--popover": "228 16% 13%",
+          "--popover-foreground": "228 36% 94%",
+          "--primary": "188 58% 58%",
+          "--primary-foreground": "230 18% 8%",
+          "--secondary": "228 15% 17%",
+          "--secondary-foreground": "228 36% 94%",
+          "--muted": "228 10% 43%",
+          "--muted-foreground": "226 15% 72%",
+          "--accent": "260 64% 74%",
+          "--accent-foreground": "230 18% 8%",
+          "--destructive": "350 78% 66%",
+          "--destructive-foreground": "230 18% 8%",
+          "--love": "350 78% 66%",
+          "--gold": "45 86% 64%",
+          "--rose": "2 55% 83%",
+          "--pine": "188 58% 44%",
+          "--foam": "188 58% 58%",
+          "--iris": "260 64% 74%",
+          "--border": "226 17% 26%",
+          "--input": "226 17% 26%",
+          "--ring": "188 58% 58%",
+          "--logo-stop-1": "color-mix(in srgb, #31748f 52%, transparent)",
+          "--logo-stop-2": "color-mix(in srgb, #eb6f92 46%, transparent)",
+          "--logo-stop-3": "color-mix(in srgb, #26233a 60%, transparent)",
+          "--logo-base-fill":
+            "color-mix(in srgb, hsl(var(--overlay)) 70%, hsl(var(--background)) 30%)",
+          "--logo-border-color": "hsla(248, 32%, 58%, 0.42)",
+          "--logo-shadow-color": "rgba(12, 9, 24, 0.55)",
+          "--logo-icon-shadow": "rgba(26, 18, 40, 0.42)",
+        },
+        dawn: {
+          "--background": "220 32% 97%",
+          "--foreground": "232 24% 22%",
+          "--card": "0 0% 100%",
+          "--card-foreground": "232 24% 22%",
+          "--overlay": "220 30% 93%",
+          "--popover": "0 0% 100%",
+          "--popover-foreground": "232 24% 22%",
+          "--primary": "192 55% 34%",
+          "--primary-foreground": "0 0% 100%",
+          "--secondary": "220 30% 94%",
+          "--secondary-foreground": "232 24% 22%",
+          "--muted": "228 10% 61%",
+          "--muted-foreground": "232 18% 34%",
+          "--accent": "259 35% 48%",
+          "--accent-foreground": "0 0% 100%",
+          "--destructive": "350 56% 45%",
+          "--destructive-foreground": "0 0% 100%",
+          "--love": "350 56% 45%",
+          "--gold": "42 76% 45%",
+          "--rose": "2 55% 67%",
+          "--pine": "192 55% 34%",
+          "--foam": "188 44% 42%",
+          "--iris": "259 35% 48%",
+          "--border": "222 24% 84%",
+          "--input": "222 24% 84%",
+          "--ring": "192 55% 34%",
+          "--logo-stop-1": "color-mix(in srgb, #31748f 36%, transparent)",
+          "--logo-stop-2": "color-mix(in srgb, #7c6fce 28%, transparent)",
+          "--logo-stop-3": "color-mix(in srgb, #f7f9fc 65%, transparent)",
+          "--logo-base-fill": "color-mix(in srgb, #ffffff 88%, #e8eef7 12%)",
+          "--logo-border-color": "hsla(222, 24%, 72%, 0.5)",
+          "--logo-shadow-color": "rgba(45, 52, 74, 0.14)",
+          "--logo-icon-shadow": "rgba(45, 52, 74, 0.18)",
+        },
       };
+
+      const applyThemeEarly = (nextTheme) => {
+        if (!validThemes.has(nextTheme)) return;
+        root.dataset.theme = nextTheme;
+        root.classList.toggle("theme-dawn", nextTheme === "dawn");
+        root.classList.toggle("theme-night", nextTheme === "night");
+        if (document.body) document.body.dataset.theme = nextTheme;
+        if (document.body) {
+          document.body.classList.toggle("theme-dawn", nextTheme === "dawn");
+          document.body.classList.toggle("theme-night", nextTheme === "night");
+        }
+        Object.entries(themeTokens[nextTheme]).forEach(([name, value]) => {
+          root.style.setProperty(name, value);
+        });
+
+        try {
+          root.style.colorScheme = nextTheme === "dawn" ? "light" : "dark";
+        } catch {}
+
+        try {
+          document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
+            const isActive = button.getAttribute("data-theme-toggle") === nextTheme;
+            button.setAttribute("aria-pressed", String(isActive));
+            button.setAttribute("data-active", String(isActive));
+          });
+        } catch {}
+      };
+
+      window.__careerToolsSetTheme = (nextTheme) => {
+        if (!validThemes.has(nextTheme)) return;
+        applyThemeEarly(nextTheme);
+        try {
+          window.localStorage.setItem(storageKey, nextTheme);
+        } catch {}
+        try {
+          const secureToken =
+            window.location.protocol === "https:" ? ";Secure" : "";
+          document.cookie = `${storageKey}=${nextTheme};path=/;max-age=31536000;SameSite=Lax${secureToken}`;
+        } catch {}
+      };
+
+      document.addEventListener(
+        "click",
+        (event) => {
+          const target =
+            event.target instanceof Element
+              ? event.target.closest("[data-theme-toggle]")
+              : null;
+          if (!target) return;
+          window.__careerToolsSetTheme(target.getAttribute("data-theme-toggle"));
+        },
+        true,
+      );
+
+      window.addEventListener("career-tools-theme-change", (event) => {
+        const nextTheme = event instanceof CustomEvent ? event.detail?.theme : null;
+        if (validThemes.has(nextTheme)) {
+          window.__careerToolsSetTheme(nextTheme);
+        }
+      });
 
       const getTheme = () => {
         try {
