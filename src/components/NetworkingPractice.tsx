@@ -369,7 +369,7 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
         key={scenario.id}
         onClick={() => handleScenarioChange(scenario.id)}
         className={`rounded-xl border px-4 py-3 text-left shadow-sm transition ${
-          isActive ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.2)] text-[hsl(var(--primary-foreground))]' : 'border-transparent bg-[hsl(var(--overlay)/0.3)] text-[hsl(var(--foreground))] hover:border-[hsl(var(--primary))]'
+          isActive ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.2)] text-[hsl(var(--foreground))]' : 'border-transparent bg-[hsl(var(--overlay)/0.3)] text-[hsl(var(--foreground))] hover:border-[hsl(var(--primary))]'
         }`}
       >
         <div className="text-sm font-semibold">{scenario.title}</div>
@@ -388,7 +388,7 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
 
   const innerClasses = cn(
     'mx-auto w-full max-w-6xl px-4 pb-20',
-    showHeader ? 'pt-12 space-y-10' : 'pt-10 space-y-8'
+    showHeader ? 'pt-12 space-y-10' : 'pt-6 space-y-8'
   );
 
   return (

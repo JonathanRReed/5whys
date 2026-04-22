@@ -1,7 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
 import Career5Whys from '../components/Career5Whys';
-import PageHero from '../components/PageHero.astro';
 import { siteConfig } from '../config/site';
 
 const pageUrl = new URL('/career/', siteConfig.siteUrl).toString();
@@ -33,21 +32,14 @@ const careerSchemas = [
   ]}
   structuredData={careerSchemas}
 >
-  <div class="relative space-y-24 overflow-hidden px-4 pb-24 pt-24 sm:pt-32">
-    <section class="mx-auto w-full max-w-6xl">
-      <PageHero
-        eyebrow="Deep Reflection"
-        title="Discover your underlying career motivations."
-        description="Journal through five guided layers of reasoning to articulate the values, tradeoffs, and impact guiding your next role. Save snapshots, export insights, and revisit your why whenever the path shifts."
-      />
-    </section>
-
+  <div class="relative overflow-hidden px-4 pb-16 pt-4 sm:pt-6">
+    <h1 class="sr-only">Career Reflection Five Whys</h1>
     <section id="why-flow" class="mx-auto w-full max-w-6xl">
       <Career5Whys
         client:load
         showHeader={false}
         showFooter={false}
-        className="rounded-[2.5rem] border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] pb-14 overflow-hidden"
+        className="pb-8"
       />
     </section>
   </div>

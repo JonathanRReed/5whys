@@ -24,15 +24,15 @@ const THEME_CHANNEL_NAME = 'career-tools-theme';
 const themeOptions: ThemeOption[] = [
   {
     id: 'night',
-    label: 'Night',
-    description: 'Rosé Pine classic',
-    gradient: 'linear-gradient(135deg,#26233a 0%,#31748f 55%,#eb6f92 100%)',
+    label: 'Dark',
+    description: 'Off black',
+    gradient: 'linear-gradient(135deg,#0f111a 0%,#1b2230 58%,#7dd3d8 100%)',
   },
   {
     id: 'dawn',
-    label: 'Dawn',
-    description: 'Soft sunrise warmth',
-    gradient: 'linear-gradient(135deg,#faf4ed 0%,#ea9d34 55%,#b4637a 100%)',
+    label: 'Light',
+    description: 'Off white',
+    gradient: 'linear-gradient(135deg,#f7f9fc 0%,#e8eef7 58%,#31748f 100%)',
   },
 ];
 
@@ -270,7 +270,7 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
 
   return (
     <header className={cn(
-      "sticky top-0 z-40 w-full max-w-6xl mx-auto border-b transition-all duration-300",
+      "sticky top-0 z-40 mx-auto w-full max-w-[1600px] border-b transition-all duration-300",
       isScrolled
         ? "border-[hsl(var(--border)/0.5)] bg-[hsl(var(--background)/0.88)] backdrop-blur-2xl shadow-[0_4px_24px_-8px_hsl(var(--background)/0.5)]"
         : "border-[hsl(var(--border)/0.35)] bg-[hsl(var(--background)/0.92)]/95 backdrop-blur-xl"
@@ -278,12 +278,12 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
       <nav
         aria-label="Primary"
         className={cn(
-          "mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 md:flex-row md:items-center md:justify-between transition-all duration-300",
+          "mx-auto flex w-full max-w-[1600px] flex-col gap-3 px-4 md:flex-row md:items-center md:justify-between transition-all duration-300",
           isScrolled ? "py-2 sm:py-2.5" : "py-3 sm:py-4"
         )}
       >
-        <div className="flex w-full flex-wrap items-center justify-between gap-4 md:w-auto md:flex-nowrap md:justify-start">
-          <a href="/" className="flex items-center gap-3 text-foreground transition-transform hover:scale-[1.02]">
+        <div className="flex w-full flex-wrap items-center justify-between gap-3 md:w-auto md:flex-nowrap md:justify-start">
+          <a href="/" className="flex flex-shrink-0 items-center gap-3 text-foreground transition-transform hover:scale-[1.02]">
             <div className="nav-logo flex h-10 w-10 items-center justify-center rounded-2xl">
               <img
                 src="/favicon.webp"
@@ -294,12 +294,12 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
               />
             </div>
             <div className="flex flex-col text-left">
-              <span className="text-sm font-medium uppercase tracking-[0.24em] text-muted-foreground">Career Tools</span>
-              <span className="text-base font-semibold tracking-tight">Growth Studio</span>
+              <span className="whitespace-nowrap text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">Career Tools</span>
+              <span className="whitespace-nowrap text-base font-semibold tracking-tight">Growth Studio</span>
             </div>
           </a>
 
-          <div className="hidden items-center gap-2 lg:flex xl:gap-4">
+          <div className="hidden items-center gap-2 lg:flex xl:gap-3">
             {navLinks.map(({ href, label }) => {
               const active = isActive(href);
               return (
@@ -308,7 +308,7 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
                   href={href}
                   aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'group relative inline-flex flex-shrink-0 items-center whitespace-nowrap rounded-full border border-[hsl(var(--border)/0.38)] bg-[linear-gradient(135deg,hsl(var(--overlay)/0.26)_0%,hsl(var(--overlay)/0.16)_100%)] px-3 py-1.5 text-xs font-semibold tracking-tight text-muted-foreground transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))] hover:-translate-y-0.5 hover:border-[hsl(var(--accent)/0.45)] hover:text-foreground hover:shadow-[0_18px_36px_-24px_hsl(var(--background)/0.88)] xl:px-4 xl:py-2 xl:text-sm',
+                    'group relative inline-flex flex-shrink-0 items-center whitespace-nowrap rounded-full border border-[hsl(var(--border)/0.38)] bg-[linear-gradient(135deg,hsl(var(--overlay)/0.26)_0%,hsl(var(--overlay)/0.16)_100%)] px-3 py-1.5 text-xs font-semibold tracking-tight text-muted-foreground transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))] hover:-translate-y-0.5 hover:border-[hsl(var(--accent)/0.45)] hover:text-foreground hover:shadow-[0_18px_36px_-24px_hsl(var(--background)/0.88)] xl:px-3.5 xl:py-2 xl:text-sm',
                     active
                       ? 'border-transparent bg-[linear-gradient(130deg,hsl(var(--overlay)/0.72)_0%,hsl(var(--overlay)/0.36)_60%,hsl(var(--overlay)/0.22)_100%)] text-foreground shadow-[0_22px_44px_-26px_hsl(var(--background)/0.95)]'
                       : 'shadow-[0_6px_20px_-16px_hsl(var(--background)/0.85)]'
@@ -339,7 +339,7 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="hidden items-center gap-2 lg:flex">
+            <div className="hidden items-center gap-2 xl:flex">
               {themeOptions.map((option) => {
                 const isActiveUi = isHydrated && activeTheme === option.id;
                 return (
@@ -348,7 +348,7 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
                     type="button"
                     onClick={() => setTheme(option.id)}
                     className={cn(
-                      'group inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]',
+                      'group inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]',
                       isActiveUi &&
                       'border-transparent bg-[radial-gradient(circle_at_top_right,hsl(var(--overlay)/0.48)_0%,hsl(var(--overlay)/0.28)_55%,transparent_100%)] text-foreground shadow-[0_18px_36px_-26px_hsl(var(--background)/0.85)]'
                       ,
