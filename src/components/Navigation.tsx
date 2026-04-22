@@ -100,7 +100,10 @@ const applyThemeToDom = (theme: Theme) => {
     body.classList.toggle('theme-night', theme === 'night');
   }
   try {
-    root.style.colorScheme = theme === 'dawn' ? 'light' : 'dark';
+    const colorScheme = theme === 'dawn' ? 'only light' : 'dark';
+    root.style.colorScheme = colorScheme;
+    if (body) body.style.colorScheme = colorScheme;
+    document.querySelector('meta[name="color-scheme"]')?.setAttribute('content', colorScheme);
   } catch {
     // ignore unsupported style writes
   }
