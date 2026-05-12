@@ -1,0 +1,96 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import PageHero from '../../components/PageHero.astro';
+import { siteConfig } from '../../config/site';
+
+const posts = (await getCollection('blog'))
+  .filter((post) => !post.data.draft)
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const pageUrl = new URL('/blog/', siteConfig.siteUrl).toString();
+const blogSchemas = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    '@id': `${pageUrl}#blog`,
+    url: pageUrl,
+    name: '5 Whys Career Studio Blog',
+    description: 'Career reflection, resume tips, interview preparation, networking, and AI & career insights.',
+    inLanguage: 'en-US',
+    publisher: {
+      '@id': 'https://jonathanrreed.com/#person',
+    },
+    blogPost: posts.map((post, index) => ({
+      '@type': 'BlogPosting',
+      position: index + 1,
+      headline: post.data.title,
+      description: post.data.description,
+      url: new URL(`/blog/${post.id}/`, siteConfig.siteUrl).toString(),
+      datePublished: post.data.pubDate.toISOString(),
+      author: {
+        '@type': 'Person',
+        name: post.data.author,
+      },
+    })),
+  },
+];
+---
+
+<Base
+  title="Blog"
+  description="Career reflection, resume tips, interview preparation, networking, and AI & career insights from 5 Whys Career Studio."
+  breadcrumbs={[
+    { label: 'Home', href: '/' },
+    { label: 'Blog', href: '/blog/' },
+  ]}
+  structuredData={blogSchemas}
+>
+  <div class="relative space-y-10 overflow-hidden px-4 pb-16 pt-8 sm:pt-10">
+    <section class="mx-auto w-full max-w-6xl">
+      <PageHero
+        eyebrow="Resources"
+        title="Career insights and practical guides."
+        description="Short, focused reads on reflection, resumes, interviews, networking, and using AI to advance your career."
+      />
+    </section>
+
+    <section class="mx-auto grid w-full max-w-6xl gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {posts.map((post) => (
+        <a
+          href={`/blog/${post.id}/`}
+          class="group grid h-full grid-rows-[auto,1fr,auto] overflow-hidden rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--card)/0.72)] p-7 shadow-[0_28px_60px_-40px_hsl(var(--background)/0.85)] transition-transform duration-300 hover:-translate-y-2 hover:border-[hsl(var(--foam)/0.4)] hover:shadow-[0_32px_70px_-44px_hsl(var(--card)/0.95)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]"
+        >
+          <div class="space-y-3">
+            <div class="flex items-center justify-between gap-2">
+              <span class="inline-flex items-center rounded-full bg-[hsl(var(--foam)/0.12)] px-2.5 py-0.5 text-[0.7rem] font-semibold uppercase tracking-[0.15em] text-[hsl(var(--foam))]">
+                {post.data.category.replace('-', ' ')}
+              </span>
+              {post.data.featured && (
+                <span class="inline-flex items-center rounded-full bg-[hsl(var(--gold)/0.12)] px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-[hsl(var(--gold))]">
+                  Featured
+                </span>
+              )}
+            </div>
+            <h2 class="text-xl font-semibold leading-snug tracking-tight text-foreground group-hover:text-[hsl(var(--foam))] transition-colors">
+              {post.data.title}
+            </h2>
+          </div>
+          <p class="mt-3 text-[0.95rem] leading-relaxed text-muted-foreground">
+            {post.data.description}
+          </p>
+          <div class="mt-4 flex items-center justify-between text-xs text-muted-foreground">
+            <span>{post.data.author}</span>
+            <time datetime={post.data.pubDate.toISOString()}>
+              {post.data.pubDate.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })}
+            </time>
+          </div>
+        </a>
+      ))}
+    </section>
+  </div>
+</Base>

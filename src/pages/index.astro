@@ -2,6 +2,7 @@
 import Base from "../layouts/Base.astro";
 import ToolCard from "../components/ToolCard.astro";
 import PageHero from "../components/PageHero.astro";
+import NewsletterSignup from "../components/NewsletterSignup";
 import { siteConfig } from "../config/site";
 
 const metrics = [
@@ -311,6 +312,10 @@ const homeStructuredData = [
           </div>
         </div>
       </div>
+    </section>
+
+    <section class="reveal mx-auto w-full max-w-6xl">
+      <NewsletterSignup client:load />
     </section>
   </div>
 </Base>

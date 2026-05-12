@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import ResumeGameApp from '../components/ResumeGame';
+import ErrorBoundary from '../components/shared/ErrorBoundary';
 import { siteConfig } from '../config/site';
 
 const pageUrl = new URL('/resume-game/', siteConfig.siteUrl).toString();
@@ -34,6 +35,36 @@ const resumeSchemas = [
       worstRating: '1',
     },
   },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'How does the resume scoring work?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'The Resume Game analyzes each bullet for action verbs, quantifiers, task clarity, and measurable impact. It then generates a score from 0-100 and suggests improvements.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Can I upload my existing resume?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Yes. You can upload .txt, .md, or .markdown files, or simply paste your resume text directly into the editor.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Is my resume data private?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Absolutely. All text is processed in your browser. No data is sent to any server.',
+        },
+      },
+    ],
+  },
 ];
 ---
 <Base
@@ -48,7 +79,9 @@ const resumeSchemas = [
   <div class="relative space-y-10 overflow-hidden px-4 pb-16 pt-4 sm:pt-6">
     <h1 class="sr-only">Resume Bullet Game</h1>
     <section class="mx-auto w-full max-w-6xl">
-      <ResumeGameApp client:load showHeader={false} className="px-0 pb-8 pt-0 overflow-hidden" />
+      <ErrorBoundary client:load>
+        <ResumeGameApp client:load showHeader={false} className="px-0 pb-8 pt-0 overflow-hidden" />
+      </ErrorBoundary>
     </section>
 
     <section class="mx-auto grid w-full max-w-6xl gap-6 md:grid-cols-[1.1fr_0.9fr]">
@@ -66,6 +99,21 @@ const resumeSchemas = [
           The score is a drafting aid, not a hiring prediction. Strong bullets usually name the work, show scale, explain
           the result, and avoid vague verbs. A lower score points to the next rewrite target so you can improve the line
           without guessing what feels weak.
+        </p>
+      </article>
+      <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6 md:col-span-2">
+        <h2 class="text-xl font-semibold text-foreground">How to revise</h2>
+        <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+          Rewrite one part at a time. Start with the verb, add the system or audience, name the measurable result, then
+          trim words that do not help a recruiter understand scope. The best version should still sound like your work,
+          just clearer and easier to verify.
+        </p>
+        <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+          When numbers are not available, use concrete scope instead: the team affected, the process improved, the
+          decision made, or the risk reduced. Specific context usually reads stronger than inflated language.
+        </p>
+        <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+          Save the strongest rewrite, then compare it against the role before sending.
         </p>
       </article>
     </section>

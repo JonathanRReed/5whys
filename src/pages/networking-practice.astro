@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import NetworkingPracticeApp from '../components/NetworkingPractice';
+import ErrorBoundary from '../components/shared/ErrorBoundary';
 import { siteConfig } from '../config/site';
 
 const pageUrl = new URL('/networking-practice/', siteConfig.siteUrl).toString();
@@ -34,6 +35,36 @@ const networkingSchemas = [
       worstRating: '1',
     },
   },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'How long should I practice each scenario?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Each scenario includes a 2-minute timer. Most people find that 2-3 reps per scenario builds confidence without fatigue.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Are the scenarios based on real situations?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Yes. Each scenario is crafted around common networking contexts like career fairs, coffee chats, virtual events, and alumni meetups.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Can I create my own scenarios?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Yes. You can customize any scenario or create entirely new versions with your own prompts, audience, and context.',
+        },
+      },
+    ],
+  },
 ];
 ---
 <Base
@@ -48,11 +79,13 @@ const networkingSchemas = [
   <div class="relative overflow-hidden px-4 pb-16 pt-4 sm:pt-6">
     <h1 class="sr-only">Networking Practice Studio</h1>
     <section class="mx-auto w-full max-w-6xl">
-      <NetworkingPracticeApp
-        client:load
-        showHeader={false}
-        className="pb-8"
-      />
+      <ErrorBoundary client:load>
+        <NetworkingPracticeApp
+          client:load
+          showHeader={false}
+          className="pb-8"
+        />
+      </ErrorBoundary>
     </section>
   </div>
 </Base>
