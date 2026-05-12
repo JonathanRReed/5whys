@@ -330,6 +330,12 @@ const schemaPayload = [
           >
           <span class="text-muted-foreground/60">·</span>
           <a
+            href="/blog/"
+            class="font-semibold text-foreground transition-colors hover:text-accent"
+            >Blog</a
+          >
+          <span class="text-muted-foreground/60">·</span>
+          <a
             href="/contact/"
             class="font-semibold text-foreground transition-colors hover:text-accent"
             >Contact</a
@@ -448,6 +454,38 @@ const schemaPayload = [
           console.log("Hey there. Interested in code");
           console.log("Check out my GitHub: https://github.com/JonathanRReed");
           console.log("Most of my sites repos are open source.");
+        })();
+      </script>
+      <script is:inline>
+        // Privacy-first analytics (no cookies, no IP)
+        (function () {
+          if (typeof window === 'undefined') return;
+          var sent = false;
+          function send() {
+            if (sent) return;
+            sent = true;
+            try {
+              fetch('/api/analytics', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  pathname: window.location.pathname,
+                  referrer: document.referrer,
+                  screenWidth: window.innerWidth,
+                  screenHeight: window.innerHeight,
+                }),
+              }).catch(function () {});
+            } catch (e) {}
+          }
+          if (document.readyState === 'complete') {
+            send();
+          } else {
+            window.addEventListener('load', send);
+          }
+          document.addEventListener('astro:page-load', function () {
+            sent = false;
+            send();
+          });
         })();
       </script>
     </div>

@@ -1,0 +1,93 @@
+---
+import Base from '../layouts/Base.astro';
+import { siteConfig } from '../config/site';
+
+const notFoundSchemas = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: 'Page Not Found',
+    description: 'The page you are looking for does not exist.',
+    url: new URL('/404/', siteConfig.siteUrl).toString(),
+  },
+];
+---
+
+<Base
+  title="Page Not Found"
+  description="The page you are looking for does not exist. Browse the career tools below."
+  noindex={true}
+  breadcrumbs={[{ label: 'Home', href: '/' }]}
+  structuredData={notFoundSchemas}
+>
+  <div class="relative flex min-h-[70vh] flex-col items-center justify-center px-4 pb-20 pt-16 text-center">
+    <div class="space-y-6">
+      <div class="inline-flex h-20 w-20 items-center justify-center rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.3)]">
+        <svg
+          class="h-10 w-10 text-[hsl(var(--muted-foreground))]"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="1.5"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+        </svg>
+      </div>
+
+      <div class="space-y-3">
+        <h1 class="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">404</h1>
+        <p class="mx-auto max-w-md text-base text-muted-foreground">
+          This page does not exist. It may have moved, or the link might be outdated.
+        </p>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-center gap-3">
+        <a
+          href="/"
+          class="inline-flex items-center gap-2 rounded-full bg-[hsl(var(--primary))] px-6 py-3 text-sm font-semibold text-[hsl(var(--primary-foreground))] shadow-lg transition-transform hover:-translate-y-0.5"
+        >
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+          </svg>
+          Back to Home
+        </a>
+      </div>
+    </div>
+
+    <section class="mx-auto mt-16 w-full max-w-4xl">
+      <h2 class="mb-6 text-sm font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+        Popular tools
+      </h2>
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <a
+          href="/career/"
+          class="group rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.2)] p-5 transition-all hover:-translate-y-1 hover:border-[hsl(var(--foam)/0.4)]"
+        >
+          <p class="text-sm font-semibold text-foreground">Career 5 Whys</p>
+          <p class="mt-1 text-xs text-muted-foreground">Guided reflection exercise</p>
+        </a>
+        <a
+          href="/resume-game/"
+          class="group rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.2)] p-5 transition-all hover:-translate-y-1 hover:border-[hsl(var(--gold)/0.4)]"
+        >
+          <p class="text-sm font-semibold text-foreground">Resume Game</p>
+          <p class="mt-1 text-xs text-muted-foreground">Bullet scoring & rewrite</p>
+        </a>
+        <a
+          href="/networking-practice/"
+          class="group rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.2)] p-5 transition-all hover:-translate-y-1 hover:border-[hsl(var(--iris)/0.4)]"
+        >
+          <p class="text-sm font-semibold text-foreground">Networking Studio</p>
+          <p class="mt-1 text-xs text-muted-foreground">Practice & rehearsal</p>
+        </a>
+        <a
+          href="/5whys/interview-glow-up/"
+          class="group rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.2)] p-5 transition-all hover:-translate-y-1 hover:border-[hsl(var(--love)/0.4)]"
+        >
+          <p class="text-sm font-semibold text-foreground">Interview Glow Up</p>
+          <p class="mt-1 text-xs text-muted-foreground">JD decode & story builder</p>
+        </a>
+      </div>
+    </section>
+  </div>
+</Base>

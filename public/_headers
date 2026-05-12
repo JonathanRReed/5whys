@@ -9,3 +9,9 @@
 /.well-known/security.txt
   Content-Type: text/plain; charset=utf-8
   Cache-Control: public, max-age=86400
+
+https://5whys.pages.dev/*
+  X-Robots-Tag: noindex
+
+https://:version.5whys.pages.dev/*
+  X-Robots-Tag: noindex
