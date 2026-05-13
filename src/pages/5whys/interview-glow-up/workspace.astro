@@ -1,109 +1,106 @@
 ---
-import Base from "../../../layouts/Base.astro";
-import InterviewGlowUpWorkspace from "../../../components/InterviewGlowUp/InterviewGlowUpWorkspace";
-import ErrorBoundary from "../../../components/shared/ErrorBoundary";
-import WithToasts from "../../../components/WithToasts";
-import { siteConfig } from "../../../config/site";
+import Base from '../../../layouts/Base.astro';
+import InterviewGlowUpWorkspace from '../../../components/InterviewGlowUp/InterviewGlowUpWorkspace';
+import ErrorBoundary from '../../../components/shared/ErrorBoundary';
+import WithToasts from '../../../components/WithToasts';
+import { siteConfig } from '../../../config/site';
 
-const pageUrl = new URL(
-    "/5whys/interview-glow-up/workspace",
-    siteConfig.siteUrl,
-).toString();
+const pageUrl = new URL('/5whys/interview-glow-up/workspace', siteConfig.siteUrl).toString();
 const workspaceSchemas = [
-    {
-        "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "@id": `${pageUrl}#webapp`,
-        url: pageUrl,
-        name: "Interview Glow Up Workspace",
-        description:
-            "Interactive workspace to decode job descriptions, build proof-based stories, manage your story vault, and create interview packets with a panic-proof HUD mode.",
-        inLanguage: "en-US",
-        applicationCategory: "ProductivityApplication",
-        operatingSystem: "Web Browser",
-        offers: {
-            "@type": "Offer",
-            price: "0",
-            priceCurrency: "USD",
-        },
-        author: {
-            "@type": "Person",
-            name: siteConfig.author.name,
-            url: siteConfig.author.url,
-        },
-        aggregateRating: {
-            "@type": "AggregateRating",
-            ratingValue: "4.8",
-            ratingCount: "11",
-            bestRating: "5",
-            worstRating: "1",
-        },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    '@id': `${pageUrl}#webapp`,
+    url: pageUrl,
+    name: 'Interview Glow Up Workspace',
+    description:
+      'Interactive workspace to decode job descriptions, build proof-based stories, manage your story vault, and create interview packets with a panic-proof HUD mode.',
+    inLanguage: 'en-US',
+    applicationCategory: 'ProductivityApplication',
+    operatingSystem: 'Web Browser',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
     },
+    author: {
+      '@type': 'Person',
+      name: siteConfig.author.name,
+      url: siteConfig.author.url,
+    },
+  },
 ];
 ---
 
 <Base
-    title="Interview Workspace"
-    description="Decode job descriptions, build proof-based stories, manage a story vault, and create an interview packet with panic-proof HUD mode."
-    breadcrumbs={[
-        { label: "Home", href: "/" },
-        { label: "Interview Glow Up", href: "/5whys/interview-glow-up/" },
-        { label: "Workspace", href: "/5whys/interview-glow-up/workspace/" },
-    ]}
-    structuredData={workspaceSchemas}
+  title="Interview Workspace"
+  description="Decode job descriptions, build proof-based stories, manage a story vault, and create an interview packet with panic-proof HUD mode."
+  breadcrumbs={[
+    { label: 'Home', href: '/' },
+    { label: 'Interview Glow Up', href: '/5whys/interview-glow-up/' },
+    { label: 'Workspace', href: '/5whys/interview-glow-up/workspace/' },
+  ]}
+  structuredData={workspaceSchemas}
 >
-    <div class="relative space-y-10 overflow-hidden px-4 pb-16 pt-4 sm:pt-6">
-        <h1 class="sr-only">Interview Workspace</h1>
-        <section class="mx-auto w-full max-w-7xl">
-            <ErrorBoundary client:load>
-                <WithToasts client:load>
-                    <InterviewGlowUpWorkspace />
-                </WithToasts>
-            </ErrorBoundary>
-        </section>
-        <section class="mx-auto grid w-full max-w-6xl gap-6 md:grid-cols-3">
-            <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6">
-                <h2 class="text-xl font-semibold text-foreground">Decode the role</h2>
-                <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-                    Start by pulling signals from the job description: responsibilities, tools, risks, team context, and
-                    proof the interviewer will expect. That keeps prep tied to the actual role instead of generic
-                    practice questions.
-                </p>
-            </article>
-            <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6">
-                <h2 class="text-xl font-semibold text-foreground">Map your stories</h2>
-                <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-                    Add examples that show decisions, tradeoffs, results, and lessons learned. The workspace helps you
-                    connect each story to a role signal so you are not searching for evidence during the conversation.
-                </p>
-            </article>
-            <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6">
-                <h2 class="text-xl font-semibold text-foreground">Use the packet</h2>
-                <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-                    The final packet is meant to be compact. Keep the strongest points, trim filler, and use the HUD as a
-                    calm reminder of the evidence you want to bring into the interview. Before a call, review the packet
-                    once for relevance, once for proof, and once for language that sounds like you instead of a script.
-                </p>
-            </article>
-        </section>
-        <section class="mx-auto w-full max-w-4xl space-y-4 text-base leading-relaxed text-muted-foreground">
-            <h2 class="text-xl font-semibold text-foreground">A faster way to prepare</h2>
-            <p>
-                The workspace is most useful when you treat it like a rehearsal bench. Paste the role, choose the signals
-                that matter, attach stories with real outcomes, and leave weaker examples out of the packet. That process
-                keeps interview prep grounded in evidence instead of memorized answers.
-            </p>
-            <p>
-                After the first pass, read the packet from the interviewer's point of view. Each story should make the
-                decision, constraint, result, and lesson easy to understand without extra context. If a section feels
-                vague, return to the story vault and add a clearer result or a better example before the call.
-            </p>
-            <p>
-                Keep only the examples you would be comfortable defending with follow-up detail.
-            </p>
-            <p>
-                A smaller packet is easier to remember under pressure.
-            </p>
-        </section>
-    </div>
+  <div class="relative space-y-10 overflow-hidden px-4 pb-16 pt-4 sm:pt-6">
+    <section class="mx-auto w-full max-w-7xl">
+      <ErrorBoundary client:load>
+        <WithToasts client:load>
+          <InterviewGlowUpWorkspace />
+        </WithToasts>
+      </ErrorBoundary>
+    </section>
+    <section class="mx-auto grid w-full max-w-6xl gap-6 md:grid-cols-3">
+      <article
+        class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6"
+      >
+        <h2 class="text-xl font-semibold text-foreground">Decode the role</h2>
+        <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+          Start by pulling signals from the job description: responsibilities, tools, risks, team
+          context, and proof the interviewer will expect. That keeps prep tied to the actual role
+          instead of generic practice questions.
+        </p>
+      </article>
+      <article
+        class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6"
+      >
+        <h2 class="text-xl font-semibold text-foreground">Map your stories</h2>
+        <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+          Add examples that show decisions, tradeoffs, results, and lessons learned. The workspace
+          helps you connect each story to a role signal so you are not searching for evidence during
+          the conversation.
+        </p>
+      </article>
+      <article
+        class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6"
+      >
+        <h2 class="text-xl font-semibold text-foreground">Use the packet</h2>
+        <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+          The final packet is meant to be compact. Keep the strongest points, trim filler, and use
+          the HUD as a calm reminder of the evidence you want to bring into the interview. Before a
+          call, review the packet once for relevance, once for proof, and once for language that
+          sounds like you instead of a script.
+        </p>
+      </article>
+    </section>
+    <section
+      class="mx-auto w-full max-w-4xl space-y-4 text-base leading-relaxed text-muted-foreground"
+    >
+      <h2 class="text-xl font-semibold text-foreground">A faster way to prepare</h2>
+      <p>
+        The workspace is most useful when you treat it like a rehearsal bench. Paste the role,
+        choose the signals that matter, attach stories with real outcomes, and leave weaker examples
+        out of the packet. That process keeps interview prep grounded in evidence instead of
+        memorized answers.
+      </p>
+      <p>
+        After the first pass, read the packet from the interviewer's point of view. Each story
+        should make the decision, constraint, result, and lesson easy to understand without extra
+        context. If a section feels vague, return to the story vault and add a clearer result or a
+        better example before the call.
+      </p>
+      <p>Keep only the examples you would be comfortable defending with follow-up detail.</p>
+      <p>A smaller packet is easier to remember under pressure.</p>
+    </section>
+  </div>
 </Base>

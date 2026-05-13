@@ -1,58 +1,56 @@
 ---
-import Base from "../layouts/Base.astro";
-import ToolCard from "../components/ToolCard.astro";
-import PageHero from "../components/PageHero.astro";
-import { siteConfig } from "../config/site";
+import Base from '../layouts/Base.astro';
+import ToolCard from '../components/ToolCard.astro';
+import PageHero from '../components/PageHero.astro';
+import { siteConfig } from '../config/site';
 
 const highlights = [
-  "Structured reflection exercises",
-  "Resume scoring with instant feedback",
-  "Networking rehearsal with timers",
-  "Interview packet builder",
+  'Structured reflection exercises',
+  'Resume scoring with instant feedback',
+  'Networking rehearsal with timers',
+  'Interview packet builder',
 ];
 
 const toolkitItems = [
   {
-    name: "Career Reflection · Five Whys",
-    description:
-      "Structured journaling prompts to uncover the motivations behind your next move.",
-    url: "/career/",
+    name: 'Career Reflection · Five Whys',
+    description: 'Structured journaling prompts to uncover the motivations behind your next move.',
+    url: '/career/',
   },
   {
-    name: "Resume Game · Bullet Point Improvement",
+    name: 'Resume Game · Bullet Point Improvement',
     description:
-      "Score résumé bullets for impact, clarity, and action verbs before sending applications.",
-    url: "/resume-game/",
+      'Score résumé bullets for impact, clarity, and action verbs before sending applications.',
+    url: '/resume-game/',
   },
   {
-    name: "Networking Practice · Social Rehearsal",
-    description:
-      "Guided scenarios, timers, and debriefs to make networking reps intentional.",
-    url: "/networking-practice/",
+    name: 'Networking Practice · Social Rehearsal',
+    description: 'Guided scenarios, timers, and debriefs to make networking reps intentional.',
+    url: '/networking-practice/',
   },
   {
-    name: "Interview Glow Up · Proof-Based Prep",
+    name: 'Interview Glow Up · Proof-Based Prep',
     description:
-      "Decode job descriptions, build STAR-method stories, and assemble a panic-proof interview packet before your next call.",
-    url: "/5whys/interview-glow-up/",
+      'Decode job descriptions, build STAR-method stories, and assemble a panic-proof interview packet before your next call.',
+    url: '/5whys/interview-glow-up/',
   },
 ];
 
 const homeStructuredData = [
   {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    name: "Career Tools Studio",
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Career Tools Studio',
     url: siteConfig.siteUrl,
     description:
-      "Career reflection, resume refinement, and networking practice experiences crafted to feel calm and intentional.",
+      'Career reflection, resume refinement, and networking practice experiences crafted to feel calm and intentional.',
   },
   {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    name: "Career toolkit experiences",
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Career toolkit experiences',
     itemListElement: toolkitItems.map((item, index) => ({
-      "@type": "ListItem",
+      '@type': 'ListItem',
       position: index + 1,
       name: item.name,
       description: item.description,
@@ -69,55 +67,54 @@ const homeStructuredData = [
   structuredData={homeStructuredData}
 >
   <div class="relative space-y-12 overflow-hidden px-4 pb-20 pt-8 sm:pt-10">
-    <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
-      <div
-        class="gradient-orb-animated absolute -top-24 right-0 h-72 w-72 rounded-full bg-[radial-gradient(circle_at_top_right,hsl(var(--foam)/0.18)_0%,transparent_60%)] blur-3xl"
-      >
-      </div>
-      <div
-        class="gradient-orb-animated-reverse absolute bottom-0 -left-10 h-80 w-80 rounded-full bg-[radial-gradient(circle_at_bottom_left,hsl(var(--iris)/0.16)_0%,transparent_65%)] blur-[64px]"
-      >
-      </div>
-    </div>
     <section class="reveal mx-auto w-full max-w-6xl">
       <PageHero
         eyebrow="Guided Career Studio"
-        title="Modern tools to help you design a career story with intention."
-        description="Created by Jonathan R Reed, 5 Whys Career Studio offers reflective exercises, interactive resume polish, & networking practice all crafted to feel calm, cohesive, & focused on your next professional chapter."
-        primaryCta={{ href: "/career/", label: "Start with 5 Whys" }}
-        secondaryCta={{ href: "#tools", label: "Browse the toolkit" }}
+        title="5 Whys Career Studio"
+        description="A private workspace for turning career uncertainty into clearer language, stronger proof, and better next conversations."
+        primaryCta={{ href: '/career/', label: 'Start with 5 Whys' }}
+        secondaryCta={{ href: '#tools', label: 'Browse the toolkit' }}
       >
         <fragment slot="extra">
           <div class="flex flex-wrap gap-x-4 gap-y-2">
-            {highlights.map((item) => (
-              <span class="inline-flex items-center gap-2 text-sm text-muted-foreground">
-                <span class="h-1.5 w-1.5 rounded-full bg-[hsl(var(--foam))]" aria-hidden="true" />
-                {item}
-              </span>
-            ))}
+            {
+              highlights.map((item) => (
+                <span class="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                  <span class="h-1.5 w-1.5 rounded-full bg-[hsl(var(--foam))]" aria-hidden="true" />
+                  {item}
+                </span>
+              ))
+            }
           </div>
         </fragment>
 
         <fragment slot="meta">
+          <div class="space-y-2">
+            <p class="text-sm font-semibold uppercase tracking-[0.28em] text-[hsl(var(--foam))]">
+              5 Whys Method
+            </p>
+            <p class="text-2xl font-semibold leading-tight tracking-tight text-foreground">
+              Follow the real reason, then build the proof.
+            </p>
+          </div>
           <div class="flex flex-wrap items-center justify-between gap-3">
-            <span
-              class="text-sm font-semibold uppercase tracking-[0.3em] text-muted-foreground"
-              >This week’s focus</span
+            <span class="text-sm font-semibold uppercase tracking-[0.3em] text-muted-foreground"
+              >Core method</span
             >
             <span
               class="rounded-full bg-[hsl(var(--foam)/0.2)] px-3 py-1 text-xs font-medium text-[hsl(var(--foam))]"
-              >Intention</span
+              >Root-cause reflection</span
             >
           </div>
           <p class="text-base font-medium leading-relaxed text-foreground">
             "The clearer your why, the more courageous your next step becomes."
           </p>
           <div
-            class="space-y-3 rounded-[1.5rem] border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.32)] p-4 shadow-[0_30px_70px_-48px_hsl(var(--background)/0.9)]"
+            class="space-y-3 rounded-[1.5rem] border border-[hsl(var(--border)/0.34)] bg-[hsl(var(--overlay)/0.38)] p-4 shadow-[0_30px_70px_-48px_hsl(var(--background)/0.9)]"
           >
             <div class="space-y-3 text-sm text-muted-foreground">
               <div
-                class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.4)] px-4 py-3"
+                class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.34)] bg-[hsl(var(--background)/0.24)] px-4 py-3"
               >
                 <svg
                   class="h-5 w-5 text-[hsl(var(--foam))]"
@@ -126,15 +123,13 @@ const homeStructuredData = [
                   stroke="currentColor"
                   stroke-width="1.6"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M7 8h10M7 12h10m-5 4h5"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h10m-5 4h5"
+                  ></path>
                 </svg>
                 Journal through five layers of "why" to reach your core motivation.
               </div>
               <div
-                class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.4)] px-4 py-3"
+                class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.34)] bg-[hsl(var(--background)/0.24)] px-4 py-3"
               >
                 <svg
                   class="h-5 w-5 text-[hsl(var(--gold))]"
@@ -143,10 +138,7 @@ const homeStructuredData = [
                   stroke="currentColor"
                   stroke-width="1.6"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M12 6v12m6-6H6"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6"></path>
                 </svg>
                 Capture personal stories that reinforce your next career conversation.
               </div>
@@ -163,10 +155,7 @@ const homeStructuredData = [
                 stroke="currentColor"
                 stroke-width="1.8"
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M9 5l7 7-7 7"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path>
               </svg>
             </a>
           </div>
@@ -176,24 +165,19 @@ const homeStructuredData = [
 
     <section id="tools" class="reveal mx-auto w-full max-w-6xl space-y-8">
       <div class="space-y-3">
-        <h2
-          class="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl"
-        >
+        <h2 class="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
           Build your toolkit
         </h2>
         <p class="max-w-2xl text-pretty text-base text-muted-foreground">
-          Each experience is crafted to feel calm, focused, & actionable. Choose
-          a tool below to explore guided flows, helpful prompts, & progress you
-          can revisit.
+          Each experience is crafted to feel calm, focused, and actionable. Choose a tool below to
+          explore guided flows, helpful prompts, and progress you can revisit.
         </p>
       </div>
-      <div
-        class="reveal-stagger grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4 auto-rows-fr"
-      >
+      <div class="reveal-stagger grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4 auto-rows-fr">
         <ToolCard
           href="/career/"
           title="Career Reflection · Five Whys"
-          description="Work through a structured reflection to uncover the root motivations behind your career moves & translate them into confident language."
+          description="Work through a structured reflection to uncover the root motivations behind your career moves and translate them into confident language."
           accent="foam"
           cta="Start reflecting"
           tag="Deep dive"
@@ -206,19 +190,16 @@ const homeStructuredData = [
             stroke="currentColor"
             stroke-width="1.8"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M12 6v12m6-6H6"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6"></path>
           </svg>
         </ToolCard>
 
         <ToolCard
           href="/resume-game/"
           title="Resume Game · Bullet Point Improvement"
-          description="Gamify your bullet points with instant scoring across impact, clarity, & action. Track improvements & save your strongest lines."
+          description="Gamify your bullet points with instant scoring across impact, clarity, and action. Track improvements and save your strongest lines."
           accent="gold"
-          cta="Play & improve"
+          cta="Play and improve"
           tag="Momentum"
         >
           <svg
@@ -229,17 +210,14 @@ const homeStructuredData = [
             stroke="currentColor"
             stroke-width="1.8"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M12 8v8m-4-4h8"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v8m-4-4h8"></path>
           </svg>
         </ToolCard>
 
         <ToolCard
           href="/networking-practice/"
           title="Networking Practice · Social Rehearsal"
-          description="Rehearse intros, refine your story, & capture insight after every practice conversation with the guided timer & prompts."
+          description="Rehearse intros, refine your story, and capture insight after every practice conversation with the guided timer and prompts."
           accent="love"
           cta="Start practicing"
           tag="Rehearsal"
@@ -293,28 +271,32 @@ const homeStructuredData = [
             Designed for calm, confident progress
           </h3>
           <p class="max-w-md text-pretty text-base leading-relaxed text-muted-foreground">
-            Whether you’re deep in reflection or prepping for interviews, the
-            Career Tools studio keeps your focus on what matters. Gentle
-            animations, high contrast color modes, & structured flows help every
-            session feel grounded.
+            Whether you’re deep in reflection or prepping for interviews, the Career Tools studio
+            keeps your focus on what matters. Gentle animations, high contrast color modes, and
+            structured flows help every session feel grounded.
           </p>
         </div>
         <ul class="space-y-3 text-sm text-muted-foreground">
           <li class="flex items-start gap-3">
-            <span class="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[hsl(var(--foam))]" aria-hidden="true" />
+            <span
+              class="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[hsl(var(--foam))]"
+              aria-hidden="true"></span>
             <span>Clear contrast across Night and Dawn modes with full keyboard navigation.</span>
           </li>
           <li class="flex items-start gap-3">
-            <span class="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[hsl(var(--iris))]" aria-hidden="true" />
+            <span
+              class="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[hsl(var(--iris))]"
+              aria-hidden="true"></span>
             <span>Guided prompts, timers, and feedback loops built for momentum.</span>
           </li>
           <li class="flex items-start gap-3">
-            <span class="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[hsl(var(--love))]" aria-hidden="true" />
+            <span
+              class="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[hsl(var(--love))]"
+              aria-hidden="true"></span>
             <span>All data stays in your browser. No accounts. No tracking.</span>
           </li>
         </ul>
       </div>
     </section>
-
   </div>
 </Base>

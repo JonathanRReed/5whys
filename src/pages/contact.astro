@@ -11,8 +11,7 @@ const contactSchemas = [
     '@id': `${pageUrl}#contact`,
     url: pageUrl,
     name: 'Contact 5 Whys Career Studio',
-    description:
-      'Contact page for 5 Whys Career Studio, including support and project inquiries.',
+    description: 'Contact page for 5 Whys Career Studio, including support and project inquiries.',
     isPartOf: {
       '@id': 'https://5whys.jonathanrreed.com/#website',
     },
@@ -35,9 +34,6 @@ const contactSchemas = [
   structuredData={contactSchemas}
 >
   <div class="relative space-y-10 overflow-hidden px-4 pb-16 pt-8 sm:pt-10">
-    <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
-      <div class="gradient-orb-animated absolute -top-24 right-0 h-72 w-72 rounded-full bg-[radial-gradient(circle_at_top_right,hsl(var(--foam)/0.18)_0%,transparent_60%)] blur-3xl"></div>
-    </div>
     <section class="mx-auto w-full max-w-6xl">
       <PageHero
         eyebrow="Contact"
@@ -47,55 +43,99 @@ const contactSchemas = [
     </section>
 
     <section class="mx-auto grid w-full max-w-4xl gap-5 md:grid-cols-[1fr_0.8fr] reveal">
-      <article class="rounded-2xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.2)] p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-[hsl(var(--border)/0.6)] hover:shadow-[0_20px_50px_-24px_hsl(var(--background)/0.8)]">
-        <div class="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--foam)/0.12)] text-[hsl(var(--foam))]">
-          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>
+      <article
+        class="rounded-2xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.2)] p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-[hsl(var(--border)/0.6)] hover:shadow-[0_20px_50px_-24px_hsl(var(--background)/0.8)]"
+      >
+        <div
+          class="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--foam)/0.12)] text-[hsl(var(--foam))]"
+        >
+          <svg
+            class="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+            ></path></svg
+          >
         </div>
         <h2 class="text-lg font-semibold text-foreground">Email</h2>
         <p class="mt-2 text-sm leading-relaxed text-muted-foreground">
           For product feedback, privacy requests, or general questions, email
-          <a class="font-semibold text-foreground hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]" href="mailto:contact@JonathanRReed.com">contact@JonathanRReed.com</a>.
+          <a
+            class="font-semibold text-foreground hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+            href="mailto:contact@JonathanRReed.com">contact@JonathanRReed.com</a
+          >.
         </p>
       </article>
-      <article class="rounded-2xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.2)] p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-[hsl(var(--border)/0.6)] hover:shadow-[0_20px_50px_-24px_hsl(var(--background)/0.8)]">
-        <div class="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--iris)/0.12)] text-[hsl(var(--iris))]">
-          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.872-2.18a49.11 49.11 0 00-6.378-.42c-2.115 0-4.198.143-6.378.42-1.085.165-1.872 1.099-1.872 2.18v3.773c0 .65.27 1.24.75 1.661" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 15.75V12m0 0V8.25m0 3.75h3.75m-3.75 0H8.25" /></svg>
+      <article
+        class="rounded-2xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.2)] p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-[hsl(var(--border)/0.6)] hover:shadow-[0_20px_50px_-24px_hsl(var(--background)/0.8)]"
+      >
+        <div
+          class="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--iris)/0.12)] text-[hsl(var(--iris))]"
+        >
+          <svg
+            class="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.872-2.18a49.11 49.11 0 00-6.378-.42c-2.115 0-4.198.143-6.378.42-1.085.165-1.872 1.099-1.872 2.18v3.773c0 .65.27 1.24.75 1.661"
+            ></path><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 15.75V12m0 0V8.25m0 3.75h3.75m-3.75 0H8.25"></path></svg
+          >
         </div>
         <h2 class="text-lg font-semibold text-foreground">Portfolio</h2>
         <p class="mt-2 text-sm leading-relaxed text-muted-foreground">
           More projects at
-          <a class="font-semibold text-foreground hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]" href="https://jonathanrreed.com/projects/">jonathanrreed.com</a>.
+          <a
+            class="font-semibold text-foreground hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+            href="https://jonathanrreed.com/projects/">jonathanrreed.com</a
+          >.
         </p>
       </article>
     </section>
 
-    <section class="mx-auto w-full max-w-4xl space-y-4 text-base leading-relaxed text-muted-foreground reveal">
+    <section
+      class="mx-auto w-full max-w-4xl space-y-4 text-base leading-relaxed text-muted-foreground reveal"
+    >
       <p>
-        Helpful reports include the page you were using, the browser and device, what you expected to happen, and whether
-        the issue affected drafting, scoring, saving, exporting, navigation, or theme behavior. If a prompt feels unclear,
-        include the wording that slowed you down and the kind of career situation you were trying to describe.
+        Helpful reports include the page you were using, the browser and device, what you expected
+        to happen, and whether the issue affected drafting, scoring, saving, exporting, navigation,
+        or theme behavior. If a prompt feels unclear, include the wording that slowed you down and
+        the kind of career situation you were trying to describe.
       </p>
       <p>
-        For consulting or product questions, include the workflow you want to improve and whether you need research,
-        design review, prototype work, security review, or a small internal tool. The same contact route can be used for
-        accessibility feedback and privacy questions.
+        For consulting or product questions, include the workflow you want to improve and whether
+        you need research, design review, prototype work, security review, or a small internal tool.
+        The same contact route can be used for accessibility feedback and privacy questions.
       </p>
       <p>
-        If you are reporting a career-tool issue, do not send private employer documents or sensitive personal records.
-        A short example, the page name, and the step that failed are usually enough to reproduce the problem and make the
-        next update more useful.
+        If you are reporting a career-tool issue, do not send private employer documents or
+        sensitive personal records. A short example, the page name, and the step that failed are
+        usually enough to reproduce the problem and make the next update more useful.
       </p>
       <p>
-        Good feedback is especially helpful when it explains the moment where the tool stopped matching the job-search
-        task. That might be a confusing prompt, a score that did not reflect the draft, an export that needed a different
-        format, or a navigation path that made it harder to return to unfinished work.
+        Good feedback is especially helpful when it explains the moment where the tool stopped
+        matching the job-search task. That might be a confusing prompt, a score that did not reflect
+        the draft, an export that needed a different format, or a navigation path that made it
+        harder to return to unfinished work.
       </p>
       <p>
-        For accessibility issues, mention the assistive technology, keyboard path, or screen size involved.
+        For accessibility issues, mention the assistive technology, keyboard path, or screen size
+        involved.
       </p>
-      <p>
-        Short, specific notes are easier to act on than full private drafts.
-      </p>
+      <p>Short, specific notes are easier to act on than full private drafts.</p>
     </section>
   </div>
 </Base>

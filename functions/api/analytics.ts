@@ -13,7 +13,7 @@ function getBrowserFamily(userAgent: string): string {
   return 'other';
 }
 
-function getScreenBucket(width: number, height: number): string {
+function getScreenBucket(width: number): string {
   if (width >= 1920) return 'xl';
   if (width >= 1440) return 'lg';
   if (width >= 768) return 'md';
@@ -29,6 +29,16 @@ function getReferrerDomain(referrer: string): string {
   }
 }
 
+function normalizePathname(pathname: string): string {
+  try {
+    const parsed = new URL(pathname, 'https://5whys.jonathanrreed.com');
+    const safePath = parsed.pathname.replace(/[^\w\-./]/g, '').slice(0, 120);
+    return safePath.startsWith('/') ? safePath : '/';
+  } catch {
+    return '/';
+  }
+}
+
 export const onRequestPost: PagesFunction<{ ANALYTICS_KV: KVNamespace }> = async (context) => {
   try {
     const body = (await context.request.json()) as {
@@ -38,14 +48,13 @@ export const onRequestPost: PagesFunction<{ ANALYTICS_KV: KVNamespace }> = async
       screenHeight?: number;
     };
 
-    const pathname = body?.pathname || '/';
-    const referrer = body?.referrer || '';
-    const screenWidth = body?.screenWidth || 0;
-    const screenHeight = body?.screenHeight || 0;
+    const pathname = normalizePathname(body?.pathname || '/');
+    const referrer = String(body?.referrer || '').slice(0, 300);
+    const screenWidth = Number.isFinite(body?.screenWidth) ? Number(body.screenWidth) : 0;
 
     const userAgent = context.request.headers.get('User-Agent') || '';
     const browser = getBrowserFamily(userAgent);
-    const screenBucket = getScreenBucket(screenWidth, screenHeight);
+    const screenBucket = getScreenBucket(screenWidth);
     const referrerDomain = getReferrerDomain(referrer);
 
     const now = new Date();
@@ -54,35 +63,37 @@ export const onRequestPost: PagesFunction<{ ANALYTICS_KV: KVNamespace }> = async
 
     const kv = context.env.ANALYTICS_KV;
     if (!kv) {
-      return new Response(
-        JSON.stringify({ success: false }),
-        { status: 503, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ success: false }), {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Increment daily pageview counter
     const dailyKey = `pv:${dateKey}:${pathname}`;
     const currentDaily = await kv.get(dailyKey);
-    await kv.put(dailyKey, String((parseInt(currentDaily || '0', 10)) + 1));
+    await kv.put(dailyKey, String(parseInt(currentDaily || '0', 10) + 1));
 
     // Store hourly aggregate
     const hourlyKey = `hourly:${hourKey}`;
     const hourlyRaw = await kv.get(hourlyKey);
-    const hourly = hourlyRaw ? JSON.parse(hourlyRaw) : { pageviews: 0, browsers: {}, referrers: {}, screens: {} };
+    const hourly = hourlyRaw
+      ? JSON.parse(hourlyRaw)
+      : { pageviews: 0, browsers: {}, referrers: {}, screens: {} };
     hourly.pageviews += 1;
     hourly.browsers[browser] = (hourly.browsers[browser] || 0) + 1;
     hourly.referrers[referrerDomain] = (hourly.referrers[referrerDomain] || 0) + 1;
     hourly.screens[screenBucket] = (hourly.screens[screenBucket] || 0) + 1;
     await kv.put(hourlyKey, JSON.stringify(hourly));
 
-    return new Response(
-      JSON.stringify({ success: true }),
-      { status: 201, headers: { 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ success: true }), {
+      status: 201,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch {
-    return new Response(
-      JSON.stringify({ success: false }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ success: false }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 };

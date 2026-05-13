@@ -7,32 +7,32 @@
 
 @layer base {
   :root {
-    --background: 230 18% 8%;
-    --foreground: 228 36% 94%;
-    --card: 228 16% 12%;
-    --card-foreground: 228 36% 94%;
-    --overlay: 228 15% 16%;
-    --popover: 228 16% 13%;
-    --popover-foreground: 228 36% 94%;
-    --primary: 185 50% 52%;
-    --primary-foreground: 230 18% 8%;
-    --secondary: 228 15% 17%;
-    --secondary-foreground: 228 36% 94%;
-    --muted: 228 10% 43%;
-    --muted-foreground: 226 15% 76%;
-    --accent: 255 35% 68%;
-    --accent-foreground: 230 18% 8%;
-    --destructive: 350 65% 62%;
-    --destructive-foreground: 230 18% 8%;
-    --love: 350 65% 62%;
-    --gold: 38 85% 58%;
-    --rose: 355 50% 75%;
-    --pine: 185 50% 42%;
-    --foam: 185 50% 52%;
-    --iris: 255 35% 68%;
-    --border: 226 17% 28%;
-    --input: 226 17% 28%;
-    --ring: 185 50% 52%;
+    --background: 228 19% 7%;
+    --foreground: 220 24% 94%;
+    --card: 226 18% 11%;
+    --card-foreground: 220 24% 94%;
+    --overlay: 226 16% 15%;
+    --popover: 226 18% 12%;
+    --popover-foreground: 220 24% 94%;
+    --primary: 186 62% 54%;
+    --primary-foreground: 228 19% 7%;
+    --secondary: 226 14% 18%;
+    --secondary-foreground: 220 24% 94%;
+    --muted: 224 10% 42%;
+    --muted-foreground: 222 14% 78%;
+    --accent: 35 78% 62%;
+    --accent-foreground: 228 19% 7%;
+    --destructive: 350 62% 62%;
+    --destructive-foreground: 228 19% 7%;
+    --love: 350 62% 61%;
+    --gold: 35 78% 62%;
+    --rose: 350 48% 73%;
+    --pine: 172 42% 36%;
+    --foam: 186 62% 54%;
+    --iris: 255 32% 70%;
+    --border: 225 15% 27%;
+    --input: 225 15% 27%;
+    --ring: 186 62% 54%;
     --radius: 0.75rem;
     --logo-stop-1: color-mix(in srgb, #31748f 52%, transparent);
     --logo-stop-2: color-mix(in srgb, #eb6f92 46%, transparent);
@@ -57,36 +57,36 @@
   html.theme-dawn,
   body.theme-dawn,
   body[data-theme='dawn'] {
-    --background: 220 32% 97%;
-    --foreground: 232 24% 22%;
-    --card: 0 0% 100%;
-    --card-foreground: 232 24% 22%;
-    --overlay: 220 30% 93%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 232 24% 22%;
-    --primary: 192 55% 36%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 30% 94%;
-    --secondary-foreground: 232 24% 22%;
-    --muted: 228 10% 61%;
-    --muted-foreground: 232 18% 34%;
-    --accent: 255 30% 48%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 350 48% 48%;
-    --destructive-foreground: 0 0% 100%;
-    --love: 350 48% 48%;
-    --gold: 38 78% 48%;
-    --rose: 355 45% 70%;
-    --pine: 192 55% 30%;
-    --foam: 192 50% 38%;
-    --iris: 255 30% 48%;
-    --border: 222 24% 84%;
-    --input: 222 24% 84%;
-    --ring: 192 55% 36%;
+    --background: 58 24% 94%;
+    --foreground: 220 18% 20%;
+    --card: 54 30% 97%;
+    --card-foreground: 220 18% 20%;
+    --overlay: 56 18% 88%;
+    --popover: 54 30% 97%;
+    --popover-foreground: 220 18% 20%;
+    --primary: 176 42% 32%;
+    --primary-foreground: 54 30% 97%;
+    --secondary: 55 18% 90%;
+    --secondary-foreground: 220 18% 20%;
+    --muted: 53 10% 61%;
+    --muted-foreground: 220 14% 34%;
+    --accent: 337 34% 43%;
+    --accent-foreground: 54 30% 97%;
+    --destructive: 350 46% 45%;
+    --destructive-foreground: 54 30% 97%;
+    --love: 350 46% 45%;
+    --gold: 38 66% 45%;
+    --rose: 350 40% 62%;
+    --pine: 158 30% 28%;
+    --foam: 176 42% 32%;
+    --iris: 266 26% 43%;
+    --border: 50 18% 78%;
+    --input: 50 18% 78%;
+    --ring: 176 42% 32%;
     --logo-stop-1: color-mix(in srgb, #31748f 36%, transparent);
     --logo-stop-2: color-mix(in srgb, #7c6fce 28%, transparent);
     --logo-stop-3: color-mix(in srgb, #f7f9fc 65%, transparent);
-    --logo-base-fill: color-mix(in srgb, #ffffff 88%, #e8eef7 12%);
+    --logo-base-fill: color-mix(in srgb, hsl(var(--card)) 88%, hsl(var(--overlay)) 12%);
     --logo-border-color: hsla(222, 24%, 72%, 0.5);
     --logo-shadow-color: rgba(45, 52, 74, 0.14);
     --logo-icon-shadow: rgba(45, 52, 74, 0.18);
@@ -159,7 +159,6 @@
 
   .nav-logo {
     border-radius: 0.75rem;
-    background: transparent;
     transition: transform 180ms ease;
   }
 
@@ -167,9 +166,15 @@
     transform: translateY(-1px) scale(1.02);
   }
 
-  .nav-logo__icon {
+  .nav-logo__mark {
     display: block;
-    filter: none;
+    background-image: image-set(
+      url('/career-studio-mark-nav-1x.png') 1x,
+      url('/career-studio-mark-nav.png') 2x
+    );
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
   }
 
   @container (max-width: 36rem) {
@@ -189,10 +194,11 @@
 
   .theme-popover {
     border: 1px solid color-mix(in oklch, hsl(var(--border)) 70%, transparent);
-    background:
-      linear-gradient(145deg,
-        color-mix(in oklch, hsl(var(--overlay)) 85%, hsl(var(--background)) 15%) 0%,
-        color-mix(in oklch, hsl(var(--overlay)) 65%, hsl(var(--background)) 35%) 100%);
+    background: linear-gradient(
+      145deg,
+      color-mix(in oklch, hsl(var(--overlay)) 85%, hsl(var(--background)) 15%) 0%,
+      color-mix(in oklch, hsl(var(--overlay)) 65%, hsl(var(--background)) 35%) 100%
+    );
     border-radius: 1.5rem;
     padding: 0.9rem;
     display: grid;
@@ -215,16 +221,20 @@
     border: 1px solid color-mix(in srgb, hsl(var(--border)) 65%, transparent);
     color: hsl(var(--foreground));
     background: color-mix(in srgb, hsl(var(--overlay)) 78%, hsl(var(--background)) 22%);
-    transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+    transition:
+      transform 180ms ease,
+      border-color 180ms ease,
+      background 180ms ease;
     box-shadow: 0 14px 34px -28px var(--option-shadow);
   }
 
-  .theme-option[data-active="true"] {
+  .theme-option[data-active='true'] {
     border-color: color-mix(in oklch, hsl(var(--foam)) 70%, hsl(var(--border)) 30%);
-    background:
-      linear-gradient(120deg,
-        color-mix(in oklch, hsl(var(--foam)) 45%, hsl(var(--overlay)) 55%) 0%,
-        color-mix(in oklch, hsl(var(--foam)) 25%, hsl(var(--overlay)) 75%) 100%);
+    background: linear-gradient(
+      120deg,
+      color-mix(in oklch, hsl(var(--foam)) 45%, hsl(var(--overlay)) 55%) 0%,
+      color-mix(in oklch, hsl(var(--foam)) 25%, hsl(var(--overlay)) 75%) 100%
+    );
     transform: translateY(-2px);
   }
 
@@ -292,15 +302,14 @@
   }
 }
 
-
-
 /* ============================================================================
    Premium Polish: Scroll Reveal Animations
    ============================================================================ */
 .reveal {
   opacity: 0;
   transform: translateY(20px);
-  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+  transition:
+    opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
     transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -310,38 +319,39 @@
 }
 
 /* Staggered reveal for children */
-.reveal-stagger>* {
+.reveal-stagger > * {
   opacity: 0;
   transform: translateY(16px);
-  transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+  transition:
+    opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
     transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.reveal-stagger.visible>*:nth-child(1) {
+.reveal-stagger.visible > *:nth-child(1) {
   transition-delay: 0ms;
 }
 
-.reveal-stagger.visible>*:nth-child(2) {
+.reveal-stagger.visible > *:nth-child(2) {
   transition-delay: 75ms;
 }
 
-.reveal-stagger.visible>*:nth-child(3) {
+.reveal-stagger.visible > *:nth-child(3) {
   transition-delay: 150ms;
 }
 
-.reveal-stagger.visible>*:nth-child(4) {
+.reveal-stagger.visible > *:nth-child(4) {
   transition-delay: 225ms;
 }
 
-.reveal-stagger.visible>*:nth-child(5) {
+.reveal-stagger.visible > *:nth-child(5) {
   transition-delay: 300ms;
 }
 
-.reveal-stagger.visible>*:nth-child(6) {
+.reveal-stagger.visible > *:nth-child(6) {
   transition-delay: 375ms;
 }
 
-.reveal-stagger.visible>* {
+.reveal-stagger.visible > * {
   opacity: 1;
   transform: translateY(0);
 }
@@ -351,68 +361,30 @@
    ============================================================================ */
 
 /* ============================================================================
-   Animated Gradient Mesh (Hero Background)
-   ============================================================================ */
-@keyframes float-slow {
-
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-
-  33% {
-    transform: translate(15px, -10px) scale(1.02);
-  }
-
-  66% {
-    transform: translate(-10px, 8px) scale(0.98);
-  }
-}
-
-@keyframes float-slow-reverse {
-
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-
-  33% {
-    transform: translate(-12px, 12px) scale(0.98);
-  }
-
-  66% {
-    transform: translate(10px, -8px) scale(1.03);
-  }
-}
-
-.gradient-orb-animated {
-  animation: float-slow 12s ease-in-out infinite;
-}
-
-.gradient-orb-animated-reverse {
-  animation: float-slow-reverse 14s ease-in-out infinite;
-}
-
-/* ============================================================================
    Premium Polish: Micro-Interactions
    ============================================================================ */
 /* Button press state */
 button:active:not(:disabled),
-a[role="button"]:active,
+a[role='button']:active,
 .btn:active:not(:disabled),
-[class*="rounded-full"][class*="px-"]:active {
+[class*='rounded-full'][class*='px-']:active {
   transform: scale(0.97);
   transition: transform 0.1s ease;
 }
 
 /* Button press feedback for all interactive elements */
-button:active, a:active, [role="button"]:active {
+button:active,
+a:active,
+[role='button']:active {
   transform: scale(0.98);
   transition: transform 0.1s ease;
 }
 
 /* But not for range inputs or text inputs */
-input:active, textarea:active, select:active, [role="slider"]:active {
+input:active,
+textarea:active,
+select:active,
+[role='slider']:active {
   transform: none;
 }
 
@@ -458,9 +430,11 @@ input:active, textarea:active, select:active, [role="slider"]:active {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: radial-gradient(circle at var(--mouse-x) var(--mouse-y),
-      hsl(var(--foam) / 0.12) 0%,
-      transparent 50%);
+  background: radial-gradient(
+    circle at var(--mouse-x) var(--mouse-y),
+    hsl(var(--foam) / 0.12) 0%,
+    transparent 50%
+  );
   opacity: 0;
   transition: opacity 0.3s ease;
   pointer-events: none;
@@ -472,7 +446,7 @@ input:active, textarea:active, select:active, [role="slider"]:active {
 }
 
 /* Custom range slider styling */
-input[type="range"] {
+input[type='range'] {
   -webkit-appearance: none;
   appearance: none;
   height: 6px;
@@ -481,7 +455,7 @@ input[type="range"] {
   outline: none;
 }
 
-input[type="range"]::-webkit-slider-thumb {
+input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 18px;
@@ -490,35 +464,34 @@ input[type="range"]::-webkit-slider-thumb {
   background: hsl(var(--iris));
   cursor: pointer;
   border: 2px solid hsl(var(--background));
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 6px rgba(12, 16, 28, 0.2);
   transition: transform 0.15s ease;
 }
 
-input[type="range"]::-webkit-slider-thumb:hover {
+input[type='range']::-webkit-slider-thumb:hover {
   transform: scale(1.15);
 }
 
-input[type="range"]::-moz-range-thumb {
+input[type='range']::-moz-range-thumb {
   width: 18px;
   height: 18px;
   border-radius: 50%;
   background: hsl(var(--iris));
   cursor: pointer;
   border: 2px solid hsl(var(--background));
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 6px rgba(12, 16, 28, 0.2);
 }
 
 /* ============================================================================
    Reduced Motion: Respect User Preferences
    ============================================================================ */
 @media (prefers-reduced-motion: reduce) {
-
   html {
     scroll-behavior: auto;
   }
 
   .reveal,
-  .reveal-stagger>* {
+  .reveal-stagger > * {
     opacity: 1;
     transform: none;
     transition: none;
@@ -530,17 +503,14 @@ input[type="range"]::-moz-range-thumb {
     color: hsl(var(--foreground));
   }
 
-  .gradient-orb-animated,
-  .gradient-orb-animated-reverse {
-    animation: none;
-  }
-
   button:active:not(:disabled),
-  a[role="button"]:active {
+  a[role='button']:active {
     transform: none;
   }
 
-  button:active, a:active, [role="button"]:active {
+  button:active,
+  a:active,
+  [role='button']:active {
     transform: none;
   }
 }
@@ -549,10 +519,9 @@ input[type="range"]::-moz-range-thumb {
    Print Stylesheet for Interview Glow Up
    ============================================================================ */
 @media print {
-
   /* Reset colors for print */
   :root {
-    --background: 0 0% 100%;
+    --background: 220 34% 99%;
     --foreground: 0 0% 10%;
     --muted-foreground: 0 0% 40%;
     --border: 0 0% 85%;
@@ -565,7 +534,7 @@ input[type="range"]::-moz-range-thumb {
   nav,
   .print\\:hidden,
   button,
-  [role="button"] {
+  [role='button'] {
     display: none !important;
   }
 
@@ -599,8 +568,8 @@ input[type="range"]::-moz-range-thumb {
   }
 
   /* Story cards for print */
-  [class*="rounded-xl"],
-  [class*="rounded-2xl"] {
+  [class*='rounded-xl'],
+  [class*='rounded-2xl'] {
     border: 1px solid #ddd !important;
     border-radius: 8px !important;
     page-break-inside: avoid;
@@ -617,22 +586,22 @@ input[type="range"]::-moz-range-thumb {
   }
 
   /* Skill badges */
-  [class*="bg-cyan"],
-  [class*="bg-\\[hsl\\(var\\(--foam"] {
+  [class*='bg-cyan'],
+  [class*='bg-\\[hsl\\(var\\(--foam'] {
     background: #e0f7fa !important;
     color: #006064 !important;
     border: 1px solid #00acc1 !important;
   }
 
   /* Proof text */
-  [class*="text-cyan"] {
+  [class*='text-cyan'] {
     color: #00838f !important;
     font-weight: 600;
   }
 
   /* Hide decorative elements */
-  [class*="shadow"],
-  [class*="backdrop"] {
+  [class*='shadow'],
+  [class*='backdrop'] {
     box-shadow: none !important;
     backdrop-filter: none !important;
   }
@@ -644,10 +613,8 @@ input[type="range"]::-moz-range-thumb {
   }
 
   /* Panic answer styling */
-  [class*="border-amber"] {
+  [class*='border-amber'] {
     border-color: #f9a825 !important;
     background: #fffde7 !important;
   }
 }
-
-

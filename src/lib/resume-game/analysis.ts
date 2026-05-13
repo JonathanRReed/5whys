@@ -120,24 +120,23 @@ function clamp(n: number, min: number, max: number): number {
   return n;
 }
 
-export function computeBenchmarkScore(
-  bullets: BulletRecord[]
-): { score: number; details: Record<string, number> } {
+export function computeBenchmarkScore(bullets: BulletRecord[]): {
+  score: number;
+  details: Record<string, number>;
+} {
   if (bullets.length === 0) {
     return { score: 0, details: {} };
   }
 
   const totalBullets = bullets.length;
 
-  // 1. Number coverage (target 70%) — 25 pts
+  // 1. Number coverage (target 70%) , 25 pts
   const quantified = bullets.filter((b) => /\d/.test(b.improved)).length;
   const numberCoverage = quantified / totalBullets;
   const numberScore = clamp((numberCoverage / 0.7) * 25, 0, 25);
 
-  // 2. Unique strong verbs (target 8+) — 15 pts
-  const uniqueVerbs = new Set(
-    bullets.map((b) => b.fields.verb?.toLowerCase()).filter(Boolean)
-  );
+  // 2. Unique strong verbs (target 8+) , 15 pts
+  const uniqueVerbs = new Set(bullets.map((b) => b.fields.verb?.toLowerCase()).filter(Boolean));
   const uniqueStrongVerbs = new Set(
     bullets
       .map((b) => b.fields.verb?.toLowerCase())
@@ -145,7 +144,7 @@ export function computeBenchmarkScore(
   );
   const verbScore = clamp((uniqueStrongVerbs.size / 8) * 15, 0, 15);
 
-  // 3. Bullet length (target < 30 words avg) — 20 pts
+  // 3. Bullet length (target < 30 words avg) , 20 pts
   const avgLength =
     bullets.reduce((sum, b) => {
       const words = b.improved.split(/\s+/).filter(Boolean).length;
@@ -153,7 +152,7 @@ export function computeBenchmarkScore(
     }, 0) / totalBullets;
   const lengthScore = avgLength <= 30 ? 20 : avgLength <= 40 ? 10 : 0;
 
-  // 4. Passive voice avoidance — 15 pts
+  // 4. Passive voice avoidance , 15 pts
   let passiveBullets = 0;
   for (const b of bullets) {
     const r = analyzeReadability(b.improved);
@@ -162,12 +161,12 @@ export function computeBenchmarkScore(
   const passivePercent = passiveBullets / totalBullets;
   const passiveScore = clamp((1 - passivePercent) * 15, 0, 15);
 
-  // 5. Impact coverage — 20 pts
+  // 5. Impact coverage , 20 pts
   const impactBullets = bullets.filter((b) => b.hasImpact ?? detectImpact(b.improved)).length;
   const impactPercent = impactBullets / totalBullets;
   const impactScore = clamp(impactPercent * 20, 0, 20);
 
-  // 6. Weak word penalty — up to -10 pts
+  // 6. Weak word penalty , up to -10 pts
   const totalWeakWords = bullets.reduce((sum, b) => sum + (b.weakWords?.length ?? 0), 0);
   const weakPenalty = clamp(totalWeakWords * 2, 0, 10);
 
@@ -196,10 +195,7 @@ export function computeBenchmarkScore(
 // Deep Signal Report
 // ============================================================================
 
-export function buildDeepSignalReport(
-  bullets: BulletRecord[],
-  resumeText: string
-): SignalReport {
+export function buildDeepSignalReport(bullets: BulletRecord[], resumeText: string): SignalReport {
   const enriched = enrichBulletRecords(bullets);
   const benchmark = computeBenchmarkScore(enriched);
   const keywordDensity = computeKeywordDensity(resumeText);
@@ -223,21 +219,26 @@ export function buildDeepSignalReport(
 
   const weakWordCount = enriched.reduce((sum, b) => sum + (b.weakWords?.length ?? 0), 0);
   const impactBullets = enriched.filter((b) => b.hasImpact ?? false).length;
-  const impactCoverage = enriched.length > 0 ? Math.round((impactBullets / enriched.length) * 100) : 0;
+  const impactCoverage =
+    enriched.length > 0 ? Math.round((impactBullets / enriched.length) * 100) : 0;
 
   const quantifiedBullets = enriched.filter((b) => /\d/.test(b.improved)).length;
-  const quantifiedBulletPercent = enriched.length > 0 ? Math.round((quantifiedBullets / enriched.length) * 100) : 0;
+  const quantifiedBulletPercent =
+    enriched.length > 0 ? Math.round((quantifiedBullets / enriched.length) * 100) : 0;
 
-  const avgBulletLength = enriched.length > 0
-    ? enriched.reduce((sum, b) => sum + b.improved.split(/\s+/).filter(Boolean).length, 0) / enriched.length
-    : 0;
+  const avgBulletLength =
+    enriched.length > 0
+      ? enriched.reduce((sum, b) => sum + b.improved.split(/\s+/).filter(Boolean).length, 0) /
+        enriched.length
+      : 0;
 
   let passiveBullets = 0;
   for (const b of enriched) {
     const r = analyzeReadability(b.improved);
     if (r.passiveVoiceCount > 0) passiveBullets++;
   }
-  const passiveVoicePercent = enriched.length > 0 ? Math.round((passiveBullets / enriched.length) * 100) : 0;
+  const passiveVoicePercent =
+    enriched.length > 0 ? Math.round((passiveBullets / enriched.length) * 100) : 0;
 
   return {
     visible: 0,
@@ -272,10 +273,13 @@ export function extractBullets(text: string): string[] {
 
 export function seedFields(text: string): BulletFields {
   const cleaned = normalizeLine(text);
-  const verbMatch = cleaned.match(new RegExp(`^(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'i'))
-    || cleaned.match(new RegExp(`\\b(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'i'));
+  const verbMatch =
+    cleaned.match(new RegExp(`^(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'i')) ||
+    cleaned.match(new RegExp(`\\b(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'i'));
   const verb = verbMatch ? verbMatch[1] : '';
-  const remainder = verb ? cleaned.replace(new RegExp(`\\b${escapeRegExp(verb)}\\b`, 'i'), '').trim() : cleaned;
+  const remainder = verb
+    ? cleaned.replace(new RegExp(`\\b${escapeRegExp(verb)}\\b`, 'i'), '').trim()
+    : cleaned;
   let task = remainder;
   let impact = '';
 
@@ -304,7 +308,8 @@ export function buildBullet(fields: BulletFields) {
   let statement = parts.join(' ');
   if (fields.impact) {
     const normalized = fields.impact.trim();
-    const needsConnector = !normalized.toLowerCase().startsWith('to') && !normalized.toLowerCase().startsWith('by');
+    const needsConnector =
+      !normalized.toLowerCase().startsWith('to') && !normalized.toLowerCase().startsWith('by');
     statement += needsConnector ? ` to ${normalized}` : ` ${normalized}`;
   }
   if (fields.quantifier) {
@@ -325,7 +330,9 @@ export function fieldBonus(fields: BulletFields) {
 
 export function editBonus(original: string, fields: BulletFields) {
   const normalized = normalizeLine(original);
-  const startsWithVerb = new RegExp(`^(${POWER_WORDS.map(escapeRegExp).join('|')})\b`, 'i').test(normalized);
+  const startsWithVerb = new RegExp(`^(${POWER_WORDS.map(escapeRegExp).join('|')})\b`, 'i').test(
+    normalized
+  );
   const hasAnyVerb = POWER_VERB_PATTERN.test(normalized);
   let bonus = 0;
   if (!startsWithVerb && fields.verb.trim()) bonus += 4;

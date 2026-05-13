@@ -1,9 +1,21 @@
 import { POWER_WORDS } from './constants';
 
 const REGEX_SPECIAL_CHARS = /[.*+?^${}()|[\]\\]/g;
-const HEADINGS = new Set(['summary', 'education', 'experience', 'skills', 'contact', 'interests', 'projects']);
-const MONTHS = '(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)';
-const DATE_RANGE_PATTERN = new RegExp(`^(${MONTHS}\\s+\\d{4}|\\d{4})(\\s*[–-]\\s*(${MONTHS}\\s+\\d{4}|\\d{4}|current))?$`, 'i');
+const HEADINGS = new Set([
+  'summary',
+  'education',
+  'experience',
+  'skills',
+  'contact',
+  'interests',
+  'projects',
+]);
+const MONTHS =
+  '(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)';
+const DATE_RANGE_PATTERN = new RegExp(
+  `^(${MONTHS}\\s+\\d{4}|\\d{4})(\\s*[–-]\\s*(${MONTHS}\\s+\\d{4}|\\d{4}|current))?$`,
+  'i'
+);
 
 export function escapeRegExp(value: string) {
   return value.replace(REGEX_SPECIAL_CHARS, '\\$&');
@@ -35,7 +47,10 @@ export function escapeHtml(value: string) {
 }
 
 export function normalizeLine(raw: string) {
-  const decoded = decodeEntities(raw).replace(/^[-•*]\s*/, '').replace(/\s+/g, ' ').trim();
+  const decoded = decodeEntities(raw)
+    .replace(/^[-•*]\s*/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
   if (!decoded) return '';
   const heading = decoded.toLowerCase();
   if (HEADINGS.has(heading)) return '';
@@ -60,13 +75,15 @@ export function highlightResume(text: string) {
     )
     .replace(
       new RegExp(`\\b(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'gi'),
-      '<mark class="bg-[hsl(var(--love)/0.3)] text-[hsl(var(--love-foreground))] px-1 rounded">$&</mark>'
+      '<mark class="bg-[hsl(var(--love)/0.3)] text-foreground px-1 rounded">$&</mark>'
     );
 }
 
 export function countPowerVerbs(text: string) {
   if (!text) return 0;
-  const matches = decodeEntities(text).match(new RegExp(`\\b(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'gi'));
+  const matches = decodeEntities(text).match(
+    new RegExp(`\\b(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'gi')
+  );
   return matches ? matches.length : 0;
 }
 

@@ -71,7 +71,10 @@ export function useNetworkingPractice() {
     return existing.length ? existing : [fallbackVersion];
   }, [fallbackVersion]);
 
-  const [versions, setVersions] = useHydratedState<NetworkingPracticeVersion[]>([fallbackVersion], loadVersionsFromStorage);
+  const [versions, setVersions] = useHydratedState<NetworkingPracticeVersion[]>(
+    [fallbackVersion],
+    loadVersionsFromStorage
+  );
   const [sessions, setSessions] = useHydratedState<NetworkingPracticeSession[]>([], loadSessions);
   const [storageNotice, setStorageNotice] = React.useState<string | null>(null);
   const [currentVersionId, setCurrentVersionId] = React.useState<string>(fallbackVersion.id);
@@ -124,7 +127,7 @@ export function useNetworkingPractice() {
         return next;
       });
     },
-    [currentVersion, scenarios]
+    [currentVersion, scenarios, setVersions]
   );
 
   const handleFieldChange = React.useCallback(
@@ -141,7 +144,7 @@ export function useNetworkingPractice() {
         return next;
       });
     },
-    [currentVersion]
+    [currentVersion, setVersions]
   );
 
   const createNewVersion = React.useCallback(() => {
@@ -153,7 +156,7 @@ export function useNetworkingPractice() {
     saveVersion(nextVersion);
     setVersions((prev) => [nextVersion, ...prev]);
     setCurrentVersionId(nextVersion.id);
-  }, [currentScenario, scenarios]);
+  }, [currentScenario, scenarios, setVersions]);
 
   const deleteCurrentVersion = React.useCallback(() => {
     if (!currentVersion) return;
@@ -168,11 +171,12 @@ export function useNetworkingPractice() {
       }
       return next;
     });
-  }, [currentVersion, currentVersionId, fallbackVersion]);
+  }, [currentVersion, currentVersionId, fallbackVersion, setVersions]);
 
   const saveCurrentSession = React.useCallback(() => {
     if (!currentVersion) return;
-    const scenario = scenarios.find((item) => item.id === currentVersion.scenarioId) ?? scenarios[0];
+    const scenario =
+      scenarios.find((item) => item.id === currentVersion.scenarioId) ?? scenarios[0];
     const session: NetworkingPracticeSession = {
       id: generateId(),
       versionId: currentVersion.id,
@@ -198,22 +202,29 @@ export function useNetworkingPractice() {
     };
     const success = saveSession(session);
     if (!success) {
-      setStorageNotice(`You've saved ${SESSION_LIMIT} sessions. Export or delete old ones to save new practice rounds.`);
+      setStorageNotice(
+        `You've saved ${SESSION_LIMIT} sessions. Export or delete old ones to save new practice rounds.`
+      );
       return;
     }
     setSessions((prev) => [session, ...prev].slice(0, SESSION_LIMIT));
     setReflection('');
     setStorageNotice('Session saved to your local history.');
-  }, [currentVersion, scenarios, timer.remaining, ratings, reflection]);
+  }, [currentVersion, scenarios, timer.remaining, ratings, reflection, setSessions]);
 
-  const removeSession = React.useCallback((id: string) => {
-    const success = deleteSession(id);
-    if (!success) {
-      setStorageNotice('Unable to update session history. Check storage permissions and try again.');
-      return;
-    }
-    setSessions((prev) => prev.filter((s) => s.id !== id));
-  }, []);
+  const removeSession = React.useCallback(
+    (id: string) => {
+      const success = deleteSession(id);
+      if (!success) {
+        setStorageNotice(
+          'Unable to update session history. Check storage permissions and try again.'
+        );
+        return;
+      }
+      setSessions((prev) => prev.filter((s) => s.id !== id));
+    },
+    [setSessions]
+  );
 
   const exportSessions = React.useCallback(() => {
     if (sessions.length === 0) {
@@ -221,7 +232,9 @@ export function useNetworkingPractice() {
       return;
     }
     const filename = `networking-practice-sessions-${new Date().toISOString().slice(0, 10)}.json`;
-    const blob = new Blob([JSON.stringify(sessions, null, 2)], { type: 'application/json;charset=utf-8' });
+    const blob = new Blob([JSON.stringify(sessions, null, 2)], {
+      type: 'application/json;charset=utf-8',
+    });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
@@ -241,7 +254,7 @@ export function useNetworkingPractice() {
     }
     setSessions([]);
     setStorageNotice('Session history cleared.');
-  }, [sessions]);
+  }, [sessions, setSessions]);
 
   const handleRatingChange = React.useCallback((key: keyof Ratings, value: number) => {
     setRatings((prev) => ({ ...prev, [key]: value }));

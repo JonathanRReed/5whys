@@ -11,14 +11,15 @@ export default function ResumeHeader({ showHeader = true }: Props) {
       <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--foam))]">Career Lab</p>
       <h1 className="text-4xl font-semibold tracking-tight">Resume Game</h1>
       <p className="mx-auto max-w-2xl text-sm text-muted-foreground">
-        Simulate an 8-second recruiter scan to surface power verbs and numbers. Rewrite every bullet into a quantified, high-impact statement that stands out in a quick glance.
+        Simulate an 8-second recruiter scan to surface power verbs and numbers. Rewrite every bullet
+        into a quantified, high-impact statement that stands out in a quick glance.
       </p>
       <QuickStartTiles
         className="max-w-4xl"
         items={[
           {
             title: 'Drop your draft',
-            body: 'Paste bullets or upload a .txt, .md, .docx, or .pdf file—use the sample resume if you need a quick demo.',
+            body: 'Paste bullets or upload a .txt, .md, .docx, or .pdf file. Use the sample resume if you need a quick demo.',
           },
           {
             title: 'Run the scan',

@@ -51,15 +51,19 @@ const BulletItem = React.memo(function BulletItem({ bullet, isSelected, onSelect
 
 export default React.memo(function BulletList({ bullets, selectedBulletId, onSelect }: Props) {
   return (
-    <Card className="backdrop-blur-lg" data-bullet-list>
+    <Card data-bullet-list>
       <CardHeader className="space-y-1">
         <CardTitle className="text-xl">Bullets</CardTitle>
-        <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Select to rewrite</p>
+        <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+          Select to rewrite
+        </p>
       </CardHeader>
       <CardContent className="space-y-3">
         {bullets.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.15)] p-6 text-center">
-            <p className="text-sm text-muted-foreground">Run the analysis to extract and score your bullets.</p>
+            <p className="text-sm text-muted-foreground">
+              Run the analysis to extract and score your bullets.
+            </p>
           </div>
         ) : (
           bullets.map((bullet) => (

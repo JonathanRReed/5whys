@@ -3,24 +3,16 @@ interface Props {
   href: string;
   title: string;
   description: string;
-  accent?: "love" | "gold" | "foam" | "iris" | "pine";
+  accent?: 'love' | 'gold' | 'foam' | 'iris' | 'pine';
   cta?: string;
   tag?: string;
 }
 
-const {
-  href,
-  title,
-  description,
-  accent = "foam",
-  cta = "Open tool",
-  tag,
-} = Astro.props;
+const { href, title, description, accent = 'foam', cta = 'Open tool', tag } = Astro.props;
 ---
 
 <a
   href={href}
-  aria-label={`${title}: ${description}`}
   class="group relative grid h-full grid-rows-[auto,1fr,auto] overflow-hidden rounded-2xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--card)/0.6)] p-6 transition-all duration-200 hover:border-[hsl(var(--accent)/0.35)] hover:bg-[hsl(var(--card)/0.8)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))] md:p-7"
   style={`--card-accent: var(--${accent});`}
 >
@@ -41,9 +33,7 @@ const {
     </div>
 
     <div class="space-y-1.5">
-      <h2
-        class="text-xl font-semibold leading-snug tracking-tight text-foreground"
-      >
+      <h2 class="text-xl font-semibold leading-snug tracking-tight text-foreground">
         {title}
       </h2>
       <p class="text-sm leading-relaxed text-muted-foreground">
@@ -51,9 +41,7 @@ const {
       </p>
     </div>
 
-    <div
-      class="flex items-center gap-1.5 text-sm font-medium text-[hsl(var(--card-accent))]"
-    >
+    <div class="flex items-center gap-1.5 text-sm font-medium text-[hsl(var(--card-accent))]">
       {cta}
       <svg
         class="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5"
@@ -63,8 +51,7 @@ const {
         stroke-width="2"
         aria-hidden="true"
       >
-        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"
-        ></path>
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path>
       </svg>
     </div>
   </div>

@@ -1,18 +1,45 @@
 import * as React from 'react';
 import { readCareerDashboard, type CareerDashboardData } from '../lib/career-bridge';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
 import { cn } from '../lib/utils';
 
 const TOOL_LINKS = [
-  { name: 'Career 5 Whys', url: '/career/', desc: 'Clarify your core motivation', color: 'text-[hsl(var(--foam))]', bg: 'bg-[hsl(var(--foam)/0.12)]', icon: 'M7 8h10M7 12h4' },
-  { name: 'Resume Game', url: '/resume-game/', desc: 'Score and rewrite bullets', color: 'text-[hsl(var(--love))]', bg: 'bg-[hsl(var(--love)/0.12)]', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
-  { name: 'Interview Glow Up', url: '/5whys/interview-glow-up/', desc: 'Build proof-based stories', color: 'text-[hsl(var(--iris))]', bg: 'bg-[hsl(var(--iris)/0.12)]', icon: 'M13 10V3L4 14h7v7l9-11h-7z' },
-  { name: 'Networking Practice', url: '/networking-practice/', desc: 'Rehearse your pitch', color: 'text-[hsl(var(--gold))]', bg: 'bg-[hsl(var(--gold)/0.12)]', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
+  {
+    name: 'Career 5 Whys',
+    url: '/career/',
+    desc: 'Clarify your core motivation',
+    color: 'text-[hsl(var(--foam))]',
+    bg: 'bg-[hsl(var(--foam)/0.12)]',
+    icon: 'M7 8h10M7 12h4',
+  },
+  {
+    name: 'Resume Game',
+    url: '/resume-game/',
+    desc: 'Score and rewrite bullets',
+    color: 'text-[hsl(var(--love))]',
+    bg: 'bg-[hsl(var(--love)/0.12)]',
+    icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+  },
+  {
+    name: 'Interview Glow Up',
+    url: '/5whys/interview-glow-up/',
+    desc: 'Build proof-based stories',
+    color: 'text-[hsl(var(--iris))]',
+    bg: 'bg-[hsl(var(--iris)/0.12)]',
+    icon: 'M13 10V3L4 14h7v7l9-11h-7z',
+  },
+  {
+    name: 'Networking Practice',
+    url: '/networking-practice/',
+    desc: 'Rehearse your pitch',
+    color: 'text-[hsl(var(--gold))]',
+    bg: 'bg-[hsl(var(--gold)/0.12)]',
+    icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
+  },
 ];
 
 function formatDate(iso: string | null): string {
-  if (!iso) return '—';
+  if (!iso) return 'Not started';
   const d = new Date(iso);
   const now = new Date();
   const diffMs = now.getTime() - d.getTime();
@@ -28,7 +55,15 @@ function ScoreRing({ value, label, color }: { value: number; label: string; colo
     <div className="flex flex-col items-center gap-1">
       <div className="relative flex h-20 w-20 items-center justify-center rounded-full border-4 border-[hsl(var(--border)/0.3)]">
         <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" strokeWidth="8" className="text-[hsl(var(--border)/0.3)]" />
+          <circle
+            cx="50"
+            cy="50"
+            r="42"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="8"
+            className="text-[hsl(var(--border)/0.3)]"
+          />
           <circle
             cx="50"
             cy="50"
@@ -79,18 +114,25 @@ export default function CareerDashboard() {
     <div className="mx-auto w-full max-w-6xl space-y-8">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">Career Dashboard</h1>
-        <p className="text-muted-foreground">Your progress across all tools. Everything stays on your device.</p>
+        <h2 className="text-3xl font-semibold tracking-tight">Career Dashboard</h2>
+        <p className="text-muted-foreground">
+          Your progress across all tools. Everything stays on your device.
+        </p>
       </div>
 
       {/* Recommendations */}
       {data.recommendations.length > 0 && (
         <div className="rounded-2xl border border-[hsl(var(--gold)/0.4)] bg-[hsl(var(--gold)/0.08)] p-5">
-          <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--gold))]">Suggested next step</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--gold))]">
+            Suggested next step
+          </p>
           <p className="mt-2 text-sm text-muted-foreground">{data.recommendations[0]}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {data.recommendations.slice(1).map((rec, i) => (
-              <span key={i} className="rounded-full border border-[hsl(var(--border)/0.4)] bg-[hsl(var(--overlay)/0.3)] px-3 py-1 text-xs text-muted-foreground">
+              <span
+                key={i}
+                className="rounded-full border border-[hsl(var(--border)/0.4)] bg-[hsl(var(--overlay)/0.3)] px-3 py-1 text-xs text-muted-foreground"
+              >
                 {rec}
               </span>
             ))}
@@ -103,7 +145,11 @@ export default function CareerDashboard() {
         {data.resume && (
           <Card className="border-[hsl(var(--love)/0.3)] bg-[hsl(var(--overlay)/0.25)]">
             <CardContent className="p-5">
-              <ScoreRing value={data.resume.averageScore} label="Resume" color="text-[hsl(var(--love))]" />
+              <ScoreRing
+                value={data.resume.averageScore}
+                label="Resume"
+                color="text-[hsl(var(--love))]"
+              />
               <div className="mt-3 text-center text-xs text-muted-foreground">
                 {data.resume.bulletCount} bullets analyzed
               </div>
@@ -115,9 +161,13 @@ export default function CareerDashboard() {
             <CardContent className="p-5">
               <div className="flex flex-col items-center gap-1">
                 <div className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-[hsl(var(--foam)/0.3)]">
-                  <span className="text-xl font-bold text-[hsl(var(--foam))]">{data.reflection.snapshotCount}</span>
+                  <span className="text-xl font-bold text-[hsl(var(--foam))]">
+                    {data.reflection.snapshotCount}
+                  </span>
                 </div>
-                <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Reflections</span>
+                <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                  Reflections
+                </span>
               </div>
               <div className="mt-3 text-center text-xs text-muted-foreground">
                 {data.reflection.latestTopic || 'Career direction'}
@@ -130,9 +180,13 @@ export default function CareerDashboard() {
             <CardContent className="p-5">
               <div className="flex flex-col items-center gap-1">
                 <div className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-[hsl(var(--iris)/0.3)]">
-                  <span className="text-xl font-bold text-[hsl(var(--iris))]">{data.glowup.storyCount}</span>
+                  <span className="text-xl font-bold text-[hsl(var(--iris))]">
+                    {data.glowup.storyCount}
+                  </span>
                 </div>
-                <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Stories</span>
+                <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                  Stories
+                </span>
               </div>
               <div className="mt-3 text-center text-xs text-muted-foreground">
                 {data.glowup.currentRoleTitle || 'Interview prep'}
@@ -145,9 +199,13 @@ export default function CareerDashboard() {
             <CardContent className="p-5">
               <div className="flex flex-col items-center gap-1">
                 <div className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-[hsl(var(--gold)/0.3)]">
-                  <span className="text-xl font-bold text-[hsl(var(--gold))]">{data.networking.sessionCount}</span>
+                  <span className="text-xl font-bold text-[hsl(var(--gold))]">
+                    {data.networking.sessionCount}
+                  </span>
                 </div>
-                <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Practice rounds</span>
+                <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                  Practice rounds
+                </span>
               </div>
               {data.networking.averageRating && (
                 <div className="mt-3 text-center text-xs text-muted-foreground">
@@ -161,7 +219,7 @@ export default function CareerDashboard() {
 
       {/* Skills */}
       {data.resume && data.resume.hardSkills.length > 0 && (
-        <Card className="backdrop-blur-lg">
+        <Card>
           <CardHeader>
             <CardTitle className="text-lg">Skills from your resume</CardTitle>
           </CardHeader>
@@ -182,7 +240,7 @@ export default function CareerDashboard() {
 
       {/* Recent activity */}
       {data.recentActivity.length > 0 && (
-        <Card className="backdrop-blur-lg">
+        <Card>
           <CardHeader>
             <CardTitle className="text-lg">Recent activity</CardTitle>
           </CardHeader>
@@ -218,7 +276,13 @@ export default function CareerDashboard() {
             )}
           >
             <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl', tool.bg)}>
-              <svg className={cn('h-5 w-5', tool.color)} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <svg
+                className={cn('h-5 w-5', tool.color)}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.8}
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" d={tool.icon} />
               </svg>
             </div>
@@ -239,15 +303,26 @@ function EmptyState() {
       {/* Large themed icon */}
       <div className="flex justify-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[hsl(var(--foam)/0.12)]">
-          <svg className="h-8 w-8 text-[hsl(var(--foam))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+          <svg
+            className="h-8 w-8 text-[hsl(var(--foam))]"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.5}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+            />
           </svg>
         </div>
       </div>
       <div className="space-y-3">
-        <h1 className="text-3xl font-semibold tracking-tight">Welcome to your Career Dashboard</h1>
+        <h2 className="text-3xl font-semibold tracking-tight">Welcome to your Career Dashboard</h2>
         <p className="text-muted-foreground">
-          Your career dashboard is waiting. Take the 2-minute career review to get personalized recommendations.
+          Your career dashboard is waiting. Take the 2-minute career review to get personalized
+          recommendations.
         </p>
       </div>
 
@@ -257,7 +332,13 @@ function EmptyState() {
           className="inline-flex items-center gap-2 rounded-xl bg-[hsl(var(--foam))] px-6 py-3 text-sm font-semibold text-[hsl(var(--background))] shadow-lg transition hover:bg-[hsl(var(--foam)/0.9)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
         >
           Get started
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
         </a>
@@ -273,8 +354,19 @@ function EmptyState() {
               'hover:-translate-y-0.5 hover:shadow-lg hover:border-[hsl(var(--border)/0.55)] hover:bg-[hsl(var(--overlay)/0.35)]'
             )}
           >
-            <div className={cn('flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl', tool.bg)}>
-              <svg className={cn('h-5 w-5', tool.color)} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+            <div
+              className={cn(
+                'flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl',
+                tool.bg
+              )}
+            >
+              <svg
+                className={cn('h-5 w-5', tool.color)}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.8}
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" d={tool.icon} />
               </svg>
             </div>

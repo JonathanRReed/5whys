@@ -7,10 +7,7 @@ import {
   createPacket,
   updatePacket,
 } from '../../lib/glowup-store';
-import {
-  getSkillName,
-  SUGGESTED_QUESTIONS_TO_ASK,
-} from '../../lib/glowup-banks';
+import { getSkillName, SUGGESTED_QUESTIONS_TO_ASK } from '../../lib/glowup-banks';
 import { TargetIcon, PrinterIcon, ClipboardIcon } from './icons';
 
 type Props = {
@@ -21,25 +18,33 @@ type Props = {
   onLaunchHUD: () => void;
 };
 
-export default function PacketSection({ data, setData, currentRole, currentPacket, onLaunchHUD }: Props) {
+export default function PacketSection({
+  data,
+  setData,
+  currentRole,
+  currentPacket,
+  onLaunchHUD,
+}: Props) {
   const [mode, setMode] = React.useState<'prep' | 'review'>('prep');
 
   const createNewPacket = () => {
     if (!currentRole) return;
 
-    setData(createPacket(data, {
-      roleId: currentRole.id,
-      mode: 'prep',
-      topStoryIds: [],
-      customQuestions: [],
-      notes: '',
-      panicAnswer: '',
-      companyIntel: {
-        keywords: [],
+    setData(
+      createPacket(data, {
+        roleId: currentRole.id,
+        mode: 'prep',
+        topStoryIds: [],
+        customQuestions: [],
         notes: '',
-        links: [],
-      },
-    }));
+        panicAnswer: '',
+        companyIntel: {
+          keywords: [],
+          notes: '',
+          links: [],
+        },
+      })
+    );
   };
 
   if (!currentRole) {
@@ -77,14 +82,14 @@ export default function PacketSection({ data, setData, currentRole, currentPacke
     );
   }
 
-  const packetStories = data.stories.filter(s => currentPacket.topStoryIds.includes(s.id));
+  const packetStories = data.stories.filter((s) => currentPacket.topStoryIds.includes(s.id));
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold text-foreground">
-            {currentRole.company} — {currentRole.jobTitle}
+            {currentRole.company}: {currentRole.jobTitle}
           </h3>
           <p className="text-sm text-muted-foreground">
             {packetStories.length} stories in packet (target: 5)
@@ -129,29 +134,47 @@ export default function PacketSection({ data, setData, currentRole, currentPacke
       {mode === 'prep' && (
         <div className="space-y-6">
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Company Intel</h4>
+            <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Company Intel
+            </h4>
             <div>
-              <label className="mb-1 block text-sm text-muted-foreground">3 Keywords (for HUD header)</label>
-              <p className="mb-1 text-xs text-muted-foreground">These appear at the top of your HUD so you remember what to emphasize.</p>
+              <label className="mb-1 block text-sm text-muted-foreground">
+                3 Keywords (for HUD header)
+              </label>
+              <p className="mb-1 text-xs text-muted-foreground">
+                These appear at the top of your HUD so you remember what to emphasize.
+              </p>
               <input
                 type="text"
                 value={currentPacket.companyIntel?.keywords.join(', ') ?? ''}
-                onChange={e => {
-                  const keywords = e.target.value.split(',').map(k => k.trim()).filter(Boolean).slice(0, 3);
-                  setData(updatePacket(data, currentPacket.id, {
-                    companyIntel: { ...currentPacket.companyIntel!, keywords },
-                  }));
+                onChange={(e) => {
+                  const keywords = e.target.value
+                    .split(',')
+                    .map((k) => k.trim())
+                    .filter(Boolean)
+                    .slice(0, 3);
+                  setData(
+                    updatePacket(data, currentPacket.id, {
+                      companyIntel: { ...currentPacket.companyIntel!, keywords },
+                    })
+                  );
                 }}
                 placeholder="e.g., growth, developer productivity, AI-first"
                 className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm text-muted-foreground">Notes (mission/fit/why-us)</label>
-              <p className="mb-1 text-xs text-muted-foreground">Your personal pitch: why this company, why this team, why you.</p>
+              <label className="mb-1 block text-sm text-muted-foreground">
+                Notes (mission/fit/why-us)
+              </label>
+              <p className="mb-1 text-xs text-muted-foreground">
+                Your personal pitch: why this company, why this team, why you.
+              </p>
               <textarea
                 value={currentPacket.notes}
-                onChange={e => setData(updatePacket(data, currentPacket.id, { notes: e.target.value }))}
+                onChange={(e) =>
+                  setData(updatePacket(data, currentPacket.id, { notes: e.target.value }))
+                }
                 placeholder="Why are you excited about this role? What makes you a good fit?"
                 rows={3}
                 className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
@@ -163,10 +186,14 @@ export default function PacketSection({ data, setData, currentRole, currentPacke
             <label className="mb-1 block text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Panic Answer (generic safe story)
             </label>
-            <p className="mb-1 text-xs text-muted-foreground">A fallback story you can tell if your mind goes blank mid-interview.</p>
+            <p className="mb-1 text-xs text-muted-foreground">
+              A fallback story you can tell if your mind goes blank mid-interview.
+            </p>
             <textarea
               value={currentPacket.panicAnswer ?? ''}
-              onChange={e => setData(updatePacket(data, currentPacket.id, { panicAnswer: e.target.value }))}
+              onChange={(e) =>
+                setData(updatePacket(data, currentPacket.id, { panicAnswer: e.target.value }))
+              }
               placeholder="A generic story you can use if you completely blank..."
               rows={2}
               className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
@@ -174,15 +201,22 @@ export default function PacketSection({ data, setData, currentRole, currentPacke
           </div>
 
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Questions to Ask</h4>
-            <p className="text-xs text-muted-foreground">Smart questions show interest and help you evaluate the role.</p>
+            <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Questions to Ask
+            </h4>
+            <p className="text-xs text-muted-foreground">
+              Smart questions show interest and help you evaluate the role.
+            </p>
             <div className="space-y-2">
-              {(currentPacket.customQuestions.length > 0 ? currentPacket.customQuestions : ['']).map((q, i) => (
+              {(currentPacket.customQuestions.length > 0
+                ? currentPacket.customQuestions
+                : ['']
+              ).map((q, i) => (
                 <div key={i} className="flex gap-2">
                   <input
                     type="text"
                     value={q}
-                    onChange={e => {
+                    onChange={(e) => {
                       const updated = [...currentPacket.customQuestions];
                       updated[i] = e.target.value;
                       setData(updatePacket(data, currentPacket.id, { customQuestions: updated }));
@@ -206,9 +240,11 @@ export default function PacketSection({ data, setData, currentRole, currentPacke
               <button
                 type="button"
                 onClick={() => {
-                  setData(updatePacket(data, currentPacket.id, {
-                    customQuestions: [...currentPacket.customQuestions, ''],
-                  }));
+                  setData(
+                    updatePacket(data, currentPacket.id, {
+                      customQuestions: [...currentPacket.customQuestions, ''],
+                    })
+                  );
                 }}
                 className="rounded px-1 text-sm text-[hsl(var(--foam))] hover:underline focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
               >
@@ -223,9 +259,11 @@ export default function PacketSection({ data, setData, currentRole, currentPacke
                   type="button"
                   onClick={() => {
                     if (!currentPacket.customQuestions.includes(q)) {
-                      setData(updatePacket(data, currentPacket.id, {
-                        customQuestions: [...currentPacket.customQuestions, q],
-                      }));
+                      setData(
+                        updatePacket(data, currentPacket.id, {
+                          customQuestions: [...currentPacket.customQuestions, q],
+                        })
+                      );
                     }
                   }}
                   className="rounded-full bg-[hsl(var(--overlay)/0.4)] px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
@@ -241,7 +279,8 @@ export default function PacketSection({ data, setData, currentRole, currentPacke
               <div>
                 <h4 className="text-sm font-semibold text-foreground">Ready for the interview?</h4>
                 <p className="text-xs text-muted-foreground">
-                  Launch the HUD to see a clean, minimal view of your packet — stories, keywords, and panic answer — all in one glance.
+                  Launch the HUD to see a clean, minimal view of your packet: stories, keywords, and
+                  panic answer in one glance.
                 </p>
               </div>
               <button
@@ -270,7 +309,7 @@ export default function PacketSection({ data, setData, currentRole, currentPacke
               </p>
             </div>
           ) : (
-            packetStories.map(story => (
+            packetStories.map((story) => (
               <div
                 key={story.id}
                 className="rounded-xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.15)] p-4"
@@ -283,7 +322,9 @@ export default function PacketSection({ data, setData, currentRole, currentPacke
                 </div>
                 <p className="mt-2 font-medium text-foreground">{story.trigger}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{story.hook}</p>
-                <p className="mt-2 text-sm font-medium text-[hsl(var(--foam))]">{story.proofSnippet}</p>
+                <p className="mt-2 text-sm font-medium text-[hsl(var(--foam))]">
+                  {story.proofSnippet}
+                </p>
               </div>
             ))
           )}

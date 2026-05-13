@@ -25,7 +25,11 @@ import WhySummary from './career-5whys/WhySummary';
 import ExportActions from './career-5whys/ExportActions';
 import HistoryPanel from './career-5whys/HistoryPanel';
 
-export default function Career5Whys({ showHeader = true, showFooter = true, className }: Career5WhysProps) {
+export default function Career5Whys({
+  showHeader = true,
+  showFooter = true,
+  className,
+}: Career5WhysProps) {
   const { session, setSession, storageNotice } = useStoredSession();
   const [hintOpen, setHintOpen] = React.useState<Record<number, boolean>>({});
   const [status, setStatus] = React.useState<string | null>(null);
@@ -48,7 +52,7 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
   const topicText = session.topic.trim();
   const whyStatement =
     t === 'career'
-      ? `You're pursuing ${topicText || 'this path'} because it aligns with ${alignText || 'what matters to you'}—you're driven by ${themeText || 'a clear theme you are uncovering'}.`
+      ? `You're pursuing ${topicText || 'this path'} because it aligns with ${alignText || 'what matters to you'}, and you're driven by ${themeText || 'a clear theme you are uncovering'}.`
       : `You're motivated by ${themeText || 'this interest'} because it aligns with ${alignText || 'your values'} in the context of ${topicText || 'your core interest'}.`;
 
   const persistHistory = React.useCallback(
@@ -92,7 +96,9 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
       if (!stored) return;
       const parsed = JSON.parse(stored);
       if (!Array.isArray(parsed)) return;
-      const normalized = parsed.map((entry) => normalizeSnapshot(entry)).filter(Boolean) as WhySnapshot[];
+      const normalized = parsed
+        .map((entry) => normalizeSnapshot(entry))
+        .filter(Boolean) as WhySnapshot[];
       setHistory(normalized);
     } catch (err) {
       console.warn('Unable to load why snapshot history', err);
@@ -162,13 +168,19 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
   const handleExport = () => {
     const exportPayload = { ...session, whyStatement, createdAt: new Date().toISOString() };
     const topicSlug = toSlug(session.topic || TRACKS[session.track].label) || session.track;
-    downloadJson(`career-why-${topicSlug}-${new Date().toISOString().slice(0, 10)}.json`, exportPayload);
+    downloadJson(
+      `career-why-${topicSlug}-${new Date().toISOString().slice(0, 10)}.json`,
+      exportPayload
+    );
     setStatus('Export ready. Check your downloads.');
   };
 
   const handleExportSnapshot = (snapshot: WhySnapshot) => {
     const topicSlug = toSlug(snapshot.topic || TRACKS[snapshot.track].label) || snapshot.track;
-    downloadJson(`career-why-snapshot-${topicSlug}-${snapshot.timestamp.slice(0, 10)}.json`, snapshot);
+    downloadJson(
+      `career-why-snapshot-${topicSlug}-${snapshot.timestamp.slice(0, 10)}.json`,
+      snapshot
+    );
   };
 
   const handleExportHistory = () => {

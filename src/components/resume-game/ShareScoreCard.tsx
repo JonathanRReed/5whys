@@ -11,7 +11,12 @@ type Props = {
   verbCoverage: number;
 };
 
-export default function ShareScoreCard({ bullets, averageScore, signalReport, verbCoverage }: Props) {
+export default function ShareScoreCard({
+  bullets,
+  averageScore,
+  signalReport,
+  verbCoverage,
+}: Props) {
   const cardRef = React.useRef<HTMLDivElement>(null);
   const [copied, setCopied] = React.useState(false);
 
@@ -37,7 +42,7 @@ export default function ShareScoreCard({ bullets, averageScore, signalReport, ve
   };
 
   return (
-    <Card className="backdrop-blur-lg">
+    <Card>
       <CardHeader>
         <CardTitle className="text-xl">Share your score</CardTitle>
       </CardHeader>
@@ -46,7 +51,9 @@ export default function ShareScoreCard({ bullets, averageScore, signalReport, ve
           ref={cardRef}
           className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-gradient-to-br from-[hsl(var(--card)/0.9)] to-[hsl(var(--overlay)/0.6)] p-6 text-center"
         >
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Resume Game Score</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+            Resume Game Score
+          </p>
           <p className="mt-2 text-5xl font-bold text-[hsl(var(--foam))]">{averageScore}</p>
           <p className="text-sm text-muted-foreground">out of 100</p>
           <div className="mt-4 grid grid-cols-2 gap-3 text-sm">

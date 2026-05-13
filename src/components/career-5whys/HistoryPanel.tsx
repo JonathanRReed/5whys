@@ -40,14 +40,16 @@ export default function HistoryPanel({
   onDeleteSnapshot,
 }: HistoryPanelProps) {
   return (
-    <Card className="bg-[hsl(var(--card)/0.4)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] backdrop-blur">
+    <Card className="border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.86)] text-[hsl(var(--foreground))]">
       <CardHeader className="space-y-4">
         <div className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">Snapshots</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
+            Snapshots
+          </p>
           <CardTitle className="text-xl">History dashboard</CardTitle>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Stored locally on this device. Up to {historyLimit} entries are kept. New saves will replace the oldest
-            entries automatically.
+            Stored locally on this device. Up to {historyLimit} entries are kept. New saves will
+            replace the oldest entries automatically.
           </p>
           {historyIsFull ? (
             <p className="text-xs text-[hsl(var(--gold))]">
@@ -68,7 +70,11 @@ export default function HistoryPanel({
               value={historyLimit}
               onChange={(event) => {
                 const nextLimit = Number(event.target.value);
-                if (HISTORY_LIMIT_OPTIONS.includes(nextLimit as (typeof HISTORY_LIMIT_OPTIONS)[number])) {
+                if (
+                  HISTORY_LIMIT_OPTIONS.includes(
+                    nextLimit as (typeof HISTORY_LIMIT_OPTIONS)[number]
+                  )
+                ) {
                   onLimitChange(nextLimit);
                 }
               }}
@@ -106,7 +112,8 @@ export default function HistoryPanel({
       <CardContent className="space-y-3">
         {history.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.1)] p-5 text-sm text-[hsl(var(--muted-foreground))]">
-            Save a completed reflection to populate your personal archive. Snapshots stay on this browser only.
+            Save a completed reflection to populate your personal archive. Snapshots stay on this
+            browser only.
           </div>
         ) : (
           history.map((entry) => (
