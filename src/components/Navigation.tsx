@@ -1,5 +1,4 @@
 import * as React from 'react';
-
 import { cn } from '../lib/utils';
 
 type Theme = 'night' | 'dawn';
@@ -15,39 +14,17 @@ type NavigationProps = {
   initialTheme?: Theme;
 };
 
-type ThemeOption = {
-  id: Theme;
-  label: string;
-  description: string;
-  gradient: string;
-};
-
 const THEME_STORAGE_KEY = 'career-tools-theme';
 const THEME_COOKIE = 'career-tools-theme';
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 const THEME_CHANNEL_NAME = 'career-tools-theme';
-
-const themeOptions: ThemeOption[] = [
-  {
-    id: 'night',
-    label: 'Dark',
-    description: 'Off black',
-    gradient: 'linear-gradient(135deg,#0f111a 0%,#1b2230 58%,#7dd3d8 100%)',
-  },
-  {
-    id: 'dawn',
-    label: 'Light',
-    description: 'Off white',
-    gradient: 'linear-gradient(135deg,#f7f9fc 0%,#e8eef7 58%,#31748f 100%)',
-  },
-];
 
 const navLinks = [
   { href: '/', label: 'Home' },
   { href: '/career/', label: 'Career 5 Whys' },
   { href: '/resume-game/', label: 'Resume Game' },
-  { href: '/networking-practice/', label: 'Networking Studio' },
-  { href: '/5whys/interview-glow-up/', label: 'Interview Glow Up' },
+  { href: '/networking-practice/', label: 'Networking' },
+  { href: '/5whys/interview-glow-up/', label: 'Interview' },
 ];
 
 const isValidTheme = (value: unknown): value is Theme => value === 'night' || value === 'dawn';
@@ -61,15 +38,11 @@ const readDatasetTheme = (): Theme | null => {
 const readCookieTheme = (): Theme | null => {
   if (typeof document === 'undefined') return null;
   try {
-    const cookie = document.cookie
-      .split('; ')
-      .find((entry) => entry.startsWith(`${THEME_COOKIE}=`));
+    const cookie = document.cookie.split('; ').find((entry) => entry.startsWith(`${THEME_COOKIE}=`));
     if (!cookie) return null;
     const [, value] = cookie.split('=');
     return isValidTheme(value) ? value : null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 };
 
 const readStorageTheme = (): Theme | null => {
@@ -77,9 +50,7 @@ const readStorageTheme = (): Theme | null => {
   try {
     const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
     return isValidTheme(stored) ? stored : null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 };
 
 const applyThemeToDom = (theme: Theme) => {
@@ -103,110 +74,60 @@ const applyThemeToDom = (theme: Theme) => {
     root.style.colorScheme = colorScheme;
     if (body) body.style.colorScheme = colorScheme;
     document.querySelector('meta[name="color-scheme"]')?.setAttribute('content', colorScheme);
-  } catch {
-    // ignore unsupported style writes
-  }
+  } catch { /* ignore */ }
 };
 
 const writeStorageTheme = (theme: Theme) => {
   if (typeof window === 'undefined') return;
   try {
     const existing = window.localStorage.getItem(THEME_STORAGE_KEY);
-    if (existing !== theme) {
-      window.localStorage.setItem(THEME_STORAGE_KEY, theme);
-    }
-  } catch {
-    // ignore storage failures
-  }
+    if (existing !== theme) window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch { /* ignore */ }
 };
 
 const writeCookieTheme = (theme: Theme) => {
   if (typeof document === 'undefined') return;
   try {
-    const current = readCookieTheme();
-    if (current === theme) return;
     const secureToken = typeof window !== 'undefined' && window.location.protocol === 'https:' ? ';Secure' : '';
     document.cookie = `${THEME_COOKIE}=${theme};path=/;max-age=${COOKIE_MAX_AGE};SameSite=Lax${secureToken}`;
-  } catch {
-    // ignore cookie failures
-  }
-};
-
-const resolveInitialTheme = (): Theme => {
-  if (typeof window === 'undefined') return 'night';
-  return readDatasetTheme() ?? readCookieTheme() ?? readStorageTheme() ?? 'night';
+  } catch { /* ignore */ }
 };
 
 export default function Navigation({ currentPath = '/', initialTheme }: NavigationProps) {
   const [menuOpen, setMenuOpen] = React.useState(false);
-  const [activeTheme, setActiveTheme] = React.useState<Theme>(initialTheme ?? resolveInitialTheme);
+  const [activeTheme, setActiveTheme] = React.useState<Theme>(initialTheme ?? 'night');
   const [isHydrated, setIsHydrated] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
   const broadcastRef = React.useRef<BroadcastChannel | null>(null);
 
   React.useEffect(() => {
-    // mark hydrated to allow applying active UI states
     setIsHydrated(true);
   }, []);
 
-  // Scroll-aware navigation
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
     const onScroll = () => setIsScrolled(window.scrollY > 24);
     window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll(); // Check initial state
+    onScroll();
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      // Use the same improved cookie parsing logic
       const cookieMatch = document.cookie.match(new RegExp('(^|; )' + THEME_COOKIE + '=([^;]*)'));
-      let theme = null;
-
-        if (cookieMatch?.[2]) {
-          const cookieValue = cookieMatch[2];
-          if (cookieValue === 'night' || cookieValue === 'dawn') {
-            theme = cookieValue;
-          }
-        }
-
-        const stored = theme ?? window.localStorage.getItem(THEME_STORAGE_KEY);
-        if (stored === 'night' || stored === 'dawn') {
-        setActiveTheme(stored);
-      }
-    } catch (_) {
-      // ignore hydration sync issues
-    }
+      const cookieValue = cookieMatch?.[2];
+      const stored = (cookieValue === 'night' || cookieValue === 'dawn') ? cookieValue
+        : window.localStorage.getItem(THEME_STORAGE_KEY);
+      if (stored === 'night' || stored === 'dawn') setActiveTheme(stored);
+    } catch { /* ignore */ }
   }, []);
 
   React.useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
+    if (typeof window === 'undefined') return;
     applyThemeToDom(activeTheme);
-
-    try {
-      const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-      if (stored !== activeTheme) {
-        window.localStorage.setItem(THEME_STORAGE_KEY, activeTheme);
-      }
-    } catch (_) {
-      // storage might be unavailable; fail silently
-    }
-
-    try {
-      const secureToken = window.location.protocol === 'https:' ? ';Secure' : '';
-      const cookieMatch = document.cookie.match(new RegExp('(^|; )' + THEME_COOKIE + '=([^;]*)'));
-      if (cookieMatch?.[2] !== activeTheme) {
-        document.cookie = `${THEME_COOKIE}=${activeTheme};path=/;max-age=${COOKIE_MAX_AGE};SameSite=Lax${secureToken}`;
-      }
-    } catch (_) {
-      // ignore cookie issues
-    }
-
+    writeStorageTheme(activeTheme);
+    writeCookieTheme(activeTheme);
     broadcastRef.current?.postMessage({ theme: activeTheme });
   }, [activeTheme]);
 
@@ -215,9 +136,8 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
     const handleStorage = (event: StorageEvent) => {
       if (event.key !== THEME_STORAGE_KEY || !event.newValue) return;
       if (event.newValue === 'night' || event.newValue === 'dawn') {
-        // Apply DOM immediately, then update state
         applyThemeToDom(event.newValue as Theme);
-        setActiveTheme((previous) => (previous === event.newValue ? previous : (event.newValue as Theme)));
+        setActiveTheme((prev) => (prev === event.newValue ? prev : event.newValue as Theme));
       }
     };
     window.addEventListener('storage', handleStorage);
@@ -225,18 +145,15 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
   }, []);
 
   React.useEffect(() => {
-    if (typeof window === 'undefined' || !('BroadcastChannel' in window)) {
-      return;
-    }
+    if (typeof window === 'undefined' || !('BroadcastChannel' in window)) return;
     try {
       const channel = new BroadcastChannel(THEME_CHANNEL_NAME);
       broadcastRef.current = channel;
       const handleMessage = (event: MessageEvent<{ theme?: Theme }>) => {
         const incoming = event.data?.theme;
         if (incoming === 'night' || incoming === 'dawn') {
-          // Apply DOM immediately, then update state
           applyThemeToDom(incoming);
-          setActiveTheme((previous) => (previous === incoming ? previous : incoming));
+          setActiveTheme((prev) => (prev === incoming ? prev : incoming));
         }
       };
       channel.addEventListener('message', handleMessage);
@@ -245,237 +162,160 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
         channel.close();
         broadcastRef.current = null;
       };
-    } catch (_) {
-      broadcastRef.current = null;
-    }
+    } catch { broadcastRef.current = null; }
   }, []);
 
   React.useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 768) {
-        setMenuOpen(false);
-      }
-    };
-
+    const handleResize = () => { if (window.innerWidth >= 768) setMenuOpen(false); };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const setTheme = React.useCallback(
-    (theme: Theme) => {
-      try {
-        applyThemeToDom(theme);
-        writeStorageTheme(theme);
-        writeCookieTheme(theme);
-        broadcastRef.current?.postMessage({ theme });
-        window.dispatchEvent(new CustomEvent('career-tools-theme-change', { detail: { theme } }));
-      } catch { }
-      setActiveTheme(theme);
-    },
-    []
-  );
+  const toggleTheme = React.useCallback(() => {
+    const next = activeTheme === 'night' ? 'dawn' : 'night';
+    setActiveTheme(next);
+  }, [activeTheme]);
 
   const isActive = React.useCallback(
     (href: string) => {
-      if (href === '/') {
-        return currentPath === '/';
-      }
+      if (href === '/') return currentPath === '/';
       return currentPath.startsWith(href);
     },
     [currentPath]
   );
 
+  const isNight = activeTheme === 'night';
+
   return (
-    <header className={cn(
-      "sticky top-0 z-40 mx-auto w-full max-w-[1600px] border-b transition-all duration-300",
-      isScrolled
-        ? "border-[hsl(var(--border)/0.5)] bg-[hsl(var(--background)/0.88)] backdrop-blur-2xl shadow-[0_4px_24px_-8px_hsl(var(--background)/0.5)]"
-        : "border-[hsl(var(--border)/0.35)] bg-[hsl(var(--background)/0.92)]/95 backdrop-blur-xl"
-    )}>
+    <header
+      className={cn(
+        'sticky top-0 z-40 w-full border-b transition-all duration-300',
+        isScrolled
+          ? 'border-[hsl(var(--border)/0.45)] bg-[hsl(var(--background)/0.92)] backdrop-blur-2xl'
+          : 'border-[hsl(var(--border)/0.25)] bg-[hsl(var(--background)/0.85)] backdrop-blur-xl'
+      )}
+    >
       <nav
         aria-label="Primary"
         className={cn(
-          "mx-auto flex w-full max-w-[1600px] flex-col gap-3 px-4 md:flex-row md:items-center md:justify-between transition-all duration-300",
-          isScrolled ? "py-2 sm:py-2.5" : "py-3 sm:py-4"
+          'mx-auto flex max-w-6xl items-center justify-between px-4 transition-all duration-300',
+          isScrolled ? 'py-2.5' : 'py-3.5'
         )}
       >
-        <div className="flex w-full flex-wrap items-center justify-between gap-3 md:w-auto md:flex-nowrap md:justify-start">
-          <a href="/" className="flex flex-shrink-0 items-center gap-3 text-foreground transition-transform hover:scale-[1.02]">
-            <div className="nav-logo flex h-10 w-10 items-center justify-center rounded-2xl">
-              <img
-                src="/favicon.webp"
-                alt="Career Tools Growth Studio icon"
-                width={26}
-                height={26}
-                className="nav-logo__icon h-7 w-7 object-contain"
-              />
-            </div>
-            <div className="flex flex-col text-left">
-              <span className="whitespace-nowrap text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">Career Tools</span>
-              <span className="whitespace-nowrap text-base font-semibold tracking-tight">Growth Studio</span>
-            </div>
-          </a>
-
-          <div className="hidden items-center gap-2 lg:flex xl:gap-3">
-            {navLinks.map(({ href, label }) => {
-              const active = isActive(href);
-              return (
-                <a
-                  key={href}
-                  href={href}
-                  aria-current={active ? 'page' : undefined}
-                  className={cn(
-                    'group relative inline-flex flex-shrink-0 items-center whitespace-nowrap rounded-full border border-[hsl(var(--border)/0.38)] bg-[linear-gradient(135deg,hsl(var(--overlay)/0.26)_0%,hsl(var(--overlay)/0.16)_100%)] px-3 py-1.5 text-xs font-semibold tracking-tight text-muted-foreground transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))] hover:-translate-y-0.5 hover:border-[hsl(var(--accent)/0.45)] hover:text-foreground hover:shadow-[0_18px_36px_-24px_hsl(var(--background)/0.88)] xl:px-3.5 xl:py-2 xl:text-sm',
-                    active
-                      ? 'border-transparent bg-[linear-gradient(130deg,hsl(var(--overlay)/0.72)_0%,hsl(var(--overlay)/0.36)_60%,hsl(var(--overlay)/0.22)_100%)] text-foreground shadow-[0_22px_44px_-26px_hsl(var(--background)/0.95)]'
-                      : 'shadow-[0_6px_20px_-16px_hsl(var(--background)/0.85)]'
-                  )}
-                >
-                  <span
-                    aria-hidden
-                    className={cn(
-                      'pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_14%_50%,hsl(var(--foam)/0.55)_0%,transparent_45%)] opacity-0 transition-opacity duration-300',
-                      active ? 'opacity-100' : 'group-hover:opacity-75'
-                    )}
-                  />
-                  <span className="relative z-10 flex items-center gap-2 lg:gap-3">
-                    <span
-                      aria-hidden
-                      className={cn(
-                        'hidden h-2 w-2 flex-none rounded-full transition-all duration-300 xl:block xl:h-2.5 xl:w-2.5',
-                        active
-                          ? 'bg-[radial-gradient(circle,hsl(var(--foam))_0%,hsl(var(--foam)/0.25)_100%)] shadow-[0_0_0_1px_hsl(var(--foam)/0.7)]'
-                          : 'bg-[radial-gradient(circle,hsl(var(--foam)/0.6)_0%,hsl(var(--foam)/0.08)_100%)] opacity-80 group-hover:opacity-100'
-                      )}
-                    />
-                    <span className="leading-none">{label}</span>
-                  </span>
-                </a>
-              );
-            })}
+        {/* Logo */}
+        <a
+          href="/"
+          className="flex flex-shrink-0 items-center gap-2.5 text-foreground transition-opacity hover:opacity-80"
+        >
+          <div className="nav-logo flex h-9 w-9 items-center justify-center rounded-xl">
+            <img
+              src="/favicon.webp"
+              alt=""
+              width={22}
+              height={22}
+              className="nav-logo__icon h-[1.15rem] w-[1.15rem] object-contain"
+            />
           </div>
+          <span className="text-base font-semibold tracking-tight">5 Whys</span>
+        </a>
 
-          <div className="flex items-center gap-3">
-            <div className="hidden items-center gap-2 xl:flex">
-              {themeOptions.map((option) => {
-                const isActiveUi = isHydrated && activeTheme === option.id;
-                return (
-                  <button
-                    key={option.id}
-                    type="button"
-                    onClick={() => setTheme(option.id)}
-                    data-theme-toggle={option.id}
-                    data-active={String(isActiveUi)}
-                    className={cn(
-                      'group inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]',
-                      isActiveUi &&
-                      'border-transparent bg-[radial-gradient(circle_at_top_right,hsl(var(--overlay)/0.48)_0%,hsl(var(--overlay)/0.28)_55%,transparent_100%)] text-foreground shadow-[0_18px_36px_-26px_hsl(var(--background)/0.85)]'
-                      ,
-                      !isActiveUi &&
-                      'border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.22)] text-muted-foreground hover:-translate-y-0.5 hover:border-[hsl(var(--accent)/0.4)] hover:text-foreground hover:shadow-[0_14px_28px_-24px_hsl(var(--background)/0.85)]'
-                    )}
-                    aria-pressed={isHydrated ? activeTheme === option.id : undefined}
-                    aria-label={`Activate ${option.label} theme`}
-                    title={`${option.label} · ${option.description}`}
-                  >
-                    <span
-                      aria-hidden
-                      className={cn(
-                        'h-1.5 w-1.5 rounded-full transition-colors duration-200',
-                        isActiveUi
-                          ? 'bg-[hsl(var(--foam))]'
-                          : 'bg-[hsl(var(--muted-foreground)/0.45)] group-hover:bg-[hsl(var(--foam))]'
-                      )}
-                    />
-                    <span className="leading-none">{option.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <button
-              type="button"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[hsl(var(--border)/0.7)] text-foreground hover:bg-[hsl(var(--overlay)/0.35)] md:hidden"
-              onClick={() => setMenuOpen((open) => !open)}
-              aria-expanded={menuOpen}
-              aria-controls="primary-navigation"
-            >
-              <span className="sr-only">Toggle navigation</span>
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.8}
-              >
-                {menuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+        {/* Desktop nav */}
+        <div className="hidden items-center gap-1 md:flex">
+          {navLinks.map(({ href, label }) => {
+            const active = isActive(href);
+            return (
+              <a
+                key={href}
+                href={href}
+                aria-current={active ? 'page' : undefined}
+                className={cn(
+                  'relative px-3 py-1.5 text-sm font-medium transition-colors duration-200',
+                  active
+                    ? 'text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
                 )}
-              </svg>
-            </button>
-          </div>
+              >
+                {label}
+                {active && (
+                  <span
+                    className="absolute bottom-0 left-3 right-3 h-[2px] rounded-full bg-[hsl(var(--foam))]"
+                    aria-hidden="true"
+                  />
+                )}
+              </a>
+            );
+          })}
         </div>
 
-        <div
-          id="primary-navigation"
-          className={cn(
-            'w-full flex-col gap-4 border-t border-[hsl(var(--border)/0.35)] py-4 md:hidden',
-            menuOpen
-              ? 'flex translate-y-0 opacity-100'
-              : 'hidden -translate-y-2 opacity-0'
-          )}
-        >
-          <div className="flex flex-col gap-3">
-            {navLinks.map(({ href, label }) => {
-              const active = isActive(href);
-              return (
-                <a
-                  key={href}
-                  href={href}
-                  onClick={() => setMenuOpen(false)}
-                  aria-current={active ? 'page' : undefined}
-                  className={cn(
-                    'rounded-xl px-3 py-2 text-base font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]',
-                    active
-                      ? 'bg-[hsl(var(--overlay)/0.35)] text-foreground'
-                      : 'text-muted-foreground hover:bg-[hsl(var(--overlay)/0.28)] hover:text-foreground'
-                  )}
-                >
-                  {label}
-                </a>
-              );
-            })}
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="flex-1">
-              <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Theme</span>
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                {themeOptions.map((option) => {
-                  const isActiveUi = isHydrated && activeTheme === option.id;
-                  return (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => setTheme(option.id)}
-                      data-theme-toggle={option.id}
-                      data-active={String(isActiveUi)}
-                      className={cn(
-                        'flex-1 min-w-[90px] rounded-full border border-[hsl(var(--border)/0.7)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.3)] hover:text-foreground',
-                        isActiveUi && 'bg-[hsl(var(--overlay)/0.35)] text-foreground ring-1 ring-[hsl(var(--ring))]'
-                      )}
-                      aria-pressed={isHydrated ? activeTheme === option.id : undefined}
-                      aria-label={`Activate ${option.label} theme`}
-                    >
-                      {option.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+        {/* Right side: theme + mobile menu */}
+        <div className="flex items-center gap-2">
+          {/* Theme toggle */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.35)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+            aria-label={isNight ? 'Switch to light theme' : 'Switch to dark theme'}
+            title={isNight ? 'Switch to light theme' : 'Switch to dark theme'}
+          >
+            {isNight ? (
+              <svg className="h-[1.1rem] w-[1.1rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+              </svg>
+            ) : (
+              <svg className="h-[1.1rem] w-[1.1rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+              </svg>
+            )}
+          </button>
+
+          {/* Mobile menu toggle */}
+          <button
+            type="button"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.35)] hover:text-foreground md:hidden"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-expanded={menuOpen}
+            aria-controls="primary-navigation"
+          >
+            <span className="sr-only">Toggle navigation</span>
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              {menuOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
         </div>
       </nav>
+
+      {/* Mobile nav */}
+      <div
+        id="primary-navigation"
+        className={cn(
+          'w-full flex-col gap-1 border-t border-[hsl(var(--border)/0.25)] px-4 pb-4 md:hidden',
+          menuOpen ? 'flex' : 'hidden'
+        )}
+      >
+        {navLinks.map(({ href, label }) => {
+          const active = isActive(href);
+          return (
+            <a
+              key={href}
+              href={href}
+              onClick={() => setMenuOpen(false)}
+              aria-current={active ? 'page' : undefined}
+              className={cn(
+                'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                active
+                  ? 'bg-[hsl(var(--overlay)/0.3)] text-foreground'
+                  : 'text-muted-foreground hover:bg-[hsl(var(--overlay)/0.2)] hover:text-foreground'
+              )}
+            >
+              {label}
+            </a>
+          );
+        })}
+      </div>
     </header>
   );
 }
