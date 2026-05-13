@@ -104,7 +104,7 @@
     ],
     "questionTemplates": [
       {
-        "id": "caree-path",
+        "id": "career-path",
         "label": "Career Path",
         "prompt": "How did you decide the timing was right to move from academia into industry?"
       },
