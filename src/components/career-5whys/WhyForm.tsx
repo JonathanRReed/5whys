@@ -53,7 +53,7 @@ export default function WhyForm({
                 onChange={(event) => onResponseChange(index, event.target.value)}
                 placeholder="Document your reasoning. Be specific and concrete."
                 disabled={locked}
-                className="min-h-[120px] resize-none border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[hsl(var(--foam))] disabled:opacity-60"
+                className="min-h-[120px] resize-none border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2 disabled:opacity-60"
               />
               {locked && (
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">

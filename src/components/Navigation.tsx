@@ -100,6 +100,7 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
   const [activeTheme, setActiveTheme] = React.useState<Theme>(initialTheme ?? 'night');
   const [isHydrated, setIsHydrated] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
+  const [showScrollTop, setShowScrollTop] = React.useState(false);
   const broadcastRef = React.useRef<BroadcastChannel | null>(null);
 
   React.useEffect(() => {
@@ -108,10 +109,19 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
-    const onScroll = () => setIsScrolled(window.scrollY > 24);
+    const onScroll = () => {
+      setIsScrolled(window.scrollY > 24);
+      setShowScrollTop(window.scrollY > 400);
+    };
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const scrollToTop = React.useCallback(() => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }, []);
 
   React.useEffect(() => {
@@ -187,6 +197,14 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
   );
 
   const isNight = activeTheme === 'night';
+
+  const mainLinks = navLinks.filter(
+    (l) => l.href === '/' || l.href === '/start/' || l.href === '/dashboard/'
+  );
+  const toolsLinks = navLinks.filter(
+    (l) => l.href !== '/' && l.href !== '/start/' && l.href !== '/dashboard/'
+  );
+  const [toolsOpen, setToolsOpen] = React.useState(toolsLinks.some((l) => isActive(l.href)));
 
   return (
     <header
@@ -290,15 +308,35 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
         </div>
       </nav>
 
-      {/* Mobile nav */}
+      {/* Mobile overlay */}
+      {menuOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm md:hidden"
+          onClick={() => setMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Mobile nav panel */}
       <div
         id="primary-navigation"
         className={cn(
-          'w-full flex-col gap-1 border-t border-[hsl(var(--border)/0.25)] px-4 pb-4 md:hidden',
-          menuOpen ? 'flex' : 'hidden'
+          'fixed inset-y-0 right-0 z-50 w-72 flex-col gap-1 border-l border-[hsl(var(--border)/0.25)] bg-[hsl(var(--background)/0.98)] px-4 pb-4 pt-20 backdrop-blur-xl md:hidden transition-transform duration-300 ease-out',
+          menuOpen ? 'translate-x-0' : 'translate-x-full'
         )}
       >
-        {navLinks.map(({ href, label }) => {
+        <button
+          type="button"
+          onClick={() => setMenuOpen(false)}
+          className="absolute top-4 right-4 inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.35)] hover:text-foreground"
+          aria-label="Close navigation"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        {mainLinks.map(({ href, label }) => {
           const active = isActive(href);
           return (
             <a
@@ -307,17 +345,83 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
               onClick={() => setMenuOpen(false)}
               aria-current={active ? 'page' : undefined}
               className={cn(
-                'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                'rounded-lg px-3 py-2 text-sm font-medium transition-colors border-l-2',
                 active
-                  ? 'bg-[hsl(var(--overlay)/0.3)] text-foreground'
-                  : 'text-muted-foreground hover:bg-[hsl(var(--overlay)/0.2)] hover:text-foreground'
+                  ? 'border-[hsl(var(--foam))] bg-[hsl(var(--overlay)/0.3)] text-foreground'
+                  : 'border-transparent text-muted-foreground hover:bg-[hsl(var(--overlay)/0.2)] hover:text-foreground'
               )}
             >
               {label}
             </a>
           );
         })}
+
+        <div className="my-2 h-px bg-[hsl(var(--border)/0.3)]" />
+
+        <button
+          type="button"
+          onClick={() => setToolsOpen((open) => !open)}
+          aria-expanded={toolsOpen}
+          className={cn(
+            'flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+            toolsLinks.some((l) => isActive(l.href))
+              ? 'bg-[hsl(var(--overlay)/0.25)] text-foreground'
+              : 'text-muted-foreground hover:bg-[hsl(var(--overlay)/0.2)] hover:text-foreground'
+          )}
+        >
+          <span className="flex items-center gap-2">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5" />
+            </svg>
+            Tools
+          </span>
+          <svg
+            className={cn('h-4 w-4 transition-transform duration-200', toolsOpen ? 'rotate-180' : '')}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.8}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+          </svg>
+        </button>
+
+        {toolsOpen && (
+          <div className="flex flex-col gap-1 pl-2">
+            {toolsLinks.map(({ href, label }) => {
+              const active = isActive(href);
+              return (
+                <a
+                  key={href}
+                  href={href}
+                  onClick={() => setMenuOpen(false)}
+                  aria-current={active ? 'page' : undefined}
+                  className={cn(
+                    'rounded-lg px-3 py-2 text-sm font-medium transition-colors border-l-2',
+                    active
+                      ? 'border-[hsl(var(--foam))] bg-[hsl(var(--overlay)/0.3)] text-foreground'
+                      : 'border-transparent text-muted-foreground hover:bg-[hsl(var(--overlay)/0.2)] hover:text-foreground'
+                  )}
+                >
+                  {label}
+                </a>
+              );
+            })}
+          </div>
+        )}
       </div>
+      {showScrollTop && (
+        <button
+          type="button"
+          onClick={scrollToTop}
+          aria-label="Scroll to top"
+          className="fixed bottom-6 right-6 z-50 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.9)] text-foreground shadow-lg backdrop-blur-md transition hover:bg-[hsl(var(--overlay))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+          </svg>
+        </button>
+      )}
     </header>
   );
 }

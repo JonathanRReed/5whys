@@ -44,6 +44,8 @@ export default function ScenarioSelector({
                   key={scenario.id}
                   type="button"
                   onClick={() => onScenarioChange(scenario.id)}
+                  aria-label={`Select scenario: ${scenario.title}`}
+                  aria-pressed={isActive}
                   className={`rounded-xl border px-4 py-3 text-left shadow-sm transition ${
                     isActive
                       ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.2)] text-[hsl(var(--foreground))]'
@@ -60,6 +62,7 @@ export default function ScenarioSelector({
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap sm:justify-end">
           <Button
             onClick={onCreateNewVersion}
+            aria-label="Create new practice version"
             className="w-full bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.8)] sm:w-auto"
           >
             New Version
@@ -69,6 +72,7 @@ export default function ScenarioSelector({
               variant="outline"
               className="w-full border-[hsl(var(--border)/0.6)] text-[hsl(var(--foreground))] sm:w-auto"
               onClick={onDeleteCurrentVersion}
+              aria-label="Delete current practice version"
             >
               Delete Version
             </Button>

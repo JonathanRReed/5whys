@@ -58,7 +58,7 @@ export default function ScenarioEditor({ currentVersion, onFieldChange }: Props)
                 aria-label={ariaLabel}
                 value={currentVersion?.[field] ?? ''}
                 onChange={(event) => onFieldChange(field, event.target.value)}
-                className="min-h-[140px] bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--border)/0.5)] text-sm text-[hsl(var(--foreground))] focus:ring-2 focus:ring-[hsl(var(--foam))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))]"
+                className="min-h-[140px] bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--border)/0.5)] text-sm text-[hsl(var(--foreground))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))]"
               />
               <p className="text-xs text-[hsl(var(--muted-foreground))] leading-relaxed">{helpText}</p>
             </CardContent>

@@ -50,7 +50,7 @@ export default function NewsletterSignup({ className }: Props) {
             placeholder="you@example.com"
             required
             disabled={status === 'loading'}
-            className="flex-1 rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--background)/0.5)] px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-[hsl(var(--foam))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam)/0.3)] disabled:opacity-50"
+            className="flex-1 rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--background)/0.5)] px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-[hsl(var(--foam))] focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam)/0.3)] disabled:opacity-50"
           />
           <button
             type="submit"

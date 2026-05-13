@@ -270,8 +270,8 @@ export function readCareerDashboard(): CareerDashboardData {
   if (!networking?.sessionCount) {
     recommendations.push('Practice your elevator pitch with the Networking timer.');
   }
-  if (resume?.hardSkills?.length && glowup && !glowup.storyCount) {
-    recommendations.push(`Great — you have ${resume.hardSkills.length} hard skills detected. Turn them into interview stories.`);
+  if (resume?.signalReport?.hardSkills?.length && glowup && !glowup.storyCount) {
+    recommendations.push(`Great — you have ${resume.signalReport.hardSkills.length} hard skills detected. Turn them into interview stories.`);
   }
 
   return {
@@ -291,7 +291,7 @@ export function readCareerDashboard(): CareerDashboardData {
           latestTopic: why.session?.topic ?? (why.snapshots[0]?.topic || null),
           latestTrack: why.session?.track ?? (why.snapshots[0]?.track || null),
           snapshotCount: why.snapshots?.length ?? 0,
-          whyStatement: why.session?.responses?.filter(Boolean).length >= 4
+          whyStatement: why.session && why.session.responses?.filter(Boolean).length >= 4
             ? why.session.responses[why.session.responses.length - 1]
             : null,
           hasSession: !!why.session,

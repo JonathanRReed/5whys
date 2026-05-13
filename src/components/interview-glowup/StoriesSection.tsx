@@ -116,7 +116,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
               <select
                 value={formData.primarySkillId ?? ''}
                 onChange={e => setFormData({ ...formData, primarySkillId: e.target.value })}
-                className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]"
+                className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
               >
                 <option value="">Select skill...</option>
                 {SKILL_BANK.map(skill => (
@@ -132,7 +132,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                 max={100}
                 value={formData.confidence ?? 70}
                 onChange={e => setFormData({ ...formData, confidence: Number(e.target.value) })}
-                className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]"
+                className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
               />
             </div>
           </div>
@@ -146,7 +146,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                 value={formData.trigger ?? ''}
                 onChange={e => setFormData({ ...formData, trigger: e.target.value })}
                 placeholder="API redesign"
-                className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]"
+                className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
               />
             </div>
             <div>
@@ -157,7 +157,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                 value={formData.hook ?? ''}
                 onChange={e => setFormData({ ...formData, hook: e.target.value })}
                 placeholder="We needed to replace the legacy API..."
-                className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]"
+                className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
               />
             </div>
             <div>
@@ -168,7 +168,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                 value={formData.proofSnippet ?? ''}
                 onChange={e => setFormData({ ...formData, proofSnippet: e.target.value })}
                 placeholder="40% faster, zero downtime"
-                className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]"
+                className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
               />
             </div>
           </div>
@@ -190,7 +190,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
               placeholder="What was the challenge? What exactly did you do?"
               rows={4}
               className={cn(
-                'w-full rounded-lg border bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]',
+                'w-full rounded-lg border bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2',
                 playSentences > 4
                   ? 'border-[hsl(var(--gold)/0.5)]'
                   : 'border-[hsl(var(--border)/0.5)]'
@@ -214,7 +214,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
               onChange={e => setFormData({ ...formData, proof: e.target.value })}
               placeholder="Numbers, time saved, revenue, or specific praise..."
               rows={3}
-              className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]"
+              className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
             />
           </div>
 

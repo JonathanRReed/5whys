@@ -83,7 +83,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
   };
 
   const inputClass =
-    'w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]';
+    'w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2';
 
   return (
     <div className="space-y-6">
@@ -130,7 +130,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
             {selectedBullets.size > 0 && (
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">{selectedBullets.size} selected</span>
-                <select aria-label="Bulk tag selected bullets" onChange={e => { if (e.target.value) handleBulkTag(e.target.value); }} className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]" defaultValue="">
+                <select aria-label="Bulk tag selected bullets" onChange={e => { if (e.target.value) handleBulkTag(e.target.value); }} className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-2 py-1 text-sm text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2" defaultValue="">
                   <option value="">Bulk tag...</option>
                   {SKILL_BANK.map(skill => (<option key={skill.id} value={skill.id}>{skill.name}</option>))}
                 </select>
@@ -163,7 +163,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                   <div className="flex flex-wrap items-center gap-2">
                     <select value={bullet.primarySkillId ?? ''} onChange={e => {
                       setBullets(bullets.map(b => b.id === bullet.id ? { ...b, primarySkillId: e.target.value || null } : b));
-                    }} className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]">
+                    }} className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-2 py-1 text-xs text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2">
                       <option value="">Select skill...</option>
                       {SKILL_BANK.map(skill => (<option key={skill.id} value={skill.id}>{skill.name}</option>))}
                     </select>
