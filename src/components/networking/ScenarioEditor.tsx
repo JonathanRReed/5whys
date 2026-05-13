@@ -14,7 +14,8 @@ export default function ScenarioEditor({ currentVersion, onFieldChange }: Props)
       <Card className="border-[hsl(var(--gold)/0.6)] bg-[hsl(var(--overlay)/0.4)] text-[hsl(var(--foreground))]">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-[hsl(var(--gold))]">
-            <span className="text-2xl">&#x1F9D1;&#x200D;&#x1F4BC;</span>
+            <span className="text-2xl" aria-hidden="true">&#x1F9D1;&#x200D;&#x1F4BC;</span>
+            <span className="sr-only">Who</span>
             WHO
           </CardTitle>
         </CardHeader>
@@ -31,7 +32,8 @@ export default function ScenarioEditor({ currentVersion, onFieldChange }: Props)
       <Card className="border-[hsl(var(--love)/0.6)] bg-[hsl(var(--overlay)/0.4)] text-[hsl(var(--foreground))]">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-[hsl(var(--love))]">
-            <span className="text-2xl">&#x1F4CD;</span>
+            <span className="text-2xl" aria-hidden="true">&#x1F4CD;</span>
+            <span className="sr-only">Where</span>
             WHERE
           </CardTitle>
         </CardHeader>
@@ -48,7 +50,8 @@ export default function ScenarioEditor({ currentVersion, onFieldChange }: Props)
       <Card className="border-[hsl(var(--foam)/0.6)] bg-[hsl(var(--overlay)/0.4)] text-[hsl(var(--foreground))]">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-[hsl(var(--foam))]">
-            <span className="text-2xl">&#x23F3;</span>
+            <span className="text-2xl" aria-hidden="true">&#x23F3;</span>
+            <span className="sr-only">What</span>
             WHAT
           </CardTitle>
         </CardHeader>

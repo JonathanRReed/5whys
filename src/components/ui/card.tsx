@@ -25,4 +25,12 @@ function CardContent({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
   return <div className={cn('p-6 pt-0', className)} {...props} />;
 }
 
-export { Card, CardHeader, CardTitle, CardContent };
+function CardDescription({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
+  return <p className={cn('text-sm text-muted-foreground', className)} {...props} />;
+}
+
+function CardFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn('flex items-center p-6 pt-0', className)} {...props} />;
+}
+
+export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter };

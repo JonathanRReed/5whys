@@ -271,7 +271,7 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
           {/* Mobile menu toggle */}
           <button
             type="button"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.35)] hover:text-foreground md:hidden"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.35)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] md:hidden"
             onClick={() => setMenuOpen((open) => !open)}
             aria-expanded={menuOpen}
             aria-controls="primary-navigation"

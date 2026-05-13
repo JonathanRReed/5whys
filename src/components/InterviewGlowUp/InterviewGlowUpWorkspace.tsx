@@ -17,10 +17,17 @@ export default function InterviewGlowUpWorkspace() {
   const [activeTab, setActiveTab] = React.useState<Tab>('decode');
   const [showHUD, setShowHUD] = React.useState(false);
 
+  const saveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
   React.useEffect(() => {
-    if (data) {
+    if (!data) return;
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
       saveData(data);
-    }
+    }, 800);
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
   }, [data]);
 
   if (!data) {
