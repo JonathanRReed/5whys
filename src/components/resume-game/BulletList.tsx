@@ -24,12 +24,13 @@ const BulletItem = React.memo(function BulletItem({ bullet, isSelected, onSelect
       key={bullet.id}
       type="button"
       className={cn(
-        'w-full rounded-2xl border px-4 py-3 text-left transition',
+        'w-full rounded-2xl border px-4 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2',
         isSelected
           ? 'border-[hsl(var(--foam)/0.8)] bg-[hsl(var(--foam)/0.16)] shadow-[0_0_30px_hsl(var(--foam)/0.25)]'
           : 'border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.35)] hover:border-[hsl(var(--border)/0.5)]'
       )}
       onClick={() => onSelect(bullet.id)}
+      aria-pressed={isSelected}
     >
       <p
         className="overflow-hidden text-sm text-[hsl(var(--foreground))]"
@@ -50,20 +51,26 @@ const BulletItem = React.memo(function BulletItem({ bullet, isSelected, onSelect
 
 export default React.memo(function BulletList({ bullets, selectedBulletId, onSelect }: Props) {
   return (
-    <Card className="backdrop-blur-lg">
+    <Card className="backdrop-blur-lg" data-bullet-list>
       <CardHeader className="space-y-1">
         <CardTitle className="text-xl">Bullets</CardTitle>
         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Select to rewrite</p>
       </CardHeader>
       <CardContent className="space-y-3">
-        {bullets.map((bullet) => (
-          <BulletItem
-            key={bullet.id}
-            bullet={bullet}
-            isSelected={bullet.id === selectedBulletId}
-            onSelect={onSelect}
-          />
-        ))}
+        {bullets.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.15)] p-6 text-center">
+            <p className="text-sm text-muted-foreground">Run the analysis to extract and score your bullets.</p>
+          </div>
+        ) : (
+          bullets.map((bullet) => (
+            <BulletItem
+              key={bullet.id}
+              bullet={bullet}
+              isSelected={bullet.id === selectedBulletId}
+              onSelect={onSelect}
+            />
+          ))
+        )}
       </CardContent>
     </Card>
   );

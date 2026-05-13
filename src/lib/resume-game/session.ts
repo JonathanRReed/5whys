@@ -7,7 +7,20 @@ import type { BulletFields, BulletRecord, SignalReport, StoredResumeSession } fr
 
 const SESSION_STORAGE_KEY = 'resume-game-session-v2';
 
-const EMPTY_SIGNAL_REPORT: SignalReport = { visible: 0, hidden: 100, numbers: 0, verbs: 0 };
+const EMPTY_SIGNAL_REPORT: SignalReport = {
+  visible: 0,
+  hidden: 100,
+  numbers: 0,
+  verbs: 0,
+  wordCount: 0,
+  bulletCount: 0,
+  estimatedPages: 0,
+  sections: [],
+  hardSkills: [],
+  softSkills: [],
+  isOptimalLength: false,
+  lengthRecommendation: '',
+};
 
 const EMPTY_SESSION: StoredResumeSession = {
   resumeText: '',
@@ -32,11 +45,28 @@ function normalizeSignalReport(value: unknown): SignalReport {
     if (typeof num !== 'number' || Number.isNaN(num)) return fallback;
     return Math.min(Math.max(num, min), max);
   };
+  const toStrArray = (v: unknown): string[] => {
+    if (Array.isArray(v)) return v.filter((s): s is string => typeof s === 'string');
+    return [];
+  };
   const visible = clamp(data.visible, 0, 100, 0);
   const numbers = clamp(data.numbers, 0, 999, 0);
   const verbs = clamp(data.verbs, 0, 999, 0);
   const hidden = clamp(data.hidden, 0, 100, 100 - visible);
-  return { visible, hidden, numbers, verbs };
+  return {
+    visible,
+    hidden,
+    numbers,
+    verbs,
+    wordCount: clamp(data.wordCount, 0, 10000, 0),
+    bulletCount: clamp(data.bulletCount, 0, 500, 0),
+    estimatedPages: clamp(data.estimatedPages, 0, 10, 0),
+    sections: toStrArray(data.sections),
+    hardSkills: toStrArray(data.hardSkills),
+    softSkills: toStrArray(data.softSkills),
+    isOptimalLength: typeof data.isOptimalLength === 'boolean' ? data.isOptimalLength : false,
+    lengthRecommendation: typeof data.lengthRecommendation === 'string' ? data.lengthRecommendation : '',
+  };
 }
 
 function normalizeStoredBullet(entry: unknown, index: number): BulletRecord | null {

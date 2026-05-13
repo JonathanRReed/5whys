@@ -1,12 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import type { BulletRecord } from '../../lib/resume-game';
+import type { BulletRecord, SignalReport } from '../../lib/resume-game';
 
 type Props = {
   averageScore: number;
   quantifiedBullets: number;
   totalBullets: number;
   verbCoverage: number;
+  signalReport: SignalReport;
   onExportMarkdown: () => void;
   onExportDocx: () => void;
 };
@@ -16,38 +17,70 @@ export default function Scoreboard({
   quantifiedBullets,
   totalBullets,
   verbCoverage,
+  signalReport,
   onExportMarkdown,
   onExportDocx,
 }: Props) {
+  const quantifiedPercent = totalBullets > 0 ? Math.round((quantifiedBullets / totalBullets) * 100) : 0;
+
   return (
     <Card className="backdrop-blur-lg">
       <CardHeader>
         <CardTitle className="text-xl">Scoreboard</CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-2xl border border-[hsl(var(--foam)/0.6)] bg-gradient-to-br from-[hsl(var(--foam)/0.15)] to-[hsl(var(--overlay)/0.3)] p-4 text-center ring-1 ring-[hsl(var(--foam)/0.3)]">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Avg score</p>
-          <p className="text-4xl font-bold text-[hsl(var(--foam))]">{averageScore}</p>
-        </div>
-        <div className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.35)] p-4 text-center">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Quantified</p>
-          <p className="text-3xl font-semibold text-[hsl(var(--foam))]">
-            {quantifiedBullets}/{totalBullets}
+      <CardContent className="space-y-6">
+        {/* Primary metric — largest, most prominent */}
+        <div className="rounded-2xl border border-[hsl(var(--foam)/0.6)] bg-gradient-to-br from-[hsl(var(--foam)/0.15)] to-[hsl(var(--overlay)/0.3)] p-6 text-center ring-1 ring-[hsl(var(--foam)/0.3)]">
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Average bullet score</p>
+          <p className="mt-1 text-5xl font-bold text-[hsl(var(--foam))]" aria-label={`Average score: ${averageScore} out of 100`}>
+            {averageScore}
           </p>
+          <p className="mt-1 text-sm text-muted-foreground">out of 100</p>
         </div>
-        <div className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.35)] p-4 text-center">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Verb coverage</p>
-          <p className="text-3xl font-semibold text-[hsl(var(--iris))]">{verbCoverage}%</p>
+
+        {/* Secondary metrics */}
+        <div className="grid gap-3 md:grid-cols-4">
+          <div className="rounded-xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.35)] p-3 text-center">
+            <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Quantified</p>
+            <p className="text-2xl font-semibold text-[hsl(var(--foam))]">
+              {quantifiedPercent}%
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              {quantifiedBullets}/{totalBullets} bullets
+            </p>
+          </div>
+          <div className="rounded-xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.35)] p-3 text-center">
+            <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Verb coverage</p>
+            <p className="text-2xl font-semibold text-[hsl(var(--iris))]">{verbCoverage}%</p>
+            <p className="text-[10px] text-muted-foreground">With action verbs</p>
+          </div>
+          <div className="rounded-xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.35)] p-3 text-center">
+            <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Signal</p>
+            <p className="text-2xl font-semibold text-[hsl(var(--love))]">{signalReport.visible}%</p>
+            <p className="text-[10px] text-muted-foreground">Strength</p>
+          </div>
+          <div className="rounded-xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.35)] p-3 text-center">
+            <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Hard skills</p>
+            <p className="text-2xl font-semibold text-[hsl(var(--primary))]">{signalReport.hardSkills.length}</p>
+            <p className="text-[10px] text-muted-foreground">Detected</p>
+          </div>
         </div>
-        <div className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.35)] p-4 text-center">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Total bullets</p>
-          <p className="text-3xl font-semibold">{totalBullets}</p>
-        </div>
-        <div className="flex flex-wrap gap-3 md:col-span-4">
-          <Button type="button" variant="outline" onClick={onExportMarkdown} className="focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2">
+
+        <div className="flex flex-wrap gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onExportMarkdown}
+            className="focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+          >
             Export Markdown
           </Button>
-          <Button type="button" variant="outline" onClick={onExportDocx} className="focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onExportDocx}
+            className="focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+          >
             Export DOCX
           </Button>
         </div>

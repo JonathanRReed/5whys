@@ -16,6 +16,8 @@ import {
   useResumeSession,
   EMPTY_SESSION,
   EMPTY_SIGNAL_REPORT,
+  analyzeResumeLength,
+  extractSkills,
 } from '../lib/resume-game';
 import type { BulletFields, BulletRecord, SignalReport, StoredResumeSession } from '../lib/resume-game';
 import ResumeHeader from './resume-game/ResumeHeader';
@@ -149,8 +151,38 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
 
     const verbCount = countPowerVerbs(resumeText);
     const numbers = resumeText.match(/\d+\.?\d*%?/g) ?? [];
-    const visible = Math.min(100, Math.round(((verbCount + numbers.length) / Math.max(1, records.length * 2)) * 100));
-    setSignalReportValue({ visible, hidden: 100 - visible, numbers: numbers.length, verbs: verbCount });
+    const lengthAnalysis = analyzeResumeLength(resumeText);
+    const skills = extractSkills(resumeText);
+
+    // Signal strength: per-bullet average of leading verb + number + impact + skill presence
+    let totalSignal = 0;
+    records.forEach((rec) => {
+      let bulletSignal = 0;
+      if (/^(led|built|created|architected|spearheaded)/i.test(rec.improved)) bulletSignal += 25;
+      else if (POWER_VERB_PATTERN.test(rec.improved)) bulletSignal += 15;
+      if (/\d+%?|\$\d+/.test(rec.improved)) bulletSignal += 25;
+      if (/\b(to|by|resulting in|leading to)\b/i.test(rec.improved)) bulletSignal += 20;
+      if (skills.hard.some((s) => rec.improved.toLowerCase().includes(s))) bulletSignal += 15;
+      bulletSignal += rec.improvedScore >= 70 ? 15 : rec.improvedScore >= 50 ? 10 : 5;
+      totalSignal += Math.min(100, bulletSignal);
+    });
+    const visible = records.length > 0 ? Math.round(totalSignal / records.length) : 0;
+
+    const report: SignalReport = {
+      visible,
+      hidden: 100 - visible,
+      numbers: numbers.length,
+      verbs: verbCount,
+      wordCount: lengthAnalysis.wordCount,
+      bulletCount: lengthAnalysis.bulletCount,
+      estimatedPages: lengthAnalysis.estimatedPages,
+      sections: lengthAnalysis.sections,
+      hardSkills: skills.hard,
+      softSkills: skills.soft,
+      isOptimalLength: lengthAnalysis.isOptimalLength,
+      lengthRecommendation: lengthAnalysis.recommendation,
+    };
+    setSignalReportValue(report);
     setLastAnalyzed();
     setNeedsRescan(false);
     setStatus('Analysis complete. Review the insights below.');
@@ -296,6 +328,14 @@ ${improved.join('\n')}
         }}
       />
 
+      {!scanComplete && resumeText.trim() && (
+        <div className="rounded-2xl border border-dashed border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.15)] p-8 text-center">
+          <p className="text-sm text-muted-foreground">
+            Click &quot;Analyze resume&quot; above to see your signal report, highlighted text, and scoring breakdown.
+          </p>
+        </div>
+      )}
+
       {scanComplete && (
         <ScanResults
           highlightedResume={highlightedResume}
@@ -319,6 +359,7 @@ ${improved.join('\n')}
           quantifiedBullets={quantifiedBullets}
           totalBullets={bullets.length}
           verbCoverage={verbCoverage}
+          signalReport={signalReport}
           onExportMarkdown={handleExportMarkdown}
           onExportDocx={handleExportDocx}
         />

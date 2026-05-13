@@ -116,3 +116,85 @@ export const ACTION_VERBS = [
 
 export const POWER_WORDS = ACTION_VERBS;
 export const POWER_VERB_PATTERN = new RegExp(`\\b(${POWER_WORDS.join('|')})\\b`, 'i');
+
+// Verb strength tiers
+export const POWER_VERBS_WEAK = [
+  'helped', 'supported', 'assisted', 'participated', 'worked', 'involved',
+  'handled', 'managed', 'performed', 'responsible', 'aided',
+];
+
+export const POWER_VERBS_STRONG = [
+  'architected', 'spearheaded', 'pioneered', 'revolutionized', 'transformed',
+  'accelerated', 'amplified', 'catapulted', 'elevated', 'optimized',
+  'championed', 'orchestrated', 'disrupted', 'reinvented', 'engineered',
+];
+
+export function getVerbStrength(verb: string): 'weak' | 'medium' | 'strong' {
+  const lower = verb.toLowerCase();
+  if (POWER_VERBS_STRONG.some((v) => lower.includes(v))) return 'strong';
+  if (POWER_VERBS_WEAK.some((v) => lower.includes(v))) return 'weak';
+  return 'medium';
+}
+
+export function suggestStrongerVerb(weakVerb: string): string {
+  const suggestions: Record<string, string> = {
+    helped: 'Enabled',
+    supported: 'Championed',
+    managed: 'Led',
+    worked: 'Engineered',
+    handled: 'Orchestrated',
+    performed: 'Delivered',
+    assisted: 'Partnered',
+    participated: 'Contributed',
+  };
+  return suggestions[weakVerb.toLowerCase()] || '';
+}
+
+// Hard skills commonly sought by ATS
+export const HARD_SKILLS = [
+  'python', 'javascript', 'typescript', 'java', 'c++', 'c#', 'go', 'rust', 'sql', 'html', 'css',
+  'react', 'vue', 'angular', 'svelte', 'next.js', 'node.js', 'django', 'fastapi', 'flask', 'spring', 'express',
+  'aws', 'gcp', 'azure', 'docker', 'kubernetes', 'terraform', 'jenkins', 'github actions',
+  'git', 'github', 'gitlab', 'jira', 'confluence', 'notion', 'figma', 'sketch',
+  'salesforce', 'hubspot', 'marketo', 'tableau', 'power bi', 'looker', 'excel', 'sheets',
+  'mongodb', 'postgresql', 'mysql', 'redis', 'elasticsearch', 'dynamodb',
+  'tensorflow', 'pytorch', 'scikit-learn', 'pandas', 'numpy', 'spark', 'hadoop',
+  'kubernetes', 'terraform', 'ansible', 'puppet', 'chef',
+  'linux', 'unix', 'bash', 'shell', 'powershell',
+  'agile', 'scrum', 'kanban', 'lean', 'six sigma',
+  'seo', 'sem', 'google analytics', 'mixpanel', 'amplitude',
+  'photoshop', 'illustrator', 'indesign', 'after effects', 'premiere',
+  'sap', 'oracle', 'workday', 'servicenow',
+  'blockchain', 'solidity', 'ethereum', 'web3',
+  'graphql', 'rest api', 'grpc', 'websocket',
+  'kafka', 'rabbitmq', 'sqs', 'pub/sub',
+  'cypress', 'jest', 'mocha', 'playwright', 'selenium',
+  'webpack', 'vite', 'rollup', 'parcel', 'esbuild',
+  'tailwind', 'bootstrap', 'material ui', 'chakra ui', 'shadcn',
+  'prisma', 'sequelize', 'typeorm', 'mongoose',
+  'openapi', 'swagger', 'postman', 'insomnia',
+  'cicd', 'devops', 'sre', 'platform engineering',
+  'machine learning', 'deep learning', 'nlp', 'computer vision', 'data science',
+  'etl', 'data pipeline', 'data warehouse', 'data lake', 'dbt',
+  'a/b testing', 'user research', 'ux research', 'product analytics',
+  'content strategy', 'copywriting', 'technical writing', 'documentation',
+  'event-driven', 'microservices', 'serverless', 'lambda', 'cloud functions',
+];
+
+export const SOFT_SKILLS = [
+  'leadership', 'communication', 'project management', 'problem solving',
+  'collaboration', 'critical thinking', 'time management', 'adaptability',
+  'creativity', 'emotional intelligence', 'negotiation', 'conflict resolution',
+  'mentoring', 'coaching', 'delegation', 'strategic thinking',
+  'decision making', 'analytical thinking', 'attention to detail',
+  'interpersonal skills', 'teamwork', 'cross-functional', 'stakeholder management',
+  'presentation', 'public speaking', 'facilitation', 'workshop design',
+  'customer empathy', 'user-centered', 'design thinking', 'systems thinking',
+];
+
+export function extractSkills(text: string): { hard: string[]; soft: string[] } {
+  const lower = text.toLowerCase();
+  const hard = HARD_SKILLS.filter((skill) => lower.includes(skill));
+  const soft = SOFT_SKILLS.filter((skill) => lower.includes(skill));
+  return { hard: [...new Set(hard)], soft: [...new Set(soft)] };
+}
