@@ -31,7 +31,7 @@ export default function ReflectionPanel({
           value={reflection.slice(0, 500)}
           onChange={(event) => onReflectionChange(event.target.value.slice(0, 500))}
           placeholder="Notes to future you…"
-          className="min-h-[100px] bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--border)/0.6)] text-sm text-[hsl(var(--foreground))] focus:ring-2 focus:ring-[hsl(var(--foam))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))]"
+          className="min-h-[100px] bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--border)/0.6)] text-sm text-[hsl(var(--foreground))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))]"
         />
       </div>
 

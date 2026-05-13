@@ -65,7 +65,7 @@ export default function ResumeInput({
               accept=".txt,.md,.markdown,.text,.docx,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,text/plain,text/markdown"
               onChange={handleFileChange}
               aria-label="Upload resume file (PDF, DOCX, TXT, or Markdown)"
-              className="w-full md:w-auto border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[hsl(var(--foam))]"
+              className="w-full md:w-auto border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
             />
           </div>
           <div className="flex flex-col gap-2 w-full md:w-auto md:flex-row">
@@ -92,7 +92,7 @@ export default function ResumeInput({
           value={resumeText}
           onChange={(event) => onTextChange(event.target.value)}
           placeholder={SAMPLE_RESUME_TEXT}
-          className="min-h-[220px] border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[hsl(var(--foam))]"
+          className="min-h-[220px] border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
         />
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
           <Button

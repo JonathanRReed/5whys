@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { cn } from '../lib/utils';
 
@@ -38,6 +37,8 @@ interface Recommendation {
   url: string;
   accent: string;
   steps: string[];
+  stats: { label: string; value: string }[];
+  icon: string;
 }
 
 function getRecommendation(level: string, challenge: string): Recommendation {
@@ -52,6 +53,12 @@ function getRecommendation(level: string, challenge: string): Recommendation {
         'Review your synthesized theme and alignment.',
         'Save a snapshot for future reference.',
       ],
+      stats: [
+        { label: 'Prompts', value: '5 guided' },
+        { label: 'Time', value: '2 min' },
+        { label: 'Output', value: 'Theme + snapshot' },
+      ],
+      icon: 'M7 8h10M7 12h4',
     };
   }
   if (challenge === 'resume') {
@@ -65,6 +72,12 @@ function getRecommendation(level: string, challenge: string): Recommendation {
         'Run the analysis to score each bullet.',
         'Use the structured rewrite to strengthen weak bullets.',
       ],
+      stats: [
+        { label: 'Analysis', value: 'Bullet scoring' },
+        { label: 'Skills', value: 'Auto-detect' },
+        { label: 'Rewrite', value: 'AI-guided' },
+      ],
+      icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
     };
   }
   if (challenge === 'interview') {
@@ -78,6 +91,12 @@ function getRecommendation(level: string, challenge: string): Recommendation {
         'Build 3-5 STAR-method stories from your experience.',
         'Assemble a panic-proof packet for your next call.',
       ],
+      stats: [
+        { label: 'Stories', value: 'STAR method' },
+        { label: 'Skills', value: 'JD decode' },
+        { label: 'Packet', value: 'Panic-proof' },
+      ],
+      icon: 'M13 10V3L4 14h7v7l9-11h-7z',
     };
   }
   return {
@@ -90,6 +109,12 @@ function getRecommendation(level: string, challenge: string): Recommendation {
       'Practice your 2-minute pitch with the timer.',
       'Rate yourself and iterate on the next round.',
     ],
+    stats: [
+      { label: 'Scenarios', value: 'Event-ready' },
+      { label: 'Timer', value: '2-min pitch' },
+      { label: 'Feedback', value: 'Self-rated' },
+    ],
+    icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
   };
 }
 
@@ -112,6 +137,13 @@ export default function OnboardingWizard() {
     }
   };
 
+  const handleBack = () => {
+    if (step > 0) {
+      setStep((s) => s - 1);
+      setDone(false);
+    }
+  };
+
   if (done && recommendation) {
     const accentColors: Record<string, string> = {
       foam: 'border-[hsl(var(--foam)/0.4)] bg-[hsl(var(--foam)/0.08)] text-[hsl(var(--foam))]',
@@ -125,6 +157,12 @@ export default function OnboardingWizard() {
       iris: 'bg-[hsl(var(--iris))] hover:bg-[hsl(var(--iris)/0.9)] text-[hsl(var(--background))]',
       gold: 'bg-[hsl(var(--gold))] hover:bg-[hsl(var(--gold)/0.9)] text-[hsl(var(--background))]',
     };
+    const ringColors: Record<string, string> = {
+      foam: 'text-[hsl(var(--foam))]',
+      love: 'text-[hsl(var(--love))]',
+      iris: 'text-[hsl(var(--iris))]',
+      gold: 'text-[hsl(var(--gold))]',
+    };
 
     return (
       <div className="mx-auto w-full max-w-2xl space-y-8">
@@ -135,8 +173,24 @@ export default function OnboardingWizard() {
 
         <Card className={cn('rounded-2xl border p-6', accentColors[recommendation.accent])}>
           <CardContent className="space-y-4 p-0">
-            <h2 className="text-xl font-semibold">{recommendation.title}</h2>
-            <p className="text-muted-foreground">{recommendation.description}</p>
+            {/* Celebration ring */}
+            <div className="flex justify-center">
+              <div className={cn('flex h-16 w-16 items-center justify-center rounded-full border-4 border-current/30', ringColors[recommendation.accent])}>
+                <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                </svg>
+              </div>
+            </div>
+            {/* Large colored icon */}
+            <div className="flex justify-center">
+              <div className={cn('flex h-12 w-12 items-center justify-center rounded-xl', `bg-[hsl(var(--${recommendation.accent})/0.15)]`)}>
+                <svg className={cn('h-6 w-6', ringColors[recommendation.accent])} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d={recommendation.icon} />
+                </svg>
+              </div>
+            </div>
+            <h2 className="text-xl font-semibold text-center">{recommendation.title}</h2>
+            <p className="text-muted-foreground text-center">{recommendation.description}</p>
             <ol className="space-y-2 text-sm text-muted-foreground">
               {recommendation.steps.map((s, i) => (
                 <li key={i} className="flex items-start gap-2">
@@ -147,18 +201,29 @@ export default function OnboardingWizard() {
                 </li>
               ))}
             </ol>
-            <a
-              href={recommendation.url}
-              className={cn(
-                'inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold shadow-lg transition focus-visible:ring-2 focus-visible:ring-offset-2',
-                btnColor[recommendation.accent]
-              )}
-            >
-              Start now
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </a>
+            {/* Quick stats */}
+            <div className="grid grid-cols-3 gap-3 pt-2">
+              {recommendation.stats.map((stat, i) => (
+                <div key={i} className="rounded-xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.3)] p-3 text-center">
+                  <p className="text-sm font-semibold">{stat.value}</p>
+                  <p className="text-xs text-muted-foreground">{stat.label}</p>
+                </div>
+              ))}
+            </div>
+            <div className="pt-2 text-center">
+              <a
+                href={recommendation.url}
+                className={cn(
+                  'inline-flex items-center gap-2 rounded-xl text-base py-3.5 px-8 font-semibold shadow-lg transition focus-visible:ring-2 focus-visible:ring-offset-2',
+                  btnColor[recommendation.accent]
+                )}
+              >
+                Start now
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </a>
+            </div>
           </CardContent>
         </Card>
 
@@ -190,12 +255,40 @@ export default function OnboardingWizard() {
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-8">
-      <div className="space-y-2 text-center">
-        <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-          Step {step + 1} of {STEPS.length}
-        </p>
-        <h1 className="text-3xl font-semibold tracking-tight">{currentStep.question}</h1>
-        <p className="text-muted-foreground">{currentStep.subtitle}</p>
+      {/* Progress bar */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Step {step + 1} of {STEPS.length}</span>
+          <span className="text-xs text-muted-foreground">{STEPS[step].question}</span>
+        </div>
+        <div className="h-1.5 w-full rounded-full bg-[hsl(var(--border)/0.3)]">
+          <div
+            className="h-full rounded-full bg-[hsl(var(--foam))] transition-all duration-500"
+            style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div className="w-20">
+          {step > 0 && (
+            <button
+              type="button"
+              onClick={handleBack}
+              className="flex items-center gap-1 text-sm text-muted-foreground transition hover:text-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2 rounded-md"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              Back
+            </button>
+          )}
+        </div>
+        <div className="flex-1 text-center">
+          <h1 className="text-3xl font-semibold tracking-tight">{currentStep.question}</h1>
+          <p className="text-muted-foreground">{currentStep.subtitle}</p>
+        </div>
+        <div className="w-20" />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -205,8 +298,8 @@ export default function OnboardingWizard() {
             type="button"
             onClick={() => handleSelect(option.value)}
             className={cn(
-              'flex flex-col items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6 text-center transition',
-              'hover:border-[hsl(var(--foam)/0.5)] hover:bg-[hsl(var(--overlay)/0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2'
+              'flex flex-col items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6 text-center transition-all duration-200 cursor-pointer',
+              'hover:-translate-y-0.5 hover:border-[hsl(var(--foam)/0.5)] hover:shadow-lg hover:bg-[hsl(var(--overlay)/0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2'
             )}
           >
             <svg className="h-8 w-8 text-[hsl(var(--foam))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -216,16 +309,6 @@ export default function OnboardingWizard() {
           </button>
         ))}
       </div>
-
-      {step > 0 && (
-        <button
-          type="button"
-          onClick={() => { setStep((s) => s - 1); setDone(false); }}
-          className="mx-auto block text-sm text-muted-foreground underline hover:text-foreground"
-        >
-          Back
-        </button>
-      )}
     </div>
   );
 }

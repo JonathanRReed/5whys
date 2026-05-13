@@ -70,12 +70,12 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
           value={filter}
           onChange={e => setFilter(e.target.value)}
           placeholder="Search stories..."
-          className="flex-1 min-w-[200px] rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]"
+          className="flex-1 min-w-[200px] rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
         />
         <select
           value={skillFilter}
           onChange={e => setSkillFilter(e.target.value)}
-          className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]"
+          className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
         >
           <option value="">All skills</option>
           {SKILL_BANK.map(skill => (

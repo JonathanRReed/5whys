@@ -57,8 +57,16 @@ export default function CareerDashboard() {
 
   if (!data) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="text-muted-foreground">Loading your career data...</div>
+      <div className="mx-auto w-full max-w-6xl space-y-8">
+        <div className="space-y-2">
+          <div className="h-8 w-48 animate-pulse rounded-lg bg-[hsl(var(--overlay)/0.4)]" />
+          <div className="h-4 w-72 animate-pulse rounded-lg bg-[hsl(var(--overlay)/0.3)]" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-40 animate-pulse rounded-2xl bg-[hsl(var(--overlay)/0.3)]" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -205,8 +213,8 @@ export default function CareerDashboard() {
             key={tool.name}
             href={tool.url}
             className={cn(
-              'group flex flex-col gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-5 transition',
-              'hover:border-[hsl(var(--border)/0.55)] hover:bg-[hsl(var(--overlay)/0.4)]'
+              'group flex flex-col gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-5',
+              'transition-all duration-300 hover:-translate-y-0.5 hover:border-[hsl(var(--border)/0.6)] hover:bg-[hsl(var(--overlay)/0.4)] hover:shadow-[0_20px_50px_-24px_hsl(var(--background)/0.8)]'
             )}
           >
             <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl', tool.bg)}>
@@ -228,21 +236,27 @@ export default function CareerDashboard() {
 function EmptyState() {
   return (
     <div className="mx-auto w-full max-w-2xl space-y-8 text-center">
+      {/* Large themed icon */}
+      <div className="flex justify-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[hsl(var(--foam)/0.12)]">
+          <svg className="h-8 w-8 text-[hsl(var(--foam))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+          </svg>
+        </div>
+      </div>
       <div className="space-y-3">
         <h1 className="text-3xl font-semibold tracking-tight">Welcome to your Career Dashboard</h1>
         <p className="text-muted-foreground">
-          This page will show your progress across all tools once you start using them.
-          Everything stays on your device — no accounts needed.
+          Your career dashboard is waiting. Take the 2-minute career review to get personalized recommendations.
         </p>
       </div>
 
-      <div className="rounded-2xl border border-dashed border-[hsl(var(--border)/0.4)] bg-[hsl(var(--overlay)/0.15)] p-8">
-        <p className="text-sm text-muted-foreground mb-4">Not sure where to start?</p>
+      <div className="rounded-2xl border border-[hsl(var(--border)/0.4)] bg-[hsl(var(--overlay)/0.15)] p-8">
         <a
           href="/start/"
           className="inline-flex items-center gap-2 rounded-xl bg-[hsl(var(--foam))] px-6 py-3 text-sm font-semibold text-[hsl(var(--background))] shadow-lg transition hover:bg-[hsl(var(--foam)/0.9)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
         >
-          Take the 2-minute career review
+          Get started
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
@@ -254,14 +268,20 @@ function EmptyState() {
           <a
             key={tool.name}
             href={tool.url}
-            className="flex items-center gap-3 rounded-xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.2)] px-4 py-3 transition hover:border-[hsl(var(--border)/0.5)]"
+            className={cn(
+              'flex items-start gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.2)] p-4 transition-all duration-200',
+              'hover:-translate-y-0.5 hover:shadow-lg hover:border-[hsl(var(--border)/0.55)] hover:bg-[hsl(var(--overlay)/0.35)]'
+            )}
           >
-            <div className={cn('flex h-8 w-8 items-center justify-center rounded-lg', tool.bg)}>
-              <svg className={cn('h-4 w-4', tool.color)} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <div className={cn('flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl', tool.bg)}>
+              <svg className={cn('h-5 w-5', tool.color)} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d={tool.icon} />
               </svg>
             </div>
-            <span className="text-sm font-medium">{tool.name}</span>
+            <div className="text-left">
+              <p className="text-sm font-medium">{tool.name}</p>
+              <p className="text-xs text-muted-foreground">{tool.desc}</p>
+            </div>
           </a>
         ))}
       </div>

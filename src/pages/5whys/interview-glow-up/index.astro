@@ -102,7 +102,7 @@ const glowUpSchemas = [
         </section>
 
         {/* Quick Stats */}
-        <section class="mx-auto mt-10 grid w-full max-w-6xl grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Interview glow up quick stats">
+        <section class="mx-auto mt-10 grid w-full max-w-6xl grid-cols-2 gap-3 sm:grid-cols-4 reveal" aria-label="Interview glow up quick stats">
             <div class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] px-4 py-3">
                 <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--foam)/0.15)]">
                     <svg class="h-4 w-4 text-[hsl(var(--foam))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
@@ -150,7 +150,7 @@ const glowUpSchemas = [
         </section>
 
         {/* Guide section with gradient orb */}
-        <section class="relative mx-auto mt-12 w-full max-w-6xl" aria-labelledby="interview-guide-heading">
+        <section class="relative mx-auto mt-12 w-full max-w-6xl reveal" aria-labelledby="interview-guide-heading">
             <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
                 <div class="gradient-orb-animated absolute -top-24 right-0 h-72 w-72 rounded-full bg-[radial-gradient(circle_at_top_right,hsl(var(--foam)/0.18)_0%,transparent_60%)] blur-3xl"></div>
                 <div class="gradient-orb-animated-reverse absolute bottom-0 -left-10 h-80 w-80 rounded-full bg-[radial-gradient(circle_at_bottom_left,hsl(var(--iris)/0.16)_0%,transparent_65%)] blur-[64px]"></div>
@@ -161,8 +161,8 @@ const glowUpSchemas = [
                 <h2 id="interview-guide-heading" class="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Prep with proof, not scripts</h2>
             </div>
 
-            <div class="grid gap-6 md:grid-cols-3">
-                <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6">
+            <div class="grid gap-6 md:grid-cols-3 reveal-stagger">
+                <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-[hsl(var(--border)/0.6)] hover:shadow-[0_20px_50px_-24px_hsl(var(--background)/0.8)]">
                     <div class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[hsl(var(--foam)/0.15)]">
                         <svg class="h-5 w-5 text-[hsl(var(--foam))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
@@ -178,7 +178,7 @@ const glowUpSchemas = [
                     </div>
                 </article>
 
-                <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6">
+                <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-[hsl(var(--border)/0.6)] hover:shadow-[0_20px_50px_-24px_hsl(var(--background)/0.8)]">
                     <div class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[hsl(var(--foam)/0.15)]">
                         <svg class="h-5 w-5 text-[hsl(var(--foam))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
@@ -194,7 +194,7 @@ const glowUpSchemas = [
                     </div>
                 </article>
 
-                <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6">
+                <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-[hsl(var(--border)/0.6)] hover:shadow-[0_20px_50px_-24px_hsl(var(--background)/0.8)]">
                     <div class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[hsl(var(--foam)/0.15)]">
                         <svg class="h-5 w-5 text-[hsl(var(--foam))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />

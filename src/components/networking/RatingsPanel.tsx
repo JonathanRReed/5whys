@@ -73,7 +73,7 @@ export default function RatingsPanel({ ratings, onRatingChange }: Props) {
             aria-valuenow={ratings[key]}
             aria-valuemin={1}
             aria-valuemax={5}
-            className="w-full accent-[hsl(var(--iris))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2 rounded-md"
+            className="w-full focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2 rounded-md"
           />
         </div>
       ))}

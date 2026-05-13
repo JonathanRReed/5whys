@@ -143,7 +143,7 @@ export default function PacketSection({ data, setData, currentRole, currentPacke
                   }));
                 }}
                 placeholder="e.g., growth, developer productivity, AI-first"
-                className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]"
+                className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
               />
             </div>
             <div>
@@ -154,7 +154,7 @@ export default function PacketSection({ data, setData, currentRole, currentPacke
                 onChange={e => setData(updatePacket(data, currentPacket.id, { notes: e.target.value }))}
                 placeholder="Why are you excited about this role? What makes you a good fit?"
                 rows={3}
-                className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]"
+                className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
               />
             </div>
           </div>
@@ -169,7 +169,7 @@ export default function PacketSection({ data, setData, currentRole, currentPacke
               onChange={e => setData(updatePacket(data, currentPacket.id, { panicAnswer: e.target.value }))}
               placeholder="A generic story you can use if you completely blank..."
               rows={2}
-              className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]"
+              className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
             />
           </div>
 
@@ -188,7 +188,7 @@ export default function PacketSection({ data, setData, currentRole, currentPacke
                       setData(updatePacket(data, currentPacket.id, { customQuestions: updated }));
                     }}
                     placeholder="Your question..."
-                    className="flex-1 rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]"
+                    className="flex-1 rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
                   />
                   <button
                     type="button"
