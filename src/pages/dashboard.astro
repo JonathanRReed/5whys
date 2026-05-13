@@ -1,0 +1,14 @@
+---
+import Base from "../layouts/Base.astro";
+import CareerDashboard from "../components/CareerDashboard";
+---
+
+<Base
+  title="Dashboard · 5 Whys Career Studio"
+  description="Your unified career progress dashboard. See scores, skills, recent activity, and recommended next steps across all tools."
+  theme="night"
+>
+  <div class="relative mx-auto w-full max-w-6xl px-4 py-8 sm:py-12">
+    <CareerDashboard client:load />
+  </div>
+</Base>

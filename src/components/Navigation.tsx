@@ -21,6 +21,8 @@ const THEME_CHANNEL_NAME = 'career-tools-theme';
 
 const navLinks = [
   { href: '/', label: 'Home' },
+  { href: '/start/', label: 'Start' },
+  { href: '/dashboard/', label: 'Dashboard' },
   { href: '/career/', label: 'Career 5 Whys' },
   { href: '/resume-game/', label: 'Resume Game' },
   { href: '/networking-practice/', label: 'Networking' },

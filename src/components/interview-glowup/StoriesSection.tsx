@@ -12,7 +12,7 @@ import {
   SKILL_BANK,
   getSkillName,
 } from '../../lib/glowup-banks';
-import { WarningIcon, LightbulbIcon, XIcon } from './icons';
+import { WarningIcon, LightbulbIcon, XIcon, PencilIcon } from './icons';
 
 type Props = {
   data: GlowUpData;
@@ -72,7 +72,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
           <button
             type="button"
             onClick={() => startNew()}
-            className="rounded-lg bg-[hsl(var(--foam))] px-4 py-2 text-sm font-semibold text-[hsl(var(--background))] transition-colors hover:bg-[hsl(var(--foam)/0.9)]"
+            className="rounded-lg bg-[hsl(var(--foam))] px-4 py-2 text-sm font-semibold text-[hsl(var(--background))] transition-colors hover:bg-[hsl(var(--foam)/0.9)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
           >
             + New Story
           </button>
@@ -84,7 +84,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                   key={skillId}
                   type="button"
                   onClick={() => startNew(skillId)}
-                  className="rounded-full border border-[hsl(var(--destructive)/0.3)] bg-[hsl(var(--destructive)/0.08)] px-3 py-1 text-sm text-destructive hover:bg-[hsl(var(--destructive)/0.15)]"
+                  className="rounded-full border border-[hsl(var(--destructive)/0.3)] bg-[hsl(var(--destructive)/0.08)] px-3 py-1 text-sm text-destructive hover:bg-[hsl(var(--destructive)/0.15)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--destructive))] focus-visible:ring-offset-2"
                 >
                   {getSkillName(skillId)}
                 </button>
@@ -103,7 +103,8 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
             <button
               type="button"
               onClick={cancelEdit}
-              className="text-muted-foreground hover:text-foreground"
+              aria-label="Close editor"
+              className="rounded p-1 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
             >
               <XIcon className="h-4 w-4" />
             </button>
@@ -115,7 +116,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
               <select
                 value={formData.primarySkillId ?? ''}
                 onChange={e => setFormData({ ...formData, primarySkillId: e.target.value })}
-                className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground"
+                className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]"
               >
                 <option value="">Select skill...</option>
                 {SKILL_BANK.map(skill => (
@@ -131,7 +132,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                 max={100}
                 value={formData.confidence ?? 70}
                 onChange={e => setFormData({ ...formData, confidence: Number(e.target.value) })}
-                className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground"
+                className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]"
               />
             </div>
           </div>
@@ -139,32 +140,35 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
               <label className="mb-1 block text-sm font-medium text-foreground">Trigger (1-3 words)</label>
+              <p className="mb-1 text-xs text-muted-foreground">A short label you’ll use to recall this story quickly.</p>
               <input
                 type="text"
                 value={formData.trigger ?? ''}
                 onChange={e => setFormData({ ...formData, trigger: e.target.value })}
                 placeholder="API redesign"
-                className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground"
+                className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]"
               />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-foreground">Hook (~25 words)</label>
+              <p className="mb-1 text-xs text-muted-foreground">The setup: what was the situation or problem?</p>
               <input
                 type="text"
                 value={formData.hook ?? ''}
                 onChange={e => setFormData({ ...formData, hook: e.target.value })}
                 placeholder="We needed to replace the legacy API..."
-                className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground"
+                className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]"
               />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-foreground">Proof Snippet (~10 words)</label>
+              <p className="mb-1 text-xs text-muted-foreground">The measurable result or impact line.</p>
               <input
                 type="text"
                 value={formData.proofSnippet ?? ''}
                 onChange={e => setFormData({ ...formData, proofSnippet: e.target.value })}
                 placeholder="40% faster, zero downtime"
-                className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground"
+                className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]"
               />
             </div>
           </div>
@@ -179,13 +183,14 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                 </span>
               )}
             </label>
+            <p className="mb-1 text-xs text-muted-foreground">The core of your story: your actions, decisions, and approach.</p>
             <textarea
               value={formData.play ?? ''}
               onChange={e => setFormData({ ...formData, play: e.target.value })}
               placeholder="What was the challenge? What exactly did you do?"
               rows={4}
               className={cn(
-                'w-full rounded-lg border bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground',
+                'w-full rounded-lg border bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]',
                 playSentences > 4
                   ? 'border-[hsl(var(--gold)/0.5)]'
                   : 'border-[hsl(var(--border)/0.5)]'
@@ -203,12 +208,13 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                 </span>
               )}
             </label>
+            <p className="mb-1 text-xs text-muted-foreground">Quantifiable outcomes, feedback quotes, or concrete evidence.</p>
             <textarea
               value={formData.proof ?? ''}
               onChange={e => setFormData({ ...formData, proof: e.target.value })}
               placeholder="Numbers, time saved, revenue, or specific praise..."
               rows={3}
-              className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground"
+              className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]"
             />
           </div>
 
@@ -216,7 +222,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
             <button
               type="button"
               onClick={cancelEdit}
-              className="rounded-lg border border-[hsl(var(--border)/0.5)] px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-[hsl(var(--overlay)/0.3)] hover:text-foreground"
+              className="rounded-lg border border-[hsl(var(--border)/0.5)] px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-[hsl(var(--overlay)/0.3)] hover:text-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
             >
               Cancel
             </button>
@@ -224,7 +230,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
               type="button"
               onClick={saveStory}
               disabled={!formData.primarySkillId || !formData.play}
-              className="rounded-lg bg-[hsl(var(--foam))] px-4 py-2 text-sm font-semibold text-[hsl(var(--background))] disabled:opacity-50"
+              className="rounded-lg bg-[hsl(var(--foam))] px-4 py-2 text-sm font-semibold text-[hsl(var(--background))] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
             >
               Save Story
             </button>
@@ -259,7 +265,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                         setEditingId(story.id);
                         setFormData(story);
                       }}
-                      className="text-xs text-[hsl(var(--foam))] hover:underline"
+                      className="rounded px-1 text-xs text-[hsl(var(--foam))] hover:underline focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
                     >
                       Edit
                     </button>
@@ -273,9 +279,15 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
 
       {!editingId && data.stories.length === 0 && (
         <div className="rounded-xl border border-dashed border-[hsl(var(--border)/0.4)] p-8 text-center">
-          <p className="text-muted-foreground">No stories yet. Create your first one!</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Template: "I [action]ed [what], which resulted in [metric]."
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[hsl(var(--foam)/0.1)]">
+            <PencilIcon className="h-6 w-6 text-[hsl(var(--foam))]" />
+          </div>
+          <p className="text-sm font-medium text-foreground">No stories yet</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Click "+ New Story" to build your first STAR-style story.
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Tip: Start with a gap from Decode to target the role’s needs.
           </p>
         </div>
       )}

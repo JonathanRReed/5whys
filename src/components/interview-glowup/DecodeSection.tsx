@@ -15,7 +15,7 @@ import {
   getSkillName,
   detectSkillsFromText,
 } from '../../lib/glowup-banks';
-import { PartyIcon } from './icons';
+import { PartyIcon, SearchIcon } from './icons';
 
 type Props = {
   data: GlowUpData;
@@ -83,7 +83,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
   };
 
   const inputClass =
-    'w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-[hsl(var(--foam))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--foam))]';
+    'w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]';
 
   return (
     <div className="space-y-6">
@@ -103,12 +103,25 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
       </div>
       <div>
         <label htmlFor="jd-text" className="mb-1 block text-sm font-medium text-foreground">Paste Full Job Description</label>
+        <p className="mb-1 text-xs text-muted-foreground">Paste the entire JD — we’ll auto-extract bullets and suggest skill tags.</p>
         <textarea id="jd-text" value={rawJdText} onChange={e => setRawJdText(e.target.value)} placeholder="Paste the entire job description here. Include bullet points, requirements, responsibilities..." rows={6} className={`${inputClass} md:rows-[8]`} />
         <div className="mt-2 flex gap-2">
           <button type="button" onClick={parseJD} className="rounded-lg bg-[hsl(var(--foam))] px-4 py-2.5 text-sm font-semibold text-[hsl(var(--background))] transition-colors hover:bg-[hsl(var(--foam)/0.9)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2">Parse Bullets</button>
           <button type="button" onClick={saveRole} disabled={!jobTitle.trim()} aria-disabled={!jobTitle.trim()} className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2">Save Role</button>
         </div>
       </div>
+
+      {bullets.length === 0 && rawJdText.trim() === '' && (
+        <div className="rounded-xl border border-dashed border-[hsl(var(--border)/0.4)] p-8 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[hsl(var(--foam)/0.1)]">
+            <SearchIcon className="h-6 w-6 text-[hsl(var(--foam))]" />
+          </div>
+          <p className="text-sm font-medium text-foreground">No job description decoded yet</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Fill in the role details, paste the JD, then click Parse Bullets to extract requirements.
+          </p>
+        </div>
+      )}
 
       {bullets.length > 0 && (
         <div className="space-y-4">
@@ -117,11 +130,11 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
             {selectedBullets.size > 0 && (
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">{selectedBullets.size} selected</span>
-                <select aria-label="Bulk tag selected bullets" onChange={e => { if (e.target.value) handleBulkTag(e.target.value); }} className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-2 py-1 text-sm text-foreground" defaultValue="">
+                <select aria-label="Bulk tag selected bullets" onChange={e => { if (e.target.value) handleBulkTag(e.target.value); }} className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]" defaultValue="">
                   <option value="">Bulk tag...</option>
                   {SKILL_BANK.map(skill => (<option key={skill.id} value={skill.id}>{skill.name}</option>))}
                 </select>
-                <button type="button" onClick={handleBulkIgnore} className="rounded-lg border border-[hsl(var(--destructive)/0.3)] bg-[hsl(var(--destructive)/0.1)] px-2 py-1 text-sm text-destructive">Ignore</button>
+                <button type="button" onClick={handleBulkIgnore} className="rounded-lg border border-[hsl(var(--destructive)/0.3)] bg-[hsl(var(--destructive)/0.1)] px-2 py-1 text-sm text-destructive focus-visible:ring-2 focus-visible:ring-[hsl(var(--destructive))] focus-visible:ring-offset-2">Ignore</button>
               </div>
             )}
           </div>
@@ -150,7 +163,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                   <div className="flex flex-wrap items-center gap-2">
                     <select value={bullet.primarySkillId ?? ''} onChange={e => {
                       setBullets(bullets.map(b => b.id === bullet.id ? { ...b, primarySkillId: e.target.value || null } : b));
-                    }} className="rounded border border-[hsl(var(--border)/0.4)] bg-[hsl(var(--overlay)/0.3)] px-2 py-1 text-xs text-foreground">
+                    }} className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]">
                       <option value="">Select skill...</option>
                       {SKILL_BANK.map(skill => (<option key={skill.id} value={skill.id}>{skill.name}</option>))}
                     </select>
@@ -168,7 +181,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                     )}
                     <button type="button" onClick={() => {
                       setBullets(bullets.map(b => b.id === bullet.id ? { ...b, status: b.status === 'ignored' ? 'active' : 'ignored' } : b));
-                    }} className="ml-auto text-xs text-muted-foreground hover:text-foreground">
+                    }} className="ml-auto rounded px-1 py-0.5 text-xs text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2">
                       {bullet.status === 'ignored' ? 'Restore' : 'Ignore'}
                     </button>
                   </div>

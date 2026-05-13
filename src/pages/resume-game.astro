@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import ResumeGameApp from '../components/ResumeGame';
 import ErrorBoundary from '../components/shared/ErrorBoundary';
+import WithToasts from '../components/WithToasts';
 import { siteConfig } from '../config/site';
 
 const pageUrl = new URL('/resume-game/', siteConfig.siteUrl).toString();
@@ -80,7 +81,9 @@ const resumeSchemas = [
     <h1 class="sr-only">Resume Bullet Game</h1>
     <section class="mx-auto w-full max-w-6xl">
       <ErrorBoundary client:load>
-        <ResumeGameApp client:load showHeader={false} className="px-0 pb-8 pt-0 overflow-hidden" />
+        <WithToasts client:load>
+          <ResumeGameApp client:load showHeader={false} className="px-0 pb-8 pt-0 overflow-hidden" />
+        </WithToasts>
       </ErrorBoundary>
     </section>
 

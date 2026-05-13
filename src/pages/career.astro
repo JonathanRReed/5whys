@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import Career5Whys from '../components/Career5Whys';
 import ErrorBoundary from '../components/shared/ErrorBoundary';
+import WithToasts from '../components/WithToasts';
 import { siteConfig } from '../config/site';
 
 const pageUrl = new URL('/career/', siteConfig.siteUrl).toString();
@@ -67,12 +68,14 @@ const careerSchemas = [
     <h1 class="sr-only">Career Reflection Five Whys</h1>
     <section id="why-flow" class="mx-auto w-full max-w-6xl">
       <ErrorBoundary client:load>
-        <Career5Whys
-          client:load
-          showHeader={false}
-          showFooter={false}
-          className="pb-8"
-        />
+        <WithToasts client:load>
+          <Career5Whys
+            client:load
+            showHeader={false}
+            showFooter={false}
+            className="pb-8"
+          />
+        </WithToasts>
       </ErrorBoundary>
     </section>
     <section class="mx-auto mt-10 grid w-full max-w-6xl gap-6 md:grid-cols-3" aria-labelledby="career-guide-heading">
