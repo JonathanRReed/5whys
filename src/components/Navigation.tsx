@@ -48,7 +48,6 @@ const navLinks = [
   { href: '/resume-game/', label: 'Resume Game' },
   { href: '/networking-practice/', label: 'Networking Studio' },
   { href: '/5whys/interview-glow-up/', label: 'Interview Glow Up' },
-  { href: '/blog/', label: 'Blog' },
 ];
 
 const isValidTheme = (value: unknown): value is Theme => value === 'night' || value === 'dawn';
