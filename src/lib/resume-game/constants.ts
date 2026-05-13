@@ -150,6 +150,74 @@ export function suggestStrongerVerb(weakVerb: string): string {
   return suggestions[weakVerb.toLowerCase()] || '';
 }
 
+export const WEAK_WORDS = [
+  'managed',
+  'responsible for',
+  'assisted with',
+  'helped with',
+  'involved in',
+  'participated in',
+  'worked on',
+  'supported',
+  'contributed to',
+  'familiar with',
+  'exposure to',
+  'some experience with',
+  'basic knowledge of',
+] as const;
+
+export const ATS_KEYWORDS = [
+  'leadership',
+  'strategy',
+  'execution',
+  'cross-functional',
+  'stakeholder',
+  'metrics',
+  'kpi',
+  'okr',
+  'agile',
+  'scrum',
+  'sprint',
+  'roadmap',
+  'product',
+  'engineering',
+  'design',
+  'marketing',
+  'sales',
+  'operations',
+  'finance',
+  'data',
+  'analytics',
+  'machine learning',
+  'ai',
+  'api',
+  'cloud',
+  'aws',
+  'gcp',
+  'azure',
+  'react',
+  'typescript',
+  'python',
+  'sql',
+] as const;
+
+export const STOPWORDS = new Set([
+  'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+  'of', 'with', 'by', 'from', 'as', 'is', 'was', 'were', 'be', 'been',
+  'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would',
+  'could', 'should', 'may', 'might', 'must', 'shall', 'can', 'need',
+  'it', 'its', 'this', 'that', 'these', 'those', 'i', 'me', 'my', 'myself',
+  'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours', 'yourself',
+  'yourselves', 'he', 'him', 'his', 'himself', 'she', 'her', 'hers',
+  'herself', 'they', 'them', 'their', 'theirs', 'themselves', 'what',
+  'which', 'who', 'whom', 'whose', 'where', 'when', 'why', 'how', 'all',
+  'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor',
+  'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 'just',
+  'also', 'then', 'now', 'here', 'there', 'up', 'out', 'if', 'about',
+  'into', 'through', 'during', 'before', 'after', 'above', 'below',
+  'between', 'under', 'again', 'further', 'once', 'am', 'are',
+]);
+
 // Hard skills commonly sought by ATS
 export const HARD_SKILLS = [
   'python', 'javascript', 'typescript', 'java', 'c++', 'c#', 'go', 'rust', 'sql', 'html', 'css',

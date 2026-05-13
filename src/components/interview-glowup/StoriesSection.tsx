@@ -222,7 +222,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
             <button
               type="button"
               onClick={cancelEdit}
-              className="rounded-lg border border-[hsl(var(--border)/0.5)] px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-[hsl(var(--overlay)/0.3)] hover:text-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+              className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
             >
               Cancel
             </button>
@@ -230,7 +230,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
               type="button"
               onClick={saveStory}
               disabled={!formData.primarySkillId || !formData.play}
-              className="rounded-lg bg-[hsl(var(--foam))] px-4 py-2 text-sm font-semibold text-[hsl(var(--background))] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+              className="rounded-lg bg-[hsl(var(--foam))] px-4 py-2 text-sm font-semibold text-[hsl(var(--background))] transition-colors hover:bg-[hsl(var(--foam)/0.9)] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
             >
               Save Story
             </button>
@@ -265,7 +265,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                         setEditingId(story.id);
                         setFormData(story);
                       }}
-                      className="rounded px-1 text-xs text-[hsl(var(--foam))] hover:underline focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+                      className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-2 py-1 text-xs text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
                     >
                       Edit
                     </button>

@@ -86,7 +86,7 @@ export function useNetworkingPractice() {
     [currentVersionId, versions]
   );
   const currentScenario = React.useMemo(
-    () => scenarios.find((s) => s.id === currentVersion?.scenarioId) ?? scenarios[0],
+    () => scenarios.find((s) => s.id === currentVersion?.scenarioId),
     [currentVersion?.scenarioId, scenarios]
   );
   const scenarioSteps = currentScenario?.what ?? [];

@@ -1,4 +1,12 @@
-export { ACTION_VERBS, POWER_WORDS, POWER_VERB_PATTERN } from './constants';
+export {
+  ACTION_VERBS,
+  POWER_WORDS,
+  POWER_VERB_PATTERN,
+  WEAK_WORDS,
+  ATS_KEYWORDS,
+  STOPWORDS,
+  suggestStrongerVerb,
+} from './constants';
 export {
   extractBullets,
   seedFields,
@@ -6,6 +14,14 @@ export {
   fieldBonus,
   editBonus,
   createBulletRecord,
+  detectWeakWords,
+  detectImpact,
+  detectRepetitiveVerbs,
+  enrichBulletRecords,
+  computeKeywordDensity,
+  detectAtsKeywords,
+  computeBenchmarkScore,
+  buildDeepSignalReport,
 } from './analysis';
 export { scoreBullet, scoreLabel } from './scoring';
 export { analyzeReadability } from './readability';
@@ -25,4 +41,11 @@ export {
 } from './text';
 export { exportDocx, downloadTextFile } from './exporters';
 export { useResumeSession, EMPTY_SESSION, EMPTY_SIGNAL_REPORT, SESSION_STORAGE_KEY } from './session';
-export type { BulletFields, BulletRecord, SignalReport, StoredResumeSession } from './types';
+export type {
+  BulletFields,
+  BulletRecord,
+  RepetitiveVerb,
+  KeywordDensityItem,
+  SignalReport,
+  StoredResumeSession,
+} from './types';

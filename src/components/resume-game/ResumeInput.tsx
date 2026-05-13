@@ -65,14 +65,14 @@ export default function ResumeInput({
               accept=".txt,.md,.markdown,.text,.docx,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,text/plain,text/markdown"
               onChange={handleFileChange}
               aria-label="Upload resume file (PDF, DOCX, TXT, or Markdown)"
-              className="w-full md:w-auto"
+              className="w-full md:w-auto border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[hsl(var(--foam))]"
             />
           </div>
           <div className="flex flex-col gap-2 w-full md:w-auto md:flex-row">
             <Button
               type="button"
               variant="ghost"
-              className="w-full md:w-auto hover:bg-[hsl(var(--overlay)/0.3)]"
+              className="w-full md:w-auto rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
               onClick={onClear}
             >
               Clear
@@ -80,7 +80,7 @@ export default function ResumeInput({
             <Button
               type="button"
               variant="outline"
-              className="w-full md:w-auto"
+              className="w-full md:w-auto rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
               onClick={onLoadSample}
             >
               Try sample
@@ -92,13 +92,13 @@ export default function ResumeInput({
           value={resumeText}
           onChange={(event) => onTextChange(event.target.value)}
           placeholder={SAMPLE_RESUME_TEXT}
-          className="min-h-[220px]"
+          className="min-h-[220px] border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[hsl(var(--foam))]"
         />
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
           <Button
             type="button"
             onClick={onScan}
-            className="h-12 rounded-xl px-6 focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+            className="h-12 rounded-lg bg-[hsl(var(--foam))] px-6 text-sm font-semibold text-[hsl(var(--background))] transition-colors hover:bg-[hsl(var(--foam)/0.9)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
             disabled={!resumeText.trim() || isScanning || isLoadingFile}
           >
             {isScanning ? 'Analyzing...' : 'Analyze resume'}

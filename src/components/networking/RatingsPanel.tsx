@@ -20,10 +20,26 @@ function computeFeedbackColor(value: number) {
 }
 
 const RATING_FIELDS = [
-  { key: 'confidence' as const, label: 'Confidence' },
-  { key: 'clarity' as const, label: 'Clarity' },
-  { key: 'rapport' as const, label: 'Rapport' },
-  { key: 'authenticity' as const, label: 'Authenticity' },
+  {
+    key: 'confidence' as const,
+    label: 'Confidence',
+    helpText: 'How sure did you feel? 1 = Nervous, 5 = Completely at ease',
+  },
+  {
+    key: 'clarity' as const,
+    label: 'Clarity',
+    helpText: 'How clear was your message? 1 = Rambling, 5 = Sharp and concise',
+  },
+  {
+    key: 'rapport' as const,
+    label: 'Rapport',
+    helpText: 'How well did you connect? 1 = Awkward, 5 = Natural conversation',
+  },
+  {
+    key: 'authenticity' as const,
+    label: 'Authenticity',
+    helpText: 'Did you sound like yourself? 1 = Forced, 5 = Genuinely you',
+  },
 ];
 
 export default function RatingsPanel({ ratings, onRatingChange }: Props) {
@@ -34,12 +50,15 @@ export default function RatingsPanel({ ratings, onRatingChange }: Props) {
 
   return (
     <div className="grid gap-6">
-      {RATING_FIELDS.map(({ key, label }) => (
+      {RATING_FIELDS.map(({ key, label, helpText }) => (
         <div key={key} className="grid gap-2">
           <div className="flex items-center justify-between text-sm">
-            <Label htmlFor={`rating-${key}`} className="text-sm font-normal">
-              {label}
-            </Label>
+            <div className="flex flex-col gap-0.5">
+              <Label htmlFor={`rating-${key}`} className="text-sm font-normal">
+                {label}
+              </Label>
+              <p className="text-xs text-[hsl(var(--muted-foreground))]">{helpText}</p>
+            </div>
             <span className={`font-semibold ${computeFeedbackColor(ratings[key])}`}>{ratings[key]}/5</span>
           </div>
           <input
@@ -54,7 +73,7 @@ export default function RatingsPanel({ ratings, onRatingChange }: Props) {
             aria-valuenow={ratings[key]}
             aria-valuemin={1}
             aria-valuemax={5}
-            className="w-full accent-[hsl(var(--iris))]"
+            className="w-full accent-[hsl(var(--iris))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2 rounded-md"
           />
         </div>
       ))}

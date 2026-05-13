@@ -57,32 +57,28 @@ export default function NetworkingPractice({ showHeader = true, className }: Net
           </div>
         </section>
 
-        {state.currentScenario && (
-          <>
-            <section className="grid gap-6 mb-10 lg:grid-cols-[1.1fr,0.9fr]">
-              <ScenarioBlueprint currentScenario={state.currentScenario} scenarioSteps={state.scenarioSteps} />
-              <ConversationIngredients
-                currentScenario={state.currentScenario}
-                onCopy={state.handleCopy}
-                copiedKey={state.copiedKey}
-              />
-            </section>
-            <section className="grid gap-6 mb-10 lg:grid-cols-2">
-              <RapportWarmups
-                rapportSamples={state.rapportSamples}
-                scenarioId={state.currentScenario.id}
-                onCopy={state.handleCopy}
-                copiedKey={state.copiedKey}
-              />
-              <QuestionPrompts
-                questionTemplates={state.questionTemplates}
-                scenarioId={state.currentScenario.id}
-                onCopy={state.handleCopy}
-                copiedKey={state.copiedKey}
-              />
-            </section>
-          </>
-        )}
+        <section className="grid gap-6 mb-10 lg:grid-cols-[1.1fr,0.9fr]">
+          <ScenarioBlueprint currentScenario={state.currentScenario} scenarioSteps={state.scenarioSteps} timer={state.timer} />
+          <ConversationIngredients
+            currentScenario={state.currentScenario}
+            onCopy={state.handleCopy}
+            copiedKey={state.copiedKey}
+          />
+        </section>
+        <section className="grid gap-6 mb-10 lg:grid-cols-2">
+          <RapportWarmups
+            rapportSamples={state.rapportSamples}
+            scenarioId={state.currentScenario?.id}
+            onCopy={state.handleCopy}
+            copiedKey={state.copiedKey}
+          />
+          <QuestionPrompts
+            questionTemplates={state.questionTemplates}
+            scenarioId={state.currentScenario?.id}
+            onCopy={state.handleCopy}
+            copiedKey={state.copiedKey}
+          />
+        </section>
 
         <section className="w-full grid gap-6 mb-10 md:grid-cols-[minmax(0,_320px)_1fr]">
           <PracticeTimer timer={state.timer} onStart={state.startTimer} onPause={state.pauseTimer} onReset={state.resetTimer} />

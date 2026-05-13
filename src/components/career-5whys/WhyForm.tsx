@@ -53,7 +53,7 @@ export default function WhyForm({
                 onChange={(event) => onResponseChange(index, event.target.value)}
                 placeholder="Document your reasoning. Be specific and concrete."
                 disabled={locked}
-                className="min-h-[120px] resize-none bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] disabled:opacity-60"
+                className="min-h-[120px] resize-none border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[hsl(var(--foam))] disabled:opacity-60"
               />
               {locked && (
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">
@@ -65,7 +65,7 @@ export default function WhyForm({
                 variant="ghost"
                 onClick={() => onToggleHint(index)}
                 aria-expanded={isHintVisible}
-                className="w-full justify-between border border-[hsl(var(--border)/0.5)] bg-transparent text-[hsl(var(--foreground))] hover:bg-[hsl(var(--overlay)/0.1)]"
+                className="w-full justify-between rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
               >
                 Show example reasoning
                 <span aria-hidden>{isHintVisible ? '\u2212' : '+'}</span>

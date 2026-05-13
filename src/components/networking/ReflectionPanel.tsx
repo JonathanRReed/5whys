@@ -31,17 +31,20 @@ export default function ReflectionPanel({
           value={reflection.slice(0, 500)}
           onChange={(event) => onReflectionChange(event.target.value.slice(0, 500))}
           placeholder="Notes to future you…"
-          className="min-h-[100px] bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--border)/0.6)] text-sm text-[hsl(var(--foreground))] focus:border-[hsl(var(--iris))]"
+          className="min-h-[100px] bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--border)/0.6)] text-sm text-[hsl(var(--foreground))] focus:ring-2 focus:ring-[hsl(var(--foam))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))]"
         />
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <Button onClick={onSaveSession} className="bg-[hsl(var(--gold))] text-[hsl(var(--background))] hover:bg-[hsl(var(--gold)/0.8)]">
+        <Button
+          onClick={onSaveSession}
+          className="bg-[hsl(var(--gold))] text-[hsl(var(--background))] hover:bg-[hsl(var(--gold)/0.8)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+        >
           Save Session
         </Button>
         <Button
           variant="outline"
-          className="border-[hsl(var(--border)/0.6)] text-[hsl(var(--foreground))]"
+          className="border-[hsl(var(--border)/0.6)] text-[hsl(var(--foreground))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
           onClick={onResetReview}
         >
           Reset Review

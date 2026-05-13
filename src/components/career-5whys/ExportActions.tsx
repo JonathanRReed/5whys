@@ -17,7 +17,7 @@ export default function ExportActions({ onSaveSnapshot, onExport, onReset, canEx
           type="button"
           onClick={onSaveSnapshot}
           disabled={!canExport}
-          className="h-12 rounded-xl border border-[hsl(var(--love)/0.6)] bg-[hsl(var(--love)/0.2)] text-[hsl(var(--love-foreground))] hover:bg-[hsl(var(--love)/0.4)]"
+          className="h-12 rounded-lg bg-[hsl(var(--foam))] px-4 py-2 text-sm font-semibold text-[hsl(var(--background))] transition-colors hover:bg-[hsl(var(--foam)/0.9)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
         >
           Save snapshot
         </Button>
@@ -26,7 +26,7 @@ export default function ExportActions({ onSaveSnapshot, onExport, onReset, canEx
           variant="outline"
           onClick={onExport}
           disabled={!canExport}
-          className="h-12 rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.1)] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--overlay)/0.2)]"
+          className="h-12 rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
         >
           Export JSON
         </Button>
@@ -34,7 +34,7 @@ export default function ExportActions({ onSaveSnapshot, onExport, onReset, canEx
           type="button"
           variant="ghost"
           onClick={onReset}
-          className="h-12 rounded-xl border border-[hsl(var(--border)/0.5)] bg-transparent text-[hsl(var(--foreground))] hover:bg-[hsl(var(--overlay)/0.1)]"
+          className="h-12 rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
         >
           Reset session
         </Button>
