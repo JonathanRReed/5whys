@@ -46,14 +46,28 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset }: Prop
             <span className="mt-1 text-xs font-normal text-[hsl(var(--muted-foreground))]">remaining</span>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={onStart} className="bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.8)]">
+        <div className="flex flex-wrap justify-center gap-2">
+          <Button
+            onClick={onStart}
+            disabled={timer.isRunning}
+            aria-pressed={timer.isRunning}
+            className="bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.8)] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             {timer.isRunning ? 'Running' : 'Start'}
           </Button>
-          <Button onClick={onPause} variant="outline" className="border-[hsl(var(--border)/0.6)] text-[hsl(var(--foreground))]">
+          <Button
+            onClick={onPause}
+            disabled={!timer.isRunning}
+            variant="outline"
+            className="border-[hsl(var(--border)/0.6)] text-[hsl(var(--foreground))] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             Pause
           </Button>
-          <Button onClick={onReset} variant="outline" className="border-[hsl(var(--border)/0.6)] text-[hsl(var(--foreground))]">
+          <Button
+            onClick={onReset}
+            variant="outline"
+            className="border-[hsl(var(--border)/0.6)] text-[hsl(var(--foreground))]"
+          >
             Reset
           </Button>
         </div>
