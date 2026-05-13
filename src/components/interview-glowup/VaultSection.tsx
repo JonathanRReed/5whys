@@ -10,7 +10,7 @@ import {
   SKILL_BANK,
   getSkillName,
 } from '../../lib/glowup-banks';
-import { CheckIcon } from './icons';
+import { CheckIcon, ArchiveIcon } from './icons';
 
 type Props = {
   data: GlowUpData;
@@ -70,12 +70,12 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
           value={filter}
           onChange={e => setFilter(e.target.value)}
           placeholder="Search stories..."
-          className="flex-1 min-w-[200px] rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
+          className="flex-1 min-w-[200px] rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]"
         />
         <select
           value={skillFilter}
           onChange={e => setSkillFilter(e.target.value)}
-          className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm text-foreground"
+          className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foam))]"
         >
           <option value="">All skills</option>
           {SKILL_BANK.map(skill => (
@@ -87,7 +87,7 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
             type="button"
             onClick={() => setShowUnused(!showUnused)}
             className={cn(
-              'rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
+              'rounded-lg border px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2',
               showUnused
                 ? 'border-[hsl(var(--foam)/0.5)] bg-[hsl(var(--foam)/0.15)] text-[hsl(var(--foam))]'
                 : 'border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] text-muted-foreground hover:text-foreground'
@@ -104,14 +104,14 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
           <button
             type="button"
             onClick={handleBatchAddToPacket}
-            className="rounded-lg bg-[hsl(var(--foam))] px-3 py-1.5 text-sm font-semibold text-[hsl(var(--background))]"
+            className="rounded-lg bg-[hsl(var(--foam))] px-3 py-1.5 text-sm font-semibold text-[hsl(var(--background))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
           >
             Add to Packet
           </button>
           <button
             type="button"
             onClick={() => setSelectedIds(new Set())}
-            className="text-sm text-muted-foreground hover:text-foreground"
+            className="rounded px-2 py-1 text-sm text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
           >
             Clear
           </button>
@@ -181,11 +181,19 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
 
       {stories.length === 0 && (
         <div className="rounded-xl border border-dashed border-[hsl(var(--border)/0.4)] p-8 text-center">
-          <p className="text-muted-foreground">
-            {data.stories.length === 0
-              ? 'No stories in vault. Build some first!'
-              : 'No stories match your filters.'}
-          </p>
+          {data.stories.length === 0 ? (
+            <>
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[hsl(var(--foam)/0.1)]">
+                <ArchiveIcon className="h-6 w-6 text-[hsl(var(--foam))]" />
+              </div>
+              <p className="text-sm font-medium text-foreground">Your vault is empty</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Go to Build Stories to create STAR stories, then come back to organize and select them for your packet.
+              </p>
+            </>
+          ) : (
+            <p className="text-muted-foreground">No stories match your filters.</p>
+          )}
         </div>
       )}
     </div>

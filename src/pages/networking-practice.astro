@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import NetworkingPracticeApp from '../components/NetworkingPractice';
 import ErrorBoundary from '../components/shared/ErrorBoundary';
+import WithToasts from '../components/WithToasts';
 import { siteConfig } from '../config/site';
 
 const pageUrl = new URL('/networking-practice/', siteConfig.siteUrl).toString();
@@ -80,11 +81,13 @@ const networkingSchemas = [
     <h1 class="sr-only">Networking Practice Studio</h1>
     <section class="mx-auto w-full max-w-6xl">
       <ErrorBoundary client:load>
-        <NetworkingPracticeApp
-          client:load
-          showHeader={false}
-          className="pb-8"
-        />
+        <WithToasts client:load>
+          <NetworkingPracticeApp
+            client:load
+            showHeader={false}
+            className="pb-8"
+          />
+        </WithToasts>
       </ErrorBoundary>
     </section>
   </div>

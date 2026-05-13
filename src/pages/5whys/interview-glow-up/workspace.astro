@@ -2,6 +2,7 @@
 import Base from "../../../layouts/Base.astro";
 import InterviewGlowUpWorkspace from "../../../components/InterviewGlowUp/InterviewGlowUpWorkspace";
 import ErrorBoundary from "../../../components/shared/ErrorBoundary";
+import WithToasts from "../../../components/WithToasts";
 import { siteConfig } from "../../../config/site";
 
 const pageUrl = new URL(
@@ -55,7 +56,9 @@ const workspaceSchemas = [
         <h1 class="sr-only">Interview Workspace</h1>
         <section class="mx-auto w-full max-w-7xl">
             <ErrorBoundary client:load>
-                <InterviewGlowUpWorkspace />
+                <WithToasts client:load>
+                    <InterviewGlowUpWorkspace />
+                </WithToasts>
             </ErrorBoundary>
         </section>
         <section class="mx-auto grid w-full max-w-6xl gap-6 md:grid-cols-3">
