@@ -10,6 +10,7 @@ type Props = {
   isScanning: boolean;
   scanProgress: number;
   scanComplete: boolean;
+  isLoadingFile?: boolean;
   status: string | null;
   storageNotice: string | null;
   needsRescan: boolean;
@@ -29,6 +30,7 @@ export default function ResumeInput({
   isScanning,
   scanProgress,
   scanComplete,
+  isLoadingFile,
   status,
   storageNotice,
   needsRescan,
@@ -60,17 +62,20 @@ export default function ResumeInput({
             <Input
               id="resume-upload"
               type="file"
-              accept=".txt,.md,.markdown,.text,.docx,.pdf"
+              accept=".txt,.md,.markdown,.text,.docx,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,text/plain,text/markdown"
               onChange={handleFileChange}
+              aria-label="Upload resume file (PDF, DOCX, TXT, or Markdown)"
               className="w-full md:w-auto"
             />
           </div>
-          <Button type="button" variant="ghost" className="md:ml-auto" onClick={onClear}>
-            Clear workspace
-          </Button>
-          <Button type="button" variant="outline" className="w-full md:w-auto" onClick={onLoadSample}>
-            Try sample resume
-          </Button>
+          <div className="flex flex-col gap-2 w-full md:w-auto md:flex-row">
+            <Button type="button" variant="ghost" className="w-full md:w-auto hover:bg-[hsl(var(--overlay)/0.3)]" onClick={onClear}>
+              Clear
+            </Button>
+            <Button type="button" variant="outline" className="w-full md:w-auto" onClick={onLoadSample}>
+              Try sample
+            </Button>
+          </div>
         </div>
         <Textarea
           aria-label="Paste resume text"
@@ -83,18 +88,30 @@ export default function ResumeInput({
           <Button
             type="button"
             onClick={onScan}
-            className="h-12 rounded-xl px-6"
-            disabled={!resumeText.trim() || isScanning}
+            className="h-12 rounded-xl px-6 focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+            disabled={!resumeText.trim() || isScanning || isLoadingFile}
           >
-            Simulate recruiter scan
+            {isScanning ? 'Analyzing...' : 'Analyze resume'}
           </Button>
           <p className="text-sm text-muted-foreground md:ml-4">
-            {isScanning ? 'Scanning in progress...' : scanComplete ? 'Scan complete' : 'Ready when you are'}
+            {isScanning
+              ? 'Analyzing in progress...'
+              : scanComplete
+                ? 'Analysis complete'
+                : 'Ready when you are'}
             {needsRescan && scanComplete && (
-              <span className="ml-2 text-xs text-[hsl(var(--gold))]">(resume updated — rescan to refresh)</span>
+              <span className="ml-2 text-xs text-[hsl(var(--gold))]">
+                Resume changed. Tap &quot;Analyze resume&quot; to update scores.
+              </span>
             )}
           </p>
         </div>
+        {isLoadingFile && (
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-[hsl(var(--foam))] animate-pulse" />
+            <p className="text-xs text-muted-foreground">Reading file...</p>
+          </div>
+        )}
         {(isScanning || scanProgress > 0) && (
           <div className="space-y-2">
             <div className="h-2 w-full overflow-hidden rounded-full border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)]">
@@ -104,7 +121,7 @@ export default function ResumeInput({
               />
             </div>
             <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-              {isScanning ? `Scanning • ${scanProgress}%` : 'Scan ready'}
+              {isScanning ? `Analyzing • ${scanProgress}%` : 'Analysis ready'}
             </p>
           </div>
         )}

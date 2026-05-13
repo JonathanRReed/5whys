@@ -14,25 +14,25 @@
     --overlay: 228 15% 16%;
     --popover: 228 16% 13%;
     --popover-foreground: 228 36% 94%;
-    --primary: 188 58% 58%;
+    --primary: 185 50% 52%;
     --primary-foreground: 230 18% 8%;
     --secondary: 228 15% 17%;
     --secondary-foreground: 228 36% 94%;
     --muted: 228 10% 43%;
-    --muted-foreground: 226 15% 72%;
-    --accent: 260 64% 74%;
+    --muted-foreground: 226 15% 76%;
+    --accent: 255 35% 68%;
     --accent-foreground: 230 18% 8%;
-    --destructive: 350 78% 66%;
+    --destructive: 350 65% 62%;
     --destructive-foreground: 230 18% 8%;
-    --love: 350 78% 66%;
-    --gold: 45 86% 64%;
-    --rose: 2 55% 83%;
-    --pine: 188 58% 44%;
-    --foam: 188 58% 58%;
-    --iris: 260 64% 74%;
-    --border: 226 17% 26%;
-    --input: 226 17% 26%;
-    --ring: 188 58% 58%;
+    --love: 350 65% 62%;
+    --gold: 38 85% 58%;
+    --rose: 355 50% 75%;
+    --pine: 185 50% 42%;
+    --foam: 185 50% 52%;
+    --iris: 255 35% 68%;
+    --border: 226 17% 28%;
+    --input: 226 17% 28%;
+    --ring: 185 50% 52%;
     --radius: 0.75rem;
     --logo-stop-1: color-mix(in srgb, #31748f 52%, transparent);
     --logo-stop-2: color-mix(in srgb, #eb6f92 46%, transparent);
@@ -64,25 +64,25 @@
     --overlay: 220 30% 93%;
     --popover: 0 0% 100%;
     --popover-foreground: 232 24% 22%;
-    --primary: 192 55% 34%;
+    --primary: 192 55% 36%;
     --primary-foreground: 0 0% 100%;
     --secondary: 220 30% 94%;
     --secondary-foreground: 232 24% 22%;
     --muted: 228 10% 61%;
     --muted-foreground: 232 18% 34%;
-    --accent: 259 35% 48%;
+    --accent: 255 30% 48%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 350 56% 45%;
+    --destructive: 350 48% 48%;
     --destructive-foreground: 0 0% 100%;
-    --love: 350 56% 45%;
-    --gold: 42 76% 45%;
-    --rose: 2 55% 67%;
-    --pine: 192 55% 34%;
-    --foam: 188 44% 42%;
-    --iris: 259 35% 48%;
+    --love: 350 48% 48%;
+    --gold: 38 78% 48%;
+    --rose: 355 45% 70%;
+    --pine: 192 55% 30%;
+    --foam: 192 50% 38%;
+    --iris: 255 30% 48%;
     --border: 222 24% 84%;
     --input: 222 24% 84%;
-    --ring: 192 55% 34%;
+    --ring: 192 55% 36%;
     --logo-stop-1: color-mix(in srgb, #31748f 36%, transparent);
     --logo-stop-2: color-mix(in srgb, #7c6fce 28%, transparent);
     --logo-stop-3: color-mix(in srgb, #f7f9fc 65%, transparent);
@@ -158,53 +158,18 @@
   }
 
   .nav-logo {
-    position: relative;
-    overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--logo-border-color) 70%, transparent);
-    background: var(--logo-base-fill);
-    box-shadow:
-      0 10px 22px -18px var(--logo-shadow-color),
-      inset 0 0 0 1px color-mix(in srgb, var(--logo-border-color) 36%, transparent);
-    transition: transform 180ms ease, box-shadow 220ms ease, background 220ms ease;
-    backdrop-filter: blur(12px) saturate(120%);
-    isolation: isolate;
-  }
-
-  .nav-logo::before {
-    content: '';
-    position: absolute;
-    inset: 1px;
-    border-radius: inherit;
-    background:
-      radial-gradient(circle at 28% 24%, var(--logo-stop-1) 0%, transparent 58%),
-      radial-gradient(circle at 72% 28%, var(--logo-stop-2) 0%, transparent 66%),
-      radial-gradient(circle at 50% 96%, var(--logo-stop-3) 0%, transparent 78%);
-    opacity: 0.9;
-    pointer-events: none;
-  }
-
-  .nav-logo::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: radial-gradient(circle, color-mix(in srgb, var(--logo-border-color) 48%, transparent) 0%, transparent 68%);
-    mix-blend-mode: screen;
-    pointer-events: none;
-    opacity: 0.35;
+    border-radius: 0.75rem;
+    background: transparent;
+    transition: transform 180ms ease;
   }
 
   .nav-logo:hover {
-    transform: translateY(-1px) scale(1.01);
-    box-shadow:
-      0 14px 26px -20px var(--logo-shadow-color),
-      inset 0 0 0 1px color-mix(in srgb, var(--logo-border-color) 55%, transparent);
+    transform: translateY(-1px) scale(1.02);
   }
 
   .nav-logo__icon {
-    position: relative;
-    z-index: 1;
-    filter: drop-shadow(0 8px 16px var(--logo-icon-shadow));
+    display: block;
+    filter: none;
   }
 
   @container (max-width: 36rem) {

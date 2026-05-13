@@ -198,7 +198,7 @@ export function useNetworkingPractice() {
     };
     const success = saveSession(session);
     if (!success) {
-      setStorageNotice('Browser storage is full. Export or clear past sessions to keep saving.');
+      setStorageNotice(`You've saved ${SESSION_LIMIT} sessions. Export or delete old ones to save new practice rounds.`);
       return;
     }
     setSessions((prev) => [session, ...prev].slice(0, SESSION_LIMIT));

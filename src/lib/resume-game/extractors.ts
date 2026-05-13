@@ -24,10 +24,14 @@ async function extractDocx(file: File): Promise<string> {
     const arrayBuffer = await file.arrayBuffer();
     const zip = await JSZip.loadAsync(arrayBuffer);
     const xml = await zip.file('word/document.xml')?.async('text');
-    if (!xml) return '';
+    if (!xml) {
+      throw new Error(
+        'This DOCX file appears corrupted or empty. Try: (1) Re-save in Word, (2) Use .txt format, or (3) Copy-paste text directly.'
+      );
+    }
 
     // Strip XML tags and normalize whitespace
-    return xml
+    const text = xml
       .replace(/<w:p>/g, '\n')
       .replace(/<[^>]+>/g, ' ')
       .replace(/&lt;/g, '<')
@@ -39,8 +43,19 @@ async function extractDocx(file: File): Promise<string> {
       .replace(/\n /g, '\n')
       .replace(/ \n/g, '\n')
       .trim();
-  } catch {
-    throw new Error('Could not extract text from DOCX. Try pasting the text manually.');
+
+    if (text.length < 20) {
+      throw new Error(
+        'DOCX extracted very little text. Try: (1) Re-save in Word, (2) Use .txt format, or (3) Copy-paste text directly.'
+      );
+    }
+
+    return text;
+  } catch (err) {
+    if (err instanceof Error && (err.message.startsWith('This DOCX') || err.message.startsWith('DOCX extracted'))) {
+      throw err;
+    }
+    throw new Error('Could not extract text from DOCX. Try pasting the text manually.', { cause: err });
   }
 }
 
@@ -87,11 +102,20 @@ async function extractPdf(file: File): Promise<string> {
     }
 
     if (extracted.length < 50) {
-      throw new Error('PDF text extraction failed');
+      throw new Error(
+        'PDF appears to be image-based or encrypted. Try: (1) Copy-paste text directly, (2) Use a .docx file, or (3) Export PDF as text first.'
+      );
+    }
+
+    if (extracted.length < 200) {
+      console.warn('[Resume Game] PDF extraction returned minimal text. Quality may be poor.');
     }
 
     return extracted;
-  } catch {
-    throw new Error('Could not extract text from PDF. Try pasting the text manually or use a .txt file.');
+  } catch (err) {
+    if (err instanceof Error && err.message.startsWith('PDF appears')) {
+      throw err;
+    }
+    throw new Error('Could not extract text from PDF. Try pasting the text manually or use a .txt file.', { cause: err });
   }
 }

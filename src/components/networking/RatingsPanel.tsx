@@ -50,6 +50,10 @@ export default function RatingsPanel({ ratings, onRatingChange }: Props) {
             step={1}
             value={ratings[key]}
             onChange={(event) => onRatingChange(key, Number(event.target.value))}
+            aria-label={`${label} rating (1 to 5)`}
+            aria-valuenow={ratings[key]}
+            aria-valuemin={1}
+            aria-valuemax={5}
             className="w-full accent-[hsl(var(--iris))]"
           />
         </div>
@@ -62,10 +66,10 @@ export default function RatingsPanel({ ratings, onRatingChange }: Props) {
         </div>
         <p className="mt-2">
           {averageRating >= 4
-            ? 'Polished! Consider experimenting with different openers.'
+            ? 'Excellent! You are ready. Try a different scenario or add a specific ask.'
             : averageRating >= 3
-              ? 'Solid foundation-refine pacing and emphasis next round.'
-              : "Revisit your structure and energy. Try one more round while it's fresh."}
+              ? 'Good start. Next: slow down your pace, make eye contact, and pause for their response.'
+              : 'Keep practicing. Focus on: (1) Clear opening, (2) One specific goal, (3) Genuine question.'}
         </p>
       </div>
     </div>

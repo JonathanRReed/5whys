@@ -87,7 +87,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         <div>
           <label htmlFor="job-title" className="mb-1 block text-sm font-medium text-foreground">Job Title</label>
           <input id="job-title" type="text" value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="e.g., Senior Software Engineer" className={inputClass} />
@@ -103,10 +103,10 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
       </div>
       <div>
         <label htmlFor="jd-text" className="mb-1 block text-sm font-medium text-foreground">Paste Full Job Description</label>
-        <textarea id="jd-text" value={rawJdText} onChange={e => setRawJdText(e.target.value)} placeholder="Paste the entire job description here. Include bullet points, requirements, responsibilities..." rows={8} className={inputClass} />
+        <textarea id="jd-text" value={rawJdText} onChange={e => setRawJdText(e.target.value)} placeholder="Paste the entire job description here. Include bullet points, requirements, responsibilities..." rows={6} className={`${inputClass} md:rows-[8]`} />
         <div className="mt-2 flex gap-2">
-          <button type="button" onClick={parseJD} className="rounded-lg bg-[hsl(var(--foam))] px-4 py-2 text-sm font-semibold text-[hsl(var(--background))] transition-colors hover:bg-[hsl(var(--foam)/0.9)]">Parse Bullets</button>
-          <button type="button" onClick={saveRole} disabled={!jobTitle.trim()} className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] disabled:opacity-50">Save Role</button>
+          <button type="button" onClick={parseJD} className="rounded-lg bg-[hsl(var(--foam))] px-4 py-2.5 text-sm font-semibold text-[hsl(var(--background))] transition-colors hover:bg-[hsl(var(--foam)/0.9)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2">Parse Bullets</button>
+          <button type="button" onClick={saveRole} disabled={!jobTitle.trim()} aria-disabled={!jobTitle.trim()} className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2">Save Role</button>
         </div>
       </div>
 
@@ -180,7 +180,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
       )}
 
       {skillFreq.size > 0 && (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2">
           <div className="rounded-xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.15)] p-4">
             <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Skill Frequency Map</h4>
             <div className="space-y-2">

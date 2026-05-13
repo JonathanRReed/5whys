@@ -166,7 +166,8 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
                           setData(deleteStory(data, story.id));
                         }
                       }}
-                      className="text-xs text-destructive hover:underline"
+                      aria-label={`Delete story: ${story.trigger || 'Untitled'}`}
+                      className="text-xs text-destructive hover:underline focus-visible:ring-2 focus-visible:ring-[hsl(var(--destructive))] focus-visible:ring-offset-2 rounded"
                     >
                       Delete
                     </button>

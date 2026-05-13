@@ -17,37 +17,42 @@ type Props = {
   onLaunchHUD: () => void;
 };
 
-const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: 'decode', label: 'Decode JD', icon: <SearchIcon className="h-4 w-4" /> },
-  { id: 'stories', label: 'Build Stories', icon: <PencilIcon className="h-4 w-4" /> },
-  { id: 'vault', label: 'Vault', icon: <ArchiveIcon className="h-4 w-4" /> },
-  { id: 'packet', label: 'Packet', icon: <ClipboardIcon className="h-4 w-4" /> },
+const tabs: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: 'decode', label: 'Decode JD', icon: SearchIcon },
+  { id: 'stories', label: 'Build Stories', icon: PencilIcon },
+  { id: 'vault', label: 'Vault', icon: ArchiveIcon },
+  { id: 'packet', label: 'Packet', icon: ClipboardIcon },
 ];
 
 export default function WorkspaceTabs({ activeTab, onChange, showHUD, onLaunchHUD }: Props) {
   return (
     <div className="flex flex-wrap gap-2 border-b border-[hsl(var(--border)/0.3)] pb-2">
-      {tabs.map(tab => (
-        <button
-          key={tab.id}
-          type="button"
-          onClick={() => onChange(tab.id)}
-          className={cn(
-            'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all',
-            activeTab === tab.id
-              ? 'bg-[hsl(var(--foam)/0.15)] text-foreground shadow-sm'
-              : 'text-muted-foreground hover:bg-[hsl(var(--overlay)/0.3)] hover:text-foreground'
-          )}
-        >
-          {tab.icon}
-          <span>{tab.label}</span>
-        </button>
-      ))}
+      {tabs.map(tab => {
+        const Icon = tab.icon;
+        const isActive = activeTab === tab.id;
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => onChange(tab.id)}
+            aria-pressed={isActive}
+            className={cn(
+              'flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2',
+              isActive
+                ? 'bg-[hsl(var(--foam))] text-[hsl(var(--background))] shadow-lg shadow-[hsl(var(--foam)/0.25)]'
+                : 'text-muted-foreground hover:bg-[hsl(var(--overlay)/0.4)] hover:text-foreground'
+            )}
+          >
+            <Icon className="h-4 w-4" aria-hidden="true" />
+            <span>{tab.label}</span>
+          </button>
+        );
+      })}
       {showHUD && (
         <button
           type="button"
           onClick={onLaunchHUD}
-          className="ml-auto flex items-center gap-2 rounded-lg bg-[hsl(var(--foam))] px-4 py-2 text-sm font-semibold text-[hsl(var(--background))] shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
+          className="ml-auto flex items-center gap-2 rounded-xl bg-[hsl(var(--foam))] px-4 py-2.5 text-sm font-semibold text-[hsl(var(--background))] shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
         >
           <TargetIcon className="h-4 w-4" />
           <span>Launch HUD</span>

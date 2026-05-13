@@ -12,9 +12,9 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
     <div className="grid gap-6 lg:grid-cols-[1.15fr,0.85fr]">
       <Card className="backdrop-blur-lg">
         <CardHeader>
-          <CardTitle className="text-xl">Scan visualization</CardTitle>
+          <CardTitle className="text-xl">Analysis visualization</CardTitle>
           {resumeOutOfDate && (
-            <p className="text-xs text-[hsl(var(--gold))]">Resume updated — rerun scan to refresh metrics.</p>
+            <p className="text-xs text-[hsl(var(--gold))]">Resume updated — rerun analysis to refresh metrics.</p>
           )}
         </CardHeader>
         <CardContent>
@@ -28,13 +28,15 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
       <Card className="backdrop-blur-lg">
         <CardHeader className="space-y-2">
           <CardTitle className="text-xl">Signal report</CardTitle>
-          <p className="text-xs text-muted-foreground">Visible vs hidden value under an 8-second glance.</p>
+          <p className="text-xs text-muted-foreground">How much signal your resume sends in an 8-second glance.</p>
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
             <div className="mb-2 flex justify-between text-xs text-muted-foreground">
-              <span>Visible value</span>
-              <span>{signalReport.visible}%</span>
+              <span>Signal strength (verbs + numbers)</span>
+              <span className={signalReport.visible >= 70 ? 'text-[hsl(var(--love))]' : 'text-[hsl(var(--gold))]'}>
+                {signalReport.visible}%
+              </span>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)]">
               <div
@@ -42,6 +44,11 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
                 style={{ width: `${signalReport.visible}%` }}
               />
             </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {signalReport.visible >= 70
+                ? 'Strong signal — your resume stands out in a quick scan.'
+                : 'Add more numbers or power verbs to increase signal strength.'}
+            </p>
           </div>
           <div className="grid grid-cols-1 gap-4 text-center text-sm sm:grid-cols-2">
             <div className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.45)] p-4">

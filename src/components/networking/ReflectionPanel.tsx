@@ -22,11 +22,14 @@ export default function ReflectionPanel({
   return (
     <div className="space-y-6">
       <div className="grid gap-2">
-        <Label htmlFor="reflection">Reflection</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="reflection">Reflection</Label>
+          <span className="text-xs text-muted-foreground">{reflection.length}/500</span>
+        </div>
         <Textarea
           id="reflection"
-          value={reflection}
-          onChange={(event) => onReflectionChange(event.target.value)}
+          value={reflection.slice(0, 500)}
+          onChange={(event) => onReflectionChange(event.target.value.slice(0, 500))}
           placeholder="Notes to future you…"
           className="min-h-[100px] bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--border)/0.6)] text-sm text-[hsl(var(--foreground))] focus:border-[hsl(var(--iris))]"
         />
@@ -44,9 +47,11 @@ export default function ReflectionPanel({
           Reset Review
         </Button>
         {sessionsAtCapacity ? (
-          <span className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
-            History at capacity-new saves replace the oldest ({SESSION_LIMIT} max).
-          </span>
+          <div className="rounded-lg border border-[hsl(var(--gold)/0.4)] bg-[hsl(var(--gold)/0.1)] px-3 py-2">
+            <p className="text-xs text-[hsl(var(--gold))]">
+              You have saved {SESSION_LIMIT} sessions. New ones will replace the oldest.
+            </p>
+          </div>
         ) : null}
       </div>
     </div>

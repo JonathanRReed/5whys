@@ -29,9 +29,10 @@ export default function WhyStepper({ responses, sequentialCount }: WhyStepperPro
                       isFilled
                         ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.2)] text-[hsl(var(--foreground))]'
                         : isCurrent
-                        ? 'border-[hsl(var(--iris))] text-[hsl(var(--iris))]'
+                        ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.15)] text-[hsl(var(--primary))]'
                         : 'border-[hsl(var(--border)/0.5)] text-[hsl(var(--muted-foreground))]'
                     )}
+                    aria-current={isCurrent ? 'step' : undefined}
                   >
                     {index + 1}
                   </div>

@@ -29,6 +29,7 @@ function formatTime(seconds: number) {
 
 export default function PracticeTimer({ timer, onStart, onPause, onReset }: Props) {
   const progress = (TOTAL_SECONDS - timer.remaining) / TOTAL_SECONDS;
+  const isComplete = timer.remaining === 0 && !timer.isRunning && timer.startedAt !== null;
   const ringStyle: React.CSSProperties = {
     background: `conic-gradient(hsl(var(--primary)) ${progress * 360}deg, hsl(var(--border)/0.3) 0deg)`,
   };
@@ -40,20 +41,25 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset }: Prop
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-4">
         <div className="relative flex items-center justify-center w-48 h-48 rounded-full border border-[hsl(var(--border)/0.6)]">
-          <div className="absolute inset-1 rounded-full" style={ringStyle} />
+          <div
+            className={`absolute inset-1 rounded-full transition-all ${isComplete ? 'animate-pulse' : ''}`}
+            style={ringStyle}
+          />
           <div className="relative flex flex-col items-center justify-center w-40 h-40 rounded-full bg-[hsl(var(--overlay)/0.3)] text-3xl font-semibold">
             {formatTime(timer.remaining)}
-            <span className="mt-1 text-xs font-normal text-[hsl(var(--muted-foreground))]">remaining</span>
+            <span className="mt-2 text-xs uppercase tracking-[0.2em] text-[hsl(var(--muted-foreground))]">
+              {isComplete ? "Time's up!" : 'seconds left'}
+            </span>
           </div>
         </div>
         <div className="flex flex-wrap justify-center gap-2">
           <Button
             onClick={onStart}
-            disabled={timer.isRunning}
+            disabled={timer.isRunning || isComplete}
             aria-pressed={timer.isRunning}
-            className="bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.8)] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.8)] disabled:bg-[hsl(var(--primary)/0.4)] disabled:cursor-not-allowed"
           >
-            {timer.isRunning ? 'Running' : 'Start'}
+            {timer.isRunning ? 'Running' : isComplete ? 'Done' : 'Start'}
           </Button>
           <Button
             onClick={onPause}

@@ -153,7 +153,7 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     setSignalReportValue({ visible, hidden: 100 - visible, numbers: numbers.length, verbs: verbCount });
     setLastAnalyzed();
     setNeedsRescan(false);
-    setStatus('Scan complete. Review the insights below.');
+    setStatus('Analysis complete. Review the insights below.');
   }, [resumeText, setBullets, setLastAnalyzed, setSelectedBulletId, setSignalReportValue]);
 
   const handleScan = () => {
@@ -187,15 +187,25 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     frameRef.current = requestAnimationFrame(tick);
   };
 
+  const [isLoadingFile, setIsLoadingFile] = React.useState(false);
+
   const handleFileUpload = async (file: File) => {
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file.size > MAX_FILE_SIZE) {
+      setStatus('File too large. Maximum size is 5MB.');
+      return;
+    }
+    setIsLoadingFile(true);
     try {
       const { extractTextFromFile } = await import('../lib/resume-game/extractors');
       const text = await extractTextFromFile(file);
       setResumeTextValue(decodeEntities(text));
       setNeedsRescan(true);
-      setStatus(`${file.name} loaded. Run the scan to see suggestions.`);
+      setStatus(`${file.name} loaded. Run the analysis to see suggestions.`);
     } catch (err) {
       setStatus(err instanceof Error ? err.message : 'Failed to read file.');
+    } finally {
+      setIsLoadingFile(false);
     }
   };
 
@@ -266,6 +276,7 @@ ${improved.join('\n')}
         isScanning={isScanning}
         scanProgress={scanProgress}
         scanComplete={scanComplete}
+        isLoadingFile={isLoadingFile}
         status={status}
         storageNotice={storageNotice}
         needsRescan={needsRescan}
@@ -275,7 +286,7 @@ ${improved.join('\n')}
         onLoadSample={() => {
           setResumeTextValue(SAMPLE_RESUME_TEXT);
           setNeedsRescan(true);
-          setStatus('Sample resume loaded. Run the scan to see suggestions.');
+          setStatus('Sample resume loaded. Run the analysis to see suggestions.');
         }}
         onClear={() => {
           setSessionState(() => ({ ...EMPTY_SESSION }));

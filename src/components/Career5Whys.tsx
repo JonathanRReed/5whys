@@ -231,6 +231,9 @@ export default function Career5Whys({ showHeader = true, showFooter = true, clas
           onTrackChange={handleTrackChange}
           onTopicChange={(topic) => updateSession({ topic })}
         />
+        <div aria-live="polite" aria-atomic="true" className="sr-only">
+          {status ? status : ''}
+        </div>
         <div className="grid gap-8 lg:grid-cols-[320px,minmax(0,1fr)]">
           <div className="space-y-6">
             <WhyStepper responses={session.responses} sequentialCount={sequentialCount} />
