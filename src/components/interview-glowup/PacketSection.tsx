@@ -69,7 +69,7 @@ export default function PacketSection({ data, setData, currentRole, currentPacke
         <button
           type="button"
           onClick={createNewPacket}
-          className="mt-4 rounded-lg bg-[hsl(var(--foam))] px-4 py-2 text-sm font-semibold text-[hsl(var(--background))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+          className="mt-4 rounded-lg bg-[hsl(var(--foam))] px-4 py-2 text-sm font-semibold text-[hsl(var(--background))] transition-colors hover:bg-[hsl(var(--foam)/0.9)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
         >
           Create Interview Packet
         </button>

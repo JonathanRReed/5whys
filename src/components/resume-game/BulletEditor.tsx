@@ -55,7 +55,7 @@ export default function BulletEditor({ bullet, onFieldChange }: Props) {
                   id={`bullet-${bullet.id}-verb`}
                   value={bullet.fields.verb}
                   onChange={(event) => onFieldChange(bullet.id, 'verb', event.target.value)}
-                  className="mt-2"
+                  className="mt-2 border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[hsl(var(--foam))]"
                   placeholder="e.g., Led, Built, Increased"
                 />
                 <p className="mt-1 text-xs text-muted-foreground">The action you took. Should be strong and specific.</p>
@@ -68,7 +68,7 @@ export default function BulletEditor({ bullet, onFieldChange }: Props) {
                   id={`bullet-${bullet.id}-quantifier`}
                   value={bullet.fields.quantifier}
                   onChange={(event) => onFieldChange(bullet.id, 'quantifier', event.target.value)}
-                  className="mt-2"
+                  className="mt-2 border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[hsl(var(--foam))]"
                   placeholder="e.g., 32%, 120 users, $500K"
                 />
                 <p className="mt-1 text-xs text-muted-foreground">A number that proves impact: percentage, count, or dollar amount.</p>
@@ -83,7 +83,7 @@ export default function BulletEditor({ bullet, onFieldChange }: Props) {
                   id={`bullet-${bullet.id}-task`}
                   value={bullet.fields.task}
                   onChange={(event) => onFieldChange(bullet.id, 'task', event.target.value)}
-                  className="mt-2 min-h-[100px]"
+                  className="mt-2 min-h-[100px] border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[hsl(var(--foam))]"
                   placeholder="e.g., a cross-functional team to launch a new dashboard"
                 />
                 <p className="mt-1 text-xs text-muted-foreground">The work itself. Don&apos;t repeat the verb here.</p>
@@ -96,7 +96,7 @@ export default function BulletEditor({ bullet, onFieldChange }: Props) {
                   id={`bullet-${bullet.id}-impact`}
                   value={bullet.fields.impact}
                   onChange={(event) => onFieldChange(bullet.id, 'impact', event.target.value)}
-                  className="mt-2 min-h-[100px]"
+                  className="mt-2 min-h-[100px] border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[hsl(var(--foam))]"
                   placeholder="e.g., to increase adoption by 40% in Q1"
                 />
                 <p className="mt-1 text-xs text-muted-foreground">The result. Start with &quot;to&quot; or &quot;by&quot; to connect to the action.</p>

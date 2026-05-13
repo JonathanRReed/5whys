@@ -1,8 +1,8 @@
 import * as React from 'react';
 
-import { buildBullet, editBonus, fieldBonus } from './analysis';
+import { buildBullet } from './analysis';
 import { scoreBullet } from './scoring';
-import { decodeEntities, normalizeLine, uniqueId } from './text';
+import { decodeEntities, uniqueId } from './text';
 import type { BulletFields, BulletRecord, SignalReport, StoredResumeSession } from './types';
 
 const SESSION_STORAGE_KEY = 'resume-game-session-v2';
@@ -20,6 +20,12 @@ const EMPTY_SIGNAL_REPORT: SignalReport = {
   softSkills: [],
   isOptimalLength: false,
   lengthRecommendation: '',
+  weakWordCount: 0,
+  repetitiveVerbs: [],
+  impactCoverage: 0,
+  keywordDensity: [],
+  benchmarkScore: 0,
+  uniqueVerbCount: 0,
 };
 
 const EMPTY_SESSION: StoredResumeSession = {
@@ -49,6 +55,26 @@ function normalizeSignalReport(value: unknown): SignalReport {
     if (Array.isArray(v)) return v.filter((s): s is string => typeof s === 'string');
     return [];
   };
+  const toRepetitiveVerbArray = (v: unknown): { verb: string; count: number }[] => {
+    if (!Array.isArray(v)) return [];
+    return v
+      .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
+      .map((item) => ({
+        verb: typeof item.verb === 'string' ? item.verb : '',
+        count: typeof item.count === 'number' ? item.count : 0,
+      }))
+      .filter((item) => item.verb && item.count > 0);
+  };
+  const toKeywordDensityArray = (v: unknown): { word: string; count: number }[] => {
+    if (!Array.isArray(v)) return [];
+    return v
+      .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
+      .map((item) => ({
+        word: typeof item.word === 'string' ? item.word : '',
+        count: typeof item.count === 'number' ? item.count : 0,
+      }))
+      .filter((item) => item.word && item.count > 0);
+  };
   const visible = clamp(data.visible, 0, 100, 0);
   const numbers = clamp(data.numbers, 0, 999, 0);
   const verbs = clamp(data.verbs, 0, 999, 0);
@@ -66,6 +92,15 @@ function normalizeSignalReport(value: unknown): SignalReport {
     softSkills: toStrArray(data.softSkills),
     isOptimalLength: typeof data.isOptimalLength === 'boolean' ? data.isOptimalLength : false,
     lengthRecommendation: typeof data.lengthRecommendation === 'string' ? data.lengthRecommendation : '',
+    weakWordCount: clamp(data.weakWordCount, 0, 999, 0),
+    repetitiveVerbs: toRepetitiveVerbArray(data.repetitiveVerbs),
+    impactCoverage: clamp(data.impactCoverage, 0, 100, 0),
+    keywordDensity: toKeywordDensityArray(data.keywordDensity),
+    benchmarkScore: clamp(data.benchmarkScore, 0, 100, 0),
+    uniqueVerbCount: clamp(data.uniqueVerbCount, 0, 999, 0),
+    quantifiedBulletPercent: clamp(data.quantifiedBulletPercent, 0, 100, 0),
+    avgBulletLength: clamp(data.avgBulletLength, 0, 200, 0),
+    passiveVoicePercent: clamp(data.passiveVoicePercent, 0, 100, 0),
   };
 }
 
@@ -85,6 +120,10 @@ function normalizeStoredBullet(entry: unknown, index: number): BulletRecord | nu
   const baselineScore = typeof data.baselineScore === 'number' ? data.baselineScore : scoreBullet(original || improved);
   const improvedScore = typeof data.improvedScore === 'number' ? data.improvedScore : scoreBullet(improved);
   const id = typeof data.id === 'string' ? data.id : uniqueId('stored-bullet', index);
+  const toStrArray = (v: unknown): string[] => {
+    if (Array.isArray(v)) return v.filter((s): s is string => typeof s === 'string');
+    return [];
+  };
   return {
     id,
     original,
@@ -92,6 +131,9 @@ function normalizeStoredBullet(entry: unknown, index: number): BulletRecord | nu
     baselineScore,
     improved,
     improvedScore,
+    weakWords: toStrArray(data.weakWords),
+    hasImpact: typeof data.hasImpact === 'boolean' ? data.hasImpact : false,
+    isRepetitiveVerb: typeof data.isRepetitiveVerb === 'boolean' ? data.isRepetitiveVerb : false,
   };
 }
 

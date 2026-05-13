@@ -104,14 +104,14 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
           <button
             type="button"
             onClick={handleBatchAddToPacket}
-            className="rounded-lg bg-[hsl(var(--foam))] px-3 py-1.5 text-sm font-semibold text-[hsl(var(--background))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+            className="rounded-lg bg-[hsl(var(--foam))] px-4 py-2 text-sm font-semibold text-[hsl(var(--background))] transition-colors hover:bg-[hsl(var(--foam)/0.9)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
           >
             Add to Packet
           </button>
           <button
             type="button"
             onClick={() => setSelectedIds(new Set())}
-            className="rounded px-2 py-1 text-sm text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+            className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
           >
             Clear
           </button>
@@ -134,6 +134,7 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
               <div className="flex items-start gap-2">
                 <input
                   type="checkbox"
+                  aria-label={`Select story: ${story.trigger || 'Untitled'}`}
                   checked={selectedIds.has(story.id)}
                   onChange={e => {
                     const newSet = new Set(selectedIds);
@@ -167,7 +168,7 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
                         }
                       }}
                       aria-label={`Delete story: ${story.trigger || 'Untitled'}`}
-                      className="text-xs text-destructive hover:underline focus-visible:ring-2 focus-visible:ring-[hsl(var(--destructive))] focus-visible:ring-offset-2 rounded"
+                      className="rounded-lg border border-[hsl(var(--destructive)/0.3)] bg-[hsl(var(--destructive)/0.1)] px-3 py-1 text-xs text-destructive transition-colors hover:bg-[hsl(var(--destructive)/0.15)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--destructive))] focus-visible:ring-offset-2"
                     >
                       Delete
                     </button>

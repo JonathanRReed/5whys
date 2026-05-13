@@ -87,38 +87,126 @@ const resumeSchemas = [
       </ErrorBoundary>
     </section>
 
-    <section class="mx-auto grid w-full max-w-6xl gap-6 md:grid-cols-[1.1fr_0.9fr]">
-      <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6">
-        <h2 class="text-xl font-semibold text-foreground">When to use it</h2>
-        <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Use the Resume Bullet Game when a line sounds busy but does not yet prove impact. Paste one bullet at a time,
-          check whether it has a clear action, audience, result, and measure, then rewrite it until the evidence is easy
-          to scan. It is built for early drafts, final polish, and quick reviews before applications.
-        </p>
-      </article>
-      <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6">
-        <h2 class="text-xl font-semibold text-foreground">What the score means</h2>
-        <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-          The score is a drafting aid, not a hiring prediction. Strong bullets usually name the work, show scale, explain
-          the result, and avoid vague verbs. A lower score points to the next rewrite target so you can improve the line
-          without guessing what feels weak.
-        </p>
-      </article>
-      <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6 md:col-span-2">
-        <h2 class="text-xl font-semibold text-foreground">How to revise</h2>
-        <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Rewrite one part at a time. Start with the verb, add the system or audience, name the measurable result, then
-          trim words that do not help a recruiter understand scope. The best version should still sound like your work,
-          just clearer and easier to verify.
-        </p>
-        <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-          When numbers are not available, use concrete scope instead: the team affected, the process improved, the
-          decision made, or the risk reduced. Specific context usually reads stronger than inflated language.
-        </p>
-        <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Save the strongest rewrite, then compare it against the role before sending.
-        </p>
-      </article>
+    {/* Quick Stats */}
+    <section class="mx-auto grid w-full max-w-6xl grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Resume game quick stats">
+      <div class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] px-4 py-3">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--gold)/0.15)]">
+          <svg class="h-4 w-4 text-[hsl(var(--gold))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs font-semibold text-foreground">Bullet scoring 0-100</p>
+          <p class="text-[10px] text-muted-foreground">Instant feedback</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] px-4 py-3">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--gold)/0.15)]">
+          <svg class="h-4 w-4 text-[hsl(var(--gold))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs font-semibold text-foreground">Power verb detection</p>
+          <p class="text-[10px] text-muted-foreground">Action signal</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] px-4 py-3">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--gold)/0.15)]">
+          <svg class="h-4 w-4 text-[hsl(var(--gold))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs font-semibold text-foreground">File upload support</p>
+          <p class="text-[10px] text-muted-foreground">PDF, DOCX, TXT</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] px-4 py-3">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--gold)/0.15)]">
+          <svg class="h-4 w-4 text-[hsl(var(--gold))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.125 2.25h-4.5c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125v-9M10.125 2.25h.375a1.125 1.125 0 011.125 1.125v9M10.125 2.25c.621 0 1.125.504 1.125 1.125v9m-1.125-10.125h1.5" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs font-semibold text-foreground">Export improved version</p>
+          <p class="text-[10px] text-muted-foreground">Save best lines</p>
+        </div>
+      </div>
+    </section>
+
+    {/* Guide section with gradient orb */}
+    <section class="relative mx-auto w-full max-w-6xl" aria-labelledby="resume-guide-heading">
+      <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
+        <div class="gradient-orb-animated absolute -top-24 right-0 h-72 w-72 rounded-full bg-[radial-gradient(circle_at_top_right,hsl(var(--gold)/0.18)_0%,transparent_60%)] blur-3xl"></div>
+        <div class="gradient-orb-animated-reverse absolute bottom-0 -left-10 h-80 w-80 rounded-full bg-[radial-gradient(circle_at_bottom_left,hsl(var(--foam)/0.16)_0%,transparent_65%)] blur-[64px]"></div>
+      </div>
+
+      <div class="mb-8 text-center">
+        <span class="text-xs font-semibold uppercase tracking-[0.3em] text-[hsl(var(--gold))]">How it works</span>
+        <h2 id="resume-guide-heading" class="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Turn busy lines into proof</h2>
+      </div>
+
+      <div class="grid gap-6 md:grid-cols-[1.1fr_0.9fr]">
+        <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6">
+          <div class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[hsl(var(--gold)/0.15)]">
+            <svg class="h-5 w-5 text-[hsl(var(--gold))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold text-foreground">When to use it</h3>
+          <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+            Use the Resume Bullet Game when a line sounds busy but does not yet prove impact. Paste one bullet at a time,
+            check whether it has a clear action, audience, result, and measure, then rewrite it until the evidence is easy
+            to scan. It is built for early drafts, final polish, and quick reviews before applications.
+          </p>
+          <div class="mt-4 rounded-xl bg-[hsl(var(--gold)/0.08)] p-3">
+            <p class="text-xs text-[hsl(var(--gold))]">Pro tip: Start with your weakest bullet. Biggest gains hide where you are most vague.</p>
+          </div>
+        </article>
+
+        <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6">
+          <div class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[hsl(var(--gold)/0.15)]">
+            <svg class="h-5 w-5 text-[hsl(var(--gold))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold text-foreground">What the score means</h3>
+          <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+            The score is a drafting aid, not a hiring prediction. Strong bullets usually name the work, show scale, explain
+            the result, and avoid vague verbs. A lower score points to the next rewrite target so you can improve the line
+            without guessing what feels weak.
+          </p>
+          <div class="mt-4 rounded-xl bg-[hsl(var(--gold)/0.08)] p-3">
+            <p class="text-xs text-[hsl(var(--gold))]">Pro tip: A score of 80+ usually means recruiters can scan the bullet in under two seconds.</p>
+          </div>
+        </article>
+
+        <article class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6 md:col-span-2">
+          <div class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[hsl(var(--gold)/0.15)]">
+            <svg class="h-5 w-5 text-[hsl(var(--gold))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold text-foreground">How to revise</h3>
+          <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+            Rewrite one part at a time. Start with the verb, add the system or audience, name the measurable result, then
+            trim words that do not help a recruiter understand scope. The best version should still sound like your work,
+            just clearer and easier to verify.
+          </p>
+          <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+            When numbers are not available, use concrete scope instead: the team affected, the process improved, the
+            decision made, or the risk reduced. Specific context usually reads stronger than inflated language.
+          </p>
+          <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+            Save the strongest rewrite, then compare it against the role before sending.
+          </p>
+          <div class="mt-4 rounded-xl bg-[hsl(var(--gold)/0.08)] p-3">
+            <p class="text-xs text-[hsl(var(--gold))]">Pro tip: Read the bullet out loud. If it sounds like a job description, it is probably too vague.</p>
+          </div>
+        </article>
+      </div>
     </section>
 
   </div>

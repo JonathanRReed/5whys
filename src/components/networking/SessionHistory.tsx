@@ -10,6 +10,24 @@ type Props = {
   onRemoveSession: (id: string) => void;
 };
 
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-10 text-center">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[hsl(var(--overlay)/0.4)]">
+        <svg className="h-6 w-6 text-[hsl(var(--gold))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <p className="mt-3 text-sm font-medium text-[hsl(var(--foreground))]">No saved sessions yet</p>
+      <p className="mt-1 max-w-md text-sm text-[hsl(var(--muted-foreground))]">
+        Run a practice rep and tap{' '}
+        <strong className="font-semibold text-[hsl(var(--foreground))]">Save Session</strong> to begin your history.
+        Revisit saved runs to spot growth over time.
+      </p>
+    </div>
+  );
+}
+
 export default function SessionHistory({ sessions, onExport, onClearHistory, onRemoveSession }: Props) {
   return (
     <section className="w-full space-y-6">
@@ -20,7 +38,7 @@ export default function SessionHistory({ sessions, onExport, onClearHistory, onR
           <Button
             type="button"
             variant="outline"
-            className="border-[hsl(var(--border)/0.6)] text-[hsl(var(--foreground))]"
+            className="border-[hsl(var(--border)/0.6)] text-[hsl(var(--foreground))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
             onClick={onExport}
           >
             Export sessions JSON
@@ -28,7 +46,7 @@ export default function SessionHistory({ sessions, onExport, onClearHistory, onR
           <Button
             type="button"
             variant="ghost"
-            className="text-[hsl(var(--destructive))] hover:text-[hsl(var(--destructive))]"
+            className="text-[hsl(var(--destructive))] hover:text-[hsl(var(--destructive))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
             onClick={onClearHistory}
           >
             Clear history
@@ -38,10 +56,8 @@ export default function SessionHistory({ sessions, onExport, onClearHistory, onR
 
       {sessions.length === 0 ? (
         <Card className="border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.3)]">
-          <CardContent className="py-10 text-center text-[hsl(var(--muted-foreground))]">
-            No saved sessions yet. Run a practice rep and tap{' '}
-            <strong className="font-semibold text-[hsl(var(--foreground))]">Save Session</strong> to begin your history.
-            Revisit saved runs to spot growth over time.
+          <CardContent>
+            <EmptyState />
           </CardContent>
         </Card>
       ) : (
@@ -91,7 +107,7 @@ export default function SessionHistory({ sessions, onExport, onClearHistory, onR
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full border-[hsl(var(--border))] text-[hsl(var(--foreground))] sm:w-auto"
+                    className="w-full border-[hsl(var(--border))] text-[hsl(var(--foreground))] sm:w-auto focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
                     onClick={() => onRemoveSession(session.id)}
                   >
                     Delete

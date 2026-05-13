@@ -87,7 +87,7 @@ export default function HistoryPanel({
               variant="outline"
               onClick={onExportHistory}
               disabled={history.length === 0}
-              className="h-10 rounded-xl border-[hsl(var(--border)/0.5)] bg-transparent text-[hsl(var(--foreground))] hover:bg-[hsl(var(--overlay)/0.1)]"
+              className="h-10 rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
             >
               Export all snapshots
             </Button>
@@ -96,7 +96,7 @@ export default function HistoryPanel({
               variant="ghost"
               onClick={onClearHistory}
               disabled={history.length === 0}
-              className="h-10 rounded-xl border border-transparent text-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.08)]"
+              className="h-10 rounded-lg border border-[hsl(var(--destructive)/0.3)] bg-[hsl(var(--destructive)/0.1)] px-4 py-2 text-sm text-destructive transition-colors hover:bg-[hsl(var(--destructive)/0.15)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--destructive))] focus-visible:ring-offset-2"
             >
               Clear history
             </Button>
@@ -131,7 +131,7 @@ export default function HistoryPanel({
                     type="button"
                     size="sm"
                     onClick={() => onRestoreSnapshot(entry)}
-                    className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.1)] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--overlay)/0.2)]"
+                    className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
                   >
                     Load snapshot
                   </Button>
@@ -140,7 +140,7 @@ export default function HistoryPanel({
                     size="sm"
                     variant="outline"
                     onClick={() => onExportSnapshot(entry)}
-                    className="rounded-lg border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--overlay)/0.1)]"
+                    className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
                   >
                     Export
                   </Button>
@@ -149,7 +149,7 @@ export default function HistoryPanel({
                     size="sm"
                     variant="ghost"
                     onClick={() => onDeleteSnapshot(entry.id)}
-                    className="rounded-lg border border-transparent text-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.08)]"
+                    className="rounded-lg border border-[hsl(var(--destructive)/0.3)] bg-[hsl(var(--destructive)/0.1)] px-4 py-2 text-sm text-destructive transition-colors hover:bg-[hsl(var(--destructive)/0.15)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--destructive))] focus-visible:ring-offset-2"
                   >
                     Delete
                   </Button>

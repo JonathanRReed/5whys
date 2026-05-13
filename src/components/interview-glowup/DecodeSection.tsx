@@ -106,8 +106,8 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
         <p className="mb-1 text-xs text-muted-foreground">Paste the entire JD — we’ll auto-extract bullets and suggest skill tags.</p>
         <textarea id="jd-text" value={rawJdText} onChange={e => setRawJdText(e.target.value)} placeholder="Paste the entire job description here. Include bullet points, requirements, responsibilities..." rows={6} className={`${inputClass} md:rows-[8]`} />
         <div className="mt-2 flex gap-2">
-          <button type="button" onClick={parseJD} className="rounded-lg bg-[hsl(var(--foam))] px-4 py-2.5 text-sm font-semibold text-[hsl(var(--background))] transition-colors hover:bg-[hsl(var(--foam)/0.9)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2">Parse Bullets</button>
-          <button type="button" onClick={saveRole} disabled={!jobTitle.trim()} aria-disabled={!jobTitle.trim()} className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2">Save Role</button>
+          <button type="button" onClick={parseJD} className="rounded-lg bg-[hsl(var(--foam))] px-4 py-2 text-sm font-semibold text-[hsl(var(--background))] transition-colors hover:bg-[hsl(var(--foam)/0.9)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2">Parse Bullets</button>
+          <button type="button" onClick={saveRole} disabled={!jobTitle.trim()} aria-disabled={!jobTitle.trim()} className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2">Save Role</button>
         </div>
       </div>
 
@@ -134,7 +134,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                   <option value="">Bulk tag...</option>
                   {SKILL_BANK.map(skill => (<option key={skill.id} value={skill.id}>{skill.name}</option>))}
                 </select>
-                <button type="button" onClick={handleBulkIgnore} className="rounded-lg border border-[hsl(var(--destructive)/0.3)] bg-[hsl(var(--destructive)/0.1)] px-2 py-1 text-sm text-destructive focus-visible:ring-2 focus-visible:ring-[hsl(var(--destructive))] focus-visible:ring-offset-2">Ignore</button>
+                <button type="button" onClick={handleBulkIgnore} className="rounded-lg border border-[hsl(var(--destructive)/0.3)] bg-[hsl(var(--destructive)/0.1)] px-4 py-2 text-sm text-destructive transition-colors hover:bg-[hsl(var(--destructive)/0.15)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--destructive))] focus-visible:ring-offset-2">Ignore</button>
               </div>
             )}
           </div>
@@ -173,7 +173,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                         {bullet.suggestion.slice(0, 2).map(s => (
                           <button key={s.skillId} type="button" onClick={() => {
                             setBullets(bullets.map(b => b.id === bullet.id ? { ...b, primarySkillId: s.skillId } : b));
-                          }} className="rounded-full bg-[hsl(var(--foam)/0.15)] px-2 py-0.5 text-xs text-[hsl(var(--foam))] hover:bg-[hsl(var(--foam)/0.25)]">
+                          }} className="rounded-full bg-[hsl(var(--foam)/0.15)] px-2 py-0.5 text-xs text-[hsl(var(--foam))] transition-colors hover:bg-[hsl(var(--foam)/0.25)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2">
                             {getSkillName(s.skillId)} ({s.confidence}%)
                           </button>
                         ))}
@@ -181,7 +181,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                     )}
                     <button type="button" onClick={() => {
                       setBullets(bullets.map(b => b.id === bullet.id ? { ...b, status: b.status === 'ignored' ? 'active' : 'ignored' } : b));
-                    }} className="ml-auto rounded px-1 py-0.5 text-xs text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2">
+                    }} className="ml-auto rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-1 text-xs text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2">
                       {bullet.status === 'ignored' ? 'Restore' : 'Ignore'}
                     </button>
                   </div>
