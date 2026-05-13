@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { cn } from '../../lib/utils';
+import { ClockIcon, TargetIcon, ChartIcon, CheckIcon, XIcon } from '../interview-glowup/icons';
 
 interface SectionProps {
     title: string;
@@ -47,7 +48,7 @@ export default function InterviewGlowUpAdvice() {
         <article className="space-y-12 rounded-[2.5rem] border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] px-6 py-12 sm:px-10 sm:py-14">
             {/* v1.3 Positioning Banner */}
             <div className="flex items-center gap-3 rounded-2xl border border-[hsl(var(--gold)/0.35)] bg-[hsl(var(--gold)/0.08)] px-5 py-4">
-                <span className="text-2xl" role="img" aria-label="clock">⏱</span>
+                <ClockIcon className="h-6 w-6 flex-shrink-0 text-[hsl(var(--gold))]" />
                 <p className="text-sm font-medium text-foreground sm:text-base">
                     <strong>Got an interview tomorrow?</strong> Build your cheat sheet in 20 minutes.
                 </p>
@@ -78,7 +79,7 @@ export default function InterviewGlowUpAdvice() {
             <Section title="Why interviews feel hard">
                 <Callout variant="insight">
                     <p className="font-medium">
-                        🧠 The "exam mindset" is your enemy. When you think "I'm being tested," your brain goes into
+                        The "exam mindset" is your enemy. When you think "I'm being tested," your brain goes into
                         survival mode. You forget details, speak too fast, and struggle to think clearly.
                     </p>
                 </Callout>
@@ -102,7 +103,7 @@ export default function InterviewGlowUpAdvice() {
                 </p>
                 <Callout variant="default">
                     <p className="font-medium">
-                        ✅ The Three Checks Every Interviewer Makes:
+                        The Three Checks Every Interviewer Makes:
                     </p>
                     <ol className="mt-2 list-inside list-decimal space-y-1 pl-2">
                         <li><strong>Can you do the job?</strong> (Skills & experience)</li>
@@ -124,11 +125,11 @@ export default function InterviewGlowUpAdvice() {
                 </p>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                     <div className="rounded-xl border border-[hsl(var(--destructive)/0.3)] bg-[hsl(var(--destructive)/0.06)] p-4">
-                        <p className="text-sm font-semibold text-destructive">❌ Don't</p>
+                        <p className="flex items-center gap-1.5 text-sm font-semibold text-destructive"><XIcon className="h-3.5 w-3.5" /> Don't</p>
                         <p className="mt-1 text-sm">Memorize scripts and deliver monologues</p>
                     </div>
                     <div className="rounded-xl border border-[hsl(var(--foam)/0.3)] bg-[hsl(var(--foam)/0.06)] p-4">
-                        <p className="text-sm font-semibold text-[hsl(var(--foam))]">✓ Do</p>
+                        <p className="flex items-center gap-1.5 text-sm font-semibold text-[hsl(var(--foam))]"><CheckIcon className="h-3.5 w-3.5" /> Do</p>
                         <p className="mt-1 text-sm">Prepare building blocks, then respond naturally</p>
                     </div>
                 </div>
@@ -142,7 +143,7 @@ export default function InterviewGlowUpAdvice() {
                 </p>
                 <Callout variant="tip">
                     <p className="font-medium">
-                        💡 Example: "Own the end-to-end development lifecycle for key features"
+                        Example: "Own the end-to-end development lifecycle for key features"
                     </p>
                     <p className="mt-2 text-sm">
                         <strong>Skills:</strong> Ownership, Technical Execution, Project Management
@@ -163,13 +164,13 @@ export default function InterviewGlowUpAdvice() {
                 </p>
                 <div className="mt-4 space-y-4">
                     <div className="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] p-4">
-                        <p className="font-semibold text-foreground">🎯 Play (What You Did)</p>
+                        <p className="flex items-center gap-2 font-semibold text-foreground"><TargetIcon className="h-4 w-4 text-[hsl(var(--foam))]" /> Play (What You Did)</p>
                         <p className="mt-1 text-sm text-muted-foreground">
                             The specific action you took. Keep it concise—2-3 sentences max.
                         </p>
                     </div>
                     <div className="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] p-4">
-                        <p className="font-semibold text-foreground">📊 Proof (The Receipt)</p>
+                        <p className="flex items-center gap-2 font-semibold text-foreground"><ChartIcon className="h-4 w-4 text-[hsl(var(--iris))]" /> Proof (The Receipt)</p>
                         <p className="mt-1 text-sm text-muted-foreground">
                             The measurable result. Numbers, time saved, revenue impact, or specific praise you received.
                         </p>

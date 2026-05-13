@@ -17,18 +17,18 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
-    "@astrojs/node": "^9.5.2",
-    "@astrojs/sitemap": "^3.7.0",
+    "@astrojs/node": "^10.1.0",
+    "@astrojs/sitemap": "^3.7.2",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-slot": "^1.2.4",
-    "astro": "^5.17.1",
+    "astro": "^6.3.1",
     "html-to-image": "^1.11.13",
     "jszip": "^3.10.1",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
   },
   "devDependencies": {
-    "@astrojs/react": "^4.4.2",
+    "@astrojs/react": "^5.0.4",
     "@astrojs/tailwind": "^6.0.2",
     "@cloudflare/workers-types": "^4.20260511.1",
     "@eslint/js": "^10.0.1",
@@ -39,8 +39,8 @@
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.59.3",
     "@typescript-eslint/parser": "^8.59.3",
-    "@vitejs/plugin-react": "4.3.4",
-    "autoprefixer": "^10.4.24",
+    "@vitejs/plugin-react": "6.0.1",
+    "autoprefixer": "^10.5.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "eslint": "^10.3.0",
@@ -52,16 +52,22 @@
     "globals": "^17.6.0",
     "jsdom": "^29.1.1",
     "playwright": "^1.60.0",
-    "postcss": "^8.5.6",
+    "postcss": "^8.5.14",
     "prettier": "^3.8.3",
     "prettier-plugin-astro": "^0.14.1",
-    "tailwind-merge": "^3.4.0",
+    "tailwind-merge": "^3.6.0",
     "tailwindcss": "^3.4.19",
     "tailwindcss-animate": "^1.0.7",
-    "typescript": "^6.0.3",
+    "typescript": "^5.8.3",
     "vitest": "^4.1.6"
   },
   "overrides": {
-    "mdast-util-to-hast": ">=13.2.1"
+    "mdast-util-to-hast": ">=13.2.1",
+    "smol-toml": ">=1.6.1",
+    "yaml": ">=2.8.3",
+    "rollup": ">=4.59.0",
+    "picomatch": ">=2.3.2",
+    "postcss": ">=8.5.10",
+    "vitest": "^5.0.0-beta.2"
   }
 }

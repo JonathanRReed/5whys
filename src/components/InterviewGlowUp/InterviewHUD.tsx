@@ -2,6 +2,7 @@ import * as React from 'react';
 import { cn } from '../../lib/utils';
 import type { Story, InterviewPacket, DecodedRole } from '../../lib/glowup-store';
 import { getSkillName } from '../../lib/glowup-banks';
+import { ChartIcon, WarningIcon } from '../interview-glowup/icons';
 
 // ============================================================================
 // Types
@@ -190,7 +191,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
                     {panicMode && packet.panicAnswer && (
                         <div className="mb-6 rounded-xl border-2 border-amber-500/50 bg-amber-500/10 p-6">
                             <div className="mb-2 flex items-center gap-2">
-                                <span className="text-2xl">🆘</span>
+                                <WarningIcon className="h-6 w-6 text-amber-400" />
                                 <span className="text-lg font-bold text-amber-400">PANIC ANSWER</span>
                             </div>
                             <p className="text-lg leading-relaxed text-white">{packet.panicAnswer}</p>
@@ -237,7 +238,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
                                                 </p>
                                                 <p className="mt-1 text-white/70">{story.hook}</p>
                                                 <p className="mt-2 text-sm font-medium text-cyan-400">
-                                                    📊 {story.proofSnippet}
+                                                    <ChartIcon className="h-4 w-4 inline" /> {story.proofSnippet}
                                                 </p>
                                             </div>
                                             <div className="text-white/30">
@@ -327,7 +328,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
                         onClick={() => setPanicMode(true)}
                         className="flex items-center gap-2 text-sm text-amber-400/70 hover:text-amber-400"
                     >
-                        <span>🆘</span>
+                        <WarningIcon className="h-4 w-4" />
                         <span>Press <kbd className="rounded bg-white/10 px-1.5 py-0.5 text-xs">P</kbd> for panic answer</span>
                     </button>
                 </footer>
