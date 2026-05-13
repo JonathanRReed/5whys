@@ -11,7 +11,7 @@ export default function ResumeHeader({ showHeader = true }: Props) {
       <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--foam))]">Career Lab</p>
       <h1 className="text-4xl font-semibold tracking-tight">Resume Game</h1>
       <p className="mx-auto max-w-2xl text-sm text-muted-foreground">
-        Simulate an eight-second recruiter scan, highlight signal words, and systematically rewrite every bullet into a quantified, high-signal statement.
+        Simulate an 8-second recruiter scan to surface power verbs and numbers. Rewrite every bullet into a quantified, high-impact statement that stands out in a quick glance.
       </p>
       <QuickStartTiles
         className="max-w-4xl"

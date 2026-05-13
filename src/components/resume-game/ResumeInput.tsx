@@ -69,10 +69,20 @@ export default function ResumeInput({
             />
           </div>
           <div className="flex flex-col gap-2 w-full md:w-auto md:flex-row">
-            <Button type="button" variant="ghost" className="w-full md:w-auto hover:bg-[hsl(var(--overlay)/0.3)]" onClick={onClear}>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full md:w-auto hover:bg-[hsl(var(--overlay)/0.3)]"
+              onClick={onClear}
+            >
               Clear
             </Button>
-            <Button type="button" variant="outline" className="w-full md:w-auto" onClick={onLoadSample}>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full md:w-auto"
+              onClick={onLoadSample}
+            >
               Try sample
             </Button>
           </div>
@@ -81,7 +91,7 @@ export default function ResumeInput({
           aria-label="Paste resume text"
           value={resumeText}
           onChange={(event) => onTextChange(event.target.value)}
-          placeholder="• Led a cross-functional pod launching...\n• Built an internal dashboard that..."
+          placeholder={SAMPLE_RESUME_TEXT}
           className="min-h-[220px]"
         />
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
@@ -114,15 +124,27 @@ export default function ResumeInput({
         )}
         {(isScanning || scanProgress > 0) && (
           <div className="space-y-2">
-            <div className="h-2 w-full overflow-hidden rounded-full border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)]">
+            <div
+              className="h-2.5 w-full overflow-hidden rounded-full border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)]"
+              role="progressbar"
+              aria-valuenow={scanProgress}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Resume analysis progress"
+            >
               <div
-                className="h-full rounded-full bg-gradient-to-r from-[hsl(var(--foam))] via-[hsl(var(--iris))] to-[hsl(var(--love))] transition-all"
+                className="h-full rounded-full bg-gradient-to-r from-[hsl(var(--foam))] via-[hsl(var(--iris))] to-[hsl(var(--love))] shadow-[0_0_10px_hsl(var(--foam)/0.5)]"
                 style={{ width: `${scanProgress}%` }}
               />
             </div>
-            <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-              {isScanning ? `Analyzing • ${scanProgress}%` : 'Analysis ready'}
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                {isScanning ? `Analyzing • ${scanProgress}%` : 'Analysis ready'}
+              </p>
+              {isScanning && (
+                <span className="inline-block h-2 w-2 rounded-full bg-[hsl(var(--foam))] animate-pulse" />
+              )}
+            </div>
           </div>
         )}
         {status ? (

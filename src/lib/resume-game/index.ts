@@ -8,6 +8,10 @@ export {
   createBulletRecord,
 } from './analysis';
 export { scoreBullet, scoreLabel } from './scoring';
+export { analyzeReadability } from './readability';
+export { analyzeResumeLength, detectSections } from './length';
+export { generateBulletSuggestions, signalGrade } from './suggestions';
+export { extractSkills } from './constants';
 export {
   highlightResume,
   countPowerVerbs,
