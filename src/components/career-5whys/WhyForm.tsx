@@ -64,6 +64,7 @@ export default function WhyForm({
                 type="button"
                 variant="ghost"
                 onClick={() => onToggleHint(index)}
+                aria-expanded={isHintVisible}
                 className="w-full justify-between border border-[hsl(var(--border)/0.5)] bg-transparent text-[hsl(var(--foreground))] hover:bg-[hsl(var(--overlay)/0.1)]"
               >
                 Show example reasoning

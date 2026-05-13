@@ -29,7 +29,7 @@ export default function QuickStartTiles({
           key={item.title}
           className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.22)] p-4 text-sm text-[hsl(var(--muted-foreground))]"
         >
-          <p className={cn('text-xs font-semibold uppercase tracking-[0.28em]', accentClassName)}>{item.title}</p>
+          <h3 className={cn('text-xs font-semibold uppercase tracking-[0.28em]', accentClassName)}>{item.title}</h3>
           <p className="mt-2 leading-relaxed">{item.body}</p>
         </div>
       ))}

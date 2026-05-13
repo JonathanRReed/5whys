@@ -163,11 +163,18 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     setScanComplete(false);
     const start = performance.now();
 
+    let frameCount = 0;
     const tick = (now: number) => {
+      frameCount++;
+      if (frameCount % 3 !== 0) {
+        frameRef.current = requestAnimationFrame(tick);
+        return;
+      }
       const elapsed = now - start;
       const nextProgress = Math.min(100, Math.round((elapsed / SCAN_DURATION) * 100));
       setScanProgress(nextProgress);
       if (elapsed >= SCAN_DURATION) {
+        setScanProgress(100);
         setIsScanning(false);
         setScanComplete(true);
         analyzeResume();

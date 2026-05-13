@@ -42,6 +42,7 @@ export default function ScenarioSelector({
               return (
                 <button
                   key={scenario.id}
+                  type="button"
                   onClick={() => onScenarioChange(scenario.id)}
                   className={`rounded-xl border px-4 py-3 text-left shadow-sm transition ${
                     isActive

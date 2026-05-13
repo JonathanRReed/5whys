@@ -89,21 +89,21 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Job Title</label>
-          <input type="text" value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="e.g., Senior Software Engineer" className={inputClass} />
+          <label htmlFor="job-title" className="mb-1 block text-sm font-medium text-foreground">Job Title</label>
+          <input id="job-title" type="text" value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="e.g., Senior Software Engineer" className={inputClass} />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Company</label>
-          <input type="text" value={company} onChange={e => setCompany(e.target.value)} placeholder="e.g., Acme Corp" className={inputClass} />
+          <label htmlFor="company" className="mb-1 block text-sm font-medium text-foreground">Company</label>
+          <input id="company" type="text" value={company} onChange={e => setCompany(e.target.value)} placeholder="e.g., Acme Corp" className={inputClass} />
         </div>
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium text-foreground">Job Description URL (optional)</label>
-        <input type="url" value={jdUrl} onChange={e => setJdUrl(e.target.value)} placeholder="https://..." className={inputClass} />
+        <label htmlFor="jd-url" className="mb-1 block text-sm font-medium text-foreground">Job Description URL (optional)</label>
+        <input id="jd-url" type="url" value={jdUrl} onChange={e => setJdUrl(e.target.value)} placeholder="https://..." className={inputClass} />
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium text-foreground">Paste Full Job Description</label>
-        <textarea value={rawJdText} onChange={e => setRawJdText(e.target.value)} placeholder="Paste the entire job description here. Include bullet points, requirements, responsibilities..." rows={8} className={inputClass} />
+        <label htmlFor="jd-text" className="mb-1 block text-sm font-medium text-foreground">Paste Full Job Description</label>
+        <textarea id="jd-text" value={rawJdText} onChange={e => setRawJdText(e.target.value)} placeholder="Paste the entire job description here. Include bullet points, requirements, responsibilities..." rows={8} className={inputClass} />
         <div className="mt-2 flex gap-2">
           <button type="button" onClick={parseJD} className="rounded-lg bg-[hsl(var(--foam))] px-4 py-2 text-sm font-semibold text-[hsl(var(--background))] transition-colors hover:bg-[hsl(var(--foam)/0.9)]">Parse Bullets</button>
           <button type="button" onClick={saveRole} disabled={!jobTitle.trim()} className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] disabled:opacity-50">Save Role</button>
@@ -117,7 +117,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
             {selectedBullets.size > 0 && (
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">{selectedBullets.size} selected</span>
-                <select onChange={e => { if (e.target.value) handleBulkTag(e.target.value); }} className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-2 py-1 text-sm text-foreground" defaultValue="">
+                <select aria-label="Bulk tag selected bullets" onChange={e => { if (e.target.value) handleBulkTag(e.target.value); }} className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-2 py-1 text-sm text-foreground" defaultValue="">
                   <option value="">Bulk tag...</option>
                   {SKILL_BANK.map(skill => (<option key={skill.id} value={skill.id}>{skill.name}</option>))}
                 </select>
@@ -135,7 +135,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                     ? 'border-[hsl(var(--gold)/0.3)] bg-[hsl(var(--gold)/0.05)]'
                     : 'border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.2)]'
               )}>
-                <input type="checkbox" checked={selectedBullets.has(bullet.id)} onChange={e => {
+                <input type="checkbox" aria-label={`Select bullet: ${bullet.text.substring(0, 50)}`} checked={selectedBullets.has(bullet.id)} onChange={e => {
                   const newSet = new Set(selectedBullets);
                   if (e.target.checked) newSet.add(bullet.id); else newSet.delete(bullet.id);
                   setSelectedBullets(newSet);
