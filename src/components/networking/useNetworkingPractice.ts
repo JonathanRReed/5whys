@@ -198,7 +198,7 @@ export function useNetworkingPractice() {
     };
     const success = saveSession(session);
     if (!success) {
-      setStorageNotice('Browser storage is full-export or clear past sessions to keep saving.');
+      setStorageNotice('Browser storage is full. Export or clear past sessions to keep saving.');
       return;
     }
     setSessions((prev) => [session, ...prev].slice(0, SESSION_LIMIT));
@@ -228,7 +228,7 @@ export function useNetworkingPractice() {
     anchor.download = filename;
     anchor.click();
     URL.revokeObjectURL(url);
-    setStorageNotice('Sessions exported-check your downloads.');
+    setStorageNotice('Sessions exported. Check your downloads.');
   }, [sessions]);
 
   const clearSessionHistory = React.useCallback(() => {

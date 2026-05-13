@@ -188,9 +188,15 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
   };
 
   const handleFileUpload = async (file: File) => {
-    const text = await file.text();
-    setResumeTextValue(decodeEntities(text));
-    setNeedsRescan(true);
+    try {
+      const { extractTextFromFile } = await import('../lib/resume-game/extractors');
+      const text = await extractTextFromFile(file);
+      setResumeTextValue(decodeEntities(text));
+      setNeedsRescan(true);
+      setStatus(`${file.name} loaded. Run the scan to see suggestions.`);
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : 'Failed to read file.');
+    }
   };
 
   const handleTextChange = (value: string) => {

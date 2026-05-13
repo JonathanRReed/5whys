@@ -14,7 +14,7 @@ import { CheckIcon } from './icons';
 
 type Props = {
   data: GlowUpData;
-  setData: React.Dispatch<React.SetStateAction<GlowUpData | null>>;
+  setData: React.Dispatch<React.SetStateAction<GlowUpData>>;
   currentPacket: InterviewPacket | undefined;
 };
 
@@ -49,14 +49,16 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
     if (!currentPacket || selectedIds.size === 0) return;
 
     const newIds = Array.from(selectedIds).filter(id => !currentPacket.topStoryIds.includes(id));
-    setData(updatePacket(data, currentPacket.id, {
+    const updatedData = updatePacket(data, currentPacket.id, {
       topStoryIds: [...currentPacket.topStoryIds, ...newIds],
-    }));
-
-    const updatedStories = data.stories.map(s =>
-      newIds.includes(s.id) ? { ...s, lastUsedAt: Date.now() } : s
-    );
-    setData(prev => prev ? { ...prev, stories: updatedStories } : prev);
+    });
+    const finalData = {
+      ...updatedData,
+      stories: updatedData.stories.map(s =>
+        newIds.includes(s.id) ? { ...s, lastUsedAt: Date.now() } : s
+      ),
+    };
+    setData(finalData);
     setSelectedIds(new Set());
   };
 

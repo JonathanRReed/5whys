@@ -48,7 +48,7 @@ export default function ResumeInput({
       <CardHeader className="space-y-4">
         <CardTitle className="text-2xl">Upload or paste resume</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Markdown or plain text works best. Bullets starting with •, -, or * are auto-detected.
+          Supports .txt, .md, .docx, and .pdf. Bullets starting with •, -, or * are auto-detected.
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -60,7 +60,7 @@ export default function ResumeInput({
             <Input
               id="resume-upload"
               type="file"
-              accept=".txt,.md,.markdown,.text"
+              accept=".txt,.md,.markdown,.text,.docx,.pdf"
               onChange={handleFileChange}
               className="w-full md:w-auto"
             />

@@ -13,13 +13,9 @@ import VaultSection from '../interview-glowup/VaultSection';
 import PacketSection from '../interview-glowup/PacketSection';
 
 export default function InterviewGlowUpWorkspace() {
-  const [data, setData] = React.useState<GlowUpData | null>(null);
+  const [data, setData] = React.useState<GlowUpData>(() => loadData());
   const [activeTab, setActiveTab] = React.useState<Tab>('decode');
   const [showHUD, setShowHUD] = React.useState(false);
-
-  React.useEffect(() => {
-    setData(loadData());
-  }, []);
 
   React.useEffect(() => {
     if (data) {
