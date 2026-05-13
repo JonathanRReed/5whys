@@ -65,19 +65,19 @@ export default function SessionHistory({ sessions, onExport, onClearHistory, onR
                     ))}
                   </div>
                   {session.reflection?.humanNote ? (
-                    <p className="mt-3 text-sm text-[#C4A7E7]">&quot;{session.reflection.humanNote}&quot;</p>
+                    <p className="mt-3 text-sm text-[hsl(var(--iris))]">&quot;{session.reflection.humanNote}&quot;</p>
                   ) : null}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-                  <div className="min-w-[120px] flex-1 text-center">
-                    <div className="text-3xl font-bold text-[#9CCFD8]">
+                  <div className="sm:min-w-[120px] flex-1 text-center">
+                    <div className="text-3xl font-bold text-[hsl(var(--foam))]">
                       {session.attempts[0]?.durationSeconds ? (session.attempts[0].durationSeconds / 60).toFixed(1) : '0.0'}m
                     </div>
-                    <div className="text-xs uppercase tracking-[0.2em] text-[#908CAA]">Time</div>
+                    <div className="text-xs uppercase tracking-[0.2em] text-[hsl(var(--muted-foreground))]">Time</div>
                   </div>
-                  <div className="min-w-[120px] flex-1 text-center">
-                    <div className="text-3xl font-bold text-[#F6C177]">
+                  <div className="sm:min-w-[120px] flex-1 text-center">
+                    <div className="text-3xl font-bold text-[hsl(var(--gold))]">
                       {(
                         (session.ratings.confidence +
                           session.ratings.clarity +
@@ -86,11 +86,12 @@ export default function SessionHistory({ sessions, onExport, onClearHistory, onR
                         4
                       ).toFixed(1)}
                     </div>
-                    <div className="text-xs uppercase tracking-[0.2em] text-[#908CAA]">Avg</div>
+                    <div className="text-xs uppercase tracking-[0.2em] text-[hsl(var(--muted-foreground))]">Avg</div>
                   </div>
                   <Button
+                    type="button"
                     variant="outline"
-                    className="w-full border-[#6E6A86] text-[#E0DEF4] sm:w-auto"
+                    className="w-full border-[hsl(var(--border))] text-[hsl(var(--foreground))] sm:w-auto"
                     onClick={() => onRemoveSession(session.id)}
                   >
                     Delete

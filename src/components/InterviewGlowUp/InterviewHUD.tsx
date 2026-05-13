@@ -30,22 +30,38 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
     const containerRef = React.useRef<HTMLDivElement>(null);
 
     // Get packet stories
-    const packetStories = stories.filter(s => packet.topStoryIds.includes(s.id));
+    const topStoryIdSet = React.useMemo(() => new Set(packet.topStoryIds), [packet.topStoryIds]);
+    const packetStories = stories.filter(s => topStoryIdSet.has(s.id));
+
+    // Pre-compute lowercase search index
+    const searchIndex = React.useMemo(() => {
+        return stories.map(s => ({
+            id: s.id,
+            trigger: s.trigger.toLowerCase(),
+            hook: s.hook.toLowerCase(),
+            play: s.play.toLowerCase(),
+            proof: s.proof.toLowerCase(),
+            skill: getSkillName(s.primarySkillId).toLowerCase(),
+            tags: s.tags.map(t => t.toLowerCase()),
+        }));
+    }, [stories]);
 
     // Filter stories by search
     const displayStories = React.useMemo(() => {
         if (!searchQuery.trim()) return packetStories;
 
         const lower = searchQuery.toLowerCase();
-        return stories.filter(s =>
-            s.trigger.toLowerCase().includes(lower) ||
-            s.hook.toLowerCase().includes(lower) ||
-            s.play.toLowerCase().includes(lower) ||
-            s.proof.toLowerCase().includes(lower) ||
-            getSkillName(s.primarySkillId).toLowerCase().includes(lower) ||
-            s.tags.some(t => t.toLowerCase().includes(lower))
-        );
-    }, [searchQuery, packetStories, stories]);
+        return packetStories.filter(s => {
+            const idx = searchIndex.find(i => i.id === s.id);
+            if (!idx) return false;
+            return idx.trigger.includes(lower) ||
+                idx.hook.includes(lower) ||
+                idx.play.includes(lower) ||
+                idx.proof.includes(lower) ||
+                idx.skill.includes(lower) ||
+                idx.tags.some(t => t.includes(lower));
+        });
+    }, [packetStories, searchQuery, searchIndex]);
 
     // Focus management
     React.useEffect(() => {
@@ -129,14 +145,14 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
         <div
             ref={containerRef}
             tabIndex={0}
-            className="fixed inset-0 z-50 flex flex-col bg-[#0a0a0c] text-white outline-none print:relative print:bg-white print:text-black"
+            className="fixed inset-0 z-50 flex flex-col bg-[hsl(var(--background))] text-[hsl(var(--foreground))] outline-none print:relative print:bg-white print:text-black"
         >
             {/* Top Bar */}
-            <header className="flex items-center justify-between border-b border-white/10 bg-[#111114] px-6 py-4 print:bg-gray-100 print:border-gray-300">
+            <header className="flex items-center justify-between border-b border-[hsl(var(--border)/0.4)] bg-[hsl(var(--card))] px-6 py-4 print:bg-gray-100 print:border-gray-300">
                 <div className="flex items-center gap-4">
                     <button
                         onClick={onClose}
-                        className="rounded-lg p-2 text-white/60 hover:bg-white/10 hover:text-white print:hidden"
+                        className="rounded-lg p-2 text-[hsl(var(--muted-foreground)/0.9)] hover:bg-[hsl(var(--overlay)/0.25)] hover:text-[hsl(var(--foreground))] print:hidden"
                         aria-label="Close HUD"
                     >
                         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -144,14 +160,14 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
                         </svg>
                     </button>
                     <div>
-                        <h1 className="text-lg font-bold text-white print:text-black">
+                        <h1 className="text-lg font-bold text-[hsl(var(--foreground))] print:text-black">
                             {role?.company ?? 'Interview'} — {role?.jobTitle ?? 'Packet'}
                         </h1>
                         <div className="mt-1 flex gap-2">
                             {keywords.map((kw, i) => (
                                 <span
                                     key={i}
-                                    className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-xs font-medium text-cyan-300 print:bg-cyan-100 print:text-cyan-800"
+                                    className="rounded-full bg-[hsl(var(--iris)/0.2)] px-2 py-0.5 text-xs font-medium text-[hsl(var(--iris))] print:bg-cyan-100 print:text-cyan-800"
                                 >
                                     {kw}
                                 </span>
@@ -159,17 +175,17 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-3 text-sm text-white/50 print:hidden">
-                    <kbd className="rounded bg-white/10 px-2 py-0.5">Space</kbd> Search
-                    <kbd className="rounded bg-white/10 px-2 py-0.5">↑↓</kbd> Navigate
-                    <kbd className="rounded bg-white/10 px-2 py-0.5">Enter</kbd> Expand
-                    <kbd className="rounded bg-white/10 px-2 py-0.5">P</kbd> Panic
-                    <kbd className="rounded bg-white/10 px-2 py-0.5">Esc</kbd> Close
+                <div className="hidden md:flex items-center gap-3 text-sm text-[hsl(var(--muted-foreground))] print:hidden">
+                    <kbd className="rounded bg-[hsl(var(--overlay)/0.25)] px-2 py-0.5">Space</kbd> Search
+                    <kbd className="rounded bg-[hsl(var(--overlay)/0.25)] px-2 py-0.5">↑↓</kbd> Navigate
+                    <kbd className="rounded bg-[hsl(var(--overlay)/0.25)] px-2 py-0.5">Enter</kbd> Expand
+                    <kbd className="rounded bg-[hsl(var(--overlay)/0.25)] px-2 py-0.5">P</kbd> Panic
+                    <kbd className="rounded bg-[hsl(var(--overlay)/0.25)] px-2 py-0.5">Esc</kbd> Close
                 </div>
             </header>
 
             {/* Main Content */}
-            <div className="flex flex-1 overflow-hidden">
+            <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
                 {/* Left Column - Stories */}
                 <div className="flex-1 overflow-y-auto p-6">
                     {/* Search Bar */}
@@ -181,7 +197,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
                                 placeholder="Search stories by skill, keyword..."
-                                className="w-full rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-lg text-white placeholder:text-white/40 focus:border-cyan-400 focus:outline-none"
+                                className="w-full rounded-xl border border-[hsl(var(--border)/0.8)] bg-[hsl(var(--overlay)/0.15)] px-4 py-3 text-lg text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground)/0.6)] focus:border-[hsl(var(--iris))] focus:outline-none"
                                 autoFocus
                             />
                         </div>
@@ -189,19 +205,19 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
 
                     {/* Panic Mode */}
                     {panicMode && packet.panicAnswer && (
-                        <div className="mb-6 rounded-xl border-2 border-amber-500/50 bg-amber-500/10 p-6">
-                            <div className="mb-2 flex items-center gap-2">
-                                <WarningIcon className="h-6 w-6 text-amber-400" />
-                                <span className="text-lg font-bold text-amber-400">PANIC ANSWER</span>
+                        <div className="mb-6 rounded-xl border-2 border-[hsl(var(--destructive)/0.5)] bg-[hsl(var(--destructive)/0.1)] p-4 md:p-6">
+                            <div className="mb-2 flex flex-wrap items-center gap-2">
+                                <WarningIcon className="h-6 w-6 text-[hsl(var(--destructive))]" />
+                                <span className="text-lg font-bold text-[hsl(var(--destructive))]">PANIC ANSWER</span>
                             </div>
-                            <p className="text-lg leading-relaxed text-white">{packet.panicAnswer}</p>
+                            <p className="text-lg leading-relaxed text-[hsl(var(--foreground))]">{packet.panicAnswer}</p>
                         </div>
                     )}
 
                     {/* Stories List */}
                     <div className="space-y-3">
                         {displayStories.length === 0 ? (
-                            <div className="rounded-xl border border-white/10 p-8 text-center text-white/50">
+                            <div className="rounded-xl border border-[hsl(var(--border)/0.4)] p-8 text-center text-[hsl(var(--muted-foreground))]">
                                 {searchQuery ? 'No stories match your search' : 'No stories in packet'}
                             </div>
                         ) : (
@@ -219,29 +235,29 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
                                         className={cn(
                                             'cursor-pointer rounded-xl border p-4 transition-all',
                                             isSelected
-                                                ? 'border-cyan-400/50 bg-cyan-500/10 shadow-lg shadow-cyan-500/10'
-                                                : 'border-white/10 bg-white/5 hover:bg-white/10',
-                                            isExpanded && 'border-cyan-400'
+                                                ? 'border-[hsl(var(--iris)/0.5)] bg-[hsl(var(--iris)/0.1)] shadow-lg shadow-[hsl(var(--iris)/0.1)]'
+                                                : 'border-[hsl(var(--border)/0.4)] bg-[hsl(var(--overlay)/0.15)] hover:bg-[hsl(var(--overlay)/0.25)]',
+                                            isExpanded && 'border-[hsl(var(--iris))]'
                                         )}
                                     >
                                         {/* Glance View */}
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-xs font-semibold text-cyan-300">
+                                                    <span className="rounded-full bg-[hsl(var(--iris)/0.2)] px-2 py-0.5 text-xs font-semibold text-[hsl(var(--iris))]">
                                                         {getSkillName(story.primarySkillId)}
                                                     </span>
-                                                    <span className="text-xs text-white/40">{story.confidence}%</span>
+                                                    <span className="text-xs text-[hsl(var(--muted-foreground)/0.6)]">{story.confidence}%</span>
                                                 </div>
-                                                <p className="mt-2 text-lg font-semibold text-white">
+                                                <p className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
                                                     {story.trigger || 'Untitled'}
                                                 </p>
-                                                <p className="mt-1 text-white/70">{story.hook}</p>
-                                                <p className="mt-2 text-sm font-medium text-cyan-400">
+                                                <p className="mt-1 text-[hsl(var(--muted-foreground)/0.9)]">{story.hook}</p>
+                                                <p className="mt-2 text-sm font-medium text-[hsl(var(--iris))]">
                                                     <ChartIcon className="h-4 w-4 inline" /> {story.proofSnippet}
                                                 </p>
                                             </div>
-                                            <div className="text-white/30">
+                                            <div className="text-[hsl(var(--muted-foreground)/0.5)]">
                                                 {isExpanded ? (
                                                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
@@ -256,22 +272,22 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
 
                                         {/* Expanded View */}
                                         {isExpanded && (
-                                            <div className="mt-4 border-t border-white/10 pt-4">
+                                            <div className="mt-4 border-t border-[hsl(var(--border)/0.4)] pt-4">
                                                 <div className="space-y-4">
                                                     <div>
-                                                        <p className="text-xs font-semibold uppercase tracking-wider text-white/40">Play</p>
-                                                        <p className="mt-1 text-white/90 leading-relaxed">{story.play}</p>
+                                                        <p className="text-xs font-semibold uppercase tracking-wider text-[hsl(var(--muted-foreground)/0.6)]">Play</p>
+                                                        <p className="mt-1 text-[hsl(var(--foreground))] leading-relaxed">{story.play}</p>
                                                     </div>
                                                     <div>
-                                                        <p className="text-xs font-semibold uppercase tracking-wider text-white/40">Proof</p>
-                                                        <p className="mt-1 text-cyan-300 leading-relaxed">{story.proof}</p>
+                                                        <p className="text-xs font-semibold uppercase tracking-wider text-[hsl(var(--muted-foreground)/0.6)]">Proof</p>
+                                                        <p className="mt-1 text-[hsl(var(--foam))] leading-relaxed">{story.proof}</p>
                                                     </div>
                                                     {story.questionPrompts.length > 0 && (
                                                         <div>
-                                                            <p className="text-xs font-semibold uppercase tracking-wider text-white/40">Answers</p>
+                                                            <p className="text-xs font-semibold uppercase tracking-wider text-[hsl(var(--muted-foreground)/0.6)]">Answers</p>
                                                             <ul className="mt-1 space-y-1">
                                                                 {story.questionPrompts.map((q, i) => (
-                                                                    <li key={i} className="text-sm text-white/70">• {q}</li>
+                                                                    <li key={i} className="text-sm text-[hsl(var(--muted-foreground)/0.9)]">• {q}</li>
                                                                 ))}
                                                             </ul>
                                                         </div>
@@ -287,33 +303,33 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
                 </div>
 
                 {/* Right Column - Questions to Ask */}
-                <div className="w-80 flex-shrink-0 border-l border-white/10 bg-[#0d0d10] p-6 print:bg-gray-50 print:border-gray-300">
-                    <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/50 print:text-gray-600">
+                <div className="w-full md:w-80 flex-shrink-0 border-l border-[hsl(var(--border)/0.4)] bg-[hsl(var(--overlay)/0.2)] p-6 print:bg-gray-50 print:border-gray-300">
+                    <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[hsl(var(--muted-foreground))] print:text-gray-600">
                         Questions to Ask
                     </h2>
                     <ul className="space-y-3">
                         {packet.customQuestions.filter(Boolean).map((q, i) => (
                             <li
                                 key={i}
-                                className="flex items-start gap-2 text-white/80 print:text-gray-800"
+                                className="flex items-start gap-2 text-[hsl(var(--foreground)/0.8)] print:text-gray-800"
                             >
-                                <span className="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-cyan-400" />
+                                <span className="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-[hsl(var(--iris))]" />
                                 <span className="text-sm leading-relaxed">{q}</span>
                             </li>
                         ))}
                     </ul>
 
                     {packet.customQuestions.filter(Boolean).length === 0 && (
-                        <p className="text-sm text-white/40">No questions added yet.</p>
+                        <p className="text-sm text-[hsl(var(--muted-foreground)/0.6)]">No questions added yet.</p>
                     )}
 
                     {/* Notes */}
                     {packet.notes && (
                         <div className="mt-8">
-                            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-white/50 print:text-gray-600">
+                            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[hsl(var(--muted-foreground))] print:text-gray-600">
                                 Notes
                             </h2>
-                            <p className="text-sm leading-relaxed text-white/70 print:text-gray-700">
+                            <p className="text-sm leading-relaxed text-[hsl(var(--muted-foreground)/0.9)] print:text-gray-700">
                                 {packet.notes}
                             </p>
                         </div>
@@ -323,13 +339,13 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
 
             {/* Bottom Panic Slot (always visible reminder) */}
             {!panicMode && packet.panicAnswer && (
-                <footer className="border-t border-white/10 bg-[#111114] px-6 py-3 print:hidden">
+                <footer className="border-t border-[hsl(var(--border)/0.4)] bg-[hsl(var(--card))] px-6 py-3 print:hidden">
                     <button
                         onClick={() => setPanicMode(true)}
-                        className="flex items-center gap-2 text-sm text-amber-400/70 hover:text-amber-400"
+                        className="flex items-center gap-2 text-sm text-[hsl(var(--destructive)/0.7)] hover:text-[hsl(var(--destructive))]"
                     >
                         <WarningIcon className="h-4 w-4" />
-                        <span>Press <kbd className="rounded bg-white/10 px-1.5 py-0.5 text-xs">P</kbd> for panic answer</span>
+                        <span>Press <kbd className="rounded bg-[hsl(var(--overlay)/0.25)] px-1.5 py-0.5 text-xs">P</kbd> for panic answer</span>
                     </button>
                 </footer>
             )}

@@ -210,7 +210,7 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
           <div className="nav-logo flex h-9 w-9 items-center justify-center rounded-xl">
             <img
               src="/favicon.webp"
-              alt=""
+              alt="5 Whys Career Studio logo"
               width={22}
               height={22}
               className="nav-logo__icon h-[1.15rem] w-[1.15rem] object-contain"

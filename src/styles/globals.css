@@ -352,14 +352,6 @@
     background-color: hsl(var(--overlay)/0.12) !important;
   }
 
-  .bg-black\/20 {
-    background-color: hsl(var(--overlay)/0.38) !important;
-  }
-
-  .bg-black\/30 {
-    background-color: hsl(var(--overlay)/0.55) !important;
-  }
-
   .text-slate-500 {
     color: hsl(var(--muted-foreground)/0.9) !important;
   }
@@ -430,43 +422,11 @@
 }
 
 /* ============================================================================
-   Premium Polish: Hero Text Shimmer
+   Typography Utilities
    ============================================================================ */
-.shimmer-text {
-  background: linear-gradient(110deg,
-      hsl(var(--foreground)) 30%,
-      hsl(var(--foam)) 45%,
-      hsl(var(--iris)) 55%,
-      hsl(var(--foreground)) 70%);
-  background-size: 250% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: shimmer 20s ease-in-out forwards;
-}
-
-:root[data-theme='dawn'] .shimmer-text,
-:root.theme-dawn .shimmer-text,
-html.theme-dawn .shimmer-text,
-body.theme-dawn .shimmer-text,
-body[data-theme='dawn'] .shimmer-text {
-  background: none;
-  color: hsl(var(--foreground));
-  animation: none;
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-
-  100% {
-    background-position: -200% 0;
-  }
-}
 
 /* ============================================================================
-   Premium Polish: Animated Gradient Mesh (Hero Background)
+   Animated Gradient Mesh (Hero Background)
    ============================================================================ */
 @keyframes float-slow {
 
@@ -520,12 +480,12 @@ a[role="button"]:active,
   transition: transform 0.1s ease;
 }
 
-/* Subtle icon bounce on card hover */
-.card-icon-bounce {
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+/* Subtle icon lift on card hover */
+.card-icon-lift {
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.group:hover .card-icon-bounce {
+.group:hover .card-icon-lift {
   transform: translateY(-3px);
 }
 
@@ -539,14 +499,16 @@ a[role="button"]:active,
   position: absolute;
   bottom: -2px;
   left: 0;
-  width: 0;
+  width: 100%;
   height: 1px;
   background: currentColor;
-  transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .link-underline:hover::after {
-  width: 100%;
+  transform: scaleX(1);
 }
 
 /* Cursor spotlight for cards */
