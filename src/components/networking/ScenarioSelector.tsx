@@ -35,7 +35,9 @@ export default function ScenarioSelector({
     <>
       <div className="col-span-full flex flex-wrap items-center justify-between gap-4">
         <div className="flex w-full flex-col gap-2 sm:w-auto">
-          <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">Scenario library</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
+            Scenario library
+          </p>
           <div className="flex flex-wrap gap-3">
             {scenarios.map((scenario) => {
               const isActive = scenario.id === currentVersion?.scenarioId;
@@ -44,7 +46,6 @@ export default function ScenarioSelector({
                   key={scenario.id}
                   type="button"
                   onClick={() => onScenarioChange(scenario.id)}
-                  aria-label={`Select scenario: ${scenario.title}`}
                   aria-pressed={isActive}
                   className={`rounded-xl border px-4 py-3 text-left shadow-sm transition ${
                     isActive
@@ -53,7 +54,9 @@ export default function ScenarioSelector({
                   }`}
                 >
                   <div className="text-sm font-semibold">{scenario.title}</div>
-                  <div className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">{scenario.where}</div>
+                  <div className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
+                    {scenario.where}
+                  </div>
                 </button>
               );
             })}
@@ -62,7 +65,6 @@ export default function ScenarioSelector({
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap sm:justify-end">
           <Button
             onClick={onCreateNewVersion}
-            aria-label="Create new practice version"
             className="w-full bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.8)] sm:w-auto"
           >
             New Version
@@ -72,7 +74,6 @@ export default function ScenarioSelector({
               variant="outline"
               className="w-full border-[hsl(var(--border)/0.6)] text-[hsl(var(--foreground))] sm:w-auto"
               onClick={onDeleteCurrentVersion}
-              aria-label="Delete current practice version"
             >
               Delete Version
             </Button>
@@ -95,7 +96,10 @@ export default function ScenarioSelector({
           ))}
         </select>
         <div className="space-y-1">
-          <Label htmlFor="version-title" className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
+          <Label
+            htmlFor="version-title"
+            className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]"
+          >
             Custom name
           </Label>
           <Input
@@ -107,7 +111,10 @@ export default function ScenarioSelector({
           />
         </div>
         <div className="space-y-1">
-          <Label htmlFor="version-notes" className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
+          <Label
+            htmlFor="version-notes"
+            className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]"
+          >
             Session notes
           </Label>
           <Textarea

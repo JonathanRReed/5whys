@@ -107,7 +107,9 @@ export function isBrowser() {
 
 export function ensureResponsesLength(responses: unknown): string[] {
   const sanitized = Array.isArray(responses)
-    ? responses.map((response) => (typeof response === 'string' ? response : '')).slice(0, WHY_COUNT)
+    ? responses
+        .map((response) => (typeof response === 'string' ? response : ''))
+        .slice(0, WHY_COUNT)
     : [];
   while (sanitized.length < WHY_COUNT) {
     sanitized.push('');
@@ -151,7 +153,8 @@ export function formatSnapshotTime(value: string) {
 export function normalizeSnapshot(entry: unknown): WhySnapshot | null {
   if (!entry || typeof entry !== 'object') return null;
   const data = entry as Record<string, unknown>;
-  const track = data.track === 'career' || data.track === 'interest' ? (data.track as Track) : 'career';
+  const track =
+    data.track === 'career' || data.track === 'interest' ? (data.track as Track) : 'career';
   return {
     id: typeof data.id === 'string' ? data.id : `snapshot_${cryptoRandom()}`,
     timestamp: typeof data.timestamp === 'string' ? data.timestamp : new Date().toISOString(),
@@ -171,7 +174,66 @@ export function useSynthesis(responses: string[], topic: string, track: Track) {
   const STOPWORDS = React.useMemo(
     () =>
       new Set([
-        'the','and','for','with','that','this','from','into','your','you','are','our','was','were','will','would','could','should','about','when','what','how','why','who','whom','to','of','in','on','at','by','as','it','its','is','be','an','a','or','but','if','than','then','so','we','i','me','my','mine','their','theirs','them','they','us','we','do','did','done','doing','because'
+        'the',
+        'and',
+        'for',
+        'with',
+        'that',
+        'this',
+        'from',
+        'into',
+        'your',
+        'you',
+        'are',
+        'our',
+        'was',
+        'were',
+        'will',
+        'would',
+        'could',
+        'should',
+        'about',
+        'when',
+        'what',
+        'how',
+        'why',
+        'who',
+        'whom',
+        'to',
+        'of',
+        'in',
+        'on',
+        'at',
+        'by',
+        'as',
+        'it',
+        'its',
+        'is',
+        'be',
+        'an',
+        'a',
+        'or',
+        'but',
+        'if',
+        'than',
+        'then',
+        'so',
+        'we',
+        'i',
+        'me',
+        'my',
+        'mine',
+        'their',
+        'theirs',
+        'them',
+        'they',
+        'us',
+        'we',
+        'do',
+        'did',
+        'done',
+        'doing',
+        'because',
       ]),
     []
   );
@@ -205,7 +267,8 @@ export function useSynthesis(responses: string[], topic: string, track: Track) {
       const late = cleaned.slice(mid).join(' ');
       const lateKeys = extractKeywords(late, 3);
       const earlyKeys = extractKeywords(early, 3);
-      const title = (arr: string[]) => arr.map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(', ');
+      const title = (arr: string[]) =>
+        arr.map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(', ');
       let theme = title(lateKeys) || cleaned[cleaned.length - 1] || '';
       let alignment = title(earlyKeys) || cleaned[0] || '';
       if (!theme && track === 'interest') theme = topic || theme;
@@ -242,7 +305,6 @@ export function useStoredSession() {
       console.warn('Unable to load saved 5 Whys session', err);
       setStorageNotice('Previous progress could not be restored from storage.');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   React.useEffect(() => {

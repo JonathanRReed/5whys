@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import * as React from 'react';
 import { cn } from '../../lib/utils';
 
@@ -30,7 +31,8 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
 
   const typeStyles: Record<ToastType, string> = {
     success: 'border-[hsl(var(--foam)/0.4)] bg-[hsl(var(--foam)/0.12)] text-[hsl(var(--foam))]',
-    error: 'border-[hsl(var(--destructive)/0.4)] bg-[hsl(var(--destructive)/0.12)] text-[hsl(var(--destructive))]',
+    error:
+      'border-[hsl(var(--destructive)/0.4)] bg-[hsl(var(--destructive)/0.12)] text-[hsl(var(--destructive))]',
     warning: 'border-[hsl(var(--gold)/0.4)] bg-[hsl(var(--gold)/0.12)] text-[hsl(var(--gold))]',
     info: 'border-[hsl(var(--iris)/0.4)] bg-[hsl(var(--iris)/0.12)] text-[hsl(var(--iris))]',
   };
@@ -39,7 +41,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
     <div
       role="alert"
       className={cn(
-        'flex items-center gap-3 rounded-xl border px-4 py-3 text-sm shadow-lg backdrop-blur-sm',
+        'flex items-center gap-3 rounded-xl border px-4 py-3 text-sm shadow-lg ',
         'animate-in slide-in-from-right-4 fade-in duration-300',
         typeStyles[toast.type]
       )}
@@ -51,7 +53,13 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
         aria-label="Dismiss notification"
         className="flex-shrink-0 rounded p-1 opacity-70 hover:opacity-100 focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
       >
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg
+          className="h-4 w-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>

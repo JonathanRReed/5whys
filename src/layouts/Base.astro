@@ -1,61 +1,53 @@
 ---
-import { siteConfig, baseSchemas } from "../config/site";
-import Seo from "../components/Seo.astro";
-import { ClientRouter } from "astro:transitions";
-import Navigation from "../components/Navigation";
-import "../styles/globals.css";
+import { siteConfig, baseSchemas } from '../config/site';
+import Seo from '../components/Seo.astro';
+import { ClientRouter } from 'astro:transitions';
+import Navigation from '../components/Navigation';
+import '../styles/globals.css';
 
 const {
   title = siteConfig.siteName,
   description = siteConfig.description,
-  theme = "night",
+  theme = 'night',
   image = siteConfig.ogImage,
   noindex = false,
   canonical,
-  type = "website",
+  type = 'website',
   structuredData = [],
-  breadcrumbs = [{ label: "Home", href: "/" }],
+  breadcrumbs = [{ label: 'Home', href: '/' }],
 } = Astro.props;
 
-const htmlTheme =
-  theme === "dawn" ? "dawn" : undefined;
-
-const canonicalUrl =
-  canonical ?? new URL(Astro.url.pathname, siteConfig.siteUrl).toString();
-const breadcrumbList = breadcrumbs.map(
-  (crumb: { label: string; href: string }, index: number) => ({
-    "@type": "ListItem",
-    position: index + 1,
-    name: crumb.label,
-    item: new URL(crumb.href, siteConfig.siteUrl).toString(),
-  }),
-);
+const canonicalUrl = canonical ?? new URL(Astro.url.pathname, siteConfig.siteUrl).toString();
+const breadcrumbList = breadcrumbs.map((crumb: { label: string; href: string }, index: number) => ({
+  '@type': 'ListItem',
+  position: index + 1,
+  name: crumb.label,
+  item: new URL(crumb.href, siteConfig.siteUrl).toString(),
+}));
 
 const breadcrumbSchema =
   breadcrumbList.length > 1
     ? {
-        "@context": "https://schema.org",
-        "@type": "BreadcrumbList",
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
         itemListElement: breadcrumbList,
       }
     : null;
 
 const pageSchema = {
-  "@context": "https://schema.org",
-  "@type": "WebPage",
-  "@id": `${canonicalUrl}#webpage`,
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  '@id': `${canonicalUrl}#webpage`,
   url: canonicalUrl,
   name: title,
   description,
-  inLanguage: "en-US",
+  inLanguage: 'en-US',
   isPartOf: {
-    "@id": baseSchemas.website["@id"],
+    '@id': baseSchemas.website['@id'],
   },
 };
 
-const additionalSchemas = Array.isArray(structuredData)
-  ? structuredData
-  : [structuredData];
+const additionalSchemas = Array.isArray(structuredData) ? structuredData : [structuredData];
 const schemaPayload = [
   baseSchemas.website,
   baseSchemas.creator,
@@ -67,118 +59,118 @@ const schemaPayload = [
 
 <html
   lang="en"
-  class={`h-full ${theme === "dawn" ? "theme-dawn" : "theme-night"}`}
-  data-theme={theme === "dawn" ? "dawn" : "night"}
+  class={`h-full ${theme === 'dawn' ? 'theme-dawn' : 'theme-night'}`}
+  data-theme={theme === 'dawn' ? 'dawn' : 'night'}
 >
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content={theme === "dawn" ? "only light" : "dark"} />
+    <meta name="color-scheme" content={theme === 'dawn' ? 'only light' : 'dark'} />
     <script is:inline>
-      const storageKey = "career-tools-theme";
+      const storageKey = 'career-tools-theme';
       const root = document.documentElement;
-      const validThemes = new Set(["night", "dawn"]);
+      const validThemes = new Set(['night', 'dawn']);
       const themeTokens = {
         night: {
-          "--background": "230 18% 8%",
-          "--foreground": "228 36% 94%",
-          "--card": "228 16% 12%",
-          "--card-foreground": "228 36% 94%",
-          "--overlay": "228 15% 16%",
-          "--popover": "228 16% 13%",
-          "--popover-foreground": "228 36% 94%",
-          "--primary": "185 50% 52%",
-          "--primary-foreground": "230 18% 8%",
-          "--secondary": "228 15% 17%",
-          "--secondary-foreground": "228 36% 94%",
-          "--muted": "228 10% 43%",
-          "--muted-foreground": "226 15% 76%",
-          "--accent": "255 35% 68%",
-          "--accent-foreground": "230 18% 8%",
-          "--destructive": "350 65% 62%",
-          "--destructive-foreground": "230 18% 8%",
-          "--love": "350 65% 62%",
-          "--gold": "38 85% 58%",
-          "--rose": "355 50% 75%",
-          "--pine": "185 50% 42%",
-          "--foam": "185 50% 52%",
-          "--iris": "255 35% 68%",
-          "--border": "226 17% 28%",
-          "--input": "226 17% 28%",
-          "--ring": "185 50% 52%",
-          "--logo-stop-1": "color-mix(in srgb, #31748f 52%, transparent)",
-          "--logo-stop-2": "color-mix(in srgb, #eb6f92 46%, transparent)",
-          "--logo-stop-3": "color-mix(in srgb, #26233a 60%, transparent)",
-          "--logo-base-fill":
-            "color-mix(in srgb, hsl(var(--overlay)) 70%, hsl(var(--background)) 30%)",
-          "--logo-border-color": "hsla(248, 32%, 58%, 0.42)",
-          "--logo-shadow-color": "rgba(12, 9, 24, 0.55)",
-          "--logo-icon-shadow": "rgba(26, 18, 40, 0.42)",
+          '--background': '228 19% 7%',
+          '--foreground': '220 24% 94%',
+          '--card': '226 18% 11%',
+          '--card-foreground': '220 24% 94%',
+          '--overlay': '226 16% 15%',
+          '--popover': '226 18% 12%',
+          '--popover-foreground': '220 24% 94%',
+          '--primary': '186 62% 54%',
+          '--primary-foreground': '228 19% 7%',
+          '--secondary': '226 14% 18%',
+          '--secondary-foreground': '220 24% 94%',
+          '--muted': '224 10% 42%',
+          '--muted-foreground': '222 14% 78%',
+          '--accent': '35 78% 62%',
+          '--accent-foreground': '228 19% 7%',
+          '--destructive': '350 62% 62%',
+          '--destructive-foreground': '228 19% 7%',
+          '--love': '350 62% 61%',
+          '--gold': '35 78% 62%',
+          '--rose': '350 48% 73%',
+          '--pine': '172 42% 36%',
+          '--foam': '186 62% 54%',
+          '--iris': '255 32% 70%',
+          '--border': '225 15% 27%',
+          '--input': '225 15% 27%',
+          '--ring': '186 62% 54%',
+          '--logo-stop-1': 'color-mix(in srgb, #31748f 52%, transparent)',
+          '--logo-stop-2': 'color-mix(in srgb, #eb6f92 46%, transparent)',
+          '--logo-stop-3': 'color-mix(in srgb, #26233a 60%, transparent)',
+          '--logo-base-fill':
+            'color-mix(in srgb, hsl(var(--overlay)) 70%, hsl(var(--background)) 30%)',
+          '--logo-border-color': 'hsla(248, 32%, 58%, 0.42)',
+          '--logo-shadow-color': 'rgba(12, 9, 24, 0.55)',
+          '--logo-icon-shadow': 'rgba(26, 18, 40, 0.42)',
         },
         dawn: {
-          "--background": "220 32% 97%",
-          "--foreground": "232 24% 22%",
-          "--card": "0 0% 100%",
-          "--card-foreground": "232 24% 22%",
-          "--overlay": "220 30% 93%",
-          "--popover": "0 0% 100%",
-          "--popover-foreground": "232 24% 22%",
-          "--primary": "192 55% 36%",
-          "--primary-foreground": "0 0% 100%",
-          "--secondary": "220 30% 94%",
-          "--secondary-foreground": "232 24% 22%",
-          "--muted": "228 10% 61%",
-          "--muted-foreground": "232 18% 34%",
-          "--accent": "255 30% 48%",
-          "--accent-foreground": "0 0% 100%",
-          "--destructive": "350 48% 48%",
-          "--destructive-foreground": "0 0% 100%",
-          "--love": "350 48% 48%",
-          "--gold": "38 78% 48%",
-          "--rose": "355 45% 70%",
-          "--pine": "192 55% 30%",
-          "--foam": "192 50% 38%",
-          "--iris": "255 30% 48%",
-          "--border": "222 24% 84%",
-          "--input": "222 24% 84%",
-          "--ring": "192 55% 36%",
-          "--logo-stop-1": "color-mix(in srgb, #31748f 36%, transparent)",
-          "--logo-stop-2": "color-mix(in srgb, #7c6fce 28%, transparent)",
-          "--logo-stop-3": "color-mix(in srgb, #f7f9fc 65%, transparent)",
-          "--logo-base-fill": "color-mix(in srgb, #ffffff 88%, #e8eef7 12%)",
-          "--logo-border-color": "hsla(222, 24%, 72%, 0.5)",
-          "--logo-shadow-color": "rgba(45, 52, 74, 0.14)",
-          "--logo-icon-shadow": "rgba(45, 52, 74, 0.18)",
+          '--background': '58 24% 94%',
+          '--foreground': '220 18% 20%',
+          '--card': '54 30% 97%',
+          '--card-foreground': '220 18% 20%',
+          '--overlay': '56 18% 88%',
+          '--popover': '54 30% 97%',
+          '--popover-foreground': '220 18% 20%',
+          '--primary': '176 42% 32%',
+          '--primary-foreground': '54 30% 97%',
+          '--secondary': '55 18% 90%',
+          '--secondary-foreground': '220 18% 20%',
+          '--muted': '53 10% 61%',
+          '--muted-foreground': '220 14% 34%',
+          '--accent': '337 34% 43%',
+          '--accent-foreground': '54 30% 97%',
+          '--destructive': '350 46% 45%',
+          '--destructive-foreground': '54 30% 97%',
+          '--love': '350 46% 45%',
+          '--gold': '38 66% 45%',
+          '--rose': '350 40% 62%',
+          '--pine': '158 30% 28%',
+          '--foam': '176 42% 32%',
+          '--iris': '266 26% 43%',
+          '--border': '50 18% 78%',
+          '--input': '50 18% 78%',
+          '--ring': '176 42% 32%',
+          '--logo-stop-1': 'color-mix(in srgb, #31748f 36%, transparent)',
+          '--logo-stop-2': 'color-mix(in srgb, #7c6fce 28%, transparent)',
+          '--logo-stop-3': 'color-mix(in srgb, #f7f9fc 65%, transparent)',
+          '--logo-base-fill': 'color-mix(in srgb, hsl(var(--card)) 88%, hsl(var(--overlay)) 12%)',
+          '--logo-border-color': 'hsla(222, 24%, 72%, 0.5)',
+          '--logo-shadow-color': 'rgba(45, 52, 74, 0.14)',
+          '--logo-icon-shadow': 'rgba(45, 52, 74, 0.18)',
         },
       };
 
       const applyThemeEarly = (nextTheme) => {
         if (!validThemes.has(nextTheme)) return;
         root.dataset.theme = nextTheme;
-        root.classList.toggle("theme-dawn", nextTheme === "dawn");
-        root.classList.toggle("theme-night", nextTheme === "night");
+        root.classList.toggle('theme-dawn', nextTheme === 'dawn');
+        root.classList.toggle('theme-night', nextTheme === 'night');
         if (document.body) document.body.dataset.theme = nextTheme;
         if (document.body) {
-          document.body.classList.toggle("theme-dawn", nextTheme === "dawn");
-          document.body.classList.toggle("theme-night", nextTheme === "night");
+          document.body.classList.toggle('theme-dawn', nextTheme === 'dawn');
+          document.body.classList.toggle('theme-night', nextTheme === 'night');
         }
         Object.entries(themeTokens[nextTheme]).forEach(([name, value]) => {
           root.style.setProperty(name, value);
         });
 
         try {
-          const colorScheme = nextTheme === "dawn" ? "only light" : "dark";
+          const colorScheme = nextTheme === 'dawn' ? 'only light' : 'dark';
           root.style.colorScheme = colorScheme;
           if (document.body) document.body.style.colorScheme = colorScheme;
           const metaColorScheme = document.querySelector('meta[name="color-scheme"]');
-          if (metaColorScheme) metaColorScheme.setAttribute("content", colorScheme);
+          if (metaColorScheme) metaColorScheme.setAttribute('content', colorScheme);
         } catch {}
 
         try {
-          document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
-            const isActive = button.getAttribute("data-theme-toggle") === nextTheme;
-            button.setAttribute("aria-pressed", String(isActive));
-            button.setAttribute("data-active", String(isActive));
+          document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
+            const isActive = button.getAttribute('data-theme-toggle') === nextTheme;
+            button.setAttribute('aria-pressed', String(isActive));
+            button.setAttribute('data-active', String(isActive));
           });
         } catch {}
       };
@@ -190,26 +182,23 @@ const schemaPayload = [
           window.localStorage.setItem(storageKey, nextTheme);
         } catch {}
         try {
-          const secureToken =
-            window.location.protocol === "https:" ? ";Secure" : "";
+          const secureToken = window.location.protocol === 'https:' ? ';Secure' : '';
           document.cookie = `${storageKey}=${nextTheme};path=/;max-age=31536000;SameSite=Lax${secureToken}`;
         } catch {}
       };
 
       document.addEventListener(
-        "click",
+        'click',
         (event) => {
           const target =
-            event.target instanceof Element
-              ? event.target.closest("[data-theme-toggle]")
-              : null;
+            event.target instanceof Element ? event.target.closest('[data-theme-toggle]') : null;
           if (!target) return;
-          window.__careerToolsSetTheme(target.getAttribute("data-theme-toggle"));
+          window.__careerToolsSetTheme(target.getAttribute('data-theme-toggle'));
         },
-        true,
+        true
       );
 
-      window.addEventListener("career-tools-theme-change", (event) => {
+      window.addEventListener('career-tools-theme-change', (event) => {
         const nextTheme = event instanceof CustomEvent ? event.detail?.theme : null;
         if (validThemes.has(nextTheme)) {
           window.__careerToolsSetTheme(nextTheme);
@@ -218,34 +207,28 @@ const schemaPayload = [
 
       const getTheme = () => {
         try {
-          const cookieMatch = document.cookie.match(
-            new RegExp("(^|; )" + storageKey + "=([^;]*)"),
-          );
+          const cookieMatch = document.cookie.match(new RegExp('(^|; )' + storageKey + '=([^;]*)'));
           const fromCookie = cookieMatch?.[2];
-          if (
-            fromCookie === "night" ||
-            fromCookie === "dawn"
-          )
-            return fromCookie;
+          if (fromCookie === 'night' || fromCookie === 'dawn') return fromCookie;
         } catch {}
         try {
           const stored = window.localStorage.getItem(storageKey);
-          if (stored === "night" || stored === "dawn")
-            return stored;
+          if (stored === 'night' || stored === 'dawn') return stored;
         } catch {}
+        const serverTheme = root.dataset.theme;
+        if (serverTheme === 'night' || serverTheme === 'dawn') return serverTheme;
         const prefersDark =
-          window.matchMedia &&
-          window.matchMedia("(prefers-color-scheme: dark)").matches;
-        return prefersDark ? "night" : "dawn";
+          window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        return prefersDark ? 'night' : 'dawn';
       };
 
       const syncTheme = () => {
         // Temporarily disable transitions to avoid flashing during theme apply
         let styleEl;
         try {
-          styleEl = document.createElement("style");
-          styleEl.id = "theme-transitions-off";
-          styleEl.textContent = "*{transition: none !important}";
+          styleEl = document.createElement('style');
+          styleEl.id = 'theme-transitions-off';
+          styleEl.textContent = '*{transition: none !important}';
           document.head.appendChild(styleEl);
         } catch {}
 
@@ -255,8 +238,7 @@ const schemaPayload = [
         try {
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-              if (styleEl && styleEl.parentNode)
-                styleEl.parentNode.removeChild(styleEl);
+              if (styleEl && styleEl.parentNode) styleEl.parentNode.removeChild(styleEl);
             });
           });
         } catch {}
@@ -267,9 +249,9 @@ const schemaPayload = [
         syncTheme();
       } catch {}
       // Ensure correct theme after transitions/prefetch swaps
-      document.addEventListener("astro:before-swap", syncTheme);
-      document.addEventListener("astro:after-swap", syncTheme);
-      document.addEventListener("astro:page-load", syncTheme);
+      document.addEventListener('astro:before-swap', syncTheme);
+      document.addEventListener('astro:after-swap', syncTheme);
+      document.addEventListener('astro:page-load', syncTheme);
     </script>
     <Seo
       title={title}
@@ -284,12 +266,16 @@ const schemaPayload = [
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link
+      rel="preload"
+      as="image"
+      href="/career-studio-mark-nav-1x.png"
+      imagesrcset="/career-studio-mark-nav-1x.png 1x, /career-studio-mark-nav.png 2x"
+    />
     <link rel="manifest" href="/site.webmanifest" />
     <ClientRouter />
   </head>
-  <body
-    class="min-h-screen bg-background text-foreground transition-colors duration-300"
-  >
+  <body class="min-h-screen bg-background text-foreground transition-colors duration-300">
     <a
       href="#main-content"
       class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-[hsl(var(--primary))] focus:px-4 focus:py-2 focus:text-[hsl(var(--primary-foreground))]"
@@ -304,15 +290,8 @@ const schemaPayload = [
     >
     </div>
     <div class="relative flex min-h-screen flex-col">
-      <Navigation
-        client:load
-        currentPath={Astro.url.pathname}
-      />
-      <main
-        id="main-content"
-        class="relative z-10 flex-1"
-        transition:name="page-content"
-      >
+      <Navigation client:load currentPath={Astro.url.pathname} />
+      <main id="main-content" class="relative z-10 flex-1" transition:name="page-content">
         <slot />
       </main>
       <footer
@@ -320,9 +299,8 @@ const schemaPayload = [
         class="relative z-10 mx-auto mt-12 w-full max-w-6xl rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.2)] p-6 text-center text-sm text-muted-foreground shadow-[0_20px_60px_-34px_hsl(var(--background)/0.92)] transition-colors duration-300"
       >
         <div>
-          Made by <span class="font-medium text-foreground"
-            >Jonathan R Reed</span
-          > · Cybersecurity & AI developer, red team specialist.
+          Made by <span class="font-medium text-foreground">Jonathan R Reed</span> · AI policy, AI developer
+          tools, and developer ethics.
         </div>
         <nav
           aria-label="Footer"
@@ -330,20 +308,17 @@ const schemaPayload = [
         >
           <a
             href="/about/"
-            class="font-semibold text-foreground transition-colors hover:text-accent"
-            >About</a
+            class="font-semibold text-foreground transition-colors hover:text-accent">About</a
           >
           <span class="text-muted-foreground/60" aria-hidden="true">·</span>
           <a
             href="/contact/"
-            class="font-semibold text-foreground transition-colors hover:text-accent"
-            >Contact</a
+            class="font-semibold text-foreground transition-colors hover:text-accent">Contact</a
           >
           <span class="text-muted-foreground/60" aria-hidden="true">·</span>
           <a
             href="/privacy/"
-            class="font-semibold text-foreground transition-colors hover:text-accent"
-            >Privacy</a
+            class="font-semibold text-foreground transition-colors hover:text-accent">Privacy</a
           >
           <span class="text-muted-foreground/60" aria-hidden="true">·</span>
           <a
@@ -368,97 +343,70 @@ const schemaPayload = [
       <script is:inline>
         // Scroll Reveal Observer
         (function () {
-          if (
-            typeof window === "undefined" ||
-            typeof IntersectionObserver === "undefined"
-          )
-            return;
+          if (typeof window === 'undefined' || typeof IntersectionObserver === 'undefined') return;
 
           const initReveal = () => {
             const observer = new IntersectionObserver(
               (entries) => {
                 entries.forEach((entry) => {
                   if (entry.isIntersecting) {
-                    entry.target.classList.add("visible");
+                    entry.target.classList.add('visible');
                   }
                 });
               },
               {
                 threshold: 0.1,
-                rootMargin: "0px 0px -50px 0px",
-              },
+                rootMargin: '0px 0px -50px 0px',
+              }
             );
 
-            document
-              .querySelectorAll(".reveal, .reveal-stagger")
-              .forEach((el) => {
-                observer.observe(el);
-              });
+            document.querySelectorAll('.reveal, .reveal-stagger').forEach((el) => {
+              observer.observe(el);
+            });
           };
 
           // Run on initial load
-          if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", initReveal);
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initReveal);
           } else {
             initReveal();
           }
 
           // Re-run after Astro page transitions
-          document.addEventListener("astro:page-load", initReveal);
+          document.addEventListener('astro:page-load', initReveal);
         })();
 
         // Cursor Spotlight Tracking
         (function () {
-          if (typeof window === "undefined") return;
+          if (typeof window === 'undefined') return;
 
           const initSpotlight = () => {
-            document.querySelectorAll(".cursor-spotlight").forEach((el) => {
-              el.addEventListener("mousemove", (e) => {
+            document.querySelectorAll('.cursor-spotlight').forEach((el) => {
+              el.addEventListener('mousemove', (e) => {
                 const rect = el.getBoundingClientRect();
                 const x = ((e.clientX - rect.left) / rect.width) * 100;
                 const y = ((e.clientY - rect.top) / rect.height) * 100;
-                el.style.setProperty("--mouse-x", x + "%");
-                el.style.setProperty("--mouse-y", y + "%");
+                el.style.setProperty('--mouse-x', x + '%');
+                el.style.setProperty('--mouse-y', y + '%');
               });
             });
           };
 
-          if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", initSpotlight);
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initSpotlight);
           } else {
             initSpotlight();
           }
 
-          document.addEventListener("astro:page-load", initSpotlight);
-        })();
-      </script>
-      <script is:inline>
-        (function () {
-          if (typeof window === "undefined") return;
-
-          const ascii = `
-    ___  ________  ________     
-   |\\  \\|\\   __  \\|\\   __  \\    
-   \\ \\  \\ \\  \\|\\  \\ \\  \\|\\  \\   
- __ \\ \\  \\ \\   _  _\\ \\   _  _\\  
-|\\  \\\\_\\  \\ \\  \\\\  \\\\ \\  \\\\  \\|
-\\ \\________\\ \\__\\\\ _\\\\ \\__\\\\ _\\
- \\|________|\\|__|\\|__|\\|__|\\|__|
-                                
-                                
-                                
-          `;
-
-          console.log(ascii);
-          console.log("Hey there. Interested in code");
-          console.log("Check out my GitHub: https://github.com/JonathanRReed");
-          console.log("Most of my sites repos are open source.");
+          document.addEventListener('astro:page-load', initSpotlight);
         })();
       </script>
       <script is:inline>
         // Privacy-first analytics (no cookies, no IP)
         (function () {
           if (typeof window === 'undefined') return;
+          if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            return;
           var sent = false;
           function send() {
             if (sent) return;

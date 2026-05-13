@@ -1,5 +1,5 @@
 ---
-import { cn } from "../lib/utils";
+import { cn } from '../lib/utils';
 
 interface Cta {
   href: string;
@@ -10,7 +10,7 @@ interface Props {
   eyebrow: string;
   title: string;
   description: string;
-  accent?: "foam" | "gold" | "love" | "iris" | "pine";
+  accent?: 'foam' | 'gold' | 'love' | 'iris' | 'pine';
   primaryCta?: Cta;
   secondaryCta?: Cta;
 }
@@ -19,32 +19,30 @@ const {
   eyebrow,
   title,
   description,
-  accent = "foam",
+  accent = 'foam',
   primaryCta,
   secondaryCta,
 } = Astro.props as Props;
 
-const hasMeta = Astro.slots.has("meta");
-const hasExtra = Astro.slots.has("extra");
+const hasMeta = Astro.slots.has('meta');
+const hasExtra = Astro.slots.has('extra');
 ---
 
 <section
   class={cn(
-    "relative",
+    'relative',
     hasMeta
-      ? "grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] lg:items-start"
-      : "mx-auto max-w-3xl space-y-4",
+      ? 'grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] lg:items-start'
+      : 'mx-auto max-w-3xl space-y-4'
   )}
   style={`--hero-accent: var(--${accent});`}
 >
-  <div class={cn("space-y-4 lg:space-y-5", hasMeta && "max-w-xl")}>
+  <div class={cn('space-y-4 lg:space-y-5', hasMeta && 'max-w-xl')}>
     <div
       class="inline-flex items-center gap-3 rounded-full border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.4)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground"
     >
       {eyebrow}
-      <span
-        class="inline-flex h-2 w-2 rounded-full bg-[hsl(var(--hero-accent))]"
-      ></span>
+      <span class="inline-flex h-2 w-2 rounded-full bg-[hsl(var(--hero-accent))]"></span>
     </div>
 
     <div class="space-y-5">
@@ -53,9 +51,7 @@ const hasExtra = Astro.slots.has("extra");
       >
         {title}
       </h1>
-      <p
-        class="max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground"
-      >
+      <p class="max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground">
         {description}
       </p>
     </div>
@@ -76,11 +72,7 @@ const hasExtra = Astro.slots.has("extra");
                 stroke="currentColor"
                 stroke-width="1.8"
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M9 5l7 7-7 7"
-                />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </a>
           )}
@@ -97,11 +89,7 @@ const hasExtra = Astro.slots.has("extra");
                 stroke="currentColor"
                 stroke-width="1.8"
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M4 12h16"
-                />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 12h16" />
               </svg>
             </a>
           )}
@@ -122,10 +110,10 @@ const hasExtra = Astro.slots.has("extra");
     hasMeta && (
       <div class="relative">
         <div
-          class="absolute -inset-3 rounded-[1.75rem] border border-[hsl(var(--border)/0.2)] bg-[hsl(var(--card)/0.5)] blur-sm"
+          class="absolute -inset-3 rounded-[1.75rem] border border-[hsl(var(--border)/0.18)] bg-[hsl(var(--card)/0.46)]"
           aria-hidden="true"
         />
-        <div class="relative space-y-5 rounded-[1.75rem] border border-[hsl(var(--border)/0.45)] bg-[hsl(var(--card)/0.86)] p-5 shadow-[0_30px_80px_-50px_hsl(var(--background)/0.95)] sm:p-6">
+        <div class="relative space-y-5 rounded-[1.75rem] border border-[hsl(var(--border)/0.45)] bg-[hsl(var(--card)/0.9)] p-5 shadow-[0_30px_80px_-50px_hsl(var(--background)/0.95)] sm:p-6">
           <slot name="meta" />
         </div>
       </div>

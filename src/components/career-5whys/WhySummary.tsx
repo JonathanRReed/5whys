@@ -27,11 +27,17 @@ export default function WhySummary({
   children,
 }: WhySummaryProps) {
   return (
-    <Card className="bg-gradient-to-br from-[hsl(var(--iris)/0.2)] via-transparent to-[hsl(var(--primary)/0.2)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] backdrop-blur-lg">
+    <Card className="bg-gradient-to-br from-[hsl(var(--iris)/0.2)] via-transparent to-[hsl(var(--primary)/0.2)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] ">
       <CardHeader>
-        <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">Completion summary</p>
-        <CardTitle className="text-2xl font-semibold text-[hsl(var(--foreground))]">Why Statement</CardTitle>
-        <div className="text-sm text-[hsl(var(--muted-foreground))]">Confidence {sequentialConfidence}%</div>
+        <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
+          Completion summary
+        </p>
+        <CardTitle className="text-2xl font-semibold text-[hsl(var(--foreground))]">
+          Why Statement
+        </CardTitle>
+        <div className="text-sm text-[hsl(var(--muted-foreground))]">
+          Confidence {sequentialConfidence}%
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="rounded-2xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] p-5 text-lg leading-relaxed text-[hsl(var(--foreground))]">

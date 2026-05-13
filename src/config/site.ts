@@ -13,9 +13,9 @@ export const siteConfig = {
     'five whys exercise',
     'job search tools',
     'Jonathan R Reed',
-    'Jonathan Reed'
+    'Jonathan Reed',
   ],
-  themeColor: '#0f111a',
+  themeColor: '#0e1015',
   ogImage: '/career-studio-favicon-512x512.png',
   locale: 'en_US',
   author: {
@@ -24,7 +24,7 @@ export const siteConfig = {
     url: 'https://jonathanrreed.com',
     twitter: '@jonathanrreed',
     linkedin: 'https://www.linkedin.com/in/jonathanrreed/',
-  }
+  },
 };
 
 export const baseSchemas = {
@@ -48,15 +48,15 @@ export const baseSchemas = {
     name: 'Jonathan R Reed',
     alternateName: ['Jonathan Reed', 'Jonathan Reed AI'],
     url: 'https://jonathanrreed.com',
-    jobTitle: ['AI Consultant', 'Cybersecurity Specialist', 'Red Teamer', 'Developer'],
+    jobTitle: ['AI Policy Researcher', 'AI Developer Tools Builder', 'Developer Ethics Writer'],
     sameAs: [
       'https://www.linkedin.com/in/jonathanrreed/',
       'https://github.com/JonathanRReed',
-      'https://helloworldfirm.com'
+      'https://helloworldfirm.com',
     ],
     worksFor: {
       '@type': 'Organization',
-      name: 'Hello.World Consulting'
-    }
-  }
+      name: 'Hello.World Consulting',
+    },
+  },
 };

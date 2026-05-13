@@ -1,5 +1,5 @@
 /**
- * Career Bridge — Unified data reader across all 5 Whys tools.
+ * Career Bridge , Unified data reader across all 5 Whys tools.
  * Reads from each tool's localStorage namespace and exposes a
  * single dashboard-friendly view of the user's career data.
  */
@@ -154,7 +154,9 @@ function readNetworking(): NetworkingSummary | null {
           return vals.reduce((a: number, b: number) => a + b, 0) / vals.length;
         });
       if (ratings.length > 0) {
-        averageRating = Math.round((ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length) * 10) / 10;
+        averageRating =
+          Math.round((ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length) * 10) /
+          10;
       }
     }
 
@@ -202,7 +204,12 @@ export function readCareerDashboard(): CareerDashboardData {
   const glowup = readGlowUp();
   const networking = readNetworking();
 
-  const hasData = !!(resume?.bullets?.length || why?.snapshots?.length || glowup?.storyCount || networking?.sessionCount);
+  const hasData = !!(
+    resume?.bullets?.length ||
+    why?.snapshots?.length ||
+    glowup?.storyCount ||
+    networking?.sessionCount
+  );
 
   const avgScore = resume?.bullets?.length
     ? Math.round(resume.bullets.reduce((s, b) => s + b.improvedScore, 0) / resume.bullets.length)
@@ -271,7 +278,9 @@ export function readCareerDashboard(): CareerDashboardData {
     recommendations.push('Practice your elevator pitch with the Networking timer.');
   }
   if (resume?.signalReport?.hardSkills?.length && glowup && !glowup.storyCount) {
-    recommendations.push(`Great — you have ${resume.signalReport.hardSkills.length} hard skills detected. Turn them into interview stories.`);
+    recommendations.push(
+      `Great , you have ${resume.signalReport.hardSkills.length} hard skills detected. Turn them into interview stories.`
+    );
   }
 
   return {
@@ -291,9 +300,10 @@ export function readCareerDashboard(): CareerDashboardData {
           latestTopic: why.session?.topic ?? (why.snapshots[0]?.topic || null),
           latestTrack: why.session?.track ?? (why.snapshots[0]?.track || null),
           snapshotCount: why.snapshots?.length ?? 0,
-          whyStatement: why.session && why.session.responses?.filter(Boolean).length >= 4
-            ? why.session.responses[why.session.responses.length - 1]
-            : null,
+          whyStatement:
+            why.session && why.session.responses?.filter(Boolean).length >= 4
+              ? why.session.responses[why.session.responses.length - 1]
+              : null,
           hasSession: !!why.session,
         }
       : null,

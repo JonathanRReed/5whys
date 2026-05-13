@@ -46,7 +46,7 @@ export default function ResumeInput({
   };
 
   return (
-    <Card className="backdrop-blur-xl">
+    <Card>
       <CardHeader className="space-y-4">
         <CardTitle className="text-2xl">Upload or paste resume</CardTitle>
         <p className="text-sm text-muted-foreground">
@@ -56,7 +56,10 @@ export default function ResumeInput({
       <CardContent className="space-y-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col items-start gap-2">
-            <Label htmlFor="resume-upload" className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+            <Label
+              htmlFor="resume-upload"
+              className="text-xs uppercase tracking-[0.3em] text-muted-foreground"
+            >
               Upload
             </Label>
             <Input

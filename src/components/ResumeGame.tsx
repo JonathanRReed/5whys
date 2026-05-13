@@ -19,7 +19,12 @@ import {
   analyzeResumeLength,
   extractSkills,
 } from '../lib/resume-game';
-import type { BulletFields, BulletRecord, SignalReport, StoredResumeSession } from '../lib/resume-game';
+import type {
+  BulletFields,
+  BulletRecord,
+  SignalReport,
+  StoredResumeSession,
+} from '../lib/resume-game';
 import ResumeHeader from './resume-game/ResumeHeader';
 import ResumeInput from './resume-game/ResumeInput';
 import ScanResults from './resume-game/ScanResults';
@@ -83,9 +88,12 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     (updater: BulletRecord[] | ((previous: BulletRecord[]) => BulletRecord[])) => {
       setSessionState((previous) => {
         const nextBullets =
-          typeof updater === 'function' ? (updater as (list: BulletRecord[]) => BulletRecord[])(previous.bullets) : updater;
+          typeof updater === 'function'
+            ? (updater as (list: BulletRecord[]) => BulletRecord[])(previous.bullets)
+            : updater;
         const nextSelected = nextBullets.length
-          ? nextBullets.find((bullet) => bullet.id === previous.selectedBulletId)?.id ?? nextBullets[0].id
+          ? (nextBullets.find((bullet) => bullet.id === previous.selectedBulletId)?.id ??
+            nextBullets[0].id)
           : null;
         return { ...previous, bullets: nextBullets, selectedBulletId: nextSelected };
       });
@@ -124,7 +132,9 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
   const quantifiedBullets = bullets.filter((bullet) => /\d/.test(bullet.improved)).length;
   const verbCoverage = bullets.length
     ? Math.round(
-        (bullets.filter((bullet) => POWER_VERB_PATTERN.test(bullet.improved.toLowerCase())).length / bullets.length) * 100
+        (bullets.filter((bullet) => POWER_VERB_PATTERN.test(bullet.improved.toLowerCase())).length /
+          bullets.length) *
+          100
       )
     : 0;
 
@@ -139,9 +149,12 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     return () => window.clearTimeout(timeout);
   }, [status]);
 
-  React.useEffect(() => () => {
-    if (frameRef.current) cancelAnimationFrame(frameRef.current);
-  }, []);
+  React.useEffect(
+    () => () => {
+      if (frameRef.current) cancelAnimationFrame(frameRef.current);
+    },
+    []
+  );
 
   const analyzeResume = React.useCallback(() => {
     const lines = extractBullets(resumeText);
@@ -253,12 +266,17 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
         const nextFields = { ...bullet.fields, [field]: value };
         const improved = buildBullet(nextFields);
         const bonus = fieldBonus(nextFields) + editBonus(bullet.original, nextFields);
-        return { ...bullet, fields: nextFields, improved, improvedScore: scoreBullet(improved) + bonus };
+        return {
+          ...bullet,
+          fields: nextFields,
+          improved,
+          improvedScore: scoreBullet(improved) + bonus,
+        };
       })
     );
   };
 
-  const markdownReport = () => {
+  const markdownReport = React.useCallback(() => {
     const original = bullets.map((bullet, index) => `${index + 1}. ${bullet.original}`);
     const improved = bullets.map((bullet, index) => `${index + 1}. ${bullet.improved}`);
     return `# Resume Game Report
@@ -274,10 +292,14 @@ ${original.join('\n')}
 ## Improved Bullets
 ${improved.join('\n')}
 `;
-  };
+  }, [averageScore, bullets, quantifiedBullets, signalReport.visible]);
 
   const exportBase = React.useMemo(() => {
-    const headline = bullets[0]?.improved || bullets[0]?.original || resumeText.split('\n').find((line) => line.trim()) || 'resume-session';
+    const headline =
+      bullets[0]?.improved ||
+      bullets[0]?.original ||
+      resumeText.split('\n').find((line) => line.trim()) ||
+      'resume-session';
     const slug = slugify(headline).slice(0, 60) || 'resume-session';
     const stamped = (session.lastAnalyzedAt ?? new Date().toISOString()).slice(0, 10);
     return `resume-game-${slug}-${stamped}`;
@@ -331,7 +353,8 @@ ${improved.join('\n')}
       {!scanComplete && resumeText.trim() && (
         <div className="rounded-2xl border border-dashed border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.15)] p-8 text-center">
           <p className="text-sm text-muted-foreground">
-            Click &quot;Analyze resume&quot; above to see your signal report, highlighted text, and scoring breakdown.
+            Click &quot;Analyze resume&quot; above to see your signal report, highlighted text, and
+            scoring breakdown.
           </p>
         </div>
       )}
@@ -346,7 +369,11 @@ ${improved.join('\n')}
 
       {scanComplete && bullets.length > 0 && (
         <div className="grid gap-6 lg:grid-cols-[320px,minmax(0,1fr)]">
-          <BulletList bullets={bullets} selectedBulletId={selectedBulletId} onSelect={setSelectedBulletId} />
+          <BulletList
+            bullets={bullets}
+            selectedBulletId={selectedBulletId}
+            onSelect={setSelectedBulletId}
+          />
           <BulletEditor bullet={selectedBullet} onFieldChange={updateBulletField} />
         </div>
       )}

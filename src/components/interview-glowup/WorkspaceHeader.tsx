@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { exportJSON, clearAllData, loadData } from '../../lib/glowup-store';
+import { exportJSON, clearAllData } from '../../lib/glowup-store';
 
 type Props = {
   onClearData: () => void;

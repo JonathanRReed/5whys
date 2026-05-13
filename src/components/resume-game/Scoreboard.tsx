@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import type { BulletRecord, SignalReport } from '../../lib/resume-game';
+import type { SignalReport } from '../../lib/resume-game';
 
 type Props = {
   averageScore: number;
@@ -21,18 +21,24 @@ export default function Scoreboard({
   onExportMarkdown,
   onExportDocx,
 }: Props) {
-  const quantifiedPercent = totalBullets > 0 ? Math.round((quantifiedBullets / totalBullets) * 100) : 0;
+  const quantifiedPercent =
+    totalBullets > 0 ? Math.round((quantifiedBullets / totalBullets) * 100) : 0;
 
   return (
-    <Card className="backdrop-blur-lg">
+    <Card>
       <CardHeader>
         <CardTitle className="text-xl">Scoreboard</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Primary metric — largest, most prominent */}
+        {/* Primary metric, largest and most prominent */}
         <div className="rounded-2xl border border-[hsl(var(--foam)/0.6)] bg-gradient-to-br from-[hsl(var(--foam)/0.15)] to-[hsl(var(--overlay)/0.3)] p-6 text-center ring-1 ring-[hsl(var(--foam)/0.3)]">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Average bullet score</p>
-          <p className="mt-1 text-5xl font-bold text-[hsl(var(--foam))]" aria-label={`Average score: ${averageScore} out of 100`}>
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+            Average bullet score
+          </p>
+          <p
+            className="mt-1 text-5xl font-bold text-[hsl(var(--foam))]"
+            aria-label={`Average score: ${averageScore} out of 100`}
+          >
             {averageScore}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">out of 100</p>
@@ -42,26 +48,30 @@ export default function Scoreboard({
         <div className="grid gap-3 md:grid-cols-4">
           <div className="rounded-xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.35)] p-3 text-center">
             <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Quantified</p>
-            <p className="text-2xl font-semibold text-[hsl(var(--foam))]">
-              {quantifiedPercent}%
-            </p>
+            <p className="text-2xl font-semibold text-[hsl(var(--foam))]">{quantifiedPercent}%</p>
             <p className="text-[10px] text-muted-foreground">
               {quantifiedBullets}/{totalBullets} bullets
             </p>
           </div>
           <div className="rounded-xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.35)] p-3 text-center">
-            <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Verb coverage</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+              Verb coverage
+            </p>
             <p className="text-2xl font-semibold text-[hsl(var(--iris))]">{verbCoverage}%</p>
             <p className="text-[10px] text-muted-foreground">With action verbs</p>
           </div>
           <div className="rounded-xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.35)] p-3 text-center">
             <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Signal</p>
-            <p className="text-2xl font-semibold text-[hsl(var(--love))]">{signalReport.visible}%</p>
+            <p className="text-2xl font-semibold text-[hsl(var(--love))]">
+              {signalReport.visible}%
+            </p>
             <p className="text-[10px] text-muted-foreground">Strength</p>
           </div>
           <div className="rounded-xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.35)] p-3 text-center">
             <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Hard skills</p>
-            <p className="text-2xl font-semibold text-[hsl(var(--primary))]">{signalReport.hardSkills.length}</p>
+            <p className="text-2xl font-semibold text-[hsl(var(--primary))]">
+              {signalReport.hardSkills.length}
+            </p>
             <p className="text-[10px] text-muted-foreground">Detected</p>
           </div>
         </div>
