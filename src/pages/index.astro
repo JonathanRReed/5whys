@@ -4,19 +4,11 @@ import ToolCard from "../components/ToolCard.astro";
 import PageHero from "../components/PageHero.astro";
 import { siteConfig } from "../config/site";
 
-const metrics = [
-  {
-    label: "Deep reflection prompts",
-    value: "10",
-  },
-  {
-    label: "Resume scoring heuristics",
-    value: "13",
-  },
-  {
-    label: "Guided networking scenarios",
-    value: "3",
-  },
+const highlights = [
+  "Structured reflection exercises",
+  "Resume scoring with instant feedback",
+  "Networking rehearsal with timers",
+  "Interview packet builder",
 ];
 
 const toolkitItems = [
@@ -90,22 +82,13 @@ const homeStructuredData = [
         secondaryCta={{ href: "#tools", label: "Browse the toolkit" }}
       >
         <fragment slot="extra">
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {
-              metrics.map((metric) => (
-                <div class="group rounded-2xl border border-[hsl(var(--border)/0.4)] bg-[hsl(var(--overlay)/0.35)] p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-[hsl(var(--accent)/0.35)] hover:shadow-[0_18px_40px_-28px_hsl(var(--background)/0.9)]">
-                  <div class="relative">
-                    <div class="pointer-events-none absolute -inset-2 -z-10 rounded-[1.25rem] opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-100 bg-[radial-gradient(circle_at_top_left,hsl(var(--foam)/0.24),transparent_60%)]" />
-                  </div>
-                  <div class="text-2xl font-semibold text-foreground">
-                    {metric.value}
-                  </div>
-                  <div class="text-sm text-muted-foreground">
-                    {metric.label}
-                  </div>
-                </div>
-              ))
-            }
+          <div class="flex flex-wrap gap-x-4 gap-y-2">
+            {highlights.map((item) => (
+              <span class="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                <span class="h-1.5 w-1.5 rounded-full bg-[hsl(var(--foam))]" aria-hidden="true" />
+                {item}
+              </span>
+            ))}
           </div>
         </fragment>
 
@@ -273,43 +256,33 @@ const homeStructuredData = [
       </div>
     </section>
 
-    <section
-      class="reveal mx-auto w-full max-w-6xl rounded-3xl border border-[hsl(var(--border)/0.4)] bg-[hsl(var(--overlay)/0.35)] p-6 sm:p-8 lg:p-12"
-    >
-      <div
-        class="grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(260px,1fr)] md:items-center"
-      >
+    <section class="reveal mx-auto w-full max-w-6xl">
+      <div class="grid gap-8 md:grid-cols-[1fr_1.2fr] md:items-start">
         <div class="space-y-4">
           <h3 class="text-2xl font-semibold tracking-tight text-foreground">
             Designed for calm, confident progress
           </h3>
-          <p class="text-pretty text-base text-muted-foreground">
+          <p class="max-w-md text-pretty text-base leading-relaxed text-muted-foreground">
             Whether you’re deep in reflection or prepping for interviews, the
             Career Tools studio keeps your focus on what matters. Gentle
             animations, high contrast color modes, & structured flows help every
             session feel grounded.
           </p>
         </div>
-        <div class="grid gap-3 text-sm text-muted-foreground">
-          <div
-            class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--card)/0.6)] px-4 py-3"
-          >
-            <span class="h-2.5 w-2.5 rounded-full bg-[hsl(var(--foam))]"></span>
-            Clear contrast across Night and Dawn modes.
-          </div>
-          <div
-            class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--card)/0.6)] px-4 py-3"
-          >
-            <span class="h-2.5 w-2.5 rounded-full bg-[hsl(var(--iris))]"></span>
-            Guided prompts, timers, & feedback loops built for momentum.
-          </div>
-          <div
-            class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--card)/0.6)] px-4 py-3"
-          >
-            <span class="h-2.5 w-2.5 rounded-full bg-[hsl(var(--love))]"></span>
-            Accessible typography, focus states, & keyboard-friendly interactions.
-          </div>
-        </div>
+        <ul class="space-y-3 text-sm text-muted-foreground">
+          <li class="flex items-start gap-3">
+            <span class="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[hsl(var(--foam))]" aria-hidden="true" />
+            <span>Clear contrast across Night and Dawn modes with full keyboard navigation.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[hsl(var(--iris))]" aria-hidden="true" />
+            <span>Guided prompts, timers, and feedback loops built for momentum.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[hsl(var(--love))]" aria-hidden="true" />
+            <span>All data stays in your browser. No accounts. No tracking.</span>
+          </li>
+        </ul>
       </div>
     </section>
 
