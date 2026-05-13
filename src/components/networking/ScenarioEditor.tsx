@@ -15,7 +15,7 @@ export default function ScenarioEditor({ currentVersion, onFieldChange }: Props)
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-[hsl(var(--gold))]">
             <span className="text-2xl" aria-hidden="true">&#x1F9D1;&#x200D;&#x1F4BC;</span>
-            <span className="sr-only">Who</span>
+            <span className="sr-only">Audience or person you are speaking with</span>
             WHO
           </CardTitle>
         </CardHeader>
@@ -33,7 +33,7 @@ export default function ScenarioEditor({ currentVersion, onFieldChange }: Props)
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-[hsl(var(--love))]">
             <span className="text-2xl" aria-hidden="true">&#x1F4CD;</span>
-            <span className="sr-only">Where</span>
+            <span className="sr-only">Location or setting of the conversation</span>
             WHERE
           </CardTitle>
         </CardHeader>
@@ -51,7 +51,7 @@ export default function ScenarioEditor({ currentVersion, onFieldChange }: Props)
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-[hsl(var(--foam))]">
             <span className="text-2xl" aria-hidden="true">&#x23F3;</span>
-            <span className="sr-only">What</span>
+            <span className="sr-only">Goal or question you want to ask</span>
             WHAT
           </CardTitle>
         </CardHeader>
