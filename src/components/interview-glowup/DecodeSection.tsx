@@ -19,7 +19,7 @@ import { PartyIcon } from './icons';
 
 type Props = {
   data: GlowUpData;
-  setData: React.Dispatch<React.SetStateAction<GlowUpData | null>>;
+  setData: React.Dispatch<React.SetStateAction<GlowUpData>>;
   currentRole: DecodedRole | undefined;
 };
 

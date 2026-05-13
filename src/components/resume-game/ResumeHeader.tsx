@@ -18,7 +18,7 @@ export default function ResumeHeader({ showHeader = true }: Props) {
         items={[
           {
             title: 'Drop your draft',
-            body: 'Paste bullets or upload a .txt file—use the sample resume if you need a quick demo.',
+            body: 'Paste bullets or upload a .txt, .md, .docx, or .pdf file—use the sample resume if you need a quick demo.',
           },
           {
             title: 'Run the scan',
