@@ -3,33 +3,6 @@ import Base from '../../../layouts/Base.astro';
 import InterviewGlowUpWorkspace from '../../../components/InterviewGlowUp/InterviewGlowUpWorkspace';
 import ErrorBoundary from '../../../components/shared/ErrorBoundary';
 import WithToasts from '../../../components/WithToasts';
-import { siteConfig } from '../../../config/site';
-
-const pageUrl = new URL('/5whys/interview-glow-up/workspace', siteConfig.siteUrl).toString();
-const workspaceSchemas = [
-  {
-    '@context': 'https://schema.org',
-    '@type': 'WebApplication',
-    '@id': `${pageUrl}#webapp`,
-    url: pageUrl,
-    name: 'Interview Glow Up Workspace',
-    description:
-      'Interactive workspace to decode job descriptions, build proof-based stories, manage your story vault, and create interview packets with a panic-proof HUD mode.',
-    inLanguage: 'en-US',
-    applicationCategory: 'ProductivityApplication',
-    operatingSystem: 'Web Browser',
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'USD',
-    },
-    author: {
-      '@type': 'Person',
-      name: siteConfig.author.name,
-      url: siteConfig.author.url,
-    },
-  },
-];
 ---
 
 <Base
@@ -40,7 +13,7 @@ const workspaceSchemas = [
     { label: 'Interview Glow Up', href: '/5whys/interview-glow-up/' },
     { label: 'Workspace', href: '/5whys/interview-glow-up/workspace/' },
   ]}
-  structuredData={workspaceSchemas}
+  structuredData={[]}
 >
   <div class="relative space-y-10 overflow-hidden px-4 pb-16 pt-4 sm:pt-6">
     <section class="mx-auto w-full max-w-7xl">

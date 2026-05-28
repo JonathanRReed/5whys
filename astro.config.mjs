@@ -8,6 +8,9 @@ import sitemap from '@astrojs/sitemap';
 export default defineConfig({
   site: 'https://5whys.jonathanrreed.com',
   output: 'static',
+  build: {
+    inlineStylesheets: 'never',
+  },
   integrations: [
     react(),
     tailwind({ applyBaseStyles: false }),
