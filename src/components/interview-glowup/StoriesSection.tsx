@@ -8,10 +8,7 @@ import {
   updateStory,
   getTopGaps,
 } from '../../lib/glowup-store';
-import {
-  SKILL_BANK,
-  getSkillName,
-} from '../../lib/glowup-banks';
+import { SKILL_BANK, getSkillName } from '../../lib/glowup-banks';
 import { WarningIcon, LightbulbIcon, XIcon, PencilIcon } from './icons';
 
 type Props = {
@@ -24,9 +21,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [formData, setFormData] = React.useState<Partial<Story>>({});
 
-  const recentStories = [...data.stories]
-    .sort((a, b) => b.updatedAt - a.updatedAt)
-    .slice(0, 5);
+  const recentStories = [...data.stories].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 5);
 
   const startNew = (skillId?: string) => {
     setEditingId('new');
@@ -61,7 +56,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
     setFormData({});
   };
 
-  const playSentences = (formData.play ?? '').split(/[.!?]+/).filter(s => s.trim()).length;
+  const playSentences = (formData.play ?? '').split(/[.!?]+/).filter((s) => s.trim()).length;
   const hasNumbers = /[$%#0-9]/.test(formData.proof ?? '');
   const topGaps = currentRole ? getTopGaps(data, currentRole) : [];
 
@@ -79,7 +74,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
           {topGaps.length > 0 && (
             <>
               <span className="text-sm text-muted-foreground">Start with gap:</span>
-              {topGaps.map(skillId => (
+              {topGaps.map((skillId) => (
                 <button
                   key={skillId}
                   type="button"
@@ -112,26 +107,32 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Primary Skill *</label>
+              <label className="mb-1 block text-sm font-medium text-foreground">
+                Primary Skill *
+              </label>
               <select
                 value={formData.primarySkillId ?? ''}
-                onChange={e => setFormData({ ...formData, primarySkillId: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, primarySkillId: e.target.value })}
                 className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
               >
                 <option value="">Select skill...</option>
-                {SKILL_BANK.map(skill => (
-                  <option key={skill.id} value={skill.id}>{skill.name}</option>
+                {SKILL_BANK.map((skill) => (
+                  <option key={skill.id} value={skill.id}>
+                    {skill.name}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Confidence (1-100)</label>
+              <label className="mb-1 block text-sm font-medium text-foreground">
+                Confidence (1-100)
+              </label>
               <input
                 type="number"
                 min={1}
                 max={100}
                 value={formData.confidence ?? 70}
-                onChange={e => setFormData({ ...formData, confidence: Number(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, confidence: Number(e.target.value) })}
                 className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
               />
             </div>
@@ -139,34 +140,46 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Trigger (1-3 words)</label>
-              <p className="mb-1 text-xs text-muted-foreground">A short label you’ll use to recall this story quickly.</p>
+              <label className="mb-1 block text-sm font-medium text-foreground">
+                Trigger (1-3 words)
+              </label>
+              <p className="mb-1 text-xs text-muted-foreground">
+                A short label you’ll use to recall this story quickly.
+              </p>
               <input
                 type="text"
                 value={formData.trigger ?? ''}
-                onChange={e => setFormData({ ...formData, trigger: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, trigger: e.target.value })}
                 placeholder="API redesign"
                 className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Hook (~25 words)</label>
-              <p className="mb-1 text-xs text-muted-foreground">The setup: what was the situation or problem?</p>
+              <label className="mb-1 block text-sm font-medium text-foreground">
+                Hook (~25 words)
+              </label>
+              <p className="mb-1 text-xs text-muted-foreground">
+                The setup: what was the situation or problem?
+              </p>
               <input
                 type="text"
                 value={formData.hook ?? ''}
-                onChange={e => setFormData({ ...formData, hook: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, hook: e.target.value })}
                 placeholder="We needed to replace the legacy API..."
                 className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Proof Snippet (~10 words)</label>
-              <p className="mb-1 text-xs text-muted-foreground">The measurable result or impact line.</p>
+              <label className="mb-1 block text-sm font-medium text-foreground">
+                Proof Snippet (~10 words)
+              </label>
+              <p className="mb-1 text-xs text-muted-foreground">
+                The measurable result or impact line.
+              </p>
               <input
                 type="text"
                 value={formData.proofSnippet ?? ''}
-                onChange={e => setFormData({ ...formData, proofSnippet: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, proofSnippet: e.target.value })}
                 placeholder="40% faster, zero downtime"
                 className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
               />
@@ -183,10 +196,12 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                 </span>
               )}
             </label>
-            <p className="mb-1 text-xs text-muted-foreground">The core of your story: your actions, decisions, and approach.</p>
+            <p className="mb-1 text-xs text-muted-foreground">
+              The core of your story: your actions, decisions, and approach.
+            </p>
             <textarea
               value={formData.play ?? ''}
-              onChange={e => setFormData({ ...formData, play: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, play: e.target.value })}
               placeholder="What was the challenge? What exactly did you do?"
               rows={4}
               className={cn(
@@ -208,10 +223,12 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                 </span>
               )}
             </label>
-            <p className="mb-1 text-xs text-muted-foreground">Quantifiable outcomes, feedback quotes, or concrete evidence.</p>
+            <p className="mb-1 text-xs text-muted-foreground">
+              Quantifiable outcomes, feedback quotes, or concrete evidence.
+            </p>
             <textarea
               value={formData.proof ?? ''}
-              onChange={e => setFormData({ ...formData, proof: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, proof: e.target.value })}
               placeholder="Numbers, time saved, revenue, or specific praise..."
               rows={3}
               className="w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
@@ -244,7 +261,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
             Recent Stories
           </h3>
           <div className="grid gap-3 sm:grid-cols-2">
-            {recentStories.map(story => (
+            {recentStories.map((story) => (
               <div
                 key={story.id}
                 className="rounded-xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.15)] p-4"
@@ -254,8 +271,12 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                     <span className="rounded-full bg-[hsl(var(--foam)/0.15)] px-2 py-0.5 text-xs font-medium text-[hsl(var(--foam))]">
                       {getSkillName(story.primarySkillId)}
                     </span>
-                    <p className="mt-2 text-sm font-medium text-foreground">{story.trigger || 'Untitled'}</p>
-                    <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{story.hook || story.play}</p>
+                    <p className="mt-2 text-sm font-medium text-foreground">
+                      {story.trigger || 'Untitled'}
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                      {story.hook || story.play}
+                    </p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <span className="text-xs text-muted-foreground">{story.confidence}%</span>

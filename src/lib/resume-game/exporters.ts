@@ -20,7 +20,11 @@ function documentXml(content: string) {
   const paragraphs = content
     .split('\n')
     .map((line) => line.trimEnd())
-    .map((line) => (line.length ? `<w:p><w:r><w:t xml:space="preserve">${escapeXml(line)}</w:t></w:r></w:p>` : '<w:p/>'))
+    .map((line) =>
+      line.length
+        ? `<w:p><w:r><w:t xml:space="preserve">${escapeXml(line)}</w:t></w:r></w:p>`
+        : '<w:p/>'
+    )
     .join('');
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">

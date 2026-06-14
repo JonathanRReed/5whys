@@ -40,7 +40,12 @@ export {
   capitalizeWord,
 } from './text';
 export { exportDocx, downloadTextFile } from './exporters';
-export { useResumeSession, EMPTY_SESSION, EMPTY_SIGNAL_REPORT, SESSION_STORAGE_KEY } from './session';
+export {
+  useResumeSession,
+  EMPTY_SESSION,
+  EMPTY_SIGNAL_REPORT,
+  SESSION_STORAGE_KEY,
+} from './session';
 export type {
   BulletFields,
   BulletRecord,

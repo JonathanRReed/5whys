@@ -11,41 +11,35 @@ import CareerDashboard from '../components/CareerDashboard';
   <div class="relative mx-auto w-full max-w-6xl px-4 py-8 sm:py-12 reveal">
     <h1 class="sr-only">Career Dashboard</h1>
     <p class="sr-only">
-      The 5 Whys Career Studio dashboard summarizes local career progress,
-      saved reflection work, resume review signals, interview preparation
-      activity, networking practice history, suggested next steps, and tool
-      recommendations. It gives returning visitors a private browser-based
-      overview of their career exercises without requiring an account or server
-      profile. The dashboard connects the start page, career reflection flow,
-      resume bullet game, networking practice studio, and interview glow up
-      workspace so progress can be reviewed from one place. It is designed for
-      visitors who return after completing exercises and need a quick summary
-      of saved goals, completed practice, unfinished tasks, and recommended
-      follow-up work. The page keeps career data local, uses the same private
-      browser storage model as the rest of the studio, and makes the connected
-      tool set easier for crawlers and assistive technology to understand. It
-      also explains the purpose of the client-rendered dashboard before saved
-      browser data loads, including how progress cards, skill notes, practice
-      history, recent sessions, and recommended next actions fit together. The
-      dashboard remains a quiet operational surface for repeated career work,
-      not a public profile, account portal, or analytics-backed tracking page.
+      The 5 Whys Career Studio dashboard summarizes local career progress, saved reflection work,
+      resume review signals, interview preparation activity, networking practice history, suggested
+      next steps, and tool recommendations. It gives returning visitors a private browser-based
+      overview of their career exercises without requiring an account or server profile. The
+      dashboard connects the start page, career reflection flow, resume bullet game, networking
+      practice studio, and interview glow up workspace so progress can be reviewed from one place.
+      It is designed for visitors who return after completing exercises and need a quick summary of
+      saved goals, completed practice, unfinished tasks, and recommended follow-up work. The page
+      keeps career data local, uses the same private browser storage model as the rest of the
+      studio, and makes the connected tool set easier for crawlers and assistive technology to
+      understand. It also explains the purpose of the client-rendered dashboard before saved browser
+      data loads, including how progress cards, skill notes, practice history, recent sessions, and
+      recommended next actions fit together. The dashboard remains a quiet operational surface for
+      repeated career work, not a public profile, account portal, or analytics-backed tracking page.
     </p>
     <p class="sr-only">
-      The dashboard route provides static context for a mostly client-rendered
-      workspace. It explains that saved career reflections, resume practice,
-      interview preparation, networking sessions, and recommended tasks are
-      organized locally for repeated use. The page is useful after someone has
-      completed one or more exercises and wants a concise status view before
-      choosing the next step. It keeps the visible dashboard unchanged while
-      giving crawlers a durable description of what the interface does.
+      The dashboard route provides static context for a mostly client-rendered workspace. It
+      explains that saved career reflections, resume practice, interview preparation, networking
+      sessions, and recommended tasks are organized locally for repeated use. The page is useful
+      after someone has completed one or more exercises and wants a concise status view before
+      choosing the next step. It keeps the visible dashboard unchanged while giving crawlers a
+      durable description of what the interface does.
     </p>
     <p class="sr-only">
-      The dashboard also provides durable server-rendered context for technical
-      SEO checks, including the page heading, product purpose, navigation role,
-      local storage model, relationship to the other 5 Whys tools, and the
-      reason returning visitors may use this route after completing career
-      exercises. It supports accessibility and crawl analysis without changing
-      the visible dashboard, controls, cards, charts, empty states, or layout.
+      The dashboard also provides durable server-rendered context for technical SEO checks,
+      including the page heading, product purpose, navigation role, local storage model,
+      relationship to the other 5 Whys tools, and the reason returning visitors may use this route
+      after completing career exercises. It supports accessibility and crawl analysis without
+      changing the visible dashboard, controls, cards, charts, empty states, or layout.
     </p>
     <CareerDashboard client:load />
   </div>

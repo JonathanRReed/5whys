@@ -9,7 +9,11 @@ export type TimerState = {
 };
 
 export function useTimer() {
-  const [timer, setTimer] = React.useState<TimerState>({ remaining: TOTAL_SECONDS, isRunning: false, startedAt: null });
+  const [timer, setTimer] = React.useState<TimerState>({
+    remaining: TOTAL_SECONDS,
+    isRunning: false,
+    startedAt: null,
+  });
 
   React.useEffect(() => {
     if (!timer.isRunning) return;

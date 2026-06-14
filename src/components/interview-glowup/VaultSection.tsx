@@ -6,10 +6,7 @@ import {
   updatePacket,
   deleteStory,
 } from '../../lib/glowup-store';
-import {
-  SKILL_BANK,
-  getSkillName,
-} from '../../lib/glowup-banks';
+import { SKILL_BANK, getSkillName } from '../../lib/glowup-banks';
 import { CheckIcon, ArchiveIcon } from './icons';
 
 type Props = {
@@ -27,34 +24,35 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
   let stories = [...data.stories].sort((a, b) => (b.lastUsedAt ?? 0) - (a.lastUsedAt ?? 0));
 
   if (skillFilter) {
-    stories = stories.filter(s =>
-      s.primarySkillId === skillFilter || s.otherSkillIds.includes(skillFilter)
+    stories = stories.filter(
+      (s) => s.primarySkillId === skillFilter || s.otherSkillIds.includes(skillFilter)
     );
   }
   if (filter) {
     const lower = filter.toLowerCase();
-    stories = stories.filter(s =>
-      s.play.toLowerCase().includes(lower) ||
-      s.proof.toLowerCase().includes(lower) ||
-      s.hook.toLowerCase().includes(lower) ||
-      s.trigger.toLowerCase().includes(lower)
+    stories = stories.filter(
+      (s) =>
+        s.play.toLowerCase().includes(lower) ||
+        s.proof.toLowerCase().includes(lower) ||
+        s.hook.toLowerCase().includes(lower) ||
+        s.trigger.toLowerCase().includes(lower)
     );
   }
   if (showUnused && currentPacket) {
     const usedIds = new Set(currentPacket.topStoryIds);
-    stories = stories.filter(s => !usedIds.has(s.id));
+    stories = stories.filter((s) => !usedIds.has(s.id));
   }
 
   const handleBatchAddToPacket = () => {
     if (!currentPacket || selectedIds.size === 0) return;
 
-    const newIds = Array.from(selectedIds).filter(id => !currentPacket.topStoryIds.includes(id));
+    const newIds = Array.from(selectedIds).filter((id) => !currentPacket.topStoryIds.includes(id));
     const updatedData = updatePacket(data, currentPacket.id, {
       topStoryIds: [...currentPacket.topStoryIds, ...newIds],
     });
     const finalData = {
       ...updatedData,
-      stories: updatedData.stories.map(s =>
+      stories: updatedData.stories.map((s) =>
         newIds.includes(s.id) ? { ...s, lastUsedAt: Date.now() } : s
       ),
     };
@@ -68,18 +66,20 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
         <input
           type="text"
           value={filter}
-          onChange={e => setFilter(e.target.value)}
+          onChange={(e) => setFilter(e.target.value)}
           placeholder="Search stories..."
           className="flex-1 min-w-[200px] rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
         />
         <select
           value={skillFilter}
-          onChange={e => setSkillFilter(e.target.value)}
+          onChange={(e) => setSkillFilter(e.target.value)}
           className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
         >
           <option value="">All skills</option>
-          {SKILL_BANK.map(skill => (
-            <option key={skill.id} value={skill.id}>{skill.name}</option>
+          {SKILL_BANK.map((skill) => (
+            <option key={skill.id} value={skill.id}>
+              {skill.name}
+            </option>
           ))}
         </select>
         {currentPacket && (
@@ -119,7 +119,7 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
       )}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {stories.map(story => {
+        {stories.map((story) => {
           const inPacket = currentPacket?.topStoryIds.includes(story.id);
           return (
             <div
@@ -136,7 +136,7 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
                   type="checkbox"
                   aria-label={`Select story: ${story.trigger || 'Untitled'}`}
                   checked={selectedIds.has(story.id)}
-                  onChange={e => {
+                  onChange={(e) => {
                     const newSet = new Set(selectedIds);
                     if (e.target.checked) newSet.add(story.id);
                     else newSet.delete(story.id);
@@ -156,10 +156,16 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
                       </span>
                     )}
                   </div>
-                  <p className="mt-2 text-sm font-medium text-foreground">{story.trigger || 'Untitled'}</p>
-                  <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{story.hook || story.play}</p>
+                  <p className="mt-2 text-sm font-medium text-foreground">
+                    {story.trigger || 'Untitled'}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                    {story.hook || story.play}
+                  </p>
                   <div className="mt-2 flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">Confidence: {story.confidence}%</span>
+                    <span className="text-xs text-muted-foreground">
+                      Confidence: {story.confidence}%
+                    </span>
                     <button
                       type="button"
                       onClick={() => {
@@ -189,7 +195,8 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
               </div>
               <p className="text-sm font-medium text-foreground">Your vault is empty</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Go to Build Stories to create STAR stories, then come back to organize and select them for your packet.
+                Go to Build Stories to create STAR stories, then come back to organize and select
+                them for your packet.
               </p>
             </>
           ) : (

@@ -36,7 +36,9 @@ export default function WhyForm({
           >
             <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">Depth {index + 1}</p>
+                <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
+                  Depth {index + 1}
+                </p>
                 <CardTitle className="text-lg text-[hsl(var(--foreground))]">{prompt}</CardTitle>
               </div>
               <span className="rounded-full border border-[hsl(var(--border)/0.5)] px-4 py-1 text-xs text-[hsl(var(--muted-foreground))]">
@@ -45,7 +47,9 @@ export default function WhyForm({
             </CardHeader>
             <CardContent className="space-y-4">
               {index > 0 && responses[index - 1].trim().length > 0 && (
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">Build on: {responses[index - 1]}</p>
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                  Build on: {responses[index - 1]}
+                </p>
               )}
               <Textarea
                 aria-label={`Depth ${index + 1} response`}

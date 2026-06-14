@@ -50,7 +50,9 @@ const VERSION_KEY = 'networking-practice-versions';
 const SESSION_KEY = 'networking-practice-sessions';
 export const SESSION_LIMIT = 60;
 const TITLE_FIXES = new Map([['Career Fair – Recruiter Chatt', 'Career Fair – Recruiter Chat']]);
-const SCENARIO_TITLE_BY_ID = new Map((scenarioData as { id: string; title: string }[]).map((scenario) => [scenario.id, scenario.title]));
+const SCENARIO_TITLE_BY_ID = new Map(
+  (scenarioData as { id: string; title: string }[]).map((scenario) => [scenario.id, scenario.title])
+);
 
 function isBrowser() {
   return typeof window !== 'undefined';
@@ -82,8 +84,19 @@ function normalizeRatings(raw: unknown): PracticeRatings {
   return {
     confidence: clamp(input.confidence as number, 1, 5, 3),
     clarity: clamp(input.clarity as number, 1, 5, 3),
-    rapport: clamp((input as Record<string, number>).rapport ?? (input as Record<string, number>).flow, 1, 5, 3),
-    authenticity: clamp((input as Record<string, number>).authenticity ?? (input as Record<string, number>).conciseness, 1, 5, 3),
+    rapport: clamp(
+      (input as Record<string, number>).rapport ?? (input as Record<string, number>).flow,
+      1,
+      5,
+      3
+    ),
+    authenticity: clamp(
+      (input as Record<string, number>).authenticity ??
+        (input as Record<string, number>).conciseness,
+      1,
+      5,
+      3
+    ),
   };
 }
 
@@ -147,21 +160,24 @@ function normalizeAttempts(raw: unknown): PracticeAttempt[] {
 function upgradeSession(session: unknown): NetworkingPracticeSession | null {
   const data = (session ?? {}) as Record<string, unknown>;
   const scenarioId = typeof data.scenarioId === 'string' ? data.scenarioId : 'unknown';
-  const attempts = normalizeAttempts(data.attempts ?? [
-    {
-      id: generateId(),
-      label: 'Round 1',
-      script: typeof data.what === 'string' ? data.what : '',
-      durationSeconds: clamp(data.durationSeconds as number, 0, 600, 0),
-      createdAt: typeof data.createdAt === 'string' ? data.createdAt : new Date().toISOString(),
-    },
-  ]);
+  const attempts = normalizeAttempts(
+    data.attempts ?? [
+      {
+        id: generateId(),
+        label: 'Round 1',
+        script: typeof data.what === 'string' ? data.what : '',
+        durationSeconds: clamp(data.durationSeconds as number, 0, 600, 0),
+        createdAt: typeof data.createdAt === 'string' ? data.createdAt : new Date().toISOString(),
+      },
+    ]
+  );
 
   return {
     id: typeof data.id === 'string' ? data.id : generateId(),
     versionId: typeof data.versionId === 'string' ? data.versionId : 'unknown-version',
     scenarioId,
-    scenarioTitle: typeof data.scenarioTitle === 'string' ? data.scenarioTitle : 'Networking Practice',
+    scenarioTitle:
+      typeof data.scenarioTitle === 'string' ? data.scenarioTitle : 'Networking Practice',
     attempts,
     ratings: normalizeRatings(data.ratings),
     reflection: normalizeReflection(data.reflection ?? emptyReflection),

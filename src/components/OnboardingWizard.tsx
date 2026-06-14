@@ -13,20 +13,52 @@ const STEPS: Step[] = [
     question: 'Where are you in your career?',
     subtitle: 'This helps us recommend the right tools.',
     options: [
-      { label: 'Early career', value: 'early', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
-      { label: 'Mid-level', value: 'mid', icon: 'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M12 16h.01' },
-      { label: 'Senior / Lead', value: 'senior', icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z' },
-      { label: 'Transitioning', value: 'transition', icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4' },
+      {
+        label: 'Early career',
+        value: 'early',
+        icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
+      },
+      {
+        label: 'Mid-level',
+        value: 'mid',
+        icon: 'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M12 16h.01',
+      },
+      {
+        label: 'Senior / Lead',
+        value: 'senior',
+        icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z',
+      },
+      {
+        label: 'Transitioning',
+        value: 'transition',
+        icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4',
+      },
     ],
   },
   {
     question: 'What is your biggest challenge right now?',
     subtitle: 'We will tailor your starting point.',
     options: [
-      { label: 'Unclear direction', value: 'direction', icon: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 7m0 13V7' },
-      { label: 'Resume needs work', value: 'resume', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
-      { label: 'Interview prep', value: 'interview', icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
-      { label: 'Networking anxiety', value: 'networking', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
+      {
+        label: 'Unclear direction',
+        value: 'direction',
+        icon: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 7m0 13V7',
+      },
+      {
+        label: 'Resume needs work',
+        value: 'resume',
+        icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+      },
+      {
+        label: 'Interview prep',
+        value: 'interview',
+        icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
+      },
+      {
+        label: 'Networking anxiety',
+        value: 'networking',
+        icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
+      },
     ],
   },
 ];
@@ -167,7 +199,9 @@ export default function OnboardingWizard() {
     return (
       <div className="mx-auto w-full max-w-2xl space-y-8">
         <div className="space-y-2 text-center">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Your career review</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+            Your career review
+          </p>
           <h1 className="text-3xl font-semibold tracking-tight">Here is your starting point</h1>
         </div>
 
@@ -175,16 +209,42 @@ export default function OnboardingWizard() {
           <CardContent className="space-y-4 p-0">
             {/* Celebration ring */}
             <div className="flex justify-center">
-              <div className={cn('flex h-16 w-16 items-center justify-center rounded-full border-4 border-current/30', ringColors[recommendation.accent])}>
-                <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+              <div
+                className={cn(
+                  'flex h-16 w-16 items-center justify-center rounded-full border-4 border-current/30',
+                  ringColors[recommendation.accent]
+                )}
+              >
+                <svg
+                  className="h-8 w-8"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+                  />
                 </svg>
               </div>
             </div>
             {/* Large colored icon */}
             <div className="flex justify-center">
-              <div className={cn('flex h-12 w-12 items-center justify-center rounded-xl', `bg-[hsl(var(--${recommendation.accent})/0.15)]`)}>
-                <svg className={cn('h-6 w-6', ringColors[recommendation.accent])} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <div
+                className={cn(
+                  'flex h-12 w-12 items-center justify-center rounded-xl',
+                  `bg-[hsl(var(--${recommendation.accent})/0.15)]`
+                )}
+              >
+                <svg
+                  className={cn('h-6 w-6', ringColors[recommendation.accent])}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" d={recommendation.icon} />
                 </svg>
               </div>
@@ -204,7 +264,10 @@ export default function OnboardingWizard() {
             {/* Quick stats */}
             <div className="grid grid-cols-3 gap-3 pt-2">
               {recommendation.stats.map((stat, i) => (
-                <div key={i} className="rounded-xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.3)] p-3 text-center">
+                <div
+                  key={i}
+                  className="rounded-xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.3)] p-3 text-center"
+                >
                   <p className="text-sm font-semibold">{stat.value}</p>
                   <p className="text-xs text-muted-foreground">{stat.label}</p>
                 </div>
@@ -219,7 +282,13 @@ export default function OnboardingWizard() {
                 )}
               >
                 Start now
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
               </a>
@@ -258,7 +327,9 @@ export default function OnboardingWizard() {
       {/* Progress bar */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Step {step + 1} of {STEPS.length}</span>
+          <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+            Step {step + 1} of {STEPS.length}
+          </span>
           <span className="text-xs text-muted-foreground">{STEPS[step].question}</span>
         </div>
         <div className="h-1.5 w-full rounded-full bg-[hsl(var(--border)/0.3)]">
@@ -277,7 +348,13 @@ export default function OnboardingWizard() {
               onClick={handleBack}
               className="flex items-center gap-1 text-sm text-muted-foreground transition hover:text-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2 rounded-md"
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
               Back
@@ -302,7 +379,13 @@ export default function OnboardingWizard() {
               'hover:-translate-y-0.5 hover:border-[hsl(var(--foam)/0.5)] hover:shadow-lg hover:bg-[hsl(var(--overlay)/0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2'
             )}
           >
-            <svg className="h-8 w-8 text-[hsl(var(--foam))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <svg
+              className="h-8 w-8 text-[hsl(var(--foam))]"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.5}
+            >
               <path strokeLinecap="round" strokeLinejoin="round" d={option.icon} />
             </svg>
             <span className="font-medium">{option.label}</span>

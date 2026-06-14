@@ -35,12 +35,12 @@ A modern collection of reflection, résumé, and networking practice tools built
 
 All commands run from the project root:
 
-| Command         | Description                                   |
-| :-------------- | :-------------------------------------------- |
-| `bun dev`       | Start the local development server            |
-| `bun build`     | Produce a production build in `./dist/`       |
-| `bun preview`   | Preview the production build locally          |
-| `bun astro ...` | Run Astro CLI commands (e.g., `astro check`)  |
+| Command         | Description                                  |
+| :-------------- | :------------------------------------------- |
+| `bun dev`       | Start the local development server           |
+| `bun build`     | Produce a production build in `./dist/`      |
+| `bun preview`   | Preview the production build locally         |
+| `bun astro ...` | Run Astro CLI commands (e.g., `astro check`) |
 
 ## 📂 Project Structure
 

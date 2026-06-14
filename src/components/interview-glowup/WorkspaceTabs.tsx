@@ -1,12 +1,6 @@
 import * as React from 'react';
 import { cn } from '../../lib/utils';
-import {
-  SearchIcon,
-  PencilIcon,
-  ArchiveIcon,
-  ClipboardIcon,
-  TargetIcon,
-} from './icons';
+import { SearchIcon, PencilIcon, ArchiveIcon, ClipboardIcon, TargetIcon } from './icons';
 
 export type Tab = 'decode' | 'stories' | 'vault' | 'packet';
 
@@ -25,13 +19,13 @@ const tabs: { id: Tab; label: string; icon: React.ComponentType<{ className?: st
 ];
 
 export default function WorkspaceTabs({ activeTab, onChange, showHUD, onLaunchHUD }: Props) {
-  const activeIndex = tabs.findIndex(t => t.id === activeTab);
+  const activeIndex = tabs.findIndex((t) => t.id === activeTab);
   const stepLabel = `Step ${activeIndex + 1} of ${tabs.length}`;
 
   return (
     <div className="space-y-2 border-b border-[hsl(var(--border)/0.3)] pb-2">
       <div className="flex flex-wrap gap-2">
-        {tabs.map(tab => {
+        {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
           return (

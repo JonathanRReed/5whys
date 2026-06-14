@@ -38,8 +38,8 @@ export default function NewsletterSignup({ className }: Props) {
       <div className="mx-auto max-w-lg space-y-4 text-center">
         <h3 className="text-xl font-semibold text-foreground">Stay in the loop</h3>
         <p className="text-sm text-muted-foreground">
-          New tools, career insights, and practical guides delivered when they are ready.
-          No spam. No sales pitches.
+          New tools, career insights, and practical guides delivered when they are ready. No spam.
+          No sales pitches.
         </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row">
