@@ -6,12 +6,7 @@
     "focus": "Confidence + clarity",
     "who": "You (Student) + Abby (Recruiter)",
     "where": "Career Fair – Recruiter @ Google",
-    "what": [
-      "Rapport",
-      "Who you are",
-      "What you bring",
-      "Thoughtful question"
-    ],
+    "what": ["Rapport", "Who you are", "What you bring", "Thoughtful question"],
     "pillars": {
       "rapport": "Hi Abby! How's the fair treating you today?",
       "identity": "I'm Kevin, a neuroscience student at UTD exploring human centered AI.",
@@ -47,11 +42,7 @@
     "focus": "Curiosity + rapport",
     "who": "You (Neuroscience Student) + Dr. Kim (Speaker)",
     "where": "Neuroscience Conference",
-    "what": [
-      "Express interest",
-      "Share background",
-      "Ask for insight"
-    ],
+    "what": ["Express interest", "Share background", "Ask for insight"],
     "pillars": {
       "rapport": "Dr. Kim, your keynote on neuroplasticity had everyone buzzing. Thanks for such a clear explainer.",
       "identity": "I'm Stephanie, a neuroscience student digging into how cognition meets behavior change.",
@@ -87,11 +78,7 @@
     "focus": "Brevity + personalization",
     "who": "You (Student) + Industry Professional",
     "where": "Online via LinkedIn Message",
-    "what": [
-      "Short intro",
-      "Goal",
-      "Ask for advice"
-    ],
+    "what": ["Short intro", "Goal", "Ask for advice"],
     "pillars": {
       "rapport": "Hi Maya, your post about ethical AI in healthcare really resonated with me.",
       "identity": "I'm Philip, a neuroscience major exploring how data storytelling can improve care decisions.",

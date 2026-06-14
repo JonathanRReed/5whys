@@ -45,9 +45,7 @@ export function analyzeReadability(text: string) {
 
   // Flesch-Kincaid Grade Level (simplified)
   const gradeLevel =
-    0.39 * (wordCount / sentenceCount) +
-    11.8 * (syllableCount / Math.max(1, wordCount)) -
-    15.59;
+    0.39 * (wordCount / sentenceCount) + 11.8 * (syllableCount / Math.max(1, wordCount)) - 15.59;
 
   // Passive voice detection: was/were/be + past participle, or common passive patterns
   const passiveMatches = normalized.match(

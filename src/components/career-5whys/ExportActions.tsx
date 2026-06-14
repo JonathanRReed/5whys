@@ -9,7 +9,13 @@ type ExportActionsProps = {
   status: string | null;
 };
 
-export default function ExportActions({ onSaveSnapshot, onExport, onReset, canExport, status }: ExportActionsProps) {
+export default function ExportActions({
+  onSaveSnapshot,
+  onExport,
+  onReset,
+  canExport,
+  status,
+}: ExportActionsProps) {
   return (
     <>
       <div className="grid gap-3 md:grid-cols-3">

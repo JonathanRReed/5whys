@@ -52,10 +52,15 @@ async function extractDocx(file: File): Promise<string> {
 
     return text;
   } catch (err) {
-    if (err instanceof Error && (err.message.startsWith('This DOCX') || err.message.startsWith('DOCX extracted'))) {
+    if (
+      err instanceof Error &&
+      (err.message.startsWith('This DOCX') || err.message.startsWith('DOCX extracted'))
+    ) {
       throw err;
     }
-    throw new Error('Could not extract text from DOCX. Try pasting the text manually.', { cause: err });
+    throw new Error('Could not extract text from DOCX. Try pasting the text manually.', {
+      cause: err,
+    });
   }
 }
 
@@ -116,6 +121,9 @@ async function extractPdf(file: File): Promise<string> {
     if (err instanceof Error && err.message.startsWith('PDF appears')) {
       throw err;
     }
-    throw new Error('Could not extract text from PDF. Try pasting the text manually or use a .txt file.', { cause: err });
+    throw new Error(
+      'Could not extract text from PDF. Try pasting the text manually or use a .txt file.',
+      { cause: err }
+    );
   }
 }

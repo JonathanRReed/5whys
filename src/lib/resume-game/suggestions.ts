@@ -3,7 +3,15 @@ import { getVerbStrength, suggestStrongerVerb } from './constants';
 import { analyzeReadability } from './readability';
 
 export type BulletSuggestion = {
-  type: 'missing-verb' | 'weak-verb' | 'missing-number' | 'missing-impact' | 'too-long' | 'passive-voice' | 'too-short' | 'readability';
+  type:
+    | 'missing-verb'
+    | 'weak-verb'
+    | 'missing-number'
+    | 'missing-impact'
+    | 'too-long'
+    | 'passive-voice'
+    | 'too-short'
+    | 'readability';
   message: string;
   fix?: string;
 };
@@ -43,7 +51,10 @@ export function generateBulletSuggestions(bullet: BulletRecord): BulletSuggestio
   }
 
   // Missing impact
-  if (!fields.impact.trim() && !/(\bby\b|\bto\b|\bresult(ing)? in\b|\bleading to\b)/i.test(original)) {
+  if (
+    !fields.impact.trim() &&
+    !/(\bby\b|\bto\b|\bresult(ing)? in\b|\bleading to\b)/i.test(original)
+  ) {
     suggestions.push({
       type: 'missing-impact',
       message: 'Add a business result. What changed because of your work?',
@@ -78,7 +89,8 @@ export function generateBulletSuggestions(bullet: BulletRecord): BulletSuggestio
   if (!readability.isReadable && readability.wordCount >= 8) {
     suggestions.push({
       type: 'readability',
-      message: 'Bullet is complex or hard to scan. Simplify sentence structure and cut filler words.',
+      message:
+        'Bullet is complex or hard to scan. Simplify sentence structure and cut filler words.',
     });
   }
 
@@ -86,8 +98,10 @@ export function generateBulletSuggestions(bullet: BulletRecord): BulletSuggestio
 }
 
 export function signalGrade(visible: number): { grade: string; label: string; color: string } {
-  if (visible >= 80) return { grade: 'A', label: 'Excellent signal', color: 'text-[hsl(var(--love))]' };
+  if (visible >= 80)
+    return { grade: 'A', label: 'Excellent signal', color: 'text-[hsl(var(--love))]' };
   if (visible >= 65) return { grade: 'B', label: 'Good signal', color: 'text-[hsl(var(--foam))]' };
-  if (visible >= 50) return { grade: 'C', label: 'Moderate signal', color: 'text-[hsl(var(--gold))]' };
+  if (visible >= 50)
+    return { grade: 'C', label: 'Moderate signal', color: 'text-[hsl(var(--gold))]' };
   return { grade: 'D', label: 'Weak signal', color: 'text-[hsl(var(--destructive))]' };
 }

@@ -1,3 +1,179 @@
 /* global document, window, Element, CustomEvent, requestAnimationFrame */
 /* eslint-disable no-empty */
-const e="career-tools-theme",o=document.documentElement,t=new Set(["night","dawn"]),r={night:{"--background":"228 19% 7%","--foreground":"220 24% 94%","--card":"226 18% 11%","--card-foreground":"220 24% 94%","--overlay":"226 16% 15%","--popover":"226 18% 12%","--popover-foreground":"220 24% 94%","--primary":"186 62% 54%","--primary-foreground":"228 19% 7%","--secondary":"226 14% 18%","--secondary-foreground":"220 24% 94%","--muted":"224 10% 42%","--muted-foreground":"222 14% 78%","--accent":"35 78% 62%","--accent-foreground":"228 19% 7%","--destructive":"350 62% 62%","--destructive-foreground":"228 19% 7%","--love":"350 62% 61%","--gold":"35 78% 62%","--rose":"350 48% 73%","--pine":"172 42% 36%","--foam":"186 62% 54%","--iris":"255 32% 70%","--border":"225 15% 27%","--input":"225 15% 27%","--ring":"186 62% 54%","--logo-stop-1":"color-mix(in srgb, #31748f 52%, transparent)","--logo-stop-2":"color-mix(in srgb, #eb6f92 46%, transparent)","--logo-stop-3":"color-mix(in srgb, #26233a 60%, transparent)","--logo-base-fill":"color-mix(in srgb, hsl(var(--overlay)) 70%, hsl(var(--background)) 30%)","--logo-border-color":"hsla(248, 32%, 58%, 0.42)","--logo-shadow-color":"rgba(12, 9, 24, 0.55)","--logo-icon-shadow":"rgba(26, 18, 40, 0.42)"},dawn:{"--background":"58 24% 94%","--foreground":"220 18% 20%","--card":"54 30% 97%","--card-foreground":"220 18% 20%","--overlay":"56 18% 88%","--popover":"54 30% 97%","--popover-foreground":"220 18% 20%","--primary":"176 42% 32%","--primary-foreground":"54 30% 97%","--secondary":"55 18% 90%","--secondary-foreground":"220 18% 20%","--muted":"53 10% 61%","--muted-foreground":"220 14% 34%","--accent":"337 34% 43%","--accent-foreground":"54 30% 97%","--destructive":"350 46% 45%","--destructive-foreground":"54 30% 97%","--love":"350 46% 45%","--gold":"38 66% 45%","--rose":"350 40% 62%","--pine":"158 30% 28%","--foam":"176 42% 32%","--iris":"266 26% 43%","--border":"50 18% 78%","--input":"50 18% 78%","--ring":"176 42% 32%","--logo-stop-1":"color-mix(in srgb, #31748f 36%, transparent)","--logo-stop-2":"color-mix(in srgb, #7c6fce 28%, transparent)","--logo-stop-3":"color-mix(in srgb, #f7f9fc 65%, transparent)","--logo-base-fill":"color-mix(in srgb, hsl(var(--card)) 88%, hsl(var(--overlay)) 12%)","--logo-border-color":"hsla(222, 24%, 72%, 0.5)","--logo-shadow-color":"rgba(45, 52, 74, 0.14)","--logo-icon-shadow":"rgba(45, 52, 74, 0.18)"}},n=e=>{if(t.has(e)){o.dataset.theme=e,o.classList.toggle("theme-dawn","dawn"===e),o.classList.toggle("theme-night","night"===e),document.body&&(document.body.dataset.theme=e),document.body&&(document.body.classList.toggle("theme-dawn","dawn"===e),document.body.classList.toggle("theme-night","night"===e)),Object.entries(r[e]).forEach(([e,t])=>{o.style.setProperty(e,t)});try{const t="dawn"===e?"only light":"dark";o.style.colorScheme=t,document.body&&(document.body.style.colorScheme=t);const r=document.querySelector('meta[name="color-scheme"]');r&&r.setAttribute("content",t)}catch{}try{document.querySelectorAll("[data-theme-toggle]").forEach(o=>{const t=o.getAttribute("data-theme-toggle")===e;o.setAttribute("aria-pressed",String(t)),o.setAttribute("data-active",String(t))})}catch{}}};window.__careerToolsSetTheme=o=>{if(t.has(o)){n(o);try{window.localStorage.setItem(e,o)}catch{}try{const t="https:"===window.location.protocol?";Secure":"";document.cookie=`${e}=${o};path=/;max-age=31536000;SameSite=Lax${t}`}catch{}}},document.addEventListener("click",e=>{const o=e.target instanceof Element?e.target.closest("[data-theme-toggle]"):null;o&&window.__careerToolsSetTheme(o.getAttribute("data-theme-toggle"))},!0),window.addEventListener("career-tools-theme-change",e=>{const o=e instanceof CustomEvent?e.detail?.theme:null;t.has(o)&&window.__careerToolsSetTheme(o)});const a=()=>{let t;try{t=document.createElement("style"),t.id="theme-transitions-off",t.textContent="*{transition: none !important}",document.head.appendChild(t)}catch{}n((()=>{try{const o=document.cookie.match(new RegExp("(^|; )"+e+"=([^;]*)")),t=o?.[2];if("night"===t||"dawn"===t)return t}catch{}try{const o=window.localStorage.getItem(e);if("night"===o||"dawn"===o)return o}catch{}const t=o.dataset.theme;return"night"===t||"dawn"===t?t:window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"night":"dawn"})());try{requestAnimationFrame(()=>{requestAnimationFrame(()=>{t&&t.parentNode&&t.parentNode.removeChild(t)})})}catch{}};try{a()}catch{}document.addEventListener("astro:before-swap",a),document.addEventListener("astro:after-swap",a),document.addEventListener("astro:page-load",a);
+(function () {
+  const STORAGE_KEY = 'career-tools-theme';
+  const root = document.documentElement;
+  const THEMES = new Set(['night', 'dawn']);
+
+  // Keep these values in sync with src/styles/globals.css (Evergreen & Brass).
+  const PALETTES = {
+    night: {
+      '--background': '150 9% 7%',
+      '--foreground': '75 11% 91%',
+      '--card': '152 8% 10%',
+      '--card-foreground': '75 11% 91%',
+      '--overlay': '150 7% 14%',
+      '--popover': '152 8% 11%',
+      '--popover-foreground': '75 11% 91%',
+      '--primary': '150 44% 42%',
+      '--primary-foreground': '150 40% 7%',
+      '--secondary': '150 7% 17%',
+      '--secondary-foreground': '75 11% 91%',
+      '--muted': '145 6% 44%',
+      '--muted-foreground': '100 8% 72%',
+      '--accent': '40 54% 56%',
+      '--accent-foreground': '40 45% 9%',
+      '--destructive': '6 58% 56%',
+      '--destructive-foreground': '60 12% 96%',
+      '--love': '14 56% 57%',
+      '--gold': '40 56% 57%',
+      '--rose': '14 44% 67%',
+      '--pine': '150 42% 34%',
+      '--foam': '150 48% 45%',
+      '--iris': '286 24% 65%',
+      '--border': '150 7% 22%',
+      '--input': '150 7% 22%',
+      '--ring': '150 48% 45%',
+      '--logo-stop-1': 'color-mix(in srgb, #3f9f78 54%, transparent)',
+      '--logo-stop-2': 'color-mix(in srgb, #cda24c 48%, transparent)',
+      '--logo-stop-3': 'color-mix(in srgb, #1a201b 60%, transparent)',
+      '--logo-base-fill': 'color-mix(in srgb, hsl(var(--overlay)) 70%, hsl(var(--background)) 30%)',
+      '--logo-border-color': 'hsla(150, 14%, 40%, 0.42)',
+      '--logo-shadow-color': 'rgba(8, 14, 10, 0.55)',
+      '--logo-icon-shadow': 'rgba(14, 22, 16, 0.42)',
+    },
+    dawn: {
+      '--background': '48 30% 95%',
+      '--foreground': '150 14% 15%',
+      '--card': '50 40% 98%',
+      '--card-foreground': '150 14% 15%',
+      '--overlay': '48 24% 90%',
+      '--popover': '50 40% 98%',
+      '--popover-foreground': '150 14% 15%',
+      '--primary': '150 50% 26%',
+      '--primary-foreground': '50 40% 97%',
+      '--secondary': '48 22% 91%',
+      '--secondary-foreground': '150 14% 15%',
+      '--muted': '45 10% 56%',
+      '--muted-foreground': '150 10% 33%',
+      '--accent': '36 64% 36%',
+      '--accent-foreground': '50 40% 97%',
+      '--destructive': '4 60% 43%',
+      '--destructive-foreground': '50 40% 97%',
+      '--love': '14 56% 41%',
+      '--gold': '36 66% 38%',
+      '--rose': '14 44% 52%',
+      '--pine': '150 46% 22%',
+      '--foam': '150 50% 26%',
+      '--iris': '286 30% 42%',
+      '--border': '48 20% 80%',
+      '--input': '48 20% 80%',
+      '--ring': '150 50% 26%',
+      '--logo-stop-1': 'color-mix(in srgb, #2c7a57 40%, transparent)',
+      '--logo-stop-2': 'color-mix(in srgb, #9a7b27 30%, transparent)',
+      '--logo-stop-3': 'color-mix(in srgb, #fbfaf3 65%, transparent)',
+      '--logo-base-fill': 'color-mix(in srgb, hsl(var(--card)) 88%, hsl(var(--overlay)) 12%)',
+      '--logo-border-color': 'hsla(150, 20%, 60%, 0.5)',
+      '--logo-shadow-color': 'rgba(60, 70, 52, 0.14)',
+      '--logo-icon-shadow': 'rgba(60, 70, 52, 0.18)',
+    },
+  };
+
+  const apply = (theme) => {
+    if (!THEMES.has(theme)) return;
+    root.dataset.theme = theme;
+    root.classList.toggle('theme-dawn', theme === 'dawn');
+    root.classList.toggle('theme-night', theme === 'night');
+    if (document.body) {
+      document.body.dataset.theme = theme;
+      document.body.classList.toggle('theme-dawn', theme === 'dawn');
+      document.body.classList.toggle('theme-night', theme === 'night');
+    }
+    Object.entries(PALETTES[theme]).forEach(([prop, value]) => {
+      root.style.setProperty(prop, value);
+    });
+    try {
+      const scheme = theme === 'dawn' ? 'only light' : 'dark';
+      root.style.colorScheme = scheme;
+      if (document.body) document.body.style.colorScheme = scheme;
+      const meta = document.querySelector('meta[name="color-scheme"]');
+      if (meta) meta.setAttribute('content', scheme);
+    } catch {}
+    try {
+      document.querySelectorAll('[data-theme-toggle]').forEach((el) => {
+        const active = el.getAttribute('data-theme-toggle') === theme;
+        el.setAttribute('aria-pressed', String(active));
+        el.setAttribute('data-active', String(active));
+      });
+    } catch {}
+  };
+
+  window.__careerToolsSetTheme = (theme) => {
+    if (!THEMES.has(theme)) return;
+    apply(theme);
+    try {
+      window.localStorage.setItem(STORAGE_KEY, theme);
+    } catch {}
+    try {
+      const secure = window.location.protocol === 'https:' ? ';Secure' : '';
+      document.cookie = `${STORAGE_KEY}=${theme};path=/;max-age=31536000;SameSite=Lax${secure}`;
+    } catch {}
+  };
+
+  document.addEventListener(
+    'click',
+    (event) => {
+      const toggle =
+        event.target instanceof Element ? event.target.closest('[data-theme-toggle]') : null;
+      if (toggle) window.__careerToolsSetTheme(toggle.getAttribute('data-theme-toggle'));
+    },
+    true
+  );
+
+  window.addEventListener('career-tools-theme-change', (event) => {
+    const theme = event instanceof CustomEvent ? event.detail?.theme : null;
+    if (THEMES.has(theme)) window.__careerToolsSetTheme(theme);
+  });
+
+  const resolveTheme = () => {
+    try {
+      const match = document.cookie.match(new RegExp('(^|; )' + STORAGE_KEY + '=([^;]*)'));
+      const cookieTheme = match?.[2];
+      if (cookieTheme === 'night' || cookieTheme === 'dawn') return cookieTheme;
+    } catch {}
+    try {
+      const stored = window.localStorage.getItem(STORAGE_KEY);
+      if (stored === 'night' || stored === 'dawn') return stored;
+    } catch {}
+    const datasetTheme = root.dataset.theme;
+    if (datasetTheme === 'night' || datasetTheme === 'dawn') return datasetTheme;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'night'
+      : 'dawn';
+  };
+
+  const run = () => {
+    let style;
+    try {
+      style = document.createElement('style');
+      style.id = 'theme-transitions-off';
+      style.textContent = '*{transition: none !important}';
+      document.head.appendChild(style);
+    } catch {}
+    apply(resolveTheme());
+    try {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (style && style.parentNode) style.parentNode.removeChild(style);
+        });
+      });
+    } catch {}
+  };
+
+  try {
+    run();
+  } catch {}
+  document.addEventListener('astro:before-swap', run);
+  document.addEventListener('astro:after-swap', run);
+  document.addEventListener('astro:page-load', run);
+})();

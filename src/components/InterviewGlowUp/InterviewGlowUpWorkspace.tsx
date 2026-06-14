@@ -1,9 +1,5 @@
 import * as React from 'react';
-import {
-  type GlowUpData,
-  loadData,
-  saveData,
-} from '../../lib/glowup-store';
+import { type GlowUpData, loadData, saveData } from '../../lib/glowup-store';
 import InterviewHUD from './InterviewHUD';
 import WorkspaceHeader from '../interview-glowup/WorkspaceHeader';
 import WorkspaceTabs, { type Tab } from '../interview-glowup/WorkspaceTabs';
@@ -38,8 +34,8 @@ export default function InterviewGlowUpWorkspace() {
     );
   }
 
-  const currentRole = data.roles.find(r => r.id === data.currentRoleId);
-  const currentPacket = data.packets.find(p => p.id === data.currentPacketId);
+  const currentRole = data.roles.find((r) => r.id === data.currentRoleId);
+  const currentPacket = data.packets.find((p) => p.id === data.currentPacketId);
 
   if (showHUD && currentPacket) {
     return (
@@ -61,10 +57,22 @@ export default function InterviewGlowUpWorkspace() {
       <WorkspaceHeader onClearData={handleClearData} />
 
       <div className="flex items-center gap-2 rounded-lg border border-[hsl(var(--foam)/0.25)] bg-[hsl(var(--foam)/0.05)] px-4 py-2 text-sm text-muted-foreground">
-        <svg className="h-4 w-4 flex-shrink-0 text-[hsl(var(--foam))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        <svg
+          className="h-4 w-4 flex-shrink-0 text-[hsl(var(--foam))]"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+          />
         </svg>
-        <span><strong>No data leaves your browser.</strong> Everything is stored locally.</span>
+        <span>
+          <strong>No data leaves your browser.</strong> Everything is stored locally.
+        </span>
       </div>
 
       <WorkspaceTabs
@@ -76,25 +84,13 @@ export default function InterviewGlowUpWorkspace() {
 
       <div className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.2)] p-6">
         {activeTab === 'decode' && (
-          <DecodeSection
-            data={data}
-            setData={setData}
-            currentRole={currentRole}
-          />
+          <DecodeSection data={data} setData={setData} currentRole={currentRole} />
         )}
         {activeTab === 'stories' && (
-          <StoriesSection
-            data={data}
-            setData={setData}
-            currentRole={currentRole}
-          />
+          <StoriesSection data={data} setData={setData} currentRole={currentRole} />
         )}
         {activeTab === 'vault' && (
-          <VaultSection
-            data={data}
-            setData={setData}
-            currentPacket={currentPacket}
-          />
+          <VaultSection data={data} setData={setData} currentPacket={currentPacket} />
         )}
         {activeTab === 'packet' && (
           <PacketSection

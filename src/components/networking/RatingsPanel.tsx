@@ -59,7 +59,9 @@ export default function RatingsPanel({ ratings, onRatingChange }: Props) {
               </Label>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">{helpText}</p>
             </div>
-            <span className={`font-semibold ${computeFeedbackColor(ratings[key])}`}>{ratings[key]}/5</span>
+            <span className={`font-semibold ${computeFeedbackColor(ratings[key])}`}>
+              {ratings[key]}/5
+            </span>
           </div>
           <input
             id={`rating-${key}`}
@@ -79,7 +81,9 @@ export default function RatingsPanel({ ratings, onRatingChange }: Props) {
       ))}
 
       <div className="rounded-xl bg-[hsl(var(--overlay)/0.3)] p-4 text-sm text-[hsl(var(--muted-foreground))]">
-        <div className="mb-1 text-xs uppercase tracking-[0.3em] text-[hsl(var(--iris))]">Average</div>
+        <div className="mb-1 text-xs uppercase tracking-[0.3em] text-[hsl(var(--iris))]">
+          Average
+        </div>
         <div className={`text-2xl font-semibold ${computeFeedbackColor(averageRating)}`}>
           {averageRating.toFixed(1)}/5
         </div>

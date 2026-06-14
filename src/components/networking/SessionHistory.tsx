@@ -14,21 +14,39 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-10 text-center">
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[hsl(var(--overlay)/0.4)]">
-        <svg className="h-6 w-6 text-[hsl(var(--gold))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg
+          className="h-6 w-6 text-[hsl(var(--gold))]"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={1.5}
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
       </div>
-      <p className="mt-3 text-sm font-medium text-[hsl(var(--foreground))]">No saved sessions yet</p>
+      <p className="mt-3 text-sm font-medium text-[hsl(var(--foreground))]">
+        No saved sessions yet
+      </p>
       <p className="mt-1 max-w-md text-sm text-[hsl(var(--muted-foreground))]">
         Run a practice rep and tap{' '}
-        <strong className="font-semibold text-[hsl(var(--foreground))]">Save Session</strong> to begin your history.
-        Revisit saved runs to spot growth over time.
+        <strong className="font-semibold text-[hsl(var(--foreground))]">Save Session</strong> to
+        begin your history. Revisit saved runs to spot growth over time.
       </p>
     </div>
   );
 }
 
-export default function SessionHistory({ sessions, onExport, onClearHistory, onRemoveSession }: Props) {
+export default function SessionHistory({
+  sessions,
+  onExport,
+  onClearHistory,
+  onRemoveSession,
+}: Props) {
   return (
     <section className="w-full space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -63,7 +81,10 @@ export default function SessionHistory({ sessions, onExport, onClearHistory, onR
       ) : (
         <div className="grid gap-4">
           {sessions.map((session) => (
-            <Card key={session.id} className="border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.3)]">
+            <Card
+              key={session.id}
+              className="border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.3)]"
+            >
               <CardContent className="flex flex-col gap-4 py-4 md:flex-row md:items-center md:justify-between">
                 <div>
                   <div className="text-sm uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
@@ -74,23 +95,32 @@ export default function SessionHistory({ sessions, onExport, onClearHistory, onR
                       minute: '2-digit',
                     })}
                   </div>
-                  <div className="mt-1 text-lg font-semibold text-[hsl(var(--foreground))]">{session.scenarioTitle}</div>
+                  <div className="mt-1 text-lg font-semibold text-[hsl(var(--foreground))]">
+                    {session.scenarioTitle}
+                  </div>
                   <div className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">
                     {session.attempts[0]?.script.split('\n').map((line: string, index: number) => (
                       <div key={index}>• {line}</div>
                     ))}
                   </div>
                   {session.reflection?.humanNote ? (
-                    <p className="mt-3 text-sm text-[hsl(var(--iris))]">&quot;{session.reflection.humanNote}&quot;</p>
+                    <p className="mt-3 text-sm text-[hsl(var(--iris))]">
+                      &quot;{session.reflection.humanNote}&quot;
+                    </p>
                   ) : null}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                   <div className="sm:min-w-[120px] flex-1 text-center">
                     <div className="text-3xl font-bold text-[hsl(var(--foam))]">
-                      {session.attempts[0]?.durationSeconds ? (session.attempts[0].durationSeconds / 60).toFixed(1) : '0.0'}m
+                      {session.attempts[0]?.durationSeconds
+                        ? (session.attempts[0].durationSeconds / 60).toFixed(1)
+                        : '0.0'}
+                      m
                     </div>
-                    <div className="text-xs uppercase tracking-[0.2em] text-[hsl(var(--muted-foreground))]">Time</div>
+                    <div className="text-xs uppercase tracking-[0.2em] text-[hsl(var(--muted-foreground))]">
+                      Time
+                    </div>
                   </div>
                   <div className="sm:min-w-[120px] flex-1 text-center">
                     <div className="text-3xl font-bold text-[hsl(var(--gold))]">
@@ -102,7 +132,9 @@ export default function SessionHistory({ sessions, onExport, onClearHistory, onR
                         4
                       ).toFixed(1)}
                     </div>
-                    <div className="text-xs uppercase tracking-[0.2em] text-[hsl(var(--muted-foreground))]">Avg</div>
+                    <div className="text-xs uppercase tracking-[0.2em] text-[hsl(var(--muted-foreground))]">
+                      Avg
+                    </div>
                   </div>
                   <Button
                     type="button"

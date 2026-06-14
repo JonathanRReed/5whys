@@ -31,11 +31,12 @@ export default function CareerHeader({
     <>
       {showHeader && (
         <header className="space-y-4 text-center">
-          <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--foam))]">Career Lab</p>
-          <h1 className="text-4xl font-semibold">Discover Your Why</h1>
+          <p className="eyebrow eyebrow-accent justify-self-center">Career 5 Whys</p>
+          <h1 className="text-4xl font-semibold tracking-tight">Discover your why</h1>
           <p className="mx-auto max-w-2xl text-[hsl(var(--muted-foreground))]">
-            Guided reasoning for uncovering the motivation behind your next career move. Choose a track, document five
-            layers of reasoning, and leave with a statement you can reuse across resume, interview, and networking prep.
+            Guided reasoning for uncovering the motivation behind your next career move. Choose a
+            track, document five layers of reasoning, and leave with a statement you can reuse
+            across resume, interview, and networking prep.
           </p>
           <QuickStartTiles
             className="max-w-4xl"
@@ -46,7 +47,7 @@ export default function CareerHeader({
               },
               {
                 title: 'Answer sequentially',
-                body: 'Move down the prompts in order\u2014the sidebar tracks depth so you can spot gaps quickly.',
+                body: 'Move down the prompts in order. The sidebar tracks depth so you can spot gaps quickly.',
               },
               {
                 title: 'Save or export',
@@ -82,7 +83,9 @@ export default function CareerHeader({
                   )}
                 >
                   <p className="text-sm font-semibold">{config.label}</p>
-                  <p className="text-xs text-[hsl(var(--muted-foreground))] mt-2">{config.description}</p>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))] mt-2">
+                    {config.description}
+                  </p>
                 </button>
               );
             })}
@@ -104,7 +107,9 @@ export default function CareerHeader({
               />
             </div>
             <div>
-              <Label className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">Progress</Label>
+              <Label className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
+                Progress
+              </Label>
               <div className="mt-2 flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] px-4 py-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[hsl(var(--primary)/0.5)] bg-[hsl(var(--primary)/0.1)] text-lg font-semibold text-[hsl(var(--foreground))]">
                   {sequentialCount}
@@ -113,7 +118,9 @@ export default function CareerHeader({
                   <p className="text-sm text-[hsl(var(--foreground))]">
                     {sequentialCount === WHY_COUNT ? 'Depth unlocked' : 'Reasoning depth'}
                   </p>
-                  <p className="text-xs text-[hsl(var(--muted-foreground))]">{progressPercent}% complete</p>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                    {progressPercent}% complete
+                  </p>
                 </div>
               </div>
             </div>

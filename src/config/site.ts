@@ -15,7 +15,7 @@ export const siteConfig = {
     'Jonathan R Reed',
     'Jonathan Reed',
   ],
-  themeColor: '#0e1015',
+  themeColor: '#11140f',
   ogImage: '/career-studio-favicon-512x512.png',
   locale: 'en_US',
   author: {

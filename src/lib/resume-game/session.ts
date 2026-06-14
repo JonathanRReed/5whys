@@ -91,7 +91,8 @@ function normalizeSignalReport(value: unknown): SignalReport {
     hardSkills: toStrArray(data.hardSkills),
     softSkills: toStrArray(data.softSkills),
     isOptimalLength: typeof data.isOptimalLength === 'boolean' ? data.isOptimalLength : false,
-    lengthRecommendation: typeof data.lengthRecommendation === 'string' ? data.lengthRecommendation : '',
+    lengthRecommendation:
+      typeof data.lengthRecommendation === 'string' ? data.lengthRecommendation : '',
     weakWordCount: clamp(data.weakWordCount, 0, 999, 0),
     repetitiveVerbs: toRepetitiveVerbArray(data.repetitiveVerbs),
     impactCoverage: clamp(data.impactCoverage, 0, 100, 0),
@@ -117,8 +118,10 @@ function normalizeStoredBullet(entry: unknown, index: number): BulletRecord | nu
   const original = sanitizeString(data.original, '');
   const fallbackBullet = buildBullet(fields);
   const improved = sanitizeString(data.improved, fallbackBullet || original || fallbackBullet);
-  const baselineScore = typeof data.baselineScore === 'number' ? data.baselineScore : scoreBullet(original || improved);
-  const improvedScore = typeof data.improvedScore === 'number' ? data.improvedScore : scoreBullet(improved);
+  const baselineScore =
+    typeof data.baselineScore === 'number' ? data.baselineScore : scoreBullet(original || improved);
+  const improvedScore =
+    typeof data.improvedScore === 'number' ? data.improvedScore : scoreBullet(improved);
   const id = typeof data.id === 'string' ? data.id : uniqueId('stored-bullet', index);
   const toStrArray = (v: unknown): string[] => {
     if (Array.isArray(v)) return v.filter((s): s is string => typeof s === 'string');

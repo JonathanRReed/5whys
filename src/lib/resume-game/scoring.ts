@@ -17,10 +17,9 @@ export function scoreBullet(bullet: string) {
   if (!normalized) return 0;
 
   const hasVerb = POWER_VERB_PATTERN.test(normalized);
-  const hasLeadingVerb = new RegExp(
-    `^(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`,
-    'i'
-  ).test(normalized);
+  const hasLeadingVerb = new RegExp(`^(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'i').test(
+    normalized
+  );
   const hasNumber = /(\$?\d+[\d,]*\.?\d*%?)/.test(normalized);
   const length = normalized.split(/\s+/).filter(Boolean).length;
   const clarity = length >= 8 && length <= 32;
@@ -32,8 +31,13 @@ export function scoreBullet(bullet: string) {
   );
   const verb = verbMatch?.[1] || '';
   const verbStrength = verb ? getVerbStrength(verb) : 'none';
-  const verbScore =
-    !hasVerb ? 0 : verbStrength === 'strong' ? 15 : verbStrength === 'medium' ? 10 : 5;
+  const verbScore = !hasVerb
+    ? 0
+    : verbStrength === 'strong'
+      ? 15
+      : verbStrength === 'medium'
+        ? 10
+        : 5;
 
   // Readability
   const readability = analyzeReadability(normalized);

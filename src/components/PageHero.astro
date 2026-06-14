@@ -11,6 +11,7 @@ interface Props {
   title: string;
   description: string;
   accent?: 'foam' | 'gold' | 'love' | 'iris' | 'pine';
+  index?: string;
   primaryCta?: Cta;
   secondaryCta?: Cta;
 }
@@ -20,6 +21,7 @@ const {
   title,
   description,
   accent = 'foam',
+  index,
   primaryCta,
   secondaryCta,
 } = Astro.props as Props;
@@ -32,41 +34,45 @@ const hasExtra = Astro.slots.has('extra');
   class={cn(
     'relative',
     hasMeta
-      ? 'grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] lg:items-start'
-      : 'mx-auto max-w-3xl space-y-4'
+      ? 'grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] lg:items-start'
+      : 'max-w-3xl'
   )}
   style={`--hero-accent: var(--${accent});`}
 >
-  <div class={cn('space-y-4 lg:space-y-5', hasMeta && 'max-w-xl')}>
-    <div
-      class="inline-flex items-center gap-3 rounded-full border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.4)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground"
-    >
-      {eyebrow}
-      <span class="inline-flex h-2 w-2 rounded-full bg-[hsl(var(--hero-accent))]"></span>
+  <div class={cn('flex flex-col gap-6', hasMeta && 'max-w-xl')}>
+    {/* Eyebrow: hairline rule + monospace kicker — the Swiss label voice */}
+    <div class="flex items-center gap-3">
+      <span class="h-px w-8 bg-[hsl(var(--hero-accent))]" aria-hidden="true"></span>
+      <span class="eyebrow eyebrow-accent" style="color: hsl(var(--hero-accent));">{eyebrow}</span>
+      {
+        index && (
+          <span class="num-index ml-auto text-xs text-muted-foreground sm:hidden">{index}</span>
+        )
+      }
     </div>
 
     <div class="space-y-5">
       <h1
-        class="text-balance text-3xl font-semibold leading-[1.12] tracking-tight text-foreground sm:text-4xl lg:text-5xl"
+        class="text-balance text-4xl font-semibold leading-[1.04] tracking-[-0.03em] text-foreground sm:text-5xl lg:text-[3.75rem]"
       >
         {title}
       </h1>
-      <p class="max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground">
+      <p class="max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
         {description}
       </p>
     </div>
 
     {
       (primaryCta || secondaryCta) && (
-        <div class="flex flex-wrap items-center gap-4">
+        <div class="flex flex-wrap items-center gap-3">
           {primaryCta && (
             <a
               href={primaryCta.href}
-              class="inline-flex items-center gap-2 rounded-full bg-[hsl(var(--primary))] px-6 py-3 text-sm font-semibold text-[hsl(var(--primary-foreground))] shadow-[0_20px_40px_-24px_hsl(var(--primary))] transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_26px_52px_-30px_hsl(var(--primary))]"
+              class="group inline-flex items-center gap-2 rounded-lg bg-[hsl(var(--primary))] px-5 py-3 text-sm font-semibold text-[hsl(var(--primary-foreground))] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-22px_hsl(var(--primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]"
             >
               {primaryCta.label}
               <svg
-                class="h-4 w-4"
+                class="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -79,18 +85,9 @@ const hasExtra = Astro.slots.has('extra');
           {secondaryCta && (
             <a
               href={secondaryCta.href}
-              class="inline-flex items-center gap-2 rounded-full border border-[hsl(var(--border)/0.55)] px-6 py-3 text-sm font-semibold text-foreground transition-colors duration-200 hover:border-[hsl(var(--accent)/0.4)] hover:text-[hsl(var(--accent))]"
+              class="inline-flex items-center gap-2 rounded-lg border border-[hsl(var(--border)/0.6)] px-5 py-3 text-sm font-semibold text-foreground transition-colors duration-200 hover:border-[hsl(var(--hero-accent)/0.5)] hover:text-[hsl(var(--hero-accent))]"
             >
               {secondaryCta.label}
-              <svg
-                class="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="1.8"
-              >
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4 12h16" />
-              </svg>
             </a>
           )}
         </div>
@@ -99,7 +96,7 @@ const hasExtra = Astro.slots.has('extra');
 
     {
       hasExtra && (
-        <div class="mt-4 sm:mt-5">
+        <div class="pt-1">
           <slot name="extra" />
         </div>
       )
@@ -109,11 +106,15 @@ const hasExtra = Astro.slots.has('extra');
   {
     hasMeta && (
       <div class="relative">
-        <div
-          class="absolute -inset-3 rounded-[1.75rem] border border-[hsl(var(--border)/0.18)] bg-[hsl(var(--card)/0.46)]"
-          aria-hidden="true"
-        />
-        <div class="relative space-y-5 rounded-[1.75rem] border border-[hsl(var(--border)/0.45)] bg-[hsl(var(--card)/0.9)] p-5 shadow-[0_30px_80px_-50px_hsl(var(--background)/0.95)] sm:p-6">
+        {index && (
+          <span
+            class="num-index absolute -top-3 right-0 text-xs text-muted-foreground"
+            aria-hidden="true"
+          >
+            {index}
+          </span>
+        )}
+        <div class="relative space-y-5 rounded-2xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.7)] p-6 shadow-[0_30px_80px_-56px_hsl(var(--background)/0.95)]">
           <slot name="meta" />
         </div>
       </div>
