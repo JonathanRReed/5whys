@@ -8,37 +8,55 @@ Physical scene: A person sitting at a desk in a quiet room, reviewing career mat
 
 ## Color Strategy
 
+Palette: **Evergreen & Brass**. A deep pine green carries primary actions and
+the brand; warm brass is the secondary accent. Neutrals are tinted warm and
+green, never blue. Tool accents fan out across green, brass, terracotta, and a
+muted plum so the four tools stay distinguishable without a rainbow.
+
+The source of truth is `src/styles/globals.css`. These same values are mirrored
+in `public/career-tools-theme.js` (an inline anti-FOUC script that applies the
+palette before the stylesheet loads). Keep the two in sync.
+
 ### Night (Default)
-- **Background**: 230 18% 8% — deep navy-black, not pure black
-- **Foreground**: 228 36% 94% — warm white, not pure white
-- **Primary**: 188 58% 58% — cyan/teal (foam)
-- **Accent**: 260 64% 74% — soft purple (iris)
-- **Muted**: 228 10% 43% — mid-gray for secondary text
-- **Border**: 226 17% 26% — subtle separation
-- **Destructive/Love**: 350 78% 66% — rose red
-- **Gold**: 45 86% 64% — warm amber for highlights
+- **Background**: 150 9% 7% — warm green-charcoal, not pure black
+- **Foreground**: 75 11% 91% — warm ivory, not pure white
+- **Primary (foam)**: 150 44% 42% — evergreen
+- **Accent / Gold**: 40 54% 56% — warm brass
+- **Love**: 14 56% 57% — terracotta
+- **Iris**: 286 24% 65% — muted plum
+- **Muted-foreground**: 100 8% 72% — readable secondary text
+- **Border**: 150 7% 22% — subtle separation
 
 ### Dawn (Light)
-- **Background**: 220 32% 97% — warm off-white
-- **Foreground**: 232 24% 22% — dark slate
-- **Primary**: 192 55% 34% — deep teal
-- **Accent**: 259 35% 48% — muted purple
-- **Muted**: 228 10% 61% — medium gray
-- **Border**: 222 24% 84% — light separation
+- **Background**: 48 30% 95% — warm ivory paper
+- **Foreground**: 150 14% 15% — deep warm ink
+- **Primary (foam)**: 150 50% 26% — deep pine
+- **Accent / Gold**: 36 64% 36% / 36 66% 38% — bronze
+- **Love**: 14 56% 41% — deep terracotta
+- **Iris**: 286 30% 42% — deep plum
+- **Border**: 48 20% 80% — light separation
 
 ### Rules
 - Never use #000 or #fff
-- Tint all neutrals toward the brand hue (cyan/teal family)
+- No blue. Tint neutrals warm, toward the green/earth family
 - Reduce chroma as lightness approaches 0 or 100
-- OKLCH for all new color work
+- Elevation comes from hairline borders, not heavy shadows
 
 ## Typography
 
-- **Stack**: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif
-- **Scale**: Tight ratio (1.125–1.2 between steps)
-- **Body line length**: max 70ch
-- **Hierarchy**: Scale + weight contrast, not color
-- **Labels/eyebrows**: uppercase, tracking-[0.28em], text-xs, font-semibold
+Self-hosted via `@fontsource-variable/*` (no CDN, on-brand for privacy-first).
+
+- **Display (headings)**: Fraunces Variable. A warm editorial serif, the voice of
+  the field guide. Optical sizing on (`font-optical-sizing: auto`), gentle tracking
+  (`-0.01em`). Applied to all headings globally. Use the `.display-italic` utility
+  (Fraunces italic with opsz/SOFT/WONK axes) to emphasize one word in a heading.
+- **Body / UI**: Inter Variable
+- **Mono (labels, indices, data)**: JetBrains Mono Variable
+- **Scale**: confident jumps for display; tight ratio for body
+- **Body line length**: max ~70ch
+- **Hierarchy**: typeface + scale + weight, not color
+- **Labels/eyebrows**: the `.eyebrow` utility — mono, uppercase,
+  tracking-[0.24em], 0.72rem. Use `.num-index` for the 01–05 numbering motif.
 
 ## Components
 

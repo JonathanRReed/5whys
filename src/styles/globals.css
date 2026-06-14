@@ -7,40 +7,47 @@
 
 @layer base {
   :root {
-    --background: 228 19% 7%;
-    --foreground: 220 24% 94%;
-    --card: 226 18% 11%;
-    --card-foreground: 220 24% 94%;
-    --overlay: 226 16% 15%;
-    --popover: 226 18% 12%;
-    --popover-foreground: 220 24% 94%;
-    --primary: 186 62% 54%;
-    --primary-foreground: 228 19% 7%;
-    --secondary: 226 14% 18%;
-    --secondary-foreground: 220 24% 94%;
-    --muted: 224 10% 42%;
-    --muted-foreground: 222 14% 78%;
-    --accent: 35 78% 62%;
-    --accent-foreground: 228 19% 7%;
-    --destructive: 350 62% 62%;
-    --destructive-foreground: 228 19% 7%;
-    --love: 350 62% 61%;
-    --gold: 35 78% 62%;
-    --rose: 350 48% 73%;
-    --pine: 172 42% 36%;
-    --foam: 186 62% 54%;
-    --iris: 255 32% 70%;
-    --border: 225 15% 27%;
-    --input: 225 15% 27%;
-    --ring: 186 62% 54%;
-    --radius: 0.75rem;
-    --logo-stop-1: color-mix(in srgb, #31748f 52%, transparent);
-    --logo-stop-2: color-mix(in srgb, #eb6f92 46%, transparent);
-    --logo-stop-3: color-mix(in srgb, #26233a 60%, transparent);
+    /* Night — Evergreen & Brass. Warm, green-tinted charcoal neutrals; a deep
+       pine signature and a warm brass accent. No blue anywhere. */
+    --background: 150 9% 7%;
+    --foreground: 75 11% 91%;
+    --card: 152 8% 10%;
+    --card-foreground: 75 11% 91%;
+    --overlay: 150 7% 14%;
+    --popover: 152 8% 11%;
+    --popover-foreground: 75 11% 91%;
+    --primary: 150 44% 42%;
+    --primary-foreground: 150 40% 7%;
+    --secondary: 150 7% 17%;
+    --secondary-foreground: 75 11% 91%;
+    --muted: 145 6% 44%;
+    --muted-foreground: 100 8% 72%;
+    --accent: 40 54% 56%;
+    --accent-foreground: 40 45% 9%;
+    --destructive: 6 58% 56%;
+    --destructive-foreground: 60 12% 96%;
+    --love: 14 56% 57%;
+    --gold: 40 56% 57%;
+    --rose: 14 44% 67%;
+    --pine: 150 42% 34%;
+    --foam: 150 48% 45%;
+    --iris: 286 24% 65%;
+    --border: 150 7% 22%;
+    --input: 150 7% 22%;
+    --ring: 150 48% 45%;
+    --radius: 0.5rem;
+    --font-display: 'Fraunces Variable', Georgia, Cambria, ui-serif, serif;
+    --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+      'Segoe UI', sans-serif;
+    --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
+      monospace;
+    --logo-stop-1: color-mix(in srgb, #3f9f78 54%, transparent);
+    --logo-stop-2: color-mix(in srgb, #cda24c 48%, transparent);
+    --logo-stop-3: color-mix(in srgb, #1a201b 60%, transparent);
     --logo-base-fill: color-mix(in srgb, hsl(var(--overlay)) 70%, hsl(var(--background)) 30%);
-    --logo-border-color: hsla(248, 32%, 58%, 0.42);
-    --logo-shadow-color: rgba(12, 9, 24, 0.55);
-    --logo-icon-shadow: rgba(26, 18, 40, 0.42);
+    --logo-border-color: hsla(150, 14%, 40%, 0.42);
+    --logo-shadow-color: rgba(8, 14, 10, 0.55);
+    --logo-icon-shadow: rgba(14, 22, 16, 0.42);
     color-scheme: dark;
   }
 
@@ -57,38 +64,40 @@
   html.theme-dawn,
   body.theme-dawn,
   body[data-theme='dawn'] {
-    --background: 58 24% 94%;
-    --foreground: 220 18% 20%;
-    --card: 54 30% 97%;
-    --card-foreground: 220 18% 20%;
-    --overlay: 56 18% 88%;
-    --popover: 54 30% 97%;
-    --popover-foreground: 220 18% 20%;
-    --primary: 176 42% 32%;
-    --primary-foreground: 54 30% 97%;
-    --secondary: 55 18% 90%;
-    --secondary-foreground: 220 18% 20%;
-    --muted: 53 10% 61%;
-    --muted-foreground: 220 14% 34%;
-    --accent: 337 34% 43%;
-    --accent-foreground: 54 30% 97%;
-    --destructive: 350 46% 45%;
-    --destructive-foreground: 54 30% 97%;
-    --love: 350 46% 45%;
-    --gold: 38 66% 45%;
-    --rose: 350 40% 62%;
-    --pine: 158 30% 28%;
-    --foam: 176 42% 32%;
-    --iris: 266 26% 43%;
-    --border: 50 18% 78%;
-    --input: 50 18% 78%;
-    --ring: 176 42% 32%;
-    --logo-stop-1: color-mix(in srgb, #31748f 36%, transparent);
-    --logo-stop-2: color-mix(in srgb, #7c6fce 28%, transparent);
-    --logo-stop-3: color-mix(in srgb, #f7f9fc 65%, transparent);
+    /* Dawn — Evergreen & Brass, light. Warm ivory paper, deep pine ink,
+       bronze accent. Calm and editorial, never cold. */
+    --background: 48 30% 95%;
+    --foreground: 150 14% 15%;
+    --card: 50 40% 98%;
+    --card-foreground: 150 14% 15%;
+    --overlay: 48 24% 90%;
+    --popover: 50 40% 98%;
+    --popover-foreground: 150 14% 15%;
+    --primary: 150 50% 26%;
+    --primary-foreground: 50 40% 97%;
+    --secondary: 48 22% 91%;
+    --secondary-foreground: 150 14% 15%;
+    --muted: 45 10% 56%;
+    --muted-foreground: 150 10% 33%;
+    --accent: 36 64% 36%;
+    --accent-foreground: 50 40% 97%;
+    --destructive: 4 60% 43%;
+    --destructive-foreground: 50 40% 97%;
+    --love: 14 56% 41%;
+    --gold: 36 66% 38%;
+    --rose: 14 44% 52%;
+    --pine: 150 46% 22%;
+    --foam: 150 50% 26%;
+    --iris: 286 30% 42%;
+    --border: 48 20% 80%;
+    --input: 48 20% 80%;
+    --ring: 150 50% 26%;
+    --logo-stop-1: color-mix(in srgb, #2c7a57 40%, transparent);
+    --logo-stop-2: color-mix(in srgb, #9a7b27 30%, transparent);
+    --logo-stop-3: color-mix(in srgb, #fbfaf3 65%, transparent);
     --logo-base-fill: color-mix(in srgb, hsl(var(--card)) 88%, hsl(var(--overlay)) 12%);
-    --logo-border-color: hsla(222, 24%, 72%, 0.5);
-    --logo-shadow-color: rgba(45, 52, 74, 0.14);
+    --logo-border-color: hsla(150, 20%, 60%, 0.5);
+    --logo-shadow-color: rgba(60, 70, 52, 0.14);
     --logo-icon-shadow: rgba(45, 52, 74, 0.18);
     color-scheme: only light;
   }
@@ -113,8 +122,31 @@
 
   body {
     @apply bg-background text-foreground antialiased transition-colors duration-300;
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv05' 1, 'ss03' 1, 'cv11' 1;
     accent-color: hsl(var(--foam));
     overflow-x: hidden;
+  }
+
+  /* Display typeface (Fraunces) carries every heading — a warm editorial serif,
+     the voice of the field guide. Optical sizing scales contrast with size. */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    letter-spacing: -0.01em;
+  }
+
+  /* Tabular, mono numerals everywhere data is shown */
+  code,
+  kbd,
+  samp,
+  pre {
+    font-family: var(--font-mono);
   }
 
   /* Premium Custom Scrollbar */
@@ -288,6 +320,158 @@
   h4 {
     text-wrap: balance;
   }
+
+  /* ==========================================================================
+     Swiss-grotesque identity utilities
+     ========================================================================== */
+
+  /* Monospace eyebrow / kicker label — the signature label voice */
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    line-height: 1;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: hsl(var(--muted-foreground));
+  }
+
+  .eyebrow-accent {
+    color: hsl(var(--foam));
+  }
+
+  /* Tabular monospace index marker, e.g. 01 — echoes the 5 Whys numbering */
+  .num-index {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    font-weight: 500;
+  }
+
+  /* Tabular numerals helper for any data figure */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 1px hairline divider — Swiss elevation comes from rules, not shadows */
+  .hairline {
+    height: 1px;
+    width: 100%;
+    background: hsl(var(--border) / 0.5);
+    border: 0;
+  }
+
+  /* Signature blueprint grid — a faint precise grid that fades toward the edges */
+  .bg-blueprint {
+    background-image:
+      linear-gradient(to right, hsl(var(--border) / 0.55) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.55) 1px, transparent 1px);
+    background-size: 76px 76px;
+    background-position: center -1px;
+    -webkit-mask-image: radial-gradient(ellipse 78% 52% at 50% 0%, #000 0%, transparent 72%);
+    mask-image: radial-gradient(ellipse 78% 52% at 50% 0%, #000 0%, transparent 72%);
+  }
+
+  /* Crisp card surface in the Swiss language: hairline border, no pillow shadow */
+  .surface {
+    border: 1px solid hsl(var(--border) / 0.45);
+    background: hsl(var(--card) / 0.55);
+    border-radius: var(--radius);
+  }
+
+  .surface-hover {
+    transition:
+      border-color 200ms ease,
+      background-color 200ms ease,
+      transform 200ms ease;
+  }
+
+  .surface-hover:hover {
+    border-color: hsl(var(--foam) / 0.4);
+    background: hsl(var(--card) / 0.78);
+  }
+
+  /* ==========================================================================
+     Field guide identity — almanac textures, plates, drop caps, marginalia
+     ========================================================================== */
+
+  /* Ruled-paper background: faint ledger lines, like a field journal page */
+  .bg-ledger {
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 33px,
+      hsl(var(--border) / 0.28) 33px,
+      hsl(var(--border) / 0.28) 34px
+    );
+  }
+
+  /* Soil-strata wash behind the descent plate: surface green fading to brass ore */
+  .bg-strata {
+    background-image: linear-gradient(
+      to bottom,
+      hsl(var(--foam) / 0.06) 0%,
+      hsl(var(--background) / 0) 26%,
+      hsl(var(--background) / 0) 64%,
+      hsl(var(--gold) / 0.07) 100%
+    );
+  }
+
+  /* Brass rule: the field-guide divider, fading to the right */
+  .rule-brass {
+    height: 2px;
+    border: 0;
+    background: linear-gradient(to right, hsl(var(--gold) / 0.75), hsl(var(--gold) / 0.1));
+  }
+
+  /* Double rule, book-style: thick line over thin line */
+  .rule-double {
+    height: 4px;
+    border: 0;
+    background:
+      linear-gradient(hsl(var(--border) / 0.7) 0 0) top / 100% 2px no-repeat,
+      linear-gradient(hsl(var(--border) / 0.4) 0 0) bottom / 100% 1px no-repeat;
+  }
+
+  /* Editorial drop cap for the opening field note */
+  .dropcap::first-letter {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 3.4em;
+    line-height: 0.74;
+    float: left;
+    margin: 0.04em 0.1em 0 0;
+    color: hsl(var(--foam));
+  }
+
+  /* Large serif plate numeral */
+  .plate-numeral {
+    font-family: var(--font-display);
+    font-weight: 300;
+    line-height: 0.78;
+    letter-spacing: -0.02em;
+    font-feature-settings: 'ss01' 1;
+  }
+
+  /* Vertical marginalia label that runs up an edge */
+  .margin-label {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+  }
+
+  /* Italic display accent (Fraunces italic) for emphasized words in headings */
+  .display-italic {
+    font-style: italic;
+    font-variation-settings: 'opsz' 90, 'SOFT' 40, 'WONK' 1;
+  }
+
+  /* Specimen: a pinned sample of a tool's real output */
+  .specimen {
+    border: 1px solid hsl(var(--border) / 0.5);
+    background: hsl(var(--card) / 0.55);
+    border-radius: calc(var(--radius) - 2px);
+  }
 }
 
 @keyframes popover-fade {
@@ -299,6 +483,92 @@
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+/* ============================================================================
+   Field guide: orchestrated hero load (taproot draws, rules expand, root glows)
+   ============================================================================ */
+@keyframes fg-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fg-rule {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes fg-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fg-glow {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.fg-rise {
+  opacity: 0;
+  animation: fg-rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.fg-rule-in {
+  transform-origin: left center;
+  animation: fg-rule 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Taproot path uses pathLength="1" so the draw is resolution-independent */
+.fg-root-path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: fg-draw 1.7s cubic-bezier(0.5, 0, 0.2, 1) forwards;
+  animation-delay: 0.4s;
+}
+
+.fg-root-tip {
+  opacity: 0;
+  transform-origin: center;
+  animation:
+    fg-rise 0.6s ease forwards,
+    fg-glow 3.4s ease-in-out 2.4s infinite;
+  animation-delay: 1.9s, 2.4s;
+}
+
+.fg-label {
+  opacity: 0;
+  animation: fg-rise 0.6s ease forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fg-rise,
+  .fg-rule-in,
+  .fg-root-tip,
+  .fg-label {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .fg-root-path {
+    animation: none;
+    stroke-dashoffset: 0;
   }
 }
 

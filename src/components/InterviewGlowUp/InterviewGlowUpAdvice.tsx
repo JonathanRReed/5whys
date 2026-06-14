@@ -36,7 +36,7 @@ function Callout({ children, variant = 'default' }: CalloutProps) {
 
 export default function InterviewGlowUpAdvice() {
   return (
-    <article className="space-y-12 rounded-[2.5rem] border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] px-6 py-12 sm:px-10 sm:py-14">
+    <article className="space-y-12 rounded-2xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.45)] px-6 py-12 sm:px-10 sm:py-14">
       {/* v1.3 Positioning Banner */}
       <div className="flex items-center gap-3 rounded-2xl border border-[hsl(var(--gold)/0.35)] bg-[hsl(var(--gold)/0.08)] px-5 py-4">
         <ClockIcon className="h-6 w-6 flex-shrink-0 text-[hsl(var(--gold))]" />
@@ -74,8 +74,8 @@ export default function InterviewGlowUpAdvice() {
           giving rehearsed answers that sound robotic.
         </p>
         <p className="mt-3 leading-relaxed">
-          The good news? <strong>This feeling is fixable.</strong> With the right preparation
-          method, you can walk in calm, confident, and ready to have a real conversation.
+          It is also fixable. With the right preparation, you can walk in calm and ready to have a
+          real conversation instead of giving a performance.
         </p>
       </Section>
 
@@ -102,8 +102,8 @@ export default function InterviewGlowUpAdvice() {
       {/* The Recruiter's Perspective */}
       <Section title="What recruiters actually want">
         <p className="leading-relaxed">
-          Here's the secret: <strong>recruiters want to hire you</strong>. Every interview is
-          expensive. They're rooting for you to be "the one" so they can stop searching.
+<strong>Recruiters want to hire you.</strong> Every interview costs them time and money, so
+          they are rooting for you to be the person who ends the search.
         </p>
         <Callout variant="default">
           <p className="font-medium">The Three Checks Every Interviewer Makes:</p>
@@ -120,8 +120,7 @@ export default function InterviewGlowUpAdvice() {
           </ol>
         </Callout>
         <p className="mt-4 leading-relaxed">
-          That's it. They're not trying to trick you. Most questions are just skill checks wearing
-          different clothes.
+          They are not trying to trick you. Most questions are skill checks in different clothing.
         </p>
       </Section>
 
@@ -208,25 +207,19 @@ export default function InterviewGlowUpAdvice() {
       <Section title="Normalize the nerves">
         <div className="space-y-4">
           <div className="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] p-4">
-            <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Before
-            </p>
+            <p className="eyebrow">Before</p>
             <p className="mt-1 text-foreground">
               "I'm prepared. I know my stories. This is just a conversation."
             </p>
           </div>
           <div className="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] p-4">
-            <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              During
-            </p>
+            <p className="eyebrow">During</p>
             <p className="mt-1 text-foreground">
               "If I blank, I can pause, breathe, and check my notes. It's normal."
             </p>
           </div>
           <div className="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] p-4">
-            <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              After
-            </p>
+            <p className="eyebrow">After</p>
             <p className="mt-1 text-foreground">
               "I showed up and gave honest answers. That's a win regardless of outcome."
             </p>
@@ -235,7 +228,7 @@ export default function InterviewGlowUpAdvice() {
       </Section>
 
       {/* CTA */}
-      <div className="flex flex-col items-center gap-4 rounded-2xl border border-[hsl(var(--iris)/0.4)] bg-gradient-to-br from-[hsl(var(--iris)/0.12)] to-[hsl(var(--foam)/0.08)] px-6 py-8 text-center sm:px-10 sm:py-10">
+      <div className="flex flex-col items-center gap-4 rounded-2xl border border-[hsl(var(--love)/0.4)] bg-[hsl(var(--love)/0.07)] px-6 py-8 text-center sm:px-10 sm:py-10">
         <h3 className="text-xl font-semibold text-foreground sm:text-2xl">
           Ready to build your interview packet?
         </h3>
@@ -245,7 +238,7 @@ export default function InterviewGlowUpAdvice() {
         </p>
         <a
           href="/5whys/interview-glow-up/workspace/"
-          className="mt-2 inline-flex items-center gap-2 rounded-full border border-transparent bg-[hsl(var(--foam))] px-6 py-3 text-sm font-semibold text-[hsl(var(--background))] shadow-lg shadow-[hsl(var(--foam)/0.25)] transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[hsl(var(--foam)/0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]"
+          className="mt-2 inline-flex items-center gap-2 rounded-lg bg-[hsl(var(--primary))] px-6 py-3 text-sm font-semibold text-[hsl(var(--primary-foreground))] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-22px_hsl(var(--primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]"
         >
           Open the Workspace
           <svg

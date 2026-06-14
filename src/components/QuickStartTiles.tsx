@@ -27,10 +27,10 @@ export default function QuickStartTiles({
       {items.map((item) => (
         <div
           key={item.title}
-          className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.22)] p-4 text-sm text-[hsl(var(--muted-foreground))]"
+          className="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.5)] p-4 text-sm text-[hsl(var(--muted-foreground))] transition-colors duration-200 hover:border-[hsl(var(--foam)/0.4)]"
         >
-          <h3 className={cn('text-xs font-semibold uppercase tracking-[0.28em]', accentClassName)}>{item.title}</h3>
-          <p className="mt-2 leading-relaxed">{item.body}</p>
+          <h3 className={cn('eyebrow', accentClassName)}>{item.title}</h3>
+          <p className="mt-2.5 leading-relaxed">{item.body}</p>
         </div>
       ))}
     </div>

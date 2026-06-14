@@ -67,7 +67,7 @@ const resumeSchemas = [
       aria-label="Resume game quick stats"
     >
       <div
-        class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] px-4 py-3"
+        class="flex items-center gap-3 rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.5)] px-4 py-3"
       >
         <div
           class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--gold)/0.15)]"
@@ -92,7 +92,7 @@ const resumeSchemas = [
         </div>
       </div>
       <div
-        class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] px-4 py-3"
+        class="flex items-center gap-3 rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.5)] px-4 py-3"
       >
         <div
           class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--gold)/0.15)]"
@@ -116,7 +116,7 @@ const resumeSchemas = [
         </div>
       </div>
       <div
-        class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] px-4 py-3"
+        class="flex items-center gap-3 rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.5)] px-4 py-3"
       >
         <div
           class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--gold)/0.15)]"
@@ -141,7 +141,7 @@ const resumeSchemas = [
         </div>
       </div>
       <div
-        class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] px-4 py-3"
+        class="flex items-center gap-3 rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.5)] px-4 py-3"
       >
         <div
           class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--gold)/0.15)]"
@@ -171,13 +171,11 @@ const resumeSchemas = [
       class="relative mx-auto w-full max-w-6xl reveal"
       aria-labelledby="resume-guide-heading"
     >
-      <div class="mb-8 text-center">
-        <span class="text-xs font-semibold uppercase tracking-[0.3em] text-[hsl(var(--gold))]"
-          >How it works</span
-        >
+      <div class="mb-8 border-t border-[hsl(var(--border)/0.4)] pt-8">
+        <span class="eyebrow" style="color: hsl(var(--gold))">How it works</span>
         <h2
           id="resume-guide-heading"
-          class="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
+          class="mt-3 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
         >
           Turn busy lines into proof
         </h2>
@@ -185,7 +183,7 @@ const resumeSchemas = [
 
       <div class="grid gap-6 md:grid-cols-[1.1fr_0.9fr] reveal-stagger">
         <article
-          class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-[hsl(var(--border)/0.6)] hover:shadow-[0_20px_50px_-24px_hsl(var(--background)/0.8)]"
+          class="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.5)] p-6 transition-colors duration-200 hover:border-[hsl(var(--gold)/0.4)] hover:bg-[hsl(var(--card)/0.7)]"
         >
           <div
             class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[hsl(var(--gold)/0.15)]"
@@ -211,15 +209,16 @@ const resumeSchemas = [
             measure, then rewrite it until the evidence is easy to scan. It is built for early
             drafts, final polish, and quick reviews before applications.
           </p>
-          <div class="mt-4 rounded-xl bg-[hsl(var(--gold)/0.08)] p-3">
-            <p class="text-xs text-[hsl(var(--gold))]">
-              Pro tip: Start with your weakest bullet. Biggest gains hide where you are most vague.
+          <div class="mt-4 rounded-lg border border-[hsl(var(--gold)/0.2)] bg-[hsl(var(--gold)/0.06)] p-3">
+            <p class="eyebrow" style="color: hsl(var(--gold))">Tip</p>
+            <p class="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+Start with your weakest bullet. Biggest gains hide where you are most vague.
             </p>
           </div>
         </article>
 
         <article
-          class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-[hsl(var(--border)/0.6)] hover:shadow-[0_20px_50px_-24px_hsl(var(--background)/0.8)]"
+          class="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.5)] p-6 transition-colors duration-200 hover:border-[hsl(var(--gold)/0.4)] hover:bg-[hsl(var(--card)/0.7)]"
         >
           <div
             class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[hsl(var(--gold)/0.15)]"
@@ -247,16 +246,17 @@ const resumeSchemas = [
             work, show scale, explain the result, and avoid vague verbs. A lower score points to the
             next rewrite target so you can improve the line without guessing what feels weak.
           </p>
-          <div class="mt-4 rounded-xl bg-[hsl(var(--gold)/0.08)] p-3">
-            <p class="text-xs text-[hsl(var(--gold))]">
-              Pro tip: A score of 80+ usually means recruiters can scan the bullet in under two
+          <div class="mt-4 rounded-lg border border-[hsl(var(--gold)/0.2)] bg-[hsl(var(--gold)/0.06)] p-3">
+            <p class="eyebrow" style="color: hsl(var(--gold))">Tip</p>
+            <p class="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+A score of 80+ usually means recruiters can scan the bullet in under two
               seconds.
             </p>
           </div>
         </article>
 
         <article
-          class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6 md:col-span-2 transition-all duration-300 hover:-translate-y-0.5 hover:border-[hsl(var(--border)/0.6)] hover:shadow-[0_20px_50px_-24px_hsl(var(--background)/0.8)]"
+          class="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.5)] p-6 md:col-span-2 transition-colors duration-200 hover:border-[hsl(var(--gold)/0.4)] hover:bg-[hsl(var(--card)/0.7)]"
         >
           <div
             class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[hsl(var(--gold)/0.15)]"
@@ -289,9 +289,10 @@ const resumeSchemas = [
           <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
             Save the strongest rewrite, then compare it against the role before sending.
           </p>
-          <div class="mt-4 rounded-xl bg-[hsl(var(--gold)/0.08)] p-3">
-            <p class="text-xs text-[hsl(var(--gold))]">
-              Pro tip: Read the bullet out loud. If it sounds like a job description, it is probably
+          <div class="mt-4 rounded-lg border border-[hsl(var(--gold)/0.2)] bg-[hsl(var(--gold)/0.06)] p-3">
+            <p class="eyebrow" style="color: hsl(var(--gold))">Tip</p>
+            <p class="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+Read the bullet out loud. If it sounds like a job description, it is probably
               too vague.
             </p>
           </div>

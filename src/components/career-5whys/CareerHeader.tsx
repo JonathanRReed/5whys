@@ -31,8 +31,8 @@ export default function CareerHeader({
     <>
       {showHeader && (
         <header className="space-y-4 text-center">
-          <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--foam))]">Career Lab</p>
-          <h1 className="text-4xl font-semibold">Discover Your Why</h1>
+          <p className="eyebrow eyebrow-accent justify-self-center">Career 5 Whys</p>
+          <h1 className="text-4xl font-semibold tracking-tight">Discover your why</h1>
           <p className="mx-auto max-w-2xl text-[hsl(var(--muted-foreground))]">
             Guided reasoning for uncovering the motivation behind your next career move. Choose a track, document five
             layers of reasoning, and leave with a statement you can reuse across resume, interview, and networking prep.
@@ -46,7 +46,7 @@ export default function CareerHeader({
               },
               {
                 title: 'Answer sequentially',
-                body: 'Move down the prompts in order\u2014the sidebar tracks depth so you can spot gaps quickly.',
+                body: 'Move down the prompts in order. The sidebar tracks depth so you can spot gaps quickly.',
               },
               {
                 title: 'Save or export',

@@ -46,7 +46,7 @@ const aboutSchemas = [
 
     <section class="mx-auto grid w-full max-w-6xl gap-5 md:grid-cols-[1.2fr_0.9fr_0.9fr] reveal">
       <article
-        class="rounded-2xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.2)] p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-[hsl(var(--border)/0.6)] hover:shadow-[0_20px_50px_-24px_hsl(var(--background)/0.8)]"
+        class="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.5)] p-6 transition-colors duration-200 hover:border-[hsl(var(--foam)/0.4)] hover:bg-[hsl(var(--card)/0.7)]"
       >
         <div
           class="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--foam)/0.12)] text-[hsl(var(--foam))]"
@@ -72,7 +72,7 @@ const aboutSchemas = [
         </p>
       </article>
       <article
-        class="rounded-2xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.2)] p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-[hsl(var(--border)/0.6)] hover:shadow-[0_20px_50px_-24px_hsl(var(--background)/0.8)]"
+        class="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.5)] p-6 transition-colors duration-200 hover:border-[hsl(var(--foam)/0.4)] hover:bg-[hsl(var(--card)/0.7)]"
       >
         <div
           class="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--iris)/0.12)] text-[hsl(var(--iris))]"
@@ -98,7 +98,7 @@ const aboutSchemas = [
         </p>
       </article>
       <article
-        class="rounded-2xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.2)] p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-[hsl(var(--border)/0.6)] hover:shadow-[0_20px_50px_-24px_hsl(var(--background)/0.8)]"
+        class="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.5)] p-6 transition-colors duration-200 hover:border-[hsl(var(--foam)/0.4)] hover:bg-[hsl(var(--card)/0.7)]"
       >
         <div
           class="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--gold)/0.12)] text-[hsl(var(--gold))]"
@@ -123,9 +123,11 @@ const aboutSchemas = [
       </article>
     </section>
 
-    <section
-      class="mx-auto w-full max-w-4xl space-y-5 text-base leading-relaxed text-muted-foreground reveal"
-    >
+    <section class="mx-auto w-full max-w-4xl reveal">
+      <p class="eyebrow eyebrow-accent mb-5 border-t border-[hsl(var(--border)/0.4)] pt-10">
+        How it works
+      </p>
+      <div class="space-y-5 text-base leading-relaxed text-muted-foreground">
       <p>
         The site is organized around small, repeatable sessions rather than long courses. Each page
         gives you an intentional place to draft, compare, and revise career material without turning
@@ -150,6 +152,7 @@ const aboutSchemas = [
         easier to reuse in an application, recruiter reply, portfolio note, or interview prep
         document.
       </p>
+      </div>
     </section>
   </div>
 </Base>

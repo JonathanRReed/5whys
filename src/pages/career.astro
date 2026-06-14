@@ -81,7 +81,7 @@ const careerSchemas = [
       aria-label="Career tool quick stats"
     >
       <div
-        class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] px-4 py-3"
+        class="flex items-center gap-3 rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.5)] px-4 py-3"
       >
         <div
           class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--foam)/0.15)]"
@@ -106,7 +106,7 @@ const careerSchemas = [
         </div>
       </div>
       <div
-        class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] px-4 py-3"
+        class="flex items-center gap-3 rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.5)] px-4 py-3"
       >
         <div
           class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--foam)/0.15)]"
@@ -131,7 +131,7 @@ const careerSchemas = [
         </div>
       </div>
       <div
-        class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] px-4 py-3"
+        class="flex items-center gap-3 rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.5)] px-4 py-3"
       >
         <div
           class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--foam)/0.15)]"
@@ -156,7 +156,7 @@ const careerSchemas = [
         </div>
       </div>
       <div
-        class="flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] px-4 py-3"
+        class="flex items-center gap-3 rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.5)] px-4 py-3"
       >
         <div
           class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--foam)/0.15)]"
@@ -186,13 +186,11 @@ const careerSchemas = [
       class="relative mx-auto mt-12 w-full max-w-6xl reveal"
       aria-labelledby="career-guide-heading"
     >
-      <div class="mb-8 text-center">
-        <span class="text-xs font-semibold uppercase tracking-[0.3em] text-[hsl(var(--foam))]"
-          >How it works</span
-        >
+      <div class="mb-8 border-t border-[hsl(var(--border)/0.4)] pt-8">
+        <span class="eyebrow" style="color: hsl(var(--foam))">How it works</span>
         <h2
           id="career-guide-heading"
-          class="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
+          class="mt-3 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
         >
           Get clarity in five layers
         </h2>
@@ -200,7 +198,7 @@ const careerSchemas = [
 
       <div class="grid gap-6 md:grid-cols-3 reveal-stagger">
         <article
-          class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-[hsl(var(--border)/0.6)] hover:shadow-[0_20px_50px_-24px_hsl(var(--background)/0.8)]"
+          class="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.5)] p-6 transition-colors duration-200 hover:border-[hsl(var(--foam)/0.4)] hover:bg-[hsl(var(--card)/0.7)]"
         >
           <div
             class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[hsl(var(--foam)/0.15)]"
@@ -225,16 +223,17 @@ const careerSchemas = [
             broad. Keep asking why until the reason names a value, constraint, skill, environment,
             or tradeoff you can act on.
           </p>
-          <div class="mt-4 rounded-xl bg-[hsl(var(--foam)/0.08)] p-3">
-            <p class="text-xs text-[hsl(var(--foam))]">
-              Pro tip: If your answer is "more money," ask what the money enables. That deeper
+          <div class="mt-4 rounded-lg border border-[hsl(var(--foam)/0.2)] bg-[hsl(var(--foam)/0.06)] p-3">
+            <p class="eyebrow" style="color: hsl(var(--foam))">Tip</p>
+            <p class="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+If your answer is "more money," ask what the money enables. That deeper
               reason usually reveals the real criteria.
             </p>
           </div>
         </article>
 
         <article
-          class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-[hsl(var(--border)/0.6)] hover:shadow-[0_20px_50px_-24px_hsl(var(--background)/0.8)]"
+          class="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.5)] p-6 transition-colors duration-200 hover:border-[hsl(var(--foam)/0.4)] hover:bg-[hsl(var(--card)/0.7)]"
         >
           <div
             class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[hsl(var(--foam)/0.15)]"
@@ -259,16 +258,17 @@ const careerSchemas = [
             Use the answers to decide what a role must offer, what you can compromise on, and which
             warning signs matter before the next interview.
           </p>
-          <div class="mt-4 rounded-xl bg-[hsl(var(--foam)/0.08)] p-3">
-            <p class="text-xs text-[hsl(var(--foam))]">
-              Pro tip: Write your top three must-haves on a sticky note and compare every new
+          <div class="mt-4 rounded-lg border border-[hsl(var(--foam)/0.2)] bg-[hsl(var(--foam)/0.06)] p-3">
+            <p class="eyebrow" style="color: hsl(var(--foam))">Tip</p>
+            <p class="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+Write your top three must-haves on a sticky note and compare every new
               opportunity against them.
             </p>
           </div>
         </article>
 
         <article
-          class="rounded-3xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-[hsl(var(--border)/0.6)] hover:shadow-[0_20px_50px_-24px_hsl(var(--background)/0.8)]"
+          class="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.5)] p-6 transition-colors duration-200 hover:border-[hsl(var(--foam)/0.4)] hover:bg-[hsl(var(--card)/0.7)]"
         >
           <div
             class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[hsl(var(--foam)/0.15)]"
@@ -293,9 +293,10 @@ const careerSchemas = [
             descriptions. Revisit it when a new opportunity looks attractive but does not match the
             reasons you already uncovered.
           </p>
-          <div class="mt-4 rounded-xl bg-[hsl(var(--foam)/0.08)] p-3">
-            <p class="text-xs text-[hsl(var(--foam))]">
-              Pro tip: Revisit your summary every three months. Your priorities shift more than you
+          <div class="mt-4 rounded-lg border border-[hsl(var(--foam)/0.2)] bg-[hsl(var(--foam)/0.06)] p-3">
+            <p class="eyebrow" style="color: hsl(var(--foam))">Tip</p>
+            <p class="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+Revisit your summary every three months. Your priorities shift more than you
               think.
             </p>
           </div>

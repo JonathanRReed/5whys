@@ -7,6 +7,33 @@ module.exports = {
   theme: {
     container: { center: true, padding: "2rem", screens: { "2xl": "1400px" } },
     extend: {
+      fontFamily: {
+        display: [
+          "'Fraunces Variable'",
+          "Georgia",
+          "Cambria",
+          "ui-serif",
+          "serif",
+        ],
+        sans: [
+          "'Inter Variable'",
+          "ui-sans-serif",
+          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "'Segoe UI'",
+          "sans-serif",
+        ],
+        mono: [
+          "'JetBrains Mono Variable'",
+          "ui-monospace",
+          "SFMono-Regular",
+          "'SF Mono'",
+          "Menlo",
+          "Consolas",
+          "monospace",
+        ],
+      },
       colors: {
         background: "hsl(var(--background) / <alpha-value>)",
         foreground: "hsl(var(--foreground) / <alpha-value>)",
@@ -37,10 +64,11 @@ module.exports = {
         border: "hsl(var(--border) / <alpha-value>)",
         input: "hsl(var(--input) / <alpha-value>)",
         ring: "hsl(var(--ring) / <alpha-value>)",
-        love: "hsl(var(--destructive) / <alpha-value>)",
-        gold: "hsl(var(--gold, 35 88% 72%) / <alpha-value>)",
-        foam: "hsl(var(--foam, 189 43% 73%) / <alpha-value>)",
-        iris: "hsl(var(--accent) / <alpha-value>)",
+        love: "hsl(var(--love) / <alpha-value>)",
+        gold: "hsl(var(--gold, 40 56% 57%) / <alpha-value>)",
+        foam: "hsl(var(--foam, 158 46% 48%) / <alpha-value>)",
+        iris: "hsl(var(--iris) / <alpha-value>)",
+        pine: "hsl(var(--pine) / <alpha-value>)",
       },
       borderRadius: {
         lg: "var(--radius)",
