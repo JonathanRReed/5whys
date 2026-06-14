@@ -6,6 +6,12 @@ dist/
 # dependencies
 node_modules/
 
+# this project uses bun (bun.lock) — keep other package managers' lockfiles out
+# so Cloudflare Pages and CI all resolve from bun.lock
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
 # logs
 npm-debug.log*
 yarn-debug.log*
