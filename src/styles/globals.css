@@ -37,10 +37,11 @@
     --ring: 150 48% 45%;
     --radius: 0.5rem;
     --font-display: 'Fraunces Variable', Georgia, Cambria, ui-serif, serif;
-    --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-      'Segoe UI', sans-serif;
-    --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
-      monospace;
+    --font-sans:
+      'Inter Variable', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+      sans-serif;
+    --font-mono:
+      'JetBrains Mono Variable', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
     --logo-stop-1: color-mix(in srgb, #3f9f78 54%, transparent);
     --logo-stop-2: color-mix(in srgb, #cda24c 48%, transparent);
     --logo-stop-3: color-mix(in srgb, #1a201b 60%, transparent);
@@ -123,7 +124,10 @@
   body {
     @apply bg-background text-foreground antialiased transition-colors duration-300;
     font-family: var(--font-sans);
-    font-feature-settings: 'cv05' 1, 'ss03' 1, 'cv11' 1;
+    font-feature-settings:
+      'cv05' 1,
+      'ss03' 1,
+      'cv11' 1;
     accent-color: hsl(var(--foam));
     overflow-x: hidden;
   }
@@ -463,7 +467,10 @@
   /* Italic display accent (Fraunces italic) for emphasized words in headings */
   .display-italic {
     font-style: italic;
-    font-variation-settings: 'opsz' 90, 'SOFT' 40, 'WONK' 1;
+    font-variation-settings:
+      'opsz' 90,
+      'SOFT' 40,
+      'WONK' 1;
   }
 
   /* Specimen: a pinned sample of a tool's real output */

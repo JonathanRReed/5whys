@@ -31,13 +31,7 @@ const { href, title, description, accent = 'foam', cta = 'Open tool', tag, index
         </span>
       )
     }
-    {
-      tag && (
-        <span class="eyebrow text-[0.6rem] text-muted-foreground">
-          {tag}
-        </span>
-      )
-    }
+    {tag && <span class="eyebrow text-[0.6rem] text-muted-foreground">{tag}</span>}
   </div>
 
   {/* Icon */}
@@ -56,9 +50,7 @@ const { href, title, description, accent = 'foam', cta = 'Open tool', tag, index
     </p>
   </div>
 
-  <div
-    class="flex items-center gap-1.5 text-sm font-medium text-[hsl(var(--card-accent))]"
-  >
+  <div class="flex items-center gap-1.5 text-sm font-medium text-[hsl(var(--card-accent))]">
     {cta}
     <svg
       class="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1"

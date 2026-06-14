@@ -18,6 +18,7 @@ in `public/career-tools-theme.js` (an inline anti-FOUC script that applies the
 palette before the stylesheet loads). Keep the two in sync.
 
 ### Night (Default)
+
 - **Background**: 150 9% 7% — warm green-charcoal, not pure black
 - **Foreground**: 75 11% 91% — warm ivory, not pure white
 - **Primary (foam)**: 150 44% 42% — evergreen
@@ -28,6 +29,7 @@ palette before the stylesheet loads). Keep the two in sync.
 - **Border**: 150 7% 22% — subtle separation
 
 ### Dawn (Light)
+
 - **Background**: 48 30% 95% — warm ivory paper
 - **Foreground**: 150 14% 15% — deep warm ink
 - **Primary (foam)**: 150 50% 26% — deep pine
@@ -37,6 +39,7 @@ palette before the stylesheet loads). Keep the two in sync.
 - **Border**: 48 20% 80% — light separation
 
 ### Rules
+
 - Never use #000 or #fff
 - No blue. Tint neutrals warm, toward the green/earth family
 - Reduce chroma as lightness approaches 0 or 100
@@ -61,6 +64,7 @@ Self-hosted via `@fontsource-variable/*` (no CDN, on-brand for privacy-first).
 ## Components
 
 ### Cards
+
 - Border: 1px, hsl(var(--border)/0.35)
 - Background: hsl(var(--overlay)/0.25)
 - Border-radius: rounded-3xl (1.5rem)
@@ -68,11 +72,13 @@ Self-hosted via `@fontsource-variable/*` (no CDN, on-brand for privacy-first).
 - No nested cards
 
 ### Buttons
+
 - Primary: bg-[hsl(var(--primary))], rounded-full, px-5 py-2.5
 - Ghost: transparent bg, hover:bg-[hsl(var(--overlay)/0.3)]
 - Outline: border only, subtle hover
 
 ### Inputs
+
 - Border: hsl(var(--border)/0.5)
 - Focus: ring-[hsl(var(--foam)/0.3)]
 - Font-size: 16px minimum (prevent zoom on mobile)

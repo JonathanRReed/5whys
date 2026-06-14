@@ -20,9 +20,13 @@ const notFoundSchemas = [
   breadcrumbs={[{ label: 'Home', href: '/' }]}
   structuredData={notFoundSchemas}
 >
-  <div class="relative flex min-h-[70vh] flex-col items-center justify-center px-4 pb-20 pt-16 text-center">
+  <div
+    class="relative flex min-h-[70vh] flex-col items-center justify-center px-4 pb-20 pt-16 text-center"
+  >
     <div class="space-y-6">
-      <div class="inline-flex h-20 w-20 items-center justify-center rounded-2xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.6)]">
+      <div
+        class="inline-flex h-20 w-20 items-center justify-center rounded-2xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.6)]"
+      >
         <svg
           class="h-10 w-10 text-[hsl(var(--muted-foreground))]"
           fill="none"
@@ -31,7 +35,10 @@ const notFoundSchemas = [
           stroke-width="1.5"
           aria-hidden="true"
         >
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"></path>
         </svg>
       </div>
 
@@ -47,8 +54,19 @@ const notFoundSchemas = [
           href="/"
           class="inline-flex items-center gap-2 rounded-lg bg-[hsl(var(--primary))] px-6 py-3 text-sm font-semibold text-[hsl(var(--primary-foreground))] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-22px_hsl(var(--primary))]"
         >
-          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+          <svg
+            class="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
+            ></path>
           </svg>
           Back to Home
         </a>
@@ -58,10 +76,26 @@ const notFoundSchemas = [
     <section class="mx-auto mt-16 w-full max-w-xl">
       <h2 class="eyebrow mb-5">Popular tools</h2>
       <div class="flex flex-wrap gap-x-6 gap-y-2">
-        <a href="/career/" class="text-sm font-medium text-foreground underline decoration-[hsl(var(--border))] underline-offset-4 transition-colors hover:text-[hsl(var(--foam))] hover:decoration-[hsl(var(--foam)/0.5)]">Career 5 Whys</a>
-        <a href="/resume-game/" class="text-sm font-medium text-foreground underline decoration-[hsl(var(--border))] underline-offset-4 transition-colors hover:text-[hsl(var(--gold))] hover:decoration-[hsl(var(--gold)/0.5)]">Resume Game</a>
-        <a href="/networking-practice/" class="text-sm font-medium text-foreground underline decoration-[hsl(var(--border))] underline-offset-4 transition-colors hover:text-[hsl(var(--iris))] hover:decoration-[hsl(var(--iris)/0.5)]">Networking Studio</a>
-        <a href="/5whys/interview-glow-up/" class="text-sm font-medium text-foreground underline decoration-[hsl(var(--border))] underline-offset-4 transition-colors hover:text-[hsl(var(--love))] hover:decoration-[hsl(var(--love)/0.5)]">Interview Glow Up</a>
+        <a
+          href="/career/"
+          class="text-sm font-medium text-foreground underline decoration-[hsl(var(--border))] underline-offset-4 transition-colors hover:text-[hsl(var(--foam))] hover:decoration-[hsl(var(--foam)/0.5)]"
+          >Career 5 Whys</a
+        >
+        <a
+          href="/resume-game/"
+          class="text-sm font-medium text-foreground underline decoration-[hsl(var(--border))] underline-offset-4 transition-colors hover:text-[hsl(var(--gold))] hover:decoration-[hsl(var(--gold)/0.5)]"
+          >Resume Game</a
+        >
+        <a
+          href="/networking-practice/"
+          class="text-sm font-medium text-foreground underline decoration-[hsl(var(--border))] underline-offset-4 transition-colors hover:text-[hsl(var(--iris))] hover:decoration-[hsl(var(--iris)/0.5)]"
+          >Networking Studio</a
+        >
+        <a
+          href="/5whys/interview-glow-up/"
+          class="text-sm font-medium text-foreground underline decoration-[hsl(var(--border))] underline-offset-4 transition-colors hover:text-[hsl(var(--love))] hover:decoration-[hsl(var(--love)/0.5)]"
+          >Interview Glow Up</a
+        >
       </div>
     </section>
   </div>

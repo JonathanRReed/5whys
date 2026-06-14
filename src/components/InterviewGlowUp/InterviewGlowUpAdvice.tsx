@@ -102,8 +102,8 @@ export default function InterviewGlowUpAdvice() {
       {/* The Recruiter's Perspective */}
       <Section title="What recruiters actually want">
         <p className="leading-relaxed">
-<strong>Recruiters want to hire you.</strong> Every interview costs them time and money, so
-          they are rooting for you to be the person who ends the search.
+          <strong>Recruiters want to hire you.</strong> Every interview costs them time and money,
+          so they are rooting for you to be the person who ends the search.
         </p>
         <Callout variant="default">
           <p className="font-medium">The Three Checks Every Interviewer Makes:</p>

@@ -8,7 +8,9 @@ export default function ResumeHeader({ showHeader = true }: Props) {
   if (!showHeader) return null;
   return (
     <header className="space-y-4 text-center">
-      <p className="eyebrow justify-self-center" style={{ color: 'hsl(var(--gold))' }}>Prove your impact</p>
+      <p className="eyebrow justify-self-center" style={{ color: 'hsl(var(--gold))' }}>
+        Prove your impact
+      </p>
       <h1 className="text-4xl font-semibold tracking-tight">Resume Game</h1>
       <p className="mx-auto max-w-2xl text-sm text-muted-foreground">
         Simulate an 8-second recruiter scan to surface power verbs and numbers. Rewrite every bullet

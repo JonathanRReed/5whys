@@ -242,16 +242,58 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
             className="nav-logo flex h-10 w-10 items-center justify-center rounded-xl border border-[hsl(var(--border)/0.6)] bg-[hsl(var(--card)/0.8)]"
           >
             <svg className="h-6 w-6 text-foreground" viewBox="0 0 36 36" fill="none">
-              <rect x="6" y="5" width="24" height="2.8" rx="1.4" fill="currentColor" fillOpacity="0.85" />
-              <rect x="8.5" y="11" width="19" height="2.8" rx="1.4" fill="currentColor" fillOpacity="0.68" />
-              <rect x="11" y="17" width="14" height="2.8" rx="1.4" fill="currentColor" fillOpacity="0.5" />
-              <rect x="13.5" y="23" width="9" height="2.8" rx="1.4" fill="currentColor" fillOpacity="0.34" />
-              <rect x="15.5" y="29" width="5" height="2.8" rx="1.4" style={{ fill: 'hsl(var(--primary))' }} />
+              <rect
+                x="6"
+                y="5"
+                width="24"
+                height="2.8"
+                rx="1.4"
+                fill="currentColor"
+                fillOpacity="0.85"
+              />
+              <rect
+                x="8.5"
+                y="11"
+                width="19"
+                height="2.8"
+                rx="1.4"
+                fill="currentColor"
+                fillOpacity="0.68"
+              />
+              <rect
+                x="11"
+                y="17"
+                width="14"
+                height="2.8"
+                rx="1.4"
+                fill="currentColor"
+                fillOpacity="0.5"
+              />
+              <rect
+                x="13.5"
+                y="23"
+                width="9"
+                height="2.8"
+                rx="1.4"
+                fill="currentColor"
+                fillOpacity="0.34"
+              />
+              <rect
+                x="15.5"
+                y="29"
+                width="5"
+                height="2.8"
+                rx="1.4"
+                style={{ fill: 'hsl(var(--primary))' }}
+              />
             </svg>
           </span>
           <span className="grid leading-none">
             <span className="font-display text-base font-semibold tracking-tight">5 Whys</span>
-            <span className="hidden text-[0.6rem] font-medium uppercase tracking-[0.24em] text-[hsl(var(--muted-foreground))] sm:block" style={{ fontFamily: 'var(--font-mono)' }}>
+            <span
+              className="hidden text-[0.6rem] font-medium uppercase tracking-[0.24em] text-[hsl(var(--muted-foreground))] sm:block"
+              style={{ fontFamily: 'var(--font-mono)' }}
+            >
               Career Studio
             </span>
           </span>
