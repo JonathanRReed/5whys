@@ -11,10 +11,10 @@ const {
   structuredData = [],
 } = Astro.props;
 
-const computedTitle =
-  title && title !== siteConfig.siteName
-    ? siteConfig.titleTemplate.replace('%s', title)
-    : siteConfig.siteName;
+const titleAlreadyBranded = title === siteConfig.siteName || title.includes('5 Whys Career Studio');
+const computedTitle = titleAlreadyBranded
+  ? title
+  : siteConfig.titleTemplate.replace('%s', title);
 
 const canonicalUrl = canonical ?? new URL(Astro.url.pathname, siteConfig.siteUrl).toString();
 const ogImage = image?.startsWith('http')
