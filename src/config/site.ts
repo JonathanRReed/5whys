@@ -1,5 +1,5 @@
 export const siteConfig = {
-  siteUrl: 'https://5whys.jonathanrreed.com',
+  siteUrl: 'https://5whys.jonathanrreed.com/',
   siteName: '5 Whys Career Studio | Reflection tools by Jonathan R Reed',
   titleTemplate: '%s · 5 Whys Career Studio',
   description:
@@ -32,7 +32,7 @@ export const baseSchemas = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     '@id': 'https://5whys.jonathanrreed.com/#website',
-    url: 'https://5whys.jonathanrreed.com',
+    url: 'https://5whys.jonathanrreed.com/',
     name: '5 Whys Career Studio',
     description:
       '5 Whys is a small studio of career reflection tools by Jonathan R Reed that helps job seekers clarify direction, improve resumes, and prepare stronger interview stories.',
