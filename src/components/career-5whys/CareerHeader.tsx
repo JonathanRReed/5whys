@@ -116,7 +116,7 @@ export default function CareerHeader({
                 </div>
                 <div>
                   <p className="text-sm text-[hsl(var(--foreground))]">
-                    {sequentialCount === WHY_COUNT ? 'Depth unlocked' : 'Reasoning depth'}
+                    {sequentialCount === WHY_COUNT ? 'Depth found' : 'Reasoning depth'}
                   </p>
                   <p className="text-xs text-[hsl(var(--muted-foreground))]">
                     {progressPercent}% complete

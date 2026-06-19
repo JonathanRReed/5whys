@@ -92,7 +92,7 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset }: Prop
           </Button>
         </div>
         <p className="text-sm text-center text-[hsl(var(--muted-foreground))]">
-          Practice aloud or time your typed intro. Aim for a confident 90–120 second pitch.
+          Practice aloud or time your typed intro. Aim for a confident 90-120 second pitch.
         </p>
       </CardContent>
     </Card>

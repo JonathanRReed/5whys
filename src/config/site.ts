@@ -1,9 +1,9 @@
 export const siteConfig = {
   siteUrl: 'https://5whys.jonathanrreed.com/',
-  siteName: '5 Whys Career Studio | Reflection tools by Jonathan R Reed',
+  siteName: '5 Whys Career Studio | Reflection tools by Jonathan R. Reed',
   titleTemplate: '%s · 5 Whys Career Studio',
   description:
-    '5 Whys is a small studio of career reflection tools by Jonathan R Reed that helps job seekers clarify direction, improve resumes, and prepare stronger interview stories.',
+    '5 Whys is a small studio of career reflection tools by Jonathan R. Reed that helps job seekers clarify direction, improve resumes, and prepare stronger interview stories.',
   keywords: [
     'career reflection',
     'resume game',
@@ -12,14 +12,14 @@ export const siteConfig = {
     'career storytelling tools',
     'five whys exercise',
     'job search tools',
-    'Jonathan R Reed',
+    'Jonathan R. Reed',
     'Jonathan Reed',
   ],
   themeColor: '#11140f',
   ogImage: '/career-studio-favicon-512x512.png',
   locale: 'en_US',
   author: {
-    name: 'Jonathan R Reed',
+    name: 'Jonathan R. Reed',
     alternateName: 'Jonathan Reed',
     url: 'https://jonathanrreed.com',
     twitter: '@jonathanrreed',
@@ -35,7 +35,7 @@ export const baseSchemas = {
     url: 'https://5whys.jonathanrreed.com/',
     name: '5 Whys Career Studio',
     description:
-      '5 Whys is a small studio of career reflection tools by Jonathan R Reed that helps job seekers clarify direction, improve resumes, and prepare stronger interview stories.',
+      '5 Whys is a small studio of career reflection tools by Jonathan R. Reed that helps job seekers clarify direction, improve resumes, and prepare stronger interview stories.',
     inLanguage: 'en-US',
     publisher: {
       '@id': 'https://jonathanrreed.com/#person',
@@ -45,7 +45,7 @@ export const baseSchemas = {
     '@context': 'https://schema.org',
     '@type': 'Person',
     '@id': 'https://jonathanrreed.com/#person',
-    name: 'Jonathan R Reed',
+    name: 'Jonathan R. Reed',
     alternateName: ['Jonathan Reed', 'Jonathan Reed AI'],
     url: 'https://jonathanrreed.com',
     jobTitle: ['AI Policy Researcher', 'AI Developer Tools Builder', 'Developer Ethics Writer'],

@@ -49,7 +49,12 @@ export type NetworkingPracticeSession = {
 const VERSION_KEY = 'networking-practice-versions';
 const SESSION_KEY = 'networking-practice-sessions';
 export const SESSION_LIMIT = 60;
-const TITLE_FIXES = new Map([['Career Fair – Recruiter Chatt', 'Career Fair – Recruiter Chat']]);
+const TITLE_FIXES = new Map([
+  ['Career Fair - Recruiter Chatt', 'Career Fair: Recruiter Chat'],
+  ['Career Fair - Recruiter Chat', 'Career Fair: Recruiter Chat'],
+  ['Career Fair – Recruiter Chatt', 'Career Fair: Recruiter Chat'],
+  ['Career Fair – Recruiter Chat', 'Career Fair: Recruiter Chat'],
+]);
 const SCENARIO_TITLE_BY_ID = new Map(
   (scenarioData as { id: string; title: string }[]).map((scenario) => [scenario.id, scenario.title])
 );

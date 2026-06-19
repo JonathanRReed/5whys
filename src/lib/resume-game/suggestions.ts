@@ -65,7 +65,7 @@ export function generateBulletSuggestions(bullet: BulletRecord): BulletSuggestio
   if (readability.wordCount > 32) {
     suggestions.push({
       type: 'too-long',
-      message: `At ${readability.wordCount} words, this bullet is hard to scan. Trim to 20–28 words.`,
+      message: `At ${readability.wordCount} words, this bullet is hard to scan. Trim to 20-28 words.`,
     });
   }
 

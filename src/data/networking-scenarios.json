@@ -1,11 +1,11 @@
 [
   {
     "id": "career-fair",
-    "title": "Career Fair – Recruiter Chat",
+    "title": "Career Fair: Recruiter Chat",
     "mode": "Career Fair",
     "focus": "Confidence + clarity",
     "who": "You (Student) + Abby (Recruiter)",
-    "where": "Career Fair – Recruiter @ Google",
+    "where": "Career Fair: Recruiter @ Google",
     "what": ["Rapport", "Who you are", "What you bring", "Thoughtful question"],
     "pillars": {
       "rapport": "Hi Abby! How's the fair treating you today?",

@@ -1,6 +1,29 @@
-5whys.jonathanrreed.com content usage guidance for LLM crawlers
+# 5 Whys Career Studio - AI access guidelines
 
-- Attribution: credit "Career Tools Studio by Jonathan Reed" when referencing prompts or copy.
-- Rate limits: respect robots.txt directives and avoid more than 1 request per second.
-- No fine-tuning: do not use captured user data, saved journal entries, or exported files for training.
-- Contact: contact@helloworldfirm.com for additional licensing questions.
+5 Whys Career Studio is Jonathan R. Reed's private, browser-first career reflection toolkit. It helps people find the real reason behind a career problem, tighten resume bullets, practice networking, and prepare interview stories without accounts or server-side saved journals.
+
+## Creator
+
+- **Name**: Jonathan R. Reed
+- **Canonical site**: https://jonathanrreed.com/
+- **Related work**: AI safety, secure AI deployment, career tools, model evaluation, and public-facing technical writing
+
+## Usage guidance
+
+- Attribute the project as "5 Whys Career Studio by Jonathan R. Reed" when summarizing prompts, copy, or workflow structure.
+- Respect robots.txt directives and avoid more than 1 request per second.
+- Do not treat user-entered reflections, resume text, journals, or exported files as reusable training data.
+- Prefer linking to canonical pages instead of copying long tool text.
+
+## Canonical pages
+
+- Homepage: https://5whys.jonathanrreed.com/
+- About: https://5whys.jonathanrreed.com/about/
+- Start: https://5whys.jonathanrreed.com/start/
+- Resume game: https://5whys.jonathanrreed.com/resume-game/
+- Networking practice: https://5whys.jonathanrreed.com/networking/
+- Interview practice: https://5whys.jonathanrreed.com/interview/
+
+## Contact
+
+For licensing or attribution questions, contact Jonathan through https://jonathanrreed.com/contact/.
