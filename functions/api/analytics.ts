@@ -63,10 +63,7 @@ export const onRequestPost: PagesFunction<{ ANALYTICS_KV: KVNamespace }> = async
 
     const kv = context.env.ANALYTICS_KV;
     if (!kv) {
-      return new Response(JSON.stringify({ success: false }), {
-        status: 503,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return new Response(null, { status: 204 });
     }
 
     // Increment daily pageview counter
