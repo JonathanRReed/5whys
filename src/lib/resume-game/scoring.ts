@@ -1,6 +1,10 @@
-import { POWER_VERB_PATTERN, POWER_WORDS, getVerbStrength } from './constants';
+import {
+  POWER_VERB_PATTERN,
+  POWER_VERB_START_PATTERN,
+  getVerbStrength,
+} from './constants';
 import { analyzeReadability } from './readability';
-import { escapeRegExp, normalizeLine } from './text';
+import { normalizeLine } from './text';
 
 /**
  * Scoring weights informed by recruiter behavior research:
@@ -17,18 +21,14 @@ export function scoreBullet(bullet: string) {
   if (!normalized) return 0;
 
   const hasVerb = POWER_VERB_PATTERN.test(normalized);
-  const hasLeadingVerb = new RegExp(`^(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'i').test(
-    normalized
-  );
+  const hasLeadingVerb = POWER_VERB_START_PATTERN.test(normalized);
   const hasNumber = /(\$?\d+[\d,]*\.?\d*%?)/.test(normalized);
   const length = normalized.split(/\s+/).filter(Boolean).length;
   const clarity = length >= 8 && length <= 32;
   const structure = /(\bby\b|\bto\b|\bresult(ing)? in\b|\bleading to\b)/.test(normalized) ? 15 : 0;
 
   // Verb strength scoring
-  const verbMatch = normalized.match(
-    new RegExp(`\\b(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'i')
-  );
+  const verbMatch = normalized.match(POWER_VERB_PATTERN);
   const verb = verbMatch?.[1] || '';
   const verbStrength = verb ? getVerbStrength(verb) : 'none';
   const verbScore = !hasVerb
