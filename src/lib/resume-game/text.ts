@@ -1,4 +1,4 @@
-import { POWER_WORDS } from './constants';
+import { POWER_VERB_GLOBAL_PATTERN } from './constants';
 
 const REGEX_SPECIAL_CHARS = /[.*+?^${}()|[\]\\]/g;
 const HEADINGS = new Set([
@@ -74,16 +74,14 @@ export function highlightResume(text: string) {
       '<mark class="bg-[hsl(var(--primary)/0.3)] text-[hsl(var(--primary-foreground))] px-1 rounded">$&</mark>'
     )
     .replace(
-      new RegExp(`\\b(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'gi'),
+      POWER_VERB_GLOBAL_PATTERN,
       '<mark class="bg-[hsl(var(--love)/0.3)] text-foreground px-1 rounded">$&</mark>'
     );
 }
 
 export function countPowerVerbs(text: string) {
   if (!text) return 0;
-  const matches = decodeEntities(text).match(
-    new RegExp(`\\b(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'gi')
-  );
+  const matches = decodeEntities(text).match(POWER_VERB_GLOBAL_PATTERN);
   return matches ? matches.length : 0;
 }
 

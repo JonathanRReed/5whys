@@ -1,6 +1,6 @@
 import {
   POWER_VERB_PATTERN,
-  POWER_WORDS,
+  POWER_VERB_START_PATTERN,
   WEAK_WORDS,
   ATS_KEYWORDS,
   STOPWORDS,
@@ -274,8 +274,8 @@ export function extractBullets(text: string): string[] {
 export function seedFields(text: string): BulletFields {
   const cleaned = normalizeLine(text);
   const verbMatch =
-    cleaned.match(new RegExp(`^(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'i')) ||
-    cleaned.match(new RegExp(`\\b(${POWER_WORDS.map(escapeRegExp).join('|')})\\b`, 'i'));
+    cleaned.match(POWER_VERB_START_PATTERN) ||
+    cleaned.match(POWER_VERB_PATTERN);
   const verb = verbMatch ? verbMatch[1] : '';
   const remainder = verb
     ? cleaned.replace(new RegExp(`\\b${escapeRegExp(verb)}\\b`, 'i'), '').trim()
@@ -330,9 +330,7 @@ export function fieldBonus(fields: BulletFields) {
 
 export function editBonus(original: string, fields: BulletFields) {
   const normalized = normalizeLine(original);
-  const startsWithVerb = new RegExp(`^(${POWER_WORDS.map(escapeRegExp).join('|')})\b`, 'i').test(
-    normalized
-  );
+  const startsWithVerb = POWER_VERB_START_PATTERN.test(normalized);
   const hasAnyVerb = POWER_VERB_PATTERN.test(normalized);
   let bonus = 0;
   if (!startsWithVerb && fields.verb.trim()) bonus += 4;

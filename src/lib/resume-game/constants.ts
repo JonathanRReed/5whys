@@ -115,7 +115,14 @@ export const ACTION_VERBS = [
 ] as const;
 
 export const POWER_WORDS = ACTION_VERBS;
-export const POWER_VERB_PATTERN = new RegExp(`\\b(${POWER_WORDS.join('|')})\\b`, 'i');
+
+const REGEX_SPECIAL_CHARS = /[.*+?^${}()|[\]\\]/g;
+const escapeRegExp = (value: string) => value.replace(REGEX_SPECIAL_CHARS, '\\$&');
+const powerWordsPattern = POWER_WORDS.map(escapeRegExp).join('|');
+
+export const POWER_VERB_PATTERN = new RegExp(`\\b(${powerWordsPattern})\\b`, 'i');
+export const POWER_VERB_GLOBAL_PATTERN = new RegExp(`\\b(${powerWordsPattern})\\b`, 'gi');
+export const POWER_VERB_START_PATTERN = new RegExp(`^(${powerWordsPattern})\\b`, 'i');
 
 // Verb strength tiers
 export const POWER_VERBS_WEAK = [
