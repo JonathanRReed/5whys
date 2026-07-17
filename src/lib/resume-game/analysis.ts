@@ -273,9 +273,7 @@ export function extractBullets(text: string): string[] {
 
 export function seedFields(text: string): BulletFields {
   const cleaned = normalizeLine(text);
-  const verbMatch =
-    cleaned.match(POWER_VERB_START_PATTERN) ||
-    cleaned.match(POWER_VERB_PATTERN);
+  const verbMatch = cleaned.match(POWER_VERB_START_PATTERN) || cleaned.match(POWER_VERB_PATTERN);
   const verb = verbMatch ? verbMatch[1] : '';
   const remainder = verb
     ? cleaned.replace(new RegExp(`\\b${escapeRegExp(verb)}\\b`, 'i'), '').trim()

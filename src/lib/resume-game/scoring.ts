@@ -1,8 +1,4 @@
-import {
-  POWER_VERB_PATTERN,
-  POWER_VERB_START_PATTERN,
-  getVerbStrength,
-} from './constants';
+import { POWER_VERB_PATTERN, POWER_VERB_START_PATTERN, getVerbStrength } from './constants';
 import { analyzeReadability } from './readability';
 import { normalizeLine } from './text';
 
