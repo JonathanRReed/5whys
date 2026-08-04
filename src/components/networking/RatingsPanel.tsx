@@ -14,7 +14,7 @@ type Props = {
 };
 
 function computeFeedbackColor(value: number) {
-  if (value >= 4) return 'text-[hsl(var(--love))]';
+  if (value >= 4) return 'text-[hsl(var(--foam))]';
   if (value >= 3) return 'text-[hsl(var(--gold))]';
   return 'text-[hsl(var(--destructive))]';
 }
@@ -42,11 +42,33 @@ const RATING_FIELDS = [
   },
 ];
 
+const NEXT_STEPS: Record<keyof Ratings, string> = {
+  confidence:
+    'Run the same scenario again right now. The second rep is always steadier, and that steadiness is what confidence is.',
+  clarity:
+    'Cut your intro to two sentences and one concrete example. Read it out loud once before the next rep.',
+  rapport:
+    'Start the next rep with a line about them, not you. Pick one warm-up line and use it word for word.',
+  authenticity:
+    'Find the line you would never say to a friend and rewrite it the way you actually talk.',
+};
+
+function computeNextStep(ratings: Ratings): string {
+  const entries = RATING_FIELDS.map(({ key }) => ({ key, value: ratings[key] }));
+  const lowest = entries.reduce((min, entry) => (entry.value < min.value ? entry : min));
+  if (lowest.value >= 4) {
+    return 'Strong round across the board. Save it, then raise the difficulty: pick a harder scenario or add a sharper ask.';
+  }
+  return NEXT_STEPS[lowest.key];
+}
+
 export default function RatingsPanel({ ratings, onRatingChange }: Props) {
   const averageRating = React.useMemo(() => {
     const total = ratings.confidence + ratings.clarity + ratings.rapport + ratings.authenticity;
     return total / 4;
   }, [ratings]);
+
+  const nextStep = React.useMemo(() => computeNextStep(ratings), [ratings]);
 
   return (
     <div className="grid gap-6">
@@ -81,19 +103,20 @@ export default function RatingsPanel({ ratings, onRatingChange }: Props) {
       ))}
 
       <div className="rounded-xl bg-[hsl(var(--overlay)/0.3)] p-4 text-sm text-[hsl(var(--muted-foreground))]">
-        <div className="mb-1 text-xs uppercase tracking-[0.3em] text-[hsl(var(--iris))]">
-          Average
+        <div className="flex items-baseline justify-between gap-4">
+          <div>
+            <div className="mb-1 text-xs uppercase tracking-[0.3em] text-[hsl(var(--iris))]">
+              Average
+            </div>
+            <div className={`text-2xl font-semibold ${computeFeedbackColor(averageRating)}`}>
+              {averageRating.toFixed(1)}/5
+            </div>
+          </div>
         </div>
-        <div className={`text-2xl font-semibold ${computeFeedbackColor(averageRating)}`}>
-          {averageRating.toFixed(1)}/5
+        <div className="mt-3 rounded-lg border border-[hsl(var(--border)/0.4)] bg-[hsl(var(--background)/0.5)] p-3">
+          <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--foam))]">Next step</p>
+          <p className="mt-1.5 text-sm text-[hsl(var(--foreground))]">{nextStep}</p>
         </div>
-        <p className="mt-2">
-          {averageRating >= 4
-            ? 'Excellent! You are ready. Try a different scenario or add a specific ask.'
-            : averageRating >= 3
-              ? 'Good start. Next: slow down your pace, make eye contact, and pause for their response.'
-              : 'Keep practicing. Focus on: (1) Clear opening, (2) One specific goal, (3) Genuine question.'}
-        </p>
       </div>
     </div>
   );

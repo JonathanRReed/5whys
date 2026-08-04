@@ -14,7 +14,7 @@ const careerSchemas = [
     url: pageUrl,
     name: 'Career Reflection · Five Whys',
     description:
-      'Guided journaling exercise that helps you dig through five layers of reasoning to articulate your next career move.',
+      'Guided five whys exercise that chains each answer into the next question, tracing a career decision from surface reason to root reason.',
     inLanguage: 'en-US',
     author: {
       '@type': 'Person',
@@ -32,7 +32,7 @@ const careerSchemas = [
         name: 'What is the five whys exercise?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'The five whys is a guided journaling technique where you ask "why" five times in succession to uncover the deeper motivation behind a career decision.',
+          text: 'The five whys is a root-cause technique where you ask "why" five times in succession, each question building on your previous answer, to trace a career decision from its surface reason to its root reason.',
         },
       },
       {
@@ -54,6 +54,14 @@ const careerSchemas = [
     ],
   },
 ];
+
+const careerNoScriptContext = [
+  'Career Reflection is the five-layer decision tool inside 5 Whys Career Studio. It is meant for moments when a career question is too vague to act on, such as whether to change teams, apply for a role, leave a project, pursue a different specialty, or explain what kind of work actually fits. The exercise asks for the visible reason first, then keeps pressing for the deeper constraint, value, tradeoff, and evidence behind that reason.',
+  'The interactive version gives you guided prompts, local saving, summary generation, and export controls. Without JavaScript, the same workflow can be followed manually: write the surface problem, ask why that answer is true, repeat that question four more times, then rewrite the final answer as a testable career signal. A useful final signal names what matters, what constraint is real, what evidence supports it, and what next step would reduce uncertainty.',
+  'Good answers tend to be specific rather than dramatic. Instead of stopping at “I want a better job,” the reflection should move toward statements like “I need work where security judgment, systems thinking, and written explanation are valued,” or “I am avoiding this role because the promotion path rewards visibility more than durable technical work.” The point is not a perfect confession. The point is a clearer reason that can guide a resume, networking pitch, interview story, or next experiment.',
+  'A useful way to review the final answer is to ask whether it changes a decision. If the answer only restates frustration, keep going. If it helps you choose which job description to ignore, which project to highlight, which person to ask for advice, or which constraint to negotiate, it is probably specific enough. The best reflection output is small but actionable: one sentence of direction, one sentence of evidence, and one next move that can be tested this week.',
+  'Privacy matters because career reflection can include names, employers, worries, and sensitive drafts. The public tool is designed for browser-local work. Treat the export as your own career note, review it before sharing, and remove private details about other people or organizations. If the reflection starts producing interview material, carry the strongest proof into the resume game or interview workspace instead of keeping it as a vague journal entry.',
+];
 ---
 
 <Base
@@ -64,6 +72,7 @@ const careerSchemas = [
     { label: 'Career Reflection', href: '/career/' },
   ]}
   structuredData={careerSchemas}
+  noScriptContext={careerNoScriptContext}
 >
   <div class="relative overflow-hidden px-4 pb-16 pt-4 sm:pt-6">
     <h1 class="sr-only">Career Reflection Five Whys</h1>

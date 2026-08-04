@@ -200,6 +200,59 @@ export default function InterviewGlowUpAdvice() {
             <strong>Example:</strong> "I refactored the authentication system to use JWT tokens
             (Play), which reduced login failures by 40% and support tickets by 25% (Proof)."
           </p>
+          <p className="mt-2 text-sm">
+            <strong>Student example:</strong> "Our capstone group was three weeks behind, so I
+            split the app into modules and took the data layer myself (Play). We demoed on time,
+            and the professor now uses our project as the example for next semester (Proof)."
+          </p>
+        </Callout>
+      </Section>
+
+      {/* Student On-Ramp */}
+      <Section title="No industry experience? You still have proof">
+        <p className="leading-relaxed">
+          Play + Proof does not care where the story happened. It cares that you did something
+          specific and can show the receipt. If you are still in school, you have four story
+          sources most candidates ignore:
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] p-4">
+            <p className="text-sm font-semibold text-foreground">Class projects</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              The part you owned, the decision you made when the plan broke, the bug you found at
+              2am before the demo.
+            </p>
+          </div>
+          <div className="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] p-4">
+            <p className="text-sm font-semibold text-foreground">Internships</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Even a small ticket counts if you can explain the context, your change, and what
+              happened after it shipped.
+            </p>
+          </div>
+          <div className="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] p-4">
+            <p className="text-sm font-semibold text-foreground">Clubs and volunteering</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              The event you organized, the budget you managed, the members you recruited. That is
+              leadership and ownership, named plainly.
+            </p>
+          </div>
+          <div className="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] p-4">
+            <p className="text-sm font-semibold text-foreground">Part-time jobs</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Handling a rush, an unhappy customer, training a new hire. Interviewers trust these
+              stories because they are hard to fake.
+            </p>
+          </div>
+        </div>
+        <Callout variant="tip">
+          <p className="font-medium">What counts as Proof without business metrics:</p>
+          <ul className="mt-2 list-inside list-disc space-y-1 pl-2 text-sm">
+            <li>Grades and instructor feedback ("used as the example for next semester")</li>
+            <li>Scope: four teammates, a ten-week build, a $2,000 budget, 60 attendees</li>
+            <li>A before and after state: "sign-ups took 3 forms, now they take 1"</li>
+            <li>Adoption: classmates or club members actually using what you made</li>
+          </ul>
         </Callout>
       </Section>
 

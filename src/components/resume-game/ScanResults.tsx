@@ -15,12 +15,6 @@ function benchmarkColor(value: number, goodThreshold: number, warnThreshold: num
   return 'text-[hsl(var(--love))]';
 }
 
-function benchmarkLabel(value: number, goodThreshold: number, warnThreshold: number): string {
-  if (value >= goodThreshold) return 'Good';
-  if (value >= warnThreshold) return 'Warning';
-  return 'Needs work';
-}
-
 export default function ScanResults({ highlightedResume, signalReport, resumeOutOfDate }: Props) {
   const grade = signalGrade(signalReport.visible);
   const hasSkills = signalReport.hardSkills.length > 0 || signalReport.softSkills.length > 0;
@@ -34,6 +28,8 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
     (signalReport.keywordDensity && signalReport.keywordDensity.length > 0) ||
     (signalReport.repetitiveVerbs && signalReport.repetitiveVerbs.length > 0);
 
+  const verbTarget = Math.min(8, Math.max(1, signalReport.bulletCount));
+
   return (
     <div className="grid gap-6 lg:grid-cols-[1.15fr,0.85fr]">
       <Card>
@@ -41,7 +37,7 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
           <CardTitle className="text-xl">Analysis visualization</CardTitle>
           {resumeOutOfDate && (
             <p className="text-xs text-[hsl(var(--gold))]">
-              Resume updated , rerun analysis to refresh metrics.
+              Resume updated. Rerun the analysis to refresh metrics.
             </p>
           )}
         </CardHeader>
@@ -322,18 +318,20 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
                     {/* Unique verbs */}
                     <div className="rounded-xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.4)] p-3 text-center">
                       <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                        Unique strong verbs
+                        Unique action verbs
                       </p>
                       <p
                         className={`text-xl font-semibold ${benchmarkColor(
                           signalReport.uniqueVerbCount ?? 0,
-                          8,
-                          5
+                          verbTarget,
+                          Math.ceil(verbTarget / 2)
                         )}`}
                       >
                         {signalReport.uniqueVerbCount ?? 0}
                       </p>
-                      <p className="text-[10px] text-muted-foreground">Target: 8+</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        Target: one per bullet, up to 8
+                      </p>
                     </div>
 
                     {/* Avg bullet length */}
@@ -387,7 +385,9 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
                         </span>
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {benchmarkLabel((signalReport.weakWordCount ?? 0) <= 3 ? 1 : 0, 1, 0)}
+                        {(signalReport.weakWordCount ?? 0) <= 3
+                          ? 'A few hedging phrases. Swap them for direct verbs.'
+                          : 'Hedging language appears often. Lead each line with a direct verb.'}
                       </p>
                     </div>
                   )}

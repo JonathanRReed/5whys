@@ -21,7 +21,13 @@ export interface DecodedBullet {
   status: BulletStatus;
   primarySkillId: string | null;
   secondarySkillIds: string[];
-  suggestion?: { skillId: string; confidence: number }[];
+  /**
+   * Skill suggestions from detection. matchedKeywords lists the exact JD
+   * terms that triggered each suggestion. Older saved data may lack
+   * matchedKeywords (it previously stored a fabricated confidence number),
+   * so consumers should guard for undefined.
+   */
+  suggestion?: { skillId: string; matchedKeywords?: string[] }[];
 }
 
 export interface DecodedRole {
@@ -349,10 +355,15 @@ export function getUnusedStories(data: GlowUpData, packetId: string): Story[] {
   return data.stories.filter((s) => !usedIds.has(s.id));
 }
 
-export function getSkillFrequencyMap(role: DecodedRole): Map<string, number> {
+/**
+ * Skill frequency across a set of bullets. Takes the bullet array directly so
+ * callers can pass either a saved role's bullets or the unsaved editor state;
+ * frequency and totals must always come from the same source.
+ */
+export function getSkillFrequencyMap(bullets: DecodedBullet[]): Map<string, number> {
   const freq = new Map<string, number>();
 
-  for (const bullet of role.bullets) {
+  for (const bullet of bullets) {
     if (bullet.status === 'ignored') continue;
 
     if (bullet.primarySkillId) {
@@ -366,8 +377,15 @@ export function getSkillFrequencyMap(role: DecodedRole): Map<string, number> {
   return freq;
 }
 
-export function getTopGaps(data: GlowUpData, role: DecodedRole, count: number = 3): string[] {
-  const freq = getSkillFrequencyMap(role);
+/** Count of active bullets that carry at least one skill tag. */
+export function getTaggedBulletCount(bullets: DecodedBullet[]): number {
+  return bullets.filter(
+    (b) => b.status === 'active' && (b.primarySkillId || b.secondarySkillIds.length > 0)
+  ).length;
+}
+
+export function getTopGaps(data: GlowUpData, bullets: DecodedBullet[], count: number = 3): string[] {
+  const freq = getSkillFrequencyMap(bullets);
   const storySkills = new Set<string>();
 
   for (const story of data.stories) {

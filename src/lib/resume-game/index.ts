@@ -2,9 +2,14 @@ export {
   ACTION_VERBS,
   POWER_WORDS,
   POWER_VERB_PATTERN,
+  POWER_VERBS_STRONG,
+  POWER_VERBS_WEAK,
   WEAK_WORDS,
+  BUZZWORDS,
   ATS_KEYWORDS,
   STOPWORDS,
+  getVerbStrength,
+  matchesTerm,
   suggestStrongerVerb,
 } from './constants';
 export {
@@ -13,6 +18,7 @@ export {
   buildBullet,
   fieldBonus,
   editBonus,
+  combinedBulletScore,
   createBulletRecord,
   detectWeakWords,
   detectImpact,
@@ -27,6 +33,7 @@ export { scoreBullet, scoreLabel } from './scoring';
 export { analyzeReadability } from './readability';
 export { analyzeResumeLength, detectSections } from './length';
 export { generateBulletSuggestions, signalGrade } from './suggestions';
+export type { BulletSuggestion } from './suggestions';
 export { extractSkills } from './constants';
 export {
   highlightResume,

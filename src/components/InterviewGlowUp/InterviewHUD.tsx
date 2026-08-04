@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { cn } from '../../lib/utils';
 import type { Story, InterviewPacket, DecodedRole } from '../../lib/glowup-store';
-import { getSkillName } from '../../lib/glowup-banks';
+import { getSkillName, resolveQuestionText } from '../../lib/glowup-banks';
 import { ChartIcon, WarningIcon } from '../interview-glowup/icons';
 
 // ============================================================================
@@ -43,6 +43,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
       proof: s.proof.toLowerCase(),
       skill: getSkillName(s.primarySkillId).toLowerCase(),
       tags: s.tags.map((t) => t.toLowerCase()),
+      questions: s.questionPrompts.map((q) => resolveQuestionText(q).toLowerCase()),
     }));
   }, [stories]);
 
@@ -60,7 +61,8 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
         idx.play.includes(lower) ||
         idx.proof.includes(lower) ||
         idx.skill.includes(lower) ||
-        idx.tags.some((t) => t.includes(lower))
+        idx.tags.some((t) => t.includes(lower)) ||
+        idx.questions.some((q) => q.includes(lower))
       );
     });
   }, [packetStories, searchQuery, searchIndex]);
@@ -327,7 +329,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
                           {story.questionPrompts.length > 0 && (
                             <div>
                               <p className="text-xs font-semibold uppercase tracking-wider text-[hsl(var(--muted-foreground)/0.6)]">
-                                Answers
+                                Questions this story answers
                               </p>
                               <ul className="mt-1 space-y-1">
                                 {story.questionPrompts.map((q, i) => (
@@ -335,7 +337,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
                                     key={i}
                                     className="text-sm text-[hsl(var(--muted-foreground)/0.9)]"
                                   >
-                                    • {q}
+                                    • {resolveQuestionText(q)}
                                   </li>
                                 ))}
                               </ul>

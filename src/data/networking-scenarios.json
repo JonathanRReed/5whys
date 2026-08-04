@@ -1,109 +1,698 @@
 [
   {
     "id": "career-fair",
-    "title": "Career Fair: Recruiter Chat",
-    "mode": "Career Fair",
-    "focus": "Confidence + clarity",
-    "who": "You (Student) + Abby (Recruiter)",
-    "where": "Career Fair: Recruiter @ Google",
-    "what": ["Rapport", "Who you are", "What you bring", "Thoughtful question"],
-    "pillars": {
-      "rapport": "Hi Abby! How's the fair treating you today?",
-      "identity": "I'm Kevin, a neuroscience student at UTD exploring human centered AI.",
-      "value": "I love building tools that help people feel confident in fast paced environments. Recently I led a team automating onboarding for 200+ volunteers.",
-      "question": "What qualities make a campus candidate memorable for you after the fair?"
-    },
+    "title": "Career Fair: Long Line Behind You",
+    "mode": "Career fair",
+    "focus": "Brevity under pressure",
+    "audience": "student",
+    "who": "You (student) + Priya (recruiter at an industrial automation company)",
+    "where": "University career fair booth, eight people in line behind you",
+    "what": [
+      "One line of rapport, then get to it",
+      "Name, year, major, one sentence",
+      "One real detail: why this company, or one thing you have done",
+      "Ask one question, then ask what happens next"
+    ],
+    "ingredients": [
+      {
+        "id": "opener",
+        "label": "Opener",
+        "line": "Hi, I know the line is long, so I will be quick. How is the day treating you?"
+      },
+      {
+        "id": "identity",
+        "label": "Who you are",
+        "line": "I'm Sam, a junior in mechanical engineering at State."
+      },
+      {
+        "id": "value",
+        "label": "One real detail",
+        "line": "Last summer I fixed test rigs in a materials lab. I learned I like debugging physical systems more than designing them from scratch."
+      },
+      {
+        "id": "value-honest",
+        "label": "No wins yet, say this",
+        "line": "I read about your team before I came. I want to work on machines people rely on every day, and yours was the booth I planned my route around."
+      }
+    ],
     "rapportSamples": [
-      "Hi Abby! How's your day at the Google booth going?",
-      "Thanks for making time to chat. What's been the standout conversation so far?"
+      "Hi, I know you have a line, so I will keep this tight.",
+      "How many conversations deep are you today? You are holding up better than I would.",
+      "Is there anything you are tired of hearing today? I will skip it."
     ],
     "questionTemplates": [
       {
-        "id": "company",
-        "label": "Company",
-        "prompt": "I noticed Google's new health AI initiative. What sparked that direction for the team?"
+        "id": "process",
+        "label": "Process",
+        "prompt": "What actually happens to the resumes you collect today?"
       },
       {
         "id": "role",
         "label": "Role",
-        "prompt": "How do new grads on your team get to experiment with different projects in their first year?"
+        "prompt": "What do interns on your team own by the end of the summer?"
       },
       {
-        "id": "growth",
-        "label": "Growth",
-        "prompt": "What skill surprised you by being essential once you joined Google?"
+        "id": "memorable",
+        "label": "Memorable",
+        "prompt": "You will talk to a hundred students today. What makes one stick in your memory?"
+      }
+    ]
+  },
+  {
+    "id": "freshman-fair",
+    "title": "Internship Fair, Empty Resume",
+    "mode": "Career fair",
+    "focus": "Honesty without apology",
+    "audience": "student",
+    "who": "You (freshman, one semester in) + Marcus (engineer working the booth)",
+    "where": "Spring internship fair, your resume is one page with a lot of white space",
+    "what": [
+      "Skip the apology, open with interest",
+      "Say your year and what you are exploring",
+      "Offer curiosity and a free summer as the value, because they are",
+      "Ask what to build or join before next year"
+    ],
+    "ingredients": [
+      {
+        "id": "opener",
+        "label": "Opener",
+        "line": "Hi, I am a freshman, so consider this a scouting trip. Do you have two minutes?"
+      },
+      {
+        "id": "identity",
+        "label": "Who you are",
+        "line": "I'm Dana, first year, still deciding between biology and public health."
+      },
+      {
+        "id": "value-honest",
+        "label": "Honest value line",
+        "line": "No internships yet. What I have is a free summer and the patience to learn unglamorous things properly."
+      },
+      {
+        "id": "ask",
+        "label": "The ask",
+        "line": "If you were me, what would you want on this resume by next spring?"
+      }
+    ],
+    "rapportSamples": [
+      "I am here to learn what teams like yours actually do, not to pitch you.",
+      "Do freshmen ever say anything useful at these? I am trying to be the exception."
+    ],
+    "questionTemplates": [
+      {
+        "id": "prep",
+        "label": "Prep",
+        "prompt": "What should a freshman build or join this year to be worth interviewing next year?"
+      },
+      {
+        "id": "path",
+        "label": "Path",
+        "prompt": "How did you get from your first year of college to this job?"
+      },
+      {
+        "id": "screening",
+        "label": "Screening",
+        "prompt": "When you scan a resume with no experience on it, what makes you keep reading?"
+      }
+    ]
+  },
+  {
+    "id": "info-session",
+    "title": "Company Info Session Q&A",
+    "mode": "On campus",
+    "focus": "One good public question",
+    "audience": "student",
+    "who": "You (student) + Elena (engineering manager presenting) + a room of classmates",
+    "where": "Evening info session in a lecture hall, Q&A just opened",
+    "what": [
+      "Ask one specific question in the room, tied to the talk",
+      "Reference what she said, not what the website says",
+      "Find the presenter afterward, not the swag table",
+      "Connect your question to your interest, then ask who to talk to next"
+    ],
+    "ingredients": [
+      {
+        "id": "room",
+        "label": "In the room",
+        "line": "You mentioned the team doubled last year. What broke first when it did?"
+      },
+      {
+        "id": "after",
+        "label": "After the talk",
+        "line": "Thanks for staying around. I'm the one who asked about the rollout process."
+      },
+      {
+        "id": "identity",
+        "label": "Who you are",
+        "line": "I'm Jordan, a junior in computer science. Most of what I know about production systems comes from breaking my own projects."
+      },
+      {
+        "id": "ask",
+        "label": "The follow-up ask",
+        "line": "Is there someone on the platform team I could talk to for 15 minutes? I will keep it to 15."
+      }
+    ],
+    "rapportSamples": [
+      "Your point about slow rollouts surprised me. Can I ask a follow-up?",
+      "Thanks for the straight answer about the on-call rotation. Most presenters dodge that."
+    ],
+    "questionTemplates": [
+      {
+        "id": "culture",
+        "label": "Culture",
+        "prompt": "What does this team argue about that outsiders would not expect?"
+      },
+      {
+        "id": "work",
+        "label": "Work",
+        "prompt": "What does the first month look like for a new grad on your team?"
+      },
+      {
+        "id": "next",
+        "label": "Next step",
+        "prompt": "Who should I talk to if I want to learn more about the platform team specifically?"
       }
     ]
   },
   {
     "id": "conference",
-    "title": "Conference Networking",
+    "title": "Meet the Speaker After the Talk",
     "mode": "Conference",
-    "focus": "Curiosity + rapport",
-    "who": "You (Neuroscience Student) + Dr. Kim (Speaker)",
-    "where": "Neuroscience Conference",
-    "what": ["Express interest", "Share background", "Ask for insight"],
-    "pillars": {
-      "rapport": "Dr. Kim, your keynote on neuroplasticity had everyone buzzing. Thanks for such a clear explainer.",
-      "identity": "I'm Stephanie, a neuroscience student digging into how cognition meets behavior change.",
-      "value": "This semester I partnered with a rehab clinic to pilot a biofeedback tool that increased patient adherence by 18%.",
-      "question": "Where do you see students contributing meaningfully to your research area in the next year?"
-    },
+    "focus": "Specific beats flattering",
+    "audience": "student",
+    "who": "You (senior in statistics) + Dr. Okafor (keynote speaker) + four people waiting behind you",
+    "where": "Hallway outside the ballroom, right after her talk",
+    "what": [
+      "Point at one specific moment in the talk",
+      "One sentence on who you are and why it landed",
+      "Ask one question she has not heard today",
+      "Ask permission to follow up, then yield to the next person"
+    ],
+    "ingredients": [
+      {
+        "id": "opener",
+        "label": "Opener",
+        "line": "Your slide on messy training data got a real laugh from my row. It also stung a little."
+      },
+      {
+        "id": "identity",
+        "label": "Who you are",
+        "line": "I'm Ana, a statistics senior. My thesis keeps hitting the exact labeling problem you described."
+      },
+      {
+        "id": "value-honest",
+        "label": "Honest value line",
+        "line": "I cannot offer you much except a careful read of your paper, which I have actually done."
+      },
+      {
+        "id": "ask",
+        "label": "The ask",
+        "line": "Can I email you one specific question after I reread it? One, not twelve."
+      }
+    ],
     "rapportSamples": [
-      "I appreciated how you broke down complex neuroplasticity concepts. Thank you for that talk.",
-      "Loved your story about the clinical trial pivot; it felt so relatable."
+      "I will not keep you, I know there is a line. One question.",
+      "You mentioned the failed pilot in passing. That was the most useful part of the talk for me."
     ],
     "questionTemplates": [
       {
-        "id": "project",
-        "label": "Project",
-        "prompt": "What experiment or data point are you most excited to explore next?"
+        "id": "insight",
+        "label": "Insight",
+        "prompt": "What question do you wish audiences asked after this talk?"
       },
       {
-        "id": "collaboration",
-        "label": "Collaboration",
-        "prompt": "Is there a way for students to contribute to the longitudinal study you mentioned?"
+        "id": "field",
+        "label": "Field",
+        "prompt": "What is overrated in this field right now?"
       },
       {
-        "id": "growth",
-        "label": "Growth",
-        "prompt": "What would you tell your earlier self about staying curious during grad school?"
+        "id": "follow",
+        "label": "Follow-up",
+        "prompt": "May I email you one question after I have read the full paper?"
+      }
+    ]
+  },
+  {
+    "id": "alumni-coffee",
+    "title": "Alumni Coffee Chat",
+    "mode": "One on one",
+    "focus": "Their story, your direction",
+    "audience": "student",
+    "who": "You (student) + Whitney (alum, class of 2018, product manager)",
+    "where": "Coffee shop near campus, 30 minutes on her calendar",
+    "what": [
+      "Thank them once, then start, do not grovel",
+      "Two sentences on where you are and what you are testing",
+      "Spend most of the time on their decisions, not their job title",
+      "End with one concrete ask you can act on this week"
+    ],
+    "ingredients": [
+      {
+        "id": "opener",
+        "label": "Opener",
+        "line": "Thanks for making time. I said 30 minutes, so I will watch the clock for both of us."
+      },
+      {
+        "id": "identity",
+        "label": "Who you are",
+        "line": "I'm Leah, a junior in economics, testing whether product work fits how I think."
+      },
+      {
+        "id": "value-honest",
+        "label": "Prepared, not impressive",
+        "line": "I read your path before this and wrote three real questions. Tell me about your day is not one of them."
+      },
+      {
+        "id": "question",
+        "label": "The question",
+        "line": "What did you believe about this career at my age that turned out to be wrong?"
+      }
+    ],
+    "rapportSamples": [
+      "Was the jump from campus to your first job as abrupt as people say?",
+      "You switched industries twice. Was that a plan or an accident?"
+    ],
+    "questionTemplates": [
+      {
+        "id": "decision",
+        "label": "Decision",
+        "prompt": "What made you leave your first job? The real reason, not the interview answer."
+      },
+      {
+        "id": "fit",
+        "label": "Fit",
+        "prompt": "What kind of person burns out in your role?"
+      },
+      {
+        "id": "ask",
+        "label": "Ask",
+        "prompt": "Is there one person you think I should talk to next? I will handle the outreach."
       }
     ]
   },
   {
     "id": "linkedin",
-    "title": "LinkedIn Outreach",
-    "mode": "Online Outreach",
-    "focus": "Brevity + personalization",
-    "who": "You (Student) + Industry Professional",
-    "where": "Online via LinkedIn Message",
-    "what": ["Short intro", "Goal", "Ask for advice"],
-    "pillars": {
-      "rapport": "Hi Maya, your post about ethical AI in healthcare really resonated with me.",
-      "identity": "I'm Philip, a neuroscience major exploring how data storytelling can improve care decisions.",
-      "value": "I recently co-led a campus project mapping patient journeys for our student clinic to reduce wait times.",
-      "question": "Would you be open to a 15 minute chat about how you transitioned from research to product strategy?"
-    },
+    "title": "Cold LinkedIn Message to an Alum",
+    "mode": "Written outreach",
+    "focus": "Four sentences, one ask",
+    "audience": "student",
+    "who": "You (student) + Marcus Chen (alum, data analyst at a logistics company)",
+    "where": "LinkedIn message, he does not know you exist",
+    "what": [
+      "Name the specific connection, shared school counts",
+      "One sentence on who you are",
+      "One sentence on why him, not why his company",
+      "One small ask with an easy way to say no"
+    ],
+    "ingredients": [
+      {
+        "id": "connection",
+        "label": "The connection",
+        "line": "Hi Marcus, we overlapped at State, though we never met. I found you through the alumni directory."
+      },
+      {
+        "id": "identity",
+        "label": "Who you are",
+        "line": "I'm a junior in public health, leaning toward the data side of it."
+      },
+      {
+        "id": "why-them",
+        "label": "Why him",
+        "line": "Your post about moving from research to analytics answered a question I did not know I had. That is why I am writing to you and not a company page."
+      },
+      {
+        "id": "ask",
+        "label": "The small ask",
+        "line": "Would you be open to 15 minutes in the next few weeks? If not, no problem, and thanks for reading this far."
+      }
+    ],
     "rapportSamples": [
-      "Hi Maya, I enjoyed your recent article on patient centered AI rollouts.",
-      "Thanks for sharing the behind the scenes of your hackathon project. Super insightful."
+      "Your post about switching from research to analytics stuck with me. That is why I am writing.",
+      "I noticed you TA'd the same stats course I am in the middle of surviving."
     ],
     "questionTemplates": [
       {
-        "id": "career-path",
-        "label": "Career Path",
-        "prompt": "How did you decide the timing was right to move from academia into industry?"
+        "id": "path",
+        "label": "Path",
+        "prompt": "What did the first year in analytics actually look like, day to day?"
       },
       {
-        "id": "advice",
-        "label": "Advice",
-        "prompt": "What early project taught you the most about communicating research to stakeholders?"
+        "id": "skills",
+        "label": "Skills",
+        "prompt": "What skill do people in my position usually overestimate?"
       },
       {
-        "id": "project",
-        "label": "Project",
-        "prompt": "Is there a recent initiative you're proud of where students contributed meaningfully?"
+        "id": "next",
+        "label": "Next",
+        "prompt": "If the chat is useful, may I check in once a semester? I will keep it short."
+      }
+    ]
+  },
+  {
+    "id": "professor-email",
+    "title": "Cold Email to a Professor About Research",
+    "mode": "Written outreach",
+    "focus": "Prove you read the work",
+    "audience": "student",
+    "who": "You (sophomore) + Dr. Ramos (runs a cognition lab, gets 40 of these emails a term)",
+    "where": "Email, where the subject line and first two sentences decide everything",
+    "what": [
+      "Subject line: your course plus a specific interest, never Research opportunity?",
+      "Name the paper or project you actually read",
+      "State what you can offer: hours, reliability, specific skills",
+      "Ask for a meeting or a small task, not a position"
+    ],
+    "ingredients": [
+      {
+        "id": "subject",
+        "label": "Subject line",
+        "line": "Cognition 301 student, question about the sleep and recall study"
+      },
+      {
+        "id": "identity",
+        "label": "Who you are",
+        "line": "I'm a sophomore in psychology with a B+ in your class and ten free hours a week."
+      },
+      {
+        "id": "value-honest",
+        "label": "Honest value line",
+        "line": "I have no lab experience. I offer consistent hours, careful data entry, and the discipline to follow a protocol without improvising."
+      },
+      {
+        "id": "ask",
+        "label": "The ask",
+        "line": "Is there a task in your lab that needs someone reliable rather than experienced? I would like to start there."
+      }
+    ],
+    "rapportSamples": [
+      "I read your 2023 paper on sleep and recall. I understood about 60 percent of it, and I have questions about the rest.",
+      "Your lab page says you rarely take sophomores. I would like to be one of the exceptions."
+    ],
+    "questionTemplates": [
+      {
+        "id": "entry",
+        "label": "Entry",
+        "prompt": "What do new research assistants get wrong in their first month?"
+      },
+      {
+        "id": "reading",
+        "label": "Reading",
+        "prompt": "Which paper should I read before we talk, so the meeting is worth your time?"
+      },
+      {
+        "id": "commitment",
+        "label": "Commitment",
+        "prompt": "How many hours a week makes an assistant useful rather than a burden?"
+      }
+    ]
+  },
+  {
+    "id": "family-friend",
+    "title": "Asking a Family Friend for an Intro",
+    "mode": "One on one",
+    "focus": "Make yes easy",
+    "audience": "student",
+    "who": "You (student) + Rosa (your mom's friend, hospital operations director)",
+    "where": "Her kitchen after a family dinner, or a call she agreed to",
+    "what": [
+      "Name what you want before she has to guess",
+      "Give her a two-sentence version she can forward",
+      "Ask for one intro, not anyone you know",
+      "Report back afterward, that is what keeps doors open"
+    ],
+    "ingredients": [
+      {
+        "id": "opener",
+        "label": "Opener",
+        "line": "Can I ask you something career related? It is specific, I promise."
+      },
+      {
+        "id": "identity",
+        "label": "Who you are",
+        "line": "I finish my accounting degree in May, and everyone tells me healthcare finance is its own world."
+      },
+      {
+        "id": "value-honest",
+        "label": "The honest frame",
+        "line": "You do not have to vouch for my work. We both know you have not seen it. Vouch that I show up and write polite emails."
+      },
+      {
+        "id": "ask",
+        "label": "The forwardable ask",
+        "line": "Is there one person on the finance side you could introduce me to? I will draft the note so you only have to hit forward."
+      }
+    ],
+    "rapportSamples": [
+      "Mom says you hire people. I am not asking you to hire me, I promise.",
+      "Can I ask you a work question, or is tonight strictly off duty?"
+    ],
+    "questionTemplates": [
+      {
+        "id": "intro",
+        "label": "Intro",
+        "prompt": "Who is the one person you would want me to talk to before I apply anywhere?"
+      },
+      {
+        "id": "context",
+        "label": "Context",
+        "prompt": "What should I know about your industry before I embarrass either of us?"
+      },
+      {
+        "id": "forward",
+        "label": "Forward",
+        "prompt": "If I write three sentences about myself, would you forward them along?"
+      }
+    ]
+  },
+  {
+    "id": "first-week",
+    "title": "Internship, Week One: Meet the Team",
+    "mode": "On the job",
+    "focus": "Names, questions, notes",
+    "audience": "student",
+    "who": "You (new intern) + teammates who already have full calendars",
+    "where": "Office kitchen, standups, and fifteen-minute intro calls",
+    "what": [
+      "Introduce yourself the same way every time, it should bore you by Friday",
+      "Ask what they are working on, then actually listen",
+      "Write names and details down within the hour",
+      "End every intro with: what should I learn first?"
+    ],
+    "ingredients": [
+      {
+        "id": "opener",
+        "label": "Opener",
+        "line": "I'm the new intern, which the lanyard and the lost expression probably gave away."
+      },
+      {
+        "id": "identity",
+        "label": "Who you are",
+        "line": "I'm Tay, here for the summer on the marketing team, mostly on campaign reporting."
+      },
+      {
+        "id": "value-honest",
+        "label": "Honest value line",
+        "line": "I am useful for the things nobody has time for. If there is a task you keep postponing, I want it."
+      },
+      {
+        "id": "question",
+        "label": "The question",
+        "line": "What is one thing about how this team works that nobody remembers to tell new people?"
+      }
+    ],
+    "rapportSamples": [
+      "How long have you been on this team, and what were you doing before?",
+      "What are you in the middle of this week? I am trying to learn who does what."
+    ],
+    "questionTemplates": [
+      {
+        "id": "work",
+        "label": "Work",
+        "prompt": "Which meeting should I sit in on to understand what this team actually does?"
+      },
+      {
+        "id": "people",
+        "label": "People",
+        "prompt": "Who should I meet who is not on this team?"
+      },
+      {
+        "id": "norms",
+        "label": "Norms",
+        "prompt": "What do interns here usually get wrong in the first month?"
+      }
+    ]
+  },
+  {
+    "id": "career-changer",
+    "title": "Industry Meetup as a Career Changer",
+    "mode": "Meetup",
+    "focus": "The bridge sentence",
+    "audience": "transition",
+    "who": "You (eight years teaching high school, moving into corporate learning) + strangers with name tags",
+    "where": "Monthly learning-and-development meetup, mostly people who already know each other",
+    "what": [
+      "Join a group of two, not a circle of five",
+      "Lead with where you are going, not a defense of where you have been",
+      "One sentence that bridges old work to new work",
+      "Leave with one name to follow up with, quality over count"
+    ],
+    "ingredients": [
+      {
+        "id": "opener",
+        "label": "Opener",
+        "line": "First time at this meetup. Does everyone already know each other, or does it just look that way?"
+      },
+      {
+        "id": "bridge",
+        "label": "The bridge",
+        "line": "I'm Dev. I taught high school chemistry for eight years, and I am moving into corporate learning design."
+      },
+      {
+        "id": "reframe",
+        "label": "Experience, reframed",
+        "line": "I ran 180 training sessions a year for an audience required to be there. Adult learners who chose the room sound like a luxury."
+      },
+      {
+        "id": "question",
+        "label": "The question",
+        "line": "What does hiring in this field look like right now, honestly?"
+      }
+    ],
+    "rapportSamples": [
+      "How did you land in learning and development? Nobody seems to start here.",
+      "Which talks or people are worth staying late for at these?"
+    ],
+    "questionTemplates": [
+      {
+        "id": "market",
+        "label": "Market",
+        "prompt": "What do hiring managers in this field assume about ex-teachers, right or wrong?"
+      },
+      {
+        "id": "portfolio",
+        "label": "Portfolio",
+        "prompt": "What would you want to see from someone without the standard resume for this work?"
+      },
+      {
+        "id": "scene",
+        "label": "Scene",
+        "prompt": "Which meetup, community, or newsletter actually matters in this field?"
+      }
+    ]
+  },
+  {
+    "id": "virtual-breakout",
+    "title": "Virtual Event Breakout Room",
+    "mode": "Virtual",
+    "focus": "Speak early, follow up fast",
+    "audience": "transition",
+    "who": "You (operations analyst exploring product roles) + five strangers on mute",
+    "where": "Breakout room after a product management panel, eight minutes on the clock",
+    "what": [
+      "Unmute first, someone has to",
+      "One breath intro: name, work, why this panel",
+      "Ask the room a question other people can answer",
+      "Put your LinkedIn in the chat before the room closes"
+    ],
+    "ingredients": [
+      {
+        "id": "opener",
+        "label": "Break the silence",
+        "line": "I will go first. Hi, everyone. Eight minutes, we might as well use them."
+      },
+      {
+        "id": "identity",
+        "label": "One breath intro",
+        "line": "I'm Renee, six years in bank operations, here because I keep solving product problems without the title."
+      },
+      {
+        "id": "reframe",
+        "label": "Experience, reframed",
+        "line": "My whole job is finding where processes break. I hear product managers do that on purpose."
+      },
+      {
+        "id": "close",
+        "label": "Before the room closes",
+        "line": "I am putting my LinkedIn in the chat. Say hi so I know who to look for."
+      }
+    ],
+    "rapportSamples": [
+      "Where is everyone joining from, and what did you think of the panel?",
+      "The panelist said the job is mostly saying no. Does that match anyone's real experience?"
+    ],
+    "questionTemplates": [
+      {
+        "id": "room",
+        "label": "Room",
+        "prompt": "What is everyone hoping to get out of this event? Maybe we can help each other."
+      },
+      {
+        "id": "panel",
+        "label": "Panel",
+        "prompt": "Which panelist would you follow up with, and why that one?"
+      },
+      {
+        "id": "connect",
+        "label": "Connect",
+        "prompt": "Has anyone here made a jump like this before? What worked?"
+      }
+    ]
+  },
+  {
+    "id": "followup-silence",
+    "title": "Following Up After Two Weeks of Silence",
+    "mode": "Written outreach",
+    "focus": "Add value, drop guilt",
+    "audience": "transition",
+    "who": "You + Sofia (hiring manager who said stay in touch, three weeks ago)",
+    "where": "The email thread that went quiet after a good first conversation",
+    "what": [
+      "Reply in the same thread so the context travels with you",
+      "Zero guilt, zero apologizing for existing",
+      "Add one new thing: an update, a result, something they recommended",
+      "Restate the ask smaller than last time"
+    ],
+    "ingredients": [
+      {
+        "id": "opener",
+        "label": "Thread opener",
+        "line": "Following up on our conversation from the 12th. No rush, and no guilt intended in either direction."
+      },
+      {
+        "id": "update",
+        "label": "The update",
+        "line": "Since we spoke, I finished the certification I mentioned and used it on a first real project."
+      },
+      {
+        "id": "listened",
+        "label": "Proof you listened",
+        "line": "I also read the case study you recommended. You were right about the third chapter."
+      },
+      {
+        "id": "ask",
+        "label": "The smaller ask",
+        "line": "Is 15 minutes still realistic this month? If the timing is wrong, tell me when to try again and I will."
+      }
+    ],
+    "rapportSamples": [
+      "Hiring timelines slip, I get it. This is a nudge, not a complaint.",
+      "If the answer is not now, that is a useful answer too."
+    ],
+    "questionTemplates": [
+      {
+        "id": "status",
+        "label": "Status",
+        "prompt": "Has anything changed about the role or the timeline since we spoke?"
+      },
+      {
+        "id": "redirect",
+        "label": "Redirect",
+        "prompt": "If this role is frozen, is there someone else I should be talking to?"
+      },
+      {
+        "id": "close",
+        "label": "Close",
+        "prompt": "Should I check back in a month, or close the loop here?"
       }
     ]
   }

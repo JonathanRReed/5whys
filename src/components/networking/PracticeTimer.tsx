@@ -1,14 +1,9 @@
 import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
+import type { TimerState } from './useTimer';
 
 const TOTAL_SECONDS = 120;
-
-type TimerState = {
-  remaining: number;
-  isRunning: boolean;
-  startedAt: number | null;
-};
 
 type Props = {
   timer: TimerState;
@@ -91,8 +86,14 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset }: Prop
             Reset
           </Button>
         </div>
+        {timer.elapsed > 0 ? (
+          <p className="text-sm font-medium text-[hsl(var(--foam))]" aria-live="polite">
+            {formatTime(timer.elapsed)} practiced this rep
+          </p>
+        ) : null}
         <p className="text-sm text-center text-[hsl(var(--muted-foreground))]">
-          Practice aloud or time your typed intro. Aim for a confident 90-120 second pitch.
+          Practice aloud or time your written outreach draft. Your practice time is saved with the
+          session. Reset clears it.
         </p>
       </CardContent>
     </Card>

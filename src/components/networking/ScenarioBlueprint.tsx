@@ -1,9 +1,7 @@
 import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import scenarioData from '../../data/networking-scenarios.json';
 import type { TimerState } from './useTimer';
-
-type Scenario = (typeof scenarioData)[number];
+import type { Scenario } from './useNetworkingPractice';
 
 type Props = {
   currentScenario: Scenario | undefined;
@@ -13,10 +11,10 @@ type Props = {
 
 const FLOW_STEPS = [
   { label: 'Read blueprint', description: 'Review your scenario' },
-  { label: 'Warm up', description: 'Prep your opener' },
-  { label: 'Start timer', description: 'Practice aloud' },
-  { label: 'Self-review', description: 'Rate your round' },
-  { label: 'Save session', description: 'Track progress' },
+  { label: 'Draft your intro', description: 'Your words, not the samples' },
+  { label: 'Run the timer', description: 'Say it out loud' },
+  { label: 'Rate the rep', description: 'Score it honestly' },
+  { label: 'Save session', description: 'Track the reps' },
 ] as const;
 
 function getActiveStep(timer: TimerState | undefined): number {

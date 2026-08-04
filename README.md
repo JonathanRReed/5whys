@@ -1,88 +1,89 @@
-# Career Tools Studio
+# 5 Whys Career Studio
 
-A modern collection of reflection, résumé, and networking practice tools built with Astro, React, Tailwind CSS, and Bun. The experience is designed around the Rosé Pine palette to keep every session calm, intentional, and focused on your next professional chapter.
+A small studio of four career tools by Jonathan R. Reed, built as a static Astro site with React islands. The premise: find the real reason first, then build the proof. Primary audience is students and early-career people finding their path, but the tools work for anyone doing focused career work.
 
-## ✨ Features
+Everything you write stays in your browser. No accounts, no cookies set by the site, and your work is never sent to a server.
 
-- **Career Reflection · 5 Whys**: Journal through layered prompts to uncover the motivations behind your next move and save snapshots for future review.
-- **Resume Momentum Game**: Rewrite résumé bullets with guidance on action, impact, and clarity while tracking improvements over time.
-- **Networking Practice Studio**: Cycle through guided scenarios, rehearse introductions with a built-in timer, and capture reflections after each rep.
+## The four tools
 
-## 🧰 Tech Stack
+- **Career 5 Whys** (`/career/`): Ask why five times until the answer stops moving. Two tracks, Career Path and Interest Path, with saved snapshots for later comparison.
+- **The Resume Game** (`/resume-game/`): Score each bullet for action, result, and measure, then rewrite weak lines with a structured editor.
+- **Networking Practice** (`/networking-practice/`): Rehearse introductions against a timer, rate each rep, and keep versions of your intro.
+- **Interview Glow Up** (`/5whys/interview-glow-up/`): Decode a job description into the skills it tests, build proof-based stories, and assemble an interview packet.
 
-- Astro 5 with hybrid Astro + React pages
-- React 19 for interactive flows
-- Tailwind CSS for styling and utility composition
-- Bun as the package manager and runtime
+A career review at `/start/` recommends a starting tool, and `/dashboard/` summarizes saved work across all four.
 
-## 🚀 Getting Started
+## Design
 
-1. **Install dependencies**
+Evergreen & Brass direction: a dark Night theme and a light Dawn theme built on deep greens with brass accents, set in Fraunces, Inter, and JetBrains Mono. Color tokens live in `src/styles/globals.css` and are duplicated for the pre-hydration theme script in `public/career-tools-theme.js`. Design intent is documented in `DESIGN.md` and `PRODUCT.md`.
 
-   ```sh
-   bun install
-   ```
+## Tech stack
 
-2. **Start the dev server**
+- Astro 5, static output, with React 19 islands for the interactive tools
+- Tailwind CSS 3 for styling
+- Bun as package manager and script runner
+- Vitest for tests, ESLint and Prettier for lint and format
+- Deployed as a static site (Cloudflare Pages), headers in `public/_headers`
 
-   ```sh
-   bun dev
-   ```
+## Getting started
 
-   The site runs at `http://localhost:4321` by default.
+```sh
+bun install
+bun dev
+```
 
-## 🛠️ Available Scripts
+The site runs at `http://localhost:4321`.
+
+## Scripts
 
 All commands run from the project root:
 
-| Command         | Description                                  |
-| :-------------- | :------------------------------------------- |
-| `bun dev`       | Start the local development server           |
-| `bun build`     | Produce a production build in `./dist/`      |
-| `bun preview`   | Preview the production build locally         |
-| `bun astro ...` | Run Astro CLI commands (e.g., `astro check`) |
+| Command                | Description                                |
+| :--------------------- | :----------------------------------------- |
+| `bun run dev`          | Start the local development server         |
+| `bun run build`        | Produce a production build in `./dist/`    |
+| `bun run preview`      | Preview the production build locally       |
+| `bun run test`         | Run the Vitest suite once                  |
+| `bun run test:watch`   | Run tests in watch mode                    |
+| `bun run lint`         | Lint with ESLint                           |
+| `bun run lint:fix`     | Lint and autofix                           |
+| `bun run typecheck`    | TypeScript check plus `astro check`        |
+| `bun run format`       | Format with Prettier                       |
+| `bun run format:check` | Check formatting without writing           |
+| `bun run astro ...`    | Run Astro CLI commands                     |
 
-## 📂 Project Structure
+## Project structure
 
 ```text
 /
-├── public/
-│   ├── data/
-│   │   └── skills.json
-│   └── favicon.svg
+├── public/                  # Static assets, favicons, _headers, theme + effects scripts
 ├── src/
-│   ├── components/
-│   │   ├── ui/
-│   │   ├── Career5Whys.tsx
-│   │   └── NetworkingPractice.tsx
-│   ├── data/
-│   │   ├── networking-scenarios.json
-│   │   └── skills.json
-│   ├── layouts/
-│   │   └── Base.astro
-│   └── pages/
-│       ├── career.astro
-│       ├── index.astro
-│       ├── networking-practice.astro
-│       └── resume-game.astro
+│   ├── components/          # React components: one folder per tool, plus shared/ and ui/
+│   ├── config/              # Site metadata and structured data (site.ts)
+│   ├── data/                # networking-scenarios.json
+│   ├── layouts/             # Base.astro (shell, nav, footer, noscript context)
+│   ├── lib/                 # localStorage readers, scoring logic, career-bridge.ts
+│   ├── pages/               # Astro routes for the tools and site pages
+│   ├── styles/              # globals.css (design tokens, both themes)
+│   └── utils/               # storage helpers
+├── tests/                   # Vitest tests
 ├── astro.config.mjs
-├── bun.lock
-├── package.json
-├── postcss.config.cjs
-├── tailwind.config.cjs
-└── tsconfig.json
+├── DESIGN.md                # Visual direction
+├── PRODUCT.md               # Audience, tone, product principles
+└── package.json
 ```
 
-## 🧾 Data & Content
+## Privacy model
 
-- `src/data` contains curated JSON for job skills and networking scenarios.
-- `public/data/skills.json` mirrors the skills dataset for static access.
+- All tool data (reflections, resume text, practice sessions, stories) lives in `localStorage` under per-tool keys. Nothing you type is transmitted.
+- No accounts, no sign-up, no cookies set by the site.
+- Hosting and any analytics at the platform level are disclosed on the site's privacy and subprocessors pages.
 
-## 🤝 Contributing
+## Contributing
 
 Issues and pull requests are welcome. Please open an issue describing your idea or bug before submitting significant changes.
 
-## 📄 License
+## License
 
 Icons by [Creatype](https://www.flaticon.com/authors/creatype).
 This project is released under the MIT License.

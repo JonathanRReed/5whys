@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 type Props = {
   resumeText: string;
   isScanning: boolean;
-  scanProgress: number;
   scanComplete: boolean;
   isLoadingFile?: boolean;
   status: string | null;
@@ -28,7 +27,6 @@ const SAMPLE_RESUME_TEXT = `• Led a 6-person product pod launching a pricing d
 export default function ResumeInput({
   resumeText,
   isScanning,
-  scanProgress,
   scanComplete,
   isLoadingFile,
   status,
@@ -107,11 +105,7 @@ export default function ResumeInput({
             {isScanning ? 'Analyzing...' : 'Analyze resume'}
           </Button>
           <p className="text-sm text-muted-foreground md:ml-4">
-            {isScanning
-              ? 'Analyzing in progress...'
-              : scanComplete
-                ? 'Analysis complete'
-                : 'Ready when you are'}
+            {isScanning ? 'Analyzing...' : scanComplete ? 'Analysis complete' : 'Ready when you are'}
             {needsRescan && scanComplete && (
               <span className="ml-2 text-xs text-[hsl(var(--gold))]">
                 Resume changed. Tap &quot;Analyze resume&quot; to update scores.
@@ -123,31 +117,6 @@ export default function ResumeInput({
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-[hsl(var(--foam))] animate-pulse" />
             <p className="text-xs text-muted-foreground">Reading file...</p>
-          </div>
-        )}
-        {(isScanning || scanProgress > 0) && (
-          <div className="space-y-2">
-            <div
-              className="h-2.5 w-full overflow-hidden rounded-full border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)]"
-              role="progressbar"
-              aria-valuenow={scanProgress}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label="Resume analysis progress"
-            >
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-[hsl(var(--foam))] via-[hsl(var(--iris))] to-[hsl(var(--love))] shadow-[0_0_10px_hsl(var(--foam)/0.5)]"
-                style={{ width: `${scanProgress}%` }}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                {isScanning ? `Analyzing • ${scanProgress}%` : 'Analysis ready'}
-              </p>
-              {isScanning && (
-                <span className="inline-block h-2 w-2 rounded-full bg-[hsl(var(--foam))] animate-pulse" />
-              )}
-            </div>
           </div>
         )}
         {status ? (

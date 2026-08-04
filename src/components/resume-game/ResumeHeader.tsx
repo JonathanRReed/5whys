@@ -13,8 +13,8 @@ export default function ResumeHeader({ showHeader = true }: Props) {
       </p>
       <h1 className="text-4xl font-semibold tracking-tight">Resume Game</h1>
       <p className="mx-auto max-w-2xl text-sm text-muted-foreground">
-        Simulate an 8-second recruiter scan to surface power verbs and numbers. Rewrite every bullet
-        into a quantified, high-impact statement that stands out in a quick glance.
+        Score every bullet for action, evidence, and outcome. Rewrite weak lines into specific,
+        quantified statements a reader can verify at a glance.
       </p>
       <QuickStartTiles
         className="max-w-4xl"
@@ -24,8 +24,8 @@ export default function ResumeHeader({ showHeader = true }: Props) {
             body: 'Paste bullets or upload a .txt, .md, .docx, or .pdf file. Use the sample resume if you need a quick demo.',
           },
           {
-            title: 'Run the scan',
-            body: 'Watch the 8-second pass surface verbs and numbers. Edit fields to experiment with stronger phrasing.',
+            title: 'Run the analysis',
+            body: 'Scoring runs instantly in your browser. Verbs and numbers get highlighted; every bullet gets a 0-100 score.',
           },
           {
             title: 'Export the wins',

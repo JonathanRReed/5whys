@@ -4,9 +4,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import type { NetworkingPracticeVersion } from '../../utils/storage';
-import scenarioData from '../../data/networking-scenarios.json';
-
-type Scenario = (typeof scenarioData)[number];
+import type { Scenario } from './useNetworkingPractice';
 
 type Props = {
   scenarios: Scenario[];
@@ -20,6 +18,11 @@ type Props = {
   onFieldChange: (field: 'title' | 'who' | 'where' | 'what' | 'notes', value: string) => void;
 };
 
+const GROUPS = [
+  { audience: 'student', label: 'Student situations' },
+  { audience: 'transition', label: 'Career changers and professionals' },
+] as const;
+
 export default function ScenarioSelector({
   scenarios,
   versions,
@@ -31,36 +34,54 @@ export default function ScenarioSelector({
   onDeleteCurrentVersion,
   onFieldChange,
 }: Props) {
+  const groups = GROUPS.map((group) => ({
+    ...group,
+    scenarios: scenarios.filter((scenario) => scenario.audience === group.audience),
+  })).filter((group) => group.scenarios.length > 0);
+  const ungrouped = scenarios.filter(
+    (scenario) => !GROUPS.some((group) => group.audience === scenario.audience)
+  );
+
+  const renderScenarioButton = (scenario: Scenario) => {
+    const isActive = scenario.id === currentVersion?.scenarioId;
+    return (
+      <button
+        key={scenario.id}
+        type="button"
+        onClick={() => onScenarioChange(scenario.id)}
+        aria-pressed={isActive}
+        className={`rounded-xl border px-4 py-3 text-left shadow-sm transition ${
+          isActive
+            ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.2)] text-[hsl(var(--foreground))]'
+            : 'border-transparent bg-[hsl(var(--overlay)/0.3)] text-[hsl(var(--foreground))] hover:border-[hsl(var(--primary))]'
+        }`}
+      >
+        <div className="text-sm font-semibold">{scenario.title}</div>
+        <div className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">{scenario.focus}</div>
+      </button>
+    );
+  };
+
   return (
     <>
-      <div className="col-span-full flex flex-wrap items-center justify-between gap-4">
-        <div className="flex w-full flex-col gap-2 sm:w-auto">
+      <div className="col-span-full flex flex-wrap items-start justify-between gap-4">
+        <div className="flex w-full flex-col gap-4 sm:w-auto">
           <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
             Scenario library
           </p>
-          <div className="flex flex-wrap gap-3">
-            {scenarios.map((scenario) => {
-              const isActive = scenario.id === currentVersion?.scenarioId;
-              return (
-                <button
-                  key={scenario.id}
-                  type="button"
-                  onClick={() => onScenarioChange(scenario.id)}
-                  aria-pressed={isActive}
-                  className={`rounded-xl border px-4 py-3 text-left shadow-sm transition ${
-                    isActive
-                      ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.2)] text-[hsl(var(--foreground))]'
-                      : 'border-transparent bg-[hsl(var(--overlay)/0.3)] text-[hsl(var(--foreground))] hover:border-[hsl(var(--primary))]'
-                  }`}
-                >
-                  <div className="text-sm font-semibold">{scenario.title}</div>
-                  <div className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
-                    {scenario.where}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+          {groups.map((group) => (
+            <div key={group.audience} className="flex flex-col gap-2">
+              <p className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
+                {group.label}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {group.scenarios.map(renderScenarioButton)}
+              </div>
+            </div>
+          ))}
+          {ungrouped.length > 0 ? (
+            <div className="flex flex-wrap gap-2">{ungrouped.map(renderScenarioButton)}</div>
+          ) : null}
         </div>
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap sm:justify-end">
           <Button

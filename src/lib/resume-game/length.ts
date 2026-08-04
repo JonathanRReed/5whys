@@ -19,10 +19,15 @@ export function detectSections(text: string): string[] {
   return found;
 }
 
-export function analyzeResumeLength(text: string) {
+export function analyzeResumeLength(text: string, extractedBulletCount = 0) {
   const words = text.split(/\s+/).filter(Boolean).length;
   const lines = text.split('\n').length;
-  const bullets = (text.match(/^[-•*\u25E6\u25CB\u25CF]\s+/gm) || []).length;
+  // Glyph counting misses pasted text without bullet characters, which is
+  // common after PDF extraction. Fall back to the count of bullets the
+  // analyzer actually extracted so the report never claims 0 bullets while
+  // listing them below.
+  const glyphBullets = (text.match(/^[-•*◦○●]\s+/gm) || []).length;
+  const bullets = glyphBullets > 0 ? glyphBullets : extractedBulletCount;
 
   // Estimate pages at ~250 words per page (standard resume density)
   const estimatedPages = Math.max(1, Math.round(words / 250));
@@ -33,7 +38,8 @@ export function analyzeResumeLength(text: string) {
   if (estimatedPages > 2) {
     recommendation = 'Consider trimming to 1-2 pages for better recruiter engagement.';
   } else if (words < 200) {
-    recommendation = 'Resume is quite short. Add more detail to your experience section.';
+    recommendation =
+      'Short resume. Projects, coursework, campus jobs, and volunteering all count as experience worth listing.';
   } else if (words > 800) {
     recommendation = 'Resume is getting long. Prioritize your strongest bullets.';
   } else {

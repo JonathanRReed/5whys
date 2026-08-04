@@ -1,0 +1,123 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import { siteConfig } from '../config/site';
+
+const pageUrl = new URL('/subprocessors/', siteConfig.siteUrl).toString();
+const subprocessorSchemas = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    '@id': `${pageUrl}#subprocessors`,
+    url: pageUrl,
+    name: '5 Whys Career Studio Subprocessors',
+    description:
+      'Subprocessor and hosting disclosure for 5 Whys Career Studio, including Cloudflare Pages and Cloudflare Web Analytics.',
+    isPartOf: {
+      '@id': 'https://5whys.jonathanrreed.com/#website',
+    },
+    author: {
+      '@type': 'Person',
+      name: siteConfig.author.name,
+      url: siteConfig.author.url,
+    },
+  },
+];
+
+const processors = [
+  {
+    name: 'Cloudflare',
+    role: 'Static hosting, DNS, security headers, CDN delivery, and privacy-preserving web analytics.',
+    data:
+      'Request metadata such as IP address, user agent, URL, timestamp, and aggregate analytics events needed to serve and protect the site.',
+    location: 'United States and global Cloudflare network locations.',
+  },
+];
+---
+
+<Base
+  title="Subprocessors"
+  description="Review the 5 Whys Career Studio subprocessor disclosure for static hosting, security, analytics, request handling, and local-first career tool boundaries."
+  breadcrumbs={[
+    { label: 'Home', href: '/' },
+    { label: 'Privacy', href: '/privacy/' },
+    { label: 'Subprocessors', href: '/subprocessors/' },
+  ]}
+  structuredData={subprocessorSchemas}
+>
+  <div class="relative space-y-10 overflow-hidden px-4 pb-16 pt-8 sm:pt-10">
+    <section class="mx-auto w-full max-w-6xl">
+      <PageHero
+        eyebrow="Subprocessors"
+        title="The studio stays small on purpose."
+        description="5 Whys Career Studio is a static browser-first site. The core career tools run locally in your browser, and the current infrastructure list is intentionally short."
+      />
+    </section>
+
+    <section class="mx-auto w-full max-w-4xl space-y-6">
+      {
+        processors.map((processor) => (
+          <article class="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.5)] p-6">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p class="eyebrow eyebrow-accent">Infrastructure provider</p>
+                <h2 class="mt-2 text-xl font-semibold text-foreground">{processor.name}</h2>
+              </div>
+              <span class="rounded-full border border-[hsl(var(--border)/0.6)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Active
+              </span>
+            </div>
+            <dl class="mt-5 grid gap-4 text-sm leading-relaxed text-muted-foreground">
+              <div>
+                <dt class="font-semibold text-foreground">Purpose</dt>
+                <dd class="mt-1">{processor.role}</dd>
+              </div>
+              <div>
+                <dt class="font-semibold text-foreground">Data involved</dt>
+                <dd class="mt-1">{processor.data}</dd>
+              </div>
+              <div>
+                <dt class="font-semibold text-foreground">Location</dt>
+                <dd class="mt-1">{processor.location}</dd>
+              </div>
+            </dl>
+          </article>
+        ))
+      }
+    </section>
+
+    <section class="mx-auto w-full max-w-4xl">
+      <p class="eyebrow eyebrow-accent mb-5 border-t border-[hsl(var(--border)/0.4)] pt-10">
+        Scope
+      </p>
+      <div class="space-y-4 text-base leading-relaxed text-muted-foreground">
+        <p>
+          The career drafts, resume bullets, interview notes, and networking practice text you enter
+          in the tools are handled in the browser during normal use. The project does not use a
+          production account system, payment processor, or server-side career-document database for
+          the public tools.
+        </p>
+        <p>
+          Cloudflare may process request metadata to deliver the pages, block abuse, apply security
+          controls, and provide aggregate analytics. That infrastructure processing is separate from
+          the career content you draft locally inside the browser.
+        </p>
+        <p>
+          The practical boundary is simple: Cloudflare helps the site load and stay protected, while
+          the public career tools are designed around local browser work. Resume bullet drafts,
+          interview story notes, networking practice answers, and reflection text are not sent to a
+          5 Whys account database during normal use.
+        </p>
+        <p>
+          If you contact Jonathan directly from outside the tool, that message is handled through the
+          channel you choose. It is separate from the static site and should be treated like normal
+          email or contact-form correspondence.
+        </p>
+        <p>
+          If the hosting or analytics setup changes, this page should be updated before the new
+          provider is used for production traffic.
+        </p>
+      </div>
+    </section>
+  </div>
+</Base>

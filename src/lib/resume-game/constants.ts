@@ -6,11 +6,13 @@ export const ACTION_VERBS = [
   'advocated',
   'analyzed',
   'architected',
+  'assembled',
   'authored',
   'automated',
   'built',
   'boosted',
   'brokered',
+  'calibrated',
   'captained',
   'chaired',
   'championed',
@@ -27,6 +29,7 @@ export const ACTION_VERBS = [
   'coordinated',
   'created',
   'cultivated',
+  'debugged',
   'decreased',
   'delivered',
   'demonstrated',
@@ -34,11 +37,14 @@ export const ACTION_VERBS = [
   'developed',
   'devised',
   'directed',
+  'documented',
   'doubled',
+  'drafted',
   'drove',
   'earned',
   'edited',
   'eliminated',
+  'engineered',
   'established',
   'evaluated',
   'executed',
@@ -64,18 +70,23 @@ export const ACTION_VERBS = [
   'instituted',
   'instructed',
   'integrated',
+  'interviewed',
   'launched',
   'led',
   'managed',
   'mastered',
   'mentored',
+  'modeled',
   'moderated',
   'monitored',
   'negotiated',
   'obtained',
   'operated',
+  'optimized',
+  'orchestrated',
   'organized',
   'originated',
+  'overhauled',
   'oversaw',
   'performed',
   'pioneered',
@@ -85,11 +96,16 @@ export const ACTION_VERBS = [
   'programmed',
   'promoted',
   'proposed',
+  'prototyped',
   'published',
+  'raised',
+  'recruited',
+  'redesigned',
   'reduced',
   'refined',
   'reorganized',
   'replaced',
+  'researched',
   'resolved',
   'revamped',
   'reversed',
@@ -105,12 +121,16 @@ export const ACTION_VERBS = [
   'succeeded',
   'supervised',
   'supported',
+  'surveyed',
   'taught',
   'tested',
   'trained',
   'transformed',
+  'translated',
   'troubleshot',
+  'tutored',
   'upgraded',
+  'volunteered',
   'won',
 ] as const;
 
@@ -124,7 +144,20 @@ export const POWER_VERB_PATTERN = new RegExp(`\\b(${powerWordsPattern})\\b`, 'i'
 export const POWER_VERB_GLOBAL_PATTERN = new RegExp(`\\b(${powerWordsPattern})\\b`, 'gi');
 export const POWER_VERB_START_PATTERN = new RegExp(`^(${powerWordsPattern})\\b`, 'i');
 
-// Verb strength tiers
+/**
+ * Boundary-aware term matching. Uses non-alphanumeric boundaries so short
+ * terms like "r" or "go" only match as standalone tokens, and terms with
+ * punctuation like "c++" or "next.js" still match.
+ */
+export function matchesTerm(text: string, term: string): boolean {
+  const pattern = new RegExp(`(?:^|[^a-z0-9])${escapeRegExp(term)}(?:$|[^a-z0-9])`, 'i');
+  return pattern.test(text);
+}
+
+// Verb strength tiers. A verb belongs to exactly one tier: weak verbs signal
+// involvement without ownership, strong verbs signal ownership of an outcome,
+// and everything else in ACTION_VERBS is medium. "Managed" is a normal,
+// serviceable verb: medium, never penalized.
 export const POWER_VERBS_WEAK = [
   'helped',
   'supported',
@@ -133,34 +166,35 @@ export const POWER_VERBS_WEAK = [
   'worked',
   'involved',
   'handled',
-  'managed',
   'performed',
   'responsible',
   'aided',
 ];
 
+// Every entry here also appears in ACTION_VERBS, so each one is extractable
+// by seedFields and countable by the strong-verb metrics.
 export const POWER_VERBS_STRONG = [
   'architected',
   'spearheaded',
   'pioneered',
-  'revolutionized',
   'transformed',
   'accelerated',
-  'amplified',
-  'catapulted',
-  'elevated',
-  'optimized',
   'championed',
   'orchestrated',
-  'disrupted',
-  'reinvented',
+  'optimized',
   'engineered',
+  'overhauled',
+  'automated',
+  'launched',
+  'founded',
+  'eliminated',
+  'doubled',
 ];
 
 export function getVerbStrength(verb: string): 'weak' | 'medium' | 'strong' {
-  const lower = verb.toLowerCase();
-  if (POWER_VERBS_STRONG.some((v) => lower.includes(v))) return 'strong';
-  if (POWER_VERBS_WEAK.some((v) => lower.includes(v))) return 'weak';
+  const lower = verb.trim().toLowerCase();
+  if (POWER_VERBS_STRONG.includes(lower)) return 'strong';
+  if (POWER_VERBS_WEAK.includes(lower)) return 'weak';
   return 'medium';
 }
 
@@ -169,29 +203,57 @@ export function suggestStrongerVerb(weakVerb: string): string {
     helped: 'Enabled',
     supported: 'Championed',
     managed: 'Led',
-    worked: 'Engineered',
-    handled: 'Orchestrated',
+    worked: 'Built',
+    handled: 'Resolved',
     performed: 'Delivered',
     assisted: 'Partnered',
     participated: 'Contributed',
+    involved: 'Drove',
+    aided: 'Guided',
+    led: 'Directed',
+    created: 'Designed',
+    built: 'Engineered',
+    made: 'Produced',
+    did: 'Executed',
   };
   return suggestions[weakVerb.toLowerCase()] || '';
 }
 
+// Hedging phrases, not verbs. Verb quality is handled by the strength tiers
+// above; this list catches constructions that bury the actual contribution.
 export const WEAK_WORDS = [
-  'managed',
   'responsible for',
   'assisted with',
   'helped with',
+  'helped out',
   'involved in',
   'participated in',
   'worked on',
-  'supported',
   'contributed to',
   'familiar with',
   'exposure to',
   'some experience with',
   'basic knowledge of',
+  'duties included',
+  'tasked with',
+] as const;
+
+// Self-descriptions that claim a trait instead of showing evidence.
+export const BUZZWORDS = [
+  'team player',
+  'hard-working',
+  'hardworking',
+  'detail-oriented',
+  'self-starter',
+  'go-getter',
+  'results-driven',
+  'results-oriented',
+  'proven track record',
+  'think outside the box',
+  'dynamic',
+  'synergy',
+  'passionate about',
+  'highly motivated',
 ] as const;
 
 export const ATS_KEYWORDS = [
@@ -227,6 +289,24 @@ export const ATS_KEYWORDS = [
   'typescript',
   'python',
   'sql',
+  'research',
+  'internship',
+  'volunteer',
+  'hackathon',
+  'teaching assistant',
+  'lab',
+  'budget',
+  'training',
+  'customer service',
+  'event planning',
+  'fundraising',
+  'excel',
+  'matlab',
+  'spss',
+  'figma',
+  'canva',
+  'teamwork',
+  'communication',
 ] as const;
 
 export const STOPWORDS = new Set([
@@ -353,7 +433,9 @@ export const STOPWORDS = new Set([
   'are',
 ]);
 
-// Hard skills commonly sought by ATS
+// Hard skills commonly sought by ATS. Covers professional tooling plus the
+// tools students actually use: stats packages, lab techniques, design and
+// media tools, campus-job software.
 export const HARD_SKILLS = [
   'python',
   'javascript',
@@ -401,6 +483,7 @@ export const HARD_SKILLS = [
   'looker',
   'excel',
   'sheets',
+  'pivot tables',
   'mongodb',
   'postgresql',
   'mysql',
@@ -414,8 +497,6 @@ export const HARD_SKILLS = [
   'numpy',
   'spark',
   'hadoop',
-  'kubernetes',
-  'terraform',
   'ansible',
   'puppet',
   'chef',
@@ -505,6 +586,48 @@ export const HARD_SKILLS = [
   'serverless',
   'lambda',
   'cloud functions',
+  // Student and early-career tooling
+  'matlab',
+  'spss',
+  'stata',
+  'sas',
+  'r',
+  'latex',
+  'canva',
+  'powerpoint',
+  'google sheets',
+  'google docs',
+  'google slides',
+  'qualtrics',
+  'nvivo',
+  'arcgis',
+  'autocad',
+  'solidworks',
+  'arduino',
+  'raspberry pi',
+  'labview',
+  'wordpress',
+  'squarespace',
+  'wix',
+  'mailchimp',
+  'hootsuite',
+  'capcut',
+  'final cut',
+  'davinci resolve',
+  'unity',
+  'unreal engine',
+  'quickbooks',
+  'bloomberg terminal',
+  // Lab techniques
+  'pcr',
+  'gel electrophoresis',
+  'western blot',
+  'cell culture',
+  'chromatography',
+  'spectroscopy',
+  'microscopy',
+  'titration',
+  'elisa',
 ];
 
 export const SOFT_SKILLS = [
@@ -539,11 +662,19 @@ export const SOFT_SKILLS = [
   'user-centered',
   'design thinking',
   'systems thinking',
+  // Student and early-career strengths
+  'event planning',
+  'fundraising',
+  'tutoring',
+  'customer service',
+  'peer mentoring',
+  'community outreach',
+  'recruitment',
+  'onboarding',
 ];
 
 export function extractSkills(text: string): { hard: string[]; soft: string[] } {
-  const lower = text.toLowerCase();
-  const hard = HARD_SKILLS.filter((skill) => lower.includes(skill));
-  const soft = SOFT_SKILLS.filter((skill) => lower.includes(skill));
+  const hard = HARD_SKILLS.filter((skill) => matchesTerm(text, skill));
+  const soft = SOFT_SKILLS.filter((skill) => matchesTerm(text, skill));
   return { hard: [...new Set(hard)], soft: [...new Set(soft)] };
 }

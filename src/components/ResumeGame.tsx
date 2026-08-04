@@ -4,11 +4,9 @@ import {
   extractBullets,
   createBulletRecord,
   buildBullet,
-  fieldBonus,
-  editBonus,
-  scoreBullet,
+  combinedBulletScore,
+  buildDeepSignalReport,
   highlightResume,
-  countPowerVerbs,
   decodeEntities,
   POWER_VERB_PATTERN,
   exportDocx,
@@ -16,15 +14,8 @@ import {
   useResumeSession,
   EMPTY_SESSION,
   EMPTY_SIGNAL_REPORT,
-  analyzeResumeLength,
-  extractSkills,
 } from '../lib/resume-game';
-import type {
-  BulletFields,
-  BulletRecord,
-  SignalReport,
-  StoredResumeSession,
-} from '../lib/resume-game';
+import type { BulletFields, BulletRecord, StoredResumeSession } from '../lib/resume-game';
 import ResumeHeader from './resume-game/ResumeHeader';
 import ResumeInput from './resume-game/ResumeInput';
 import ScanResults from './resume-game/ScanResults';
@@ -34,7 +25,9 @@ import BeforeAfter from './resume-game/BeforeAfter';
 import Scoreboard from './resume-game/Scoreboard';
 import ShareScoreCard from './resume-game/ShareScoreCard';
 
-const SCAN_DURATION = 8000;
+// Analysis is synchronous and instant. This brief transition only exists so
+// the button press has visible feedback; it is not a fake progress display.
+const SCAN_TRANSITION_MS = 300;
 const STATUS_RESET_MS = 3500;
 const SAMPLE_RESUME_TEXT = `• Led a 6-person product pod launching a pricing diagnostics dashboard adopted by 4 global regions within the first quarter.
 • Automated weekly revenue reporting with Python + Airflow, trimming manual analysis time by 9 hours per analyst.
@@ -57,11 +50,10 @@ type ResumeGameProps = {
 export default function ResumeGame({ showHeader = true, className }: ResumeGameProps) {
   const { session, setSession, storageNotice } = useResumeSession();
   const [isScanning, setIsScanning] = React.useState(false);
-  const [scanProgress, setScanProgress] = React.useState(0);
   const [scanComplete, setScanComplete] = React.useState(false);
   const [needsRescan, setNeedsRescan] = React.useState(false);
   const [status, setStatus] = React.useState<string | null>(null);
-  const frameRef = React.useRef<number | null>(null);
+  const scanTimeoutRef = React.useRef<number | null>(null);
 
   const setSessionState = React.useCallback(
     (mutator: (previous: StoredResumeSession) => StoredResumeSession) => {
@@ -84,40 +76,12 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     [updateSessionPartial]
   );
 
-  const setBullets = React.useCallback(
-    (updater: BulletRecord[] | ((previous: BulletRecord[]) => BulletRecord[])) => {
-      setSessionState((previous) => {
-        const nextBullets =
-          typeof updater === 'function'
-            ? (updater as (list: BulletRecord[]) => BulletRecord[])(previous.bullets)
-            : updater;
-        const nextSelected = nextBullets.length
-          ? (nextBullets.find((bullet) => bullet.id === previous.selectedBulletId)?.id ??
-            nextBullets[0].id)
-          : null;
-        return { ...previous, bullets: nextBullets, selectedBulletId: nextSelected };
-      });
-    },
-    [setSessionState]
-  );
-
   const setSelectedBulletId = React.useCallback(
     (id: string | null) => {
       updateSessionPartial({ selectedBulletId: id });
     },
     [updateSessionPartial]
   );
-
-  const setSignalReportValue = React.useCallback(
-    (report: SignalReport) => {
-      updateSessionPartial({ signalReport: report });
-    },
-    [updateSessionPartial]
-  );
-
-  const setLastAnalyzed = React.useCallback(() => {
-    updateSessionPartial({ lastAnalyzedAt: new Date().toISOString() });
-  }, [updateSessionPartial]);
 
   const resumeText = session.resumeText;
   const bullets = session.bullets;
@@ -149,9 +113,17 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     return () => window.clearTimeout(timeout);
   }, [status]);
 
+  // Restored sessions already carry analyzed bullets; show them instead of
+  // hiding results behind a rescan.
+  React.useEffect(() => {
+    if (session.lastAnalyzedAt && session.bullets.length > 0) {
+      setScanComplete(true);
+    }
+  }, [session.lastAnalyzedAt, session.bullets.length]);
+
   React.useEffect(
     () => () => {
-      if (frameRef.current) cancelAnimationFrame(frameRef.current);
+      if (scanTimeoutRef.current) window.clearTimeout(scanTimeoutRef.current);
     },
     []
   );
@@ -159,77 +131,27 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
   const analyzeResume = React.useCallback(() => {
     const lines = extractBullets(resumeText);
     const records = lines.map((line, index) => createBulletRecord(line, index));
-    setBullets(records);
-    setSelectedBulletId(records[0]?.id ?? null);
-
-    const verbCount = countPowerVerbs(resumeText);
-    const numbers = resumeText.match(/\d+\.?\d*%?/g) ?? [];
-    const lengthAnalysis = analyzeResumeLength(resumeText);
-    const skills = extractSkills(resumeText);
-
-    // Signal strength: per-bullet average of leading verb + number + impact + skill presence
-    let totalSignal = 0;
-    records.forEach((rec) => {
-      let bulletSignal = 0;
-      if (/^(led|built|created|architected|spearheaded)/i.test(rec.improved)) bulletSignal += 25;
-      else if (POWER_VERB_PATTERN.test(rec.improved)) bulletSignal += 15;
-      if (/\d+%?|\$\d+/.test(rec.improved)) bulletSignal += 25;
-      if (/\b(to|by|resulting in|leading to)\b/i.test(rec.improved)) bulletSignal += 20;
-      if (skills.hard.some((s) => rec.improved.toLowerCase().includes(s))) bulletSignal += 15;
-      bulletSignal += rec.improvedScore >= 70 ? 15 : rec.improvedScore >= 50 ? 10 : 5;
-      totalSignal += Math.min(100, bulletSignal);
-    });
-    const visible = records.length > 0 ? Math.round(totalSignal / records.length) : 0;
-
-    const report: SignalReport = {
-      visible,
-      hidden: 100 - visible,
-      numbers: numbers.length,
-      verbs: verbCount,
-      wordCount: lengthAnalysis.wordCount,
-      bulletCount: lengthAnalysis.bulletCount,
-      estimatedPages: lengthAnalysis.estimatedPages,
-      sections: lengthAnalysis.sections,
-      hardSkills: skills.hard,
-      softSkills: skills.soft,
-      isOptimalLength: lengthAnalysis.isOptimalLength,
-      lengthRecommendation: lengthAnalysis.recommendation,
-    };
-    setSignalReportValue(report);
-    setLastAnalyzed();
+    const report = buildDeepSignalReport(records, resumeText);
+    setSessionState((previous) => ({
+      ...previous,
+      bullets: records,
+      selectedBulletId: records[0]?.id ?? null,
+      signalReport: report,
+      lastAnalyzedAt: new Date().toISOString(),
+    }));
     setNeedsRescan(false);
     setStatus('Analysis complete. Review the insights below.');
-  }, [resumeText, setBullets, setLastAnalyzed, setSelectedBulletId, setSignalReportValue]);
+  }, [resumeText, setSessionState]);
 
   const handleScan = () => {
     if (!resumeText.trim() || isScanning) return;
-    setScanProgress(0);
     setIsScanning(true);
-    setScanComplete(false);
-    const start = performance.now();
-
-    let frameCount = 0;
-    const tick = (now: number) => {
-      frameCount++;
-      if (frameCount % 3 !== 0) {
-        frameRef.current = requestAnimationFrame(tick);
-        return;
-      }
-      const elapsed = now - start;
-      const nextProgress = Math.min(100, Math.round((elapsed / SCAN_DURATION) * 100));
-      setScanProgress(nextProgress);
-      if (elapsed >= SCAN_DURATION) {
-        setScanProgress(100);
-        setIsScanning(false);
-        setScanComplete(true);
-        analyzeResume();
-        frameRef.current = null;
-        return;
-      }
-      frameRef.current = requestAnimationFrame(tick);
-    };
-
-    frameRef.current = requestAnimationFrame(tick);
+    scanTimeoutRef.current = window.setTimeout(() => {
+      analyzeResume();
+      setIsScanning(false);
+      setScanComplete(true);
+      scanTimeoutRef.current = null;
+    }, SCAN_TRANSITION_MS);
   };
 
   const [isLoadingFile, setIsLoadingFile] = React.useState(false);
@@ -260,31 +182,41 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
   };
 
   const updateBulletField = (id: string, field: keyof BulletFields, value: string) => {
-    setBullets((previous) =>
-      previous.map((bullet: BulletRecord) => {
+    setSessionState((previous) => {
+      const nextBullets = previous.bullets.map((bullet: BulletRecord) => {
         if (bullet.id !== id) return bullet;
         const nextFields = { ...bullet.fields, [field]: value };
         const improved = buildBullet(nextFields);
-        const bonus = fieldBonus(nextFields) + editBonus(bullet.original, nextFields);
         return {
           ...bullet,
           fields: nextFields,
           improved,
-          improvedScore: scoreBullet(improved) + bonus,
+          improvedScore: combinedBulletScore(improved, bullet.original, nextFields),
         };
-      })
-    );
+      });
+      // Keep the report in sync with edits so the health score and signal
+      // strength reflect the current state of the bullets.
+      return {
+        ...previous,
+        bullets: nextBullets,
+        signalReport: buildDeepSignalReport(nextBullets, previous.resumeText),
+      };
+    });
   };
 
   const markdownReport = React.useCallback(() => {
     const original = bullets.map((bullet, index) => `${index + 1}. ${bullet.original}`);
     const improved = bullets.map((bullet, index) => `${index + 1}. ${bullet.improved}`);
+    const healthLine =
+      typeof signalReport.benchmarkScore === 'number'
+        ? `\n- Resume health score: ${signalReport.benchmarkScore}/100`
+        : '';
     return `# Resume Game Report
 
 ## Scores
 - Visible value: ${signalReport.visible}%
 - Average improved bullet score: ${averageScore}/100
-- Quantified bullets: ${quantifiedBullets}/${bullets.length || 0}
+- Quantified bullets: ${quantifiedBullets}/${bullets.length || 0}${healthLine}
 
 ## Original Bullets
 ${original.join('\n')}
@@ -292,7 +224,7 @@ ${original.join('\n')}
 ## Improved Bullets
 ${improved.join('\n')}
 `;
-  }, [averageScore, bullets, quantifiedBullets, signalReport.visible]);
+  }, [averageScore, bullets, quantifiedBullets, signalReport.visible, signalReport.benchmarkScore]);
 
   const exportBase = React.useMemo(() => {
     const headline =
@@ -328,7 +260,6 @@ ${improved.join('\n')}
       <ResumeInput
         resumeText={resumeText}
         isScanning={isScanning}
-        scanProgress={scanProgress}
         scanComplete={scanComplete}
         isLoadingFile={isLoadingFile}
         status={status}

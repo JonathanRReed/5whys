@@ -14,6 +14,11 @@ const STEPS: Step[] = [
     subtitle: 'This helps us recommend the right tools.',
     options: [
       {
+        label: 'Student',
+        value: 'student',
+        icon: 'M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222',
+      },
+      {
         label: 'Early career',
         value: 'early',
         icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
@@ -73,11 +78,42 @@ interface Recommendation {
   icon: string;
 }
 
+// The recommendation is a matrix: the challenge picks the tool, and the career
+// stage changes what you should do inside it. No AI involved, just a lookup.
 function getRecommendation(level: string, challenge: string): Recommendation {
+  const exploring = level === 'student' || level === 'early';
+
   if (challenge === 'direction') {
+    if (exploring) {
+      return {
+        title: 'Start with the 5 Whys Interest Path',
+        description:
+          level === 'student'
+            ? 'You do not need a job title yet. Trace what already holds your attention until a direction shows up.'
+            : 'Before optimizing the job you have, check what actually pulls you. The Interest Path digs into that.',
+        url: '/career/',
+        accent: 'foam',
+        steps: [
+          'Choose the Interest Path track and name something you keep coming back to.',
+          'Answer the five "why" prompts to find the thread underneath it.',
+          'Save a snapshot so you can compare it against options later.',
+        ],
+        stats: [
+          { label: 'Prompts', value: '5 guided' },
+          { label: 'Time', value: '2 min' },
+          { label: 'Output', value: 'Theme + snapshot' },
+        ],
+        icon: 'M7 8h10M7 12h4',
+      };
+    }
     return {
       title: 'Start with Career 5 Whys',
-      description: 'Clarify your core motivation before polishing anything else.',
+      description:
+        level === 'transition'
+          ? 'Test whether the reason behind your pivot survives five rounds of "why" before you rebuild everything else around it.'
+          : level === 'senior'
+            ? 'Name what the next move is actually for. Five rounds of "why" separate a real reason from a restless one.'
+            : 'Clarify your core motivation before polishing anything else.',
       url: '/career/',
       accent: 'foam',
       steps: [
@@ -96,18 +132,24 @@ function getRecommendation(level: string, challenge: string): Recommendation {
   if (challenge === 'resume') {
     return {
       title: 'Jump into the Resume Game',
-      description: 'Analyze your bullets, detect skills, and rewrite for impact.',
+      description: exploring
+        ? 'Class projects, internships, and part-time work all count. Score what you have and make each line carry proof.'
+        : level === 'transition'
+          ? 'Translate your old-domain bullets into evidence the new field can read. Score them, then rewrite the weak ones.'
+          : 'Analyze your bullets, detect skills, and rewrite for impact.',
       url: '/resume-game/',
       accent: 'love',
       steps: [
         'Paste or upload your current resume.',
-        'Run the analysis to score each bullet.',
-        'Use the structured rewrite to strengthen weak bullets.',
+        'Run the analysis to score each bullet for action, result, and measure.',
+        exploring
+          ? 'Rewrite the weakest lines so a project reads as evidence, not a task list.'
+          : 'Use the structured rewrite to strengthen weak bullets.',
       ],
       stats: [
         { label: 'Analysis', value: 'Bullet scoring' },
         { label: 'Skills', value: 'Auto-detect' },
-        { label: 'Rewrite', value: 'AI-guided' },
+        { label: 'Rewrite', value: 'Structured' },
       ],
       icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
     };
@@ -115,16 +157,25 @@ function getRecommendation(level: string, challenge: string): Recommendation {
   if (challenge === 'interview') {
     return {
       title: 'Build your Interview Glow Up',
-      description: 'Decode job descriptions and create proof-based stories.',
+      description:
+        level === 'senior'
+          ? 'At your level the risk is vague authority. Decode the job description, then back every leadership claim with specific proof.'
+          : level === 'transition'
+            ? 'Decode job descriptions from the new field, then build stories that carry your proof across the gap.'
+            : exploring
+              ? 'First interviews reward preparation over experience. Decode the job description and build stories from projects you already have.'
+              : 'Decode job descriptions and create proof-based stories.',
       url: '/5whys/interview-glow-up/',
       accent: 'iris',
       steps: [
         'Paste a job description to decode required skills.',
-        'Build 3-5 STAR-method stories from your experience.',
+        level === 'senior'
+          ? 'Build proof-based stories that show scope you owned, not just teams you sat near.'
+          : 'Build 3 to 5 proof-based stories from your experience.',
         'Assemble a panic-proof packet for your next call.',
       ],
       stats: [
-        { label: 'Stories', value: 'STAR method' },
+        { label: 'Stories', value: 'Proof-based' },
         { label: 'Skills', value: 'JD decode' },
         { label: 'Packet', value: 'Panic-proof' },
       ],
@@ -133,7 +184,12 @@ function getRecommendation(level: string, challenge: string): Recommendation {
   }
   return {
     title: 'Practice with Networking Rehearsal',
-    description: 'Timed scenarios and ratings to build confident delivery.',
+    description:
+      level === 'student'
+        ? 'Career fairs and cold intros get easier with reps. Practice a short introduction before you need it live.'
+        : level === 'senior'
+          ? 'Peer intros and panels need a sharper opener than your title. Rehearse it against the clock.'
+          : 'Timed scenarios and ratings to build confident delivery.',
     url: '/networking-practice/',
     accent: 'gold',
     steps: [
@@ -157,7 +213,7 @@ export default function OnboardingWizard() {
 
   const currentStep = STEPS[step];
   const recommendation = done
-    ? getRecommendation(answers[0] || 'early', answers[1] || 'direction')
+    ? getRecommendation(answers[0] || 'student', answers[1] || 'direction')
     : null;
 
   const handleSelect = (value: string) => {
@@ -202,7 +258,7 @@ export default function OnboardingWizard() {
           <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
             Your career review
           </p>
-          <h1 className="text-3xl font-semibold tracking-tight">Here is your starting point</h1>
+          <h2 className="text-3xl font-semibold tracking-tight">Here is your starting point</h2>
         </div>
 
         <Card className={cn('rounded-2xl border p-6', accentColors[recommendation.accent])}>
@@ -330,7 +386,6 @@ export default function OnboardingWizard() {
           <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
             Step {step + 1} of {STEPS.length}
           </span>
-          <span className="text-xs text-muted-foreground">{STEPS[step].question}</span>
         </div>
         <div className="h-1.5 w-full rounded-full bg-[hsl(var(--border)/0.3)]">
           <div
@@ -362,7 +417,7 @@ export default function OnboardingWizard() {
           )}
         </div>
         <div className="flex-1 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight">{currentStep.question}</h1>
+          <h2 className="text-3xl font-semibold tracking-tight">{currentStep.question}</h2>
           <p className="text-muted-foreground">{currentStep.subtitle}</p>
         </div>
         <div className="w-20" />

@@ -21,8 +21,9 @@
 - About: https://5whys.jonathanrreed.com/about/
 - Start: https://5whys.jonathanrreed.com/start/
 - Resume game: https://5whys.jonathanrreed.com/resume-game/
-- Networking practice: https://5whys.jonathanrreed.com/networking/
-- Interview practice: https://5whys.jonathanrreed.com/interview/
+- Networking practice: https://5whys.jonathanrreed.com/networking-practice/
+- Interview Glow Up: https://5whys.jonathanrreed.com/5whys/interview-glow-up/
+- Subprocessors: https://5whys.jonathanrreed.com/subprocessors/
 
 ## Contact
 

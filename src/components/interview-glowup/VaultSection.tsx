@@ -195,8 +195,8 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
               </div>
               <p className="text-sm font-medium text-foreground">Your vault is empty</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Go to Build Stories to create STAR stories, then come back to organize and select
-                them for your packet.
+                Go to Build Stories to write Play + Proof stories, then come back to organize and
+                select them for your packet.
               </p>
             </>
           ) : (

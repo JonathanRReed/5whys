@@ -32,24 +32,24 @@ export default function NetworkingHeader({ showHeader = true }: Props) {
         Networking Practice Studio
       </h1>
       <p className="mx-auto max-w-3xl text-base text-[hsl(var(--muted-foreground))]">
-        Craft confident introductions for career fairs, conferences, and outreach. Practice your Who
-        / Where / What openings, pace yourself with a two-minute timer, and capture reflections to
-        keep improving.
+        Twelve scenarios, from a career fair with a line behind you to a cold email to a professor.
+        Draft the intro in your own words, run it against a two-minute timer, score it honestly,
+        and keep every rep so you can watch the intro improve.
       </p>
       <QuickStartTiles
         className="max-w-3xl"
         items={[
           {
-            title: 'Choose a scenario',
-            body: 'Pick a built-in prompt or clone it for your own event so the notes stay contextual.',
+            title: 'Pick a scenario',
+            body: 'Twelve situations for students and career changers. Each includes sample lines, plus honest ones that work with zero experience.',
           },
           {
-            title: 'Run a timed rep',
-            body: 'Start the two-minute timer, talk aloud, and jot quick reflections while the energy is fresh.',
+            title: 'Draft and run a rep',
+            body: 'Write the intro you would actually say, then start the two-minute timer and say it out loud.',
           },
           {
-            title: 'Save + export',
-            body: 'Log each run to see progress over time. Export the JSON bundle when you want to archive or share.',
+            title: 'Rate and save',
+            body: 'Score the rep, note one fix, and save. The history keeps your exact words so you can compare reps over time.',
           },
         ]}
       />

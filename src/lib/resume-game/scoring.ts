@@ -3,14 +3,20 @@ import { analyzeReadability } from './readability';
 import { normalizeLine } from './text';
 
 /**
- * Scoring weights informed by recruiter behavior research:
- * - Leading verb (20%): recruiters scan first 3-5 words first
- * - Quantification (25%): metrics are the #1 attention signal
- * - Verb strength (15%): strong verbs correlate with higher perceived impact
- * - Impact statement (15%): "by/to/resulting in" shows business thinking
- * - Clarity (10%): 8-32 words is the sweet spot for scanability
- * - Readability (10%): grade level and passive voice affect comprehension
- * - Structure (5%): polish that adds professionalism
+ * Bullet score rubric, 100 points total. Every component below is exactly
+ * what the code checks, and a genuinely excellent bullet can reach 100:
+ *
+ * - Leading action verb (20): the first word is a recognized action verb.
+ * - Verb strength (10): strong tier 10, medium 7, weak 3, no verb 0.
+ * - Quantified result (25): at least one number, dollar amount, or percent.
+ * - Outcome link (20): the action connects to a result with "by", "to",
+ *   "resulting in", or "leading to".
+ * - Concise length (15): 8 to 32 words reads in one pass.
+ * - Readability (10): active voice and a scannable grade level.
+ *
+ * Example of a 100: "Automated weekly grant reporting in Excel to save the
+ * lab 6 hours per week." Strong leading verb, number, outcome, 14 words.
+ * Scores are clamped to 0-100.
  */
 export function scoreBullet(bullet: string) {
   const normalized = normalizeLine(bullet).toLowerCase();
@@ -21,30 +27,28 @@ export function scoreBullet(bullet: string) {
   const hasNumber = /(\$?\d+[\d,]*\.?\d*%?)/.test(normalized);
   const length = normalized.split(/\s+/).filter(Boolean).length;
   const clarity = length >= 8 && length <= 32;
-  const structure = /(\bby\b|\bto\b|\bresult(ing)? in\b|\bleading to\b)/.test(normalized) ? 15 : 0;
+  const hasOutcomeLink = /(\bby\b|\bto\b|\bresult(ing)? in\b|\bleading to\b)/.test(normalized);
 
-  // Verb strength scoring
   const verbMatch = normalized.match(POWER_VERB_PATTERN);
   const verb = verbMatch?.[1] || '';
   const verbStrength = verb ? getVerbStrength(verb) : 'none';
   const verbScore = !hasVerb
     ? 0
     : verbStrength === 'strong'
-      ? 15
+      ? 10
       : verbStrength === 'medium'
-        ? 10
-        : 5;
+        ? 7
+        : 3;
 
-  // Readability
   const readability = analyzeReadability(normalized);
   const readabilityScore = readability.isReadable ? 10 : 0;
 
-  let score =
+  const score =
     (hasLeadingVerb ? 20 : 0) +
     verbScore +
     (hasNumber ? 25 : 0) +
-    structure +
-    (clarity ? 10 : 0) +
+    (hasOutcomeLink ? 20 : 0) +
+    (clarity ? 15 : 0) +
     readabilityScore;
 
   return Math.max(0, Math.min(100, score));

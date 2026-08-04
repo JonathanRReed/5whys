@@ -4,10 +4,15 @@ import {
   type GlowUpData,
   type DecodedRole,
   type InterviewPacket,
+  type Story,
   createPacket,
   updatePacket,
 } from '../../lib/glowup-store';
-import { getSkillName, SUGGESTED_QUESTIONS_TO_ASK } from '../../lib/glowup-banks';
+import {
+  getSkillName,
+  resolveQuestionText,
+  SUGGESTED_QUESTIONS_TO_ASK,
+} from '../../lib/glowup-banks';
 import { TargetIcon, PrinterIcon, ClipboardIcon } from './icons';
 
 type Props = {
@@ -83,6 +88,17 @@ export default function PacketSection({
   }
 
   const packetStories = data.stories.filter((s) => currentPacket.topStoryIds.includes(s.id));
+
+  // Group packet stories by primary skill for a scannable rehearsal order.
+  const storiesBySkill: [string, Story[]][] = [];
+  for (const story of packetStories) {
+    const existing = storiesBySkill.find(([skillId]) => skillId === story.primarySkillId);
+    if (existing) {
+      existing[1].push(story);
+    } else {
+      storiesBySkill.push([story.primarySkillId, [story]]);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -251,27 +267,35 @@ export default function PacketSection({
                 + Add question
               </button>
             </div>
-            <div className="flex flex-wrap gap-1">
-              <span className="text-xs text-muted-foreground">Suggestions:</span>
-              {SUGGESTED_QUESTIONS_TO_ASK.slice(0, 4).map((q, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => {
-                    if (!currentPacket.customQuestions.includes(q)) {
-                      setData(
-                        updatePacket(data, currentPacket.id, {
-                          customQuestions: [...currentPacket.customQuestions, q],
-                        })
-                      );
-                    }
-                  }}
-                  className="rounded-full bg-[hsl(var(--overlay)/0.4)] px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
-                >
-                  + {q.slice(0, 30)}...
-                </button>
-              ))}
-            </div>
+            {SUGGESTED_QUESTIONS_TO_ASK.some(
+              (q) => !currentPacket.customQuestions.includes(q)
+            ) && (
+              <div className="space-y-1">
+                <span className="text-xs text-muted-foreground">
+                  Suggestions (click to add):
+                </span>
+                <div className="flex flex-col items-start gap-1">
+                  {SUGGESTED_QUESTIONS_TO_ASK.filter(
+                    (q) => !currentPacket.customQuestions.includes(q)
+                  ).map((q) => (
+                    <button
+                      key={q}
+                      type="button"
+                      onClick={() => {
+                        setData(
+                          updatePacket(data, currentPacket.id, {
+                            customQuestions: [...currentPacket.customQuestions, q],
+                          })
+                        );
+                      }}
+                      className="rounded-lg px-2 py-1 text-left text-xs text-muted-foreground hover:bg-[hsl(var(--overlay)/0.4)] hover:text-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+                    >
+                      + {q}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="rounded-xl border border-[hsl(var(--foam)/0.3)] bg-[hsl(var(--foam)/0.05)] p-5">
@@ -297,7 +321,7 @@ export default function PacketSection({
       )}
 
       {mode === 'review' && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {packetStories.length === 0 ? (
             <div className="rounded-xl border border-dashed border-[hsl(var(--border)/0.4)] p-8 text-center">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[hsl(var(--foam)/0.1)]">
@@ -309,24 +333,80 @@ export default function PacketSection({
               </p>
             </div>
           ) : (
-            packetStories.map((story) => (
-              <div
-                key={story.id}
-                className="rounded-xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.15)] p-4"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <span className="rounded-full bg-[hsl(var(--foam)/0.15)] px-2 py-0.5 text-xs font-medium text-[hsl(var(--foam))]">
-                    {getSkillName(story.primarySkillId)}
-                  </span>
-                  <span className="text-xs text-muted-foreground">{story.confidence}%</span>
+            <>
+              <p className="text-xs text-muted-foreground">
+                Rehearsal order: read the questions first, answer out loud from the Trigger, then
+                check the Play and Proof.
+              </p>
+              {storiesBySkill.map(([skillId, skillStories]) => (
+                <div key={skillId} className="space-y-3">
+                  <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                    {getSkillName(skillId)}
+                  </h4>
+                  {skillStories.map((story) => (
+                    <div
+                      key={story.id}
+                      className="rounded-xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.15)] p-4"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="font-medium text-foreground">
+                          {story.trigger || 'Untitled'}
+                        </p>
+                        <span className="text-xs text-muted-foreground">{story.confidence}%</span>
+                      </div>
+                      {story.questionPrompts.length > 0 && (
+                        <ul className="mt-2 space-y-1 rounded-lg bg-[hsl(var(--iris)/0.08)] p-2">
+                          {story.questionPrompts.map((q, i) => (
+                            <li key={i} className="text-sm text-[hsl(var(--iris))]">
+                              Q: {resolveQuestionText(q)}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      <p className="mt-2 text-sm text-muted-foreground">{story.hook}</p>
+                      {story.play && (
+                        <p className="mt-2 text-sm text-foreground">
+                          <span className="font-semibold">Play:</span> {story.play}
+                        </p>
+                      )}
+                      {story.proof && (
+                        <p className="mt-1 text-sm text-foreground">
+                          <span className="font-semibold">Proof:</span> {story.proof}
+                        </p>
+                      )}
+                      {story.proofSnippet && (
+                        <p className="mt-2 text-sm font-medium text-[hsl(var(--foam))]">
+                          {story.proofSnippet}
+                        </p>
+                      )}
+                    </div>
+                  ))}
                 </div>
-                <p className="mt-2 font-medium text-foreground">{story.trigger}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{story.hook}</p>
-                <p className="mt-2 text-sm font-medium text-[hsl(var(--foam))]">
-                  {story.proofSnippet}
-                </p>
-              </div>
-            ))
+              ))}
+              {currentPacket.customQuestions.filter(Boolean).length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                    Questions to Ask
+                  </h4>
+                  <ul className="space-y-1">
+                    {currentPacket.customQuestions.filter(Boolean).map((q, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-foreground">
+                        <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[hsl(var(--iris))]" />
+                        {q}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {currentPacket.panicAnswer && (
+                <div className="rounded-xl border border-[hsl(var(--destructive)/0.3)] bg-[hsl(var(--destructive)/0.05)] p-4">
+                  <h4 className="text-sm font-semibold uppercase tracking-wide text-destructive">
+                    Panic Answer
+                  </h4>
+                  <p className="mt-2 text-sm text-foreground">{currentPacket.panicAnswer}</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

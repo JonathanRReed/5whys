@@ -7,6 +7,9 @@ import type { BulletFields, BulletRecord, SignalReport, StoredResumeSession } fr
 
 const SESSION_STORAGE_KEY = 'resume-game-session-v2';
 
+// Deep metrics (health score, weak words, impact coverage, etc.) are
+// intentionally absent here: they only exist once a real analysis has
+// produced them. Backfilling them with zeros would show fake results.
 const EMPTY_SIGNAL_REPORT: SignalReport = {
   visible: 0,
   hidden: 100,
@@ -20,12 +23,6 @@ const EMPTY_SIGNAL_REPORT: SignalReport = {
   softSkills: [],
   isOptimalLength: false,
   lengthRecommendation: '',
-  weakWordCount: 0,
-  repetitiveVerbs: [],
-  impactCoverage: 0,
-  keywordDensity: [],
-  benchmarkScore: 0,
-  uniqueVerbCount: 0,
 };
 
 const EMPTY_SESSION: StoredResumeSession = {
@@ -44,6 +41,10 @@ function sanitizeString(value: unknown, fallback = '') {
   return typeof value === 'string' ? value : fallback;
 }
 
+function clampScore(value: number) {
+  return Math.min(100, Math.max(0, Math.round(value)));
+}
+
 function normalizeSignalReport(value: unknown): SignalReport {
   if (!value || typeof value !== 'object') return { ...EMPTY_SIGNAL_REPORT };
   const data = value as Record<string, unknown>;
@@ -51,12 +52,18 @@ function normalizeSignalReport(value: unknown): SignalReport {
     if (typeof num !== 'number' || Number.isNaN(num)) return fallback;
     return Math.min(Math.max(num, min), max);
   };
+  // Optional deep metrics: preserve real stored values, but never invent a
+  // value (like 0) when the stored session predates deep analysis.
+  const clampOptional = (num: unknown, min: number, max: number): number | undefined => {
+    if (typeof num !== 'number' || Number.isNaN(num)) return undefined;
+    return Math.min(Math.max(num, min), max);
+  };
   const toStrArray = (v: unknown): string[] => {
     if (Array.isArray(v)) return v.filter((s): s is string => typeof s === 'string');
     return [];
   };
-  const toRepetitiveVerbArray = (v: unknown): { verb: string; count: number }[] => {
-    if (!Array.isArray(v)) return [];
+  const toRepetitiveVerbArray = (v: unknown): { verb: string; count: number }[] | undefined => {
+    if (!Array.isArray(v)) return undefined;
     return v
       .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
       .map((item) => ({
@@ -65,8 +72,8 @@ function normalizeSignalReport(value: unknown): SignalReport {
       }))
       .filter((item) => item.verb && item.count > 0);
   };
-  const toKeywordDensityArray = (v: unknown): { word: string; count: number }[] => {
-    if (!Array.isArray(v)) return [];
+  const toKeywordDensityArray = (v: unknown): { word: string; count: number }[] | undefined => {
+    if (!Array.isArray(v)) return undefined;
     return v
       .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
       .map((item) => ({
@@ -93,15 +100,15 @@ function normalizeSignalReport(value: unknown): SignalReport {
     isOptimalLength: typeof data.isOptimalLength === 'boolean' ? data.isOptimalLength : false,
     lengthRecommendation:
       typeof data.lengthRecommendation === 'string' ? data.lengthRecommendation : '',
-    weakWordCount: clamp(data.weakWordCount, 0, 999, 0),
+    weakWordCount: clampOptional(data.weakWordCount, 0, 999),
     repetitiveVerbs: toRepetitiveVerbArray(data.repetitiveVerbs),
-    impactCoverage: clamp(data.impactCoverage, 0, 100, 0),
+    impactCoverage: clampOptional(data.impactCoverage, 0, 100),
     keywordDensity: toKeywordDensityArray(data.keywordDensity),
-    benchmarkScore: clamp(data.benchmarkScore, 0, 100, 0),
-    uniqueVerbCount: clamp(data.uniqueVerbCount, 0, 999, 0),
-    quantifiedBulletPercent: clamp(data.quantifiedBulletPercent, 0, 100, 0),
-    avgBulletLength: clamp(data.avgBulletLength, 0, 200, 0),
-    passiveVoicePercent: clamp(data.passiveVoicePercent, 0, 100, 0),
+    benchmarkScore: clampOptional(data.benchmarkScore, 0, 100),
+    uniqueVerbCount: clampOptional(data.uniqueVerbCount, 0, 999),
+    quantifiedBulletPercent: clampOptional(data.quantifiedBulletPercent, 0, 100),
+    avgBulletLength: clampOptional(data.avgBulletLength, 0, 200),
+    passiveVoicePercent: clampOptional(data.passiveVoicePercent, 0, 100),
   };
 }
 
@@ -118,10 +125,12 @@ function normalizeStoredBullet(entry: unknown, index: number): BulletRecord | nu
   const original = sanitizeString(data.original, '');
   const fallbackBullet = buildBullet(fields);
   const improved = sanitizeString(data.improved, fallbackBullet || original || fallbackBullet);
-  const baselineScore =
-    typeof data.baselineScore === 'number' ? data.baselineScore : scoreBullet(original || improved);
-  const improvedScore =
-    typeof data.improvedScore === 'number' ? data.improvedScore : scoreBullet(improved);
+  const baselineScore = clampScore(
+    typeof data.baselineScore === 'number' ? data.baselineScore : scoreBullet(original || improved)
+  );
+  const improvedScore = clampScore(
+    typeof data.improvedScore === 'number' ? data.improvedScore : scoreBullet(improved)
+  );
   const id = typeof data.id === 'string' ? data.id : uniqueId('stored-bullet', index);
   const toStrArray = (v: unknown): string[] => {
     if (Array.isArray(v)) return v.filter((s): s is string => typeof s === 'string');

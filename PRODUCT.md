@@ -6,7 +6,11 @@ Brand (marketing/landing) + Product (interactive tools)
 
 ## Target Users
 
-- Job seekers in transition (layoffs, career pivots, early-career)
+Primary: students and early-career people finding their path. They are choosing a direction before they have a title, turning projects and internships into a first resume, and walking into first interviews and career fairs. The tools meet them before the polish stage.
+
+Also serves:
+
+- Job seekers in transition (layoffs, career pivots)
 - Professionals preparing for interviews or networking events
 - People who prefer structured reflection over generic career advice
 - Privacy-conscious users who refuse sign-up flows
@@ -20,7 +24,7 @@ A small studio of focused, interactive career tools that help users:
 3. Rehearse networking conversations with timers and feedback (Networking Practice)
 4. Decode job descriptions and build interview packets (Interview Glow Up)
 
-All tools are privacy-first: data stored locally, no accounts, no tracking.
+All tools are privacy-first: data stored locally, no accounts, no cookies, and nothing the user writes leaves the device.
 
 ## Brand Personality
 
@@ -47,7 +51,7 @@ All tools are privacy-first: data stored locally, no accounts, no tracking.
 ## Strategic Design Principles
 
 1. The tool should disappear into the task
-2. Privacy is a feature, not a limitation — design for it
+2. Privacy is a feature, not a limitation. Design for it
 3. Typography and spacing are the primary visual hierarchy
 4. Motion conveys state, never decoration
 5. Every page should feel like it was crafted, not generated

@@ -36,6 +36,13 @@ const resumeSchemas = [
     ],
   },
 ];
+
+const resumeNoScriptContext = [
+  'Resume Bullet Game is the proof-building tool in 5 Whys Career Studio. It focuses on one practical problem: many resume bullets describe responsibility, but not evidence. The interactive version scores each line for action verbs, measurable signal, scope, clarity, and impact. The goal is not to make every bullet loud. The goal is to make the useful work easier for a recruiter, hiring manager, or interviewer to understand.',
+  'Without JavaScript, you can still use the same review pattern manually. Take one bullet at a time and check whether it names the action, the object of the work, the constraint or audience, and the result. Stronger bullets usually include a specific verb, a system or process, a scale marker, and an outcome. Weak bullets often hide behind words like helped, worked on, responsible for, supported, assisted, or managed without explaining what changed.',
+  'A practical rewrite flow is simple: paste or write the existing bullet, underline the real contribution, add a concrete scope detail, replace generic verbs with accurate action, and make the outcome visible if it is known. If a number would be fake, use a bounded qualitative signal instead: faster review cycles, fewer manual steps, clearer handoff, safer release process, better support coverage, cleaner audit trail, or more reliable onboarding.',
+  'The tool is private by design during normal use. Resume text can include employers, clients, systems, metrics, and personal history, so the browser-local boundary is intentional. Exported files are controlled by the software you use after leaving the page. Review every generated or rewritten bullet before sending it anywhere, and keep the final voice direct, specific, and honest.',
+];
 ---
 
 <Base
@@ -46,6 +53,7 @@ const resumeSchemas = [
     { label: 'Resume Game', href: '/resume-game/' },
   ]}
   structuredData={resumeSchemas}
+  noScriptContext={resumeNoScriptContext}
 >
   <div class="relative space-y-10 overflow-hidden px-4 pb-16 pt-4 sm:pt-6">
     <h1 class="sr-only">Resume Bullet Game</h1>
@@ -253,7 +261,8 @@ const resumeSchemas = [
           >
             <p class="eyebrow" style="color: hsl(var(--gold))">Tip</p>
             <p class="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-              A score of 80+ usually means recruiters can scan the bullet in under two seconds.
+              A score of 80+ means the bullet leads with action, shows scale, and names a result.
+              Aim there for your top three bullets first.
             </p>
           </div>
         </article>

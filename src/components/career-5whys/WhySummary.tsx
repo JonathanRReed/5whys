@@ -1,42 +1,37 @@
 import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
+import { WHY_COUNT } from './shared';
 
 type WhySummaryProps = {
   whyStatement: string;
-  sequentialConfidence: number;
-  theme: string;
-  alignment: string;
-  derivedTheme: string;
-  derivedAlignment: string;
-  onThemeChange: (theme: string) => void;
-  onAlignmentChange: (alignment: string) => void;
+  chain: string[];
+  isComplete: boolean;
+  sequentialCount: number;
+  nextStep: string;
   children?: React.ReactNode;
 };
 
 export default function WhySummary({
   whyStatement,
-  sequentialConfidence,
-  theme,
-  alignment,
-  derivedTheme,
-  derivedAlignment,
-  onThemeChange,
-  onAlignmentChange,
+  chain,
+  isComplete,
+  sequentialCount,
+  nextStep,
   children,
 }: WhySummaryProps) {
   return (
     <Card className="bg-gradient-to-br from-[hsl(var(--iris)/0.2)] via-transparent to-[hsl(var(--primary)/0.2)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] ">
       <CardHeader>
         <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
-          Completion summary
+          Session summary
         </p>
         <CardTitle className="text-2xl font-semibold text-[hsl(var(--foreground))]">
           Why Statement
         </CardTitle>
         <div className="text-sm text-[hsl(var(--muted-foreground))]">
-          Confidence {sequentialConfidence}%
+          {isComplete
+            ? 'Chain complete: all 5 layers answered'
+            : `Depth progress: ${sequentialCount} of ${WHY_COUNT} layers answered`}
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -44,37 +39,51 @@ export default function WhySummary({
           {whyStatement}
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <Label
-              htmlFor="career-theme"
-              className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]"
-            >
-              Theme
-            </Label>
-            <Input
-              id="career-theme"
-              value={theme}
-              onChange={(event) => onThemeChange(event.target.value)}
-              placeholder={derivedTheme}
-              className="mt-2 bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))]"
-            />
-          </div>
-          <div>
-            <Label
-              htmlFor="career-alignment"
-              className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]"
-            >
-              Alignment
-            </Label>
-            <Input
-              id="career-alignment"
-              value={alignment}
-              onChange={(event) => onAlignmentChange(event.target.value)}
-              placeholder={derivedAlignment}
-              className="mt-2 bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))]"
-            />
-          </div>
+        <div>
+          <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
+            Evidence trail
+          </p>
+          {chain.length === 0 ? (
+            <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">
+              Your chain appears here as you answer, one condensed reason per layer.
+            </p>
+          ) : (
+            <ol className="mt-3 space-y-2">
+              {chain.map((item, index) => (
+                <li key={index} className="flex items-start gap-3 text-sm">
+                  <span
+                    className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[hsl(var(--primary)/0.5)] bg-[hsl(var(--primary)/0.1)] text-xs font-semibold text-[hsl(var(--foreground))]"
+                    aria-hidden
+                  >
+                    {index + 1}
+                  </span>
+                  <span className="leading-relaxed text-[hsl(var(--foreground))]">
+                    {item}
+                    {index < chain.length - 1 && (
+                      <span aria-hidden className="ml-2 text-[hsl(var(--muted-foreground))]">
+                        ↓
+                      </span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+
+        <div>
+          <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
+            Test this by
+          </p>
+          {isComplete && nextStep ? (
+            <p className="mt-2 rounded-xl border border-[hsl(var(--gold)/0.35)] bg-[hsl(var(--gold)/0.08)] p-4 text-sm leading-relaxed text-[hsl(var(--foreground))]">
+              {nextStep}
+            </p>
+          ) : (
+            <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">
+              Finish all five layers to get one concrete next step derived from your answers.
+            </p>
+          )}
         </div>
 
         {children}

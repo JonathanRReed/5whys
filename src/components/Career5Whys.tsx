@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { cn } from '../lib/utils';
 import {
-  WHY_COUNT,
   TRACKS,
   HISTORY_KEY,
   HISTORY_LIMIT_KEY,
@@ -13,6 +12,7 @@ import {
   toSlug,
   downloadJson,
   normalizeSnapshot,
+  buildPrompts,
   useStoredSession,
   useSynthesis,
   type WhySnapshot,
@@ -31,29 +31,26 @@ export default function Career5Whys({
   className,
 }: Career5WhysProps) {
   const { session, setSession, storageNotice } = useStoredSession();
-  const [hintOpen, setHintOpen] = React.useState<Record<number, boolean>>({});
+  const [exampleOpen, setExampleOpen] = React.useState<Record<number, boolean>>({});
   const [status, setStatus] = React.useState<string | null>(null);
   const [history, setHistory] = React.useState<WhySnapshot[]>([]);
   const [historyLimit, setHistoryLimit] = React.useState<number>(DEFAULT_HISTORY_LIMIT);
   const activeTrack = TRACKS[session.track];
   const historyIsFull = history.length >= historyLimit;
   const {
-    theme: synthesizedTheme,
-    alignment: synthesizedAlignment,
+    surface,
+    root,
+    chain,
     sequentialCount,
-    sequentialConfidence,
+    progressPercent,
+    isComplete,
+    whyStatement,
+    nextStep,
   } = useSynthesis(session.responses, session.topic, session.track);
-  const progressPercent = Math.round((sequentialCount / WHY_COUNT) * 100);
-  const derivedTheme = session.theme.trim() || synthesizedTheme;
-  const derivedAlignment = session.alignment.trim() || synthesizedAlignment;
-  const t = session.track;
-  const themeText = derivedTheme.trim();
-  const alignText = derivedAlignment.trim();
-  const topicText = session.topic.trim();
-  const whyStatement =
-    t === 'career'
-      ? `You're pursuing ${topicText || 'this path'} because it aligns with ${alignText || 'what matters to you'}, and you're driven by ${themeText || 'a clear theme you are uncovering'}.`
-      : `You're motivated by ${themeText || 'this interest'} because it aligns with ${alignText || 'your values'} in the context of ${topicText || 'your core interest'}.`;
+  const prompts = React.useMemo(
+    () => buildPrompts(session.track, session.topic, session.responses),
+    [session.track, session.topic, session.responses]
+  );
 
   const persistHistory = React.useCallback(
     (entries: WhySnapshot[]) => {
@@ -156,7 +153,7 @@ export default function Career5Whys({
       theme: session.theme,
       alignment: session.alignment,
       updatedAt: session.updatedAt,
-      version: 1,
+      version: 2,
     };
     const nextHistory = [payload, ...history].slice(0, historyLimit);
     if (persistHistory(nextHistory)) {
@@ -166,7 +163,15 @@ export default function Career5Whys({
   };
 
   const handleExport = () => {
-    const exportPayload = { ...session, whyStatement, createdAt: new Date().toISOString() };
+    const exportPayload = {
+      ...session,
+      whyStatement,
+      surfaceReason: surface,
+      rootReason: root,
+      chain,
+      nextStep,
+      createdAt: new Date().toISOString(),
+    };
     const topicSlug = toSlug(session.topic || TRACKS[session.track].label) || session.track;
     downloadJson(
       `career-why-${topicSlug}-${new Date().toISOString().slice(0, 10)}.json`,
@@ -220,14 +225,14 @@ export default function Career5Whys({
       alignment: snapshot.alignment,
       updatedAt: new Date().toISOString(),
     });
-    setHintOpen({});
+    setExampleOpen({});
     setStatus('Snapshot loaded into the editor.');
   };
 
   const handleReset = () => updateSession(createEmptySession(session.track));
 
   const handleTrackChange = (track: 'career' | 'interest') => {
-    setHintOpen({});
+    setExampleOpen({});
     updateSession(createEmptySession(track));
   };
 
@@ -254,21 +259,20 @@ export default function Career5Whys({
             <WhyForm
               responses={session.responses}
               sequentialCount={sequentialCount}
-              prompts={activeTrack.prompts}
-              hints={activeTrack.hints}
-              hintOpen={hintOpen}
+              prompts={prompts}
+              example={activeTrack.example}
+              exampleOpen={exampleOpen}
               onResponseChange={handleResponseChange}
-              onToggleHint={(index) => setHintOpen((prev) => ({ ...prev, [index]: !prev[index] }))}
+              onToggleExample={(index) =>
+                setExampleOpen((prev) => ({ ...prev, [index]: !prev[index] }))
+              }
             />
             <WhySummary
               whyStatement={whyStatement}
-              sequentialConfidence={sequentialConfidence}
-              theme={session.theme}
-              alignment={session.alignment}
-              derivedTheme={derivedTheme}
-              derivedAlignment={derivedAlignment}
-              onThemeChange={(theme) => updateSession({ theme })}
-              onAlignmentChange={(alignment) => updateSession({ alignment })}
+              chain={chain}
+              isComplete={isComplete}
+              sequentialCount={sequentialCount}
+              nextStep={nextStep}
             >
               <ExportActions
                 onSaveSnapshot={handleSaveSnapshot}

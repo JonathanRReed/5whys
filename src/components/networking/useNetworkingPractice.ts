@@ -11,11 +11,39 @@ import {
   saveSession,
   saveVersion,
 } from '../../utils/storage';
-import type { NetworkingPracticeSession, NetworkingPracticeVersion } from '../../utils/storage';
+import type {
+  NetworkingPracticeSession,
+  NetworkingPracticeVersion,
+  PracticeReflection,
+} from '../../utils/storage';
 import { useTimer } from './useTimer';
 import { useClipboard } from './useClipboard';
 
-export type Scenario = (typeof scenarioData)[number];
+export type ScenarioIngredient = {
+  id: string;
+  label: string;
+  line: string;
+};
+
+export type QuestionTemplate = {
+  id: string;
+  label: string;
+  prompt: string;
+};
+
+export type Scenario = {
+  id: string;
+  title: string;
+  mode: string;
+  focus: string;
+  audience: string;
+  who: string;
+  where: string;
+  what: string[];
+  ingredients: ScenarioIngredient[];
+  rapportSamples: string[];
+  questionTemplates: QuestionTemplate[];
+};
 
 export type Ratings = {
   confidence: number;
@@ -24,9 +52,15 @@ export type Ratings = {
   authenticity: number;
 };
 
-const TOTAL_SECONDS = 120;
 const defaultRatings: Ratings = { confidence: 3, clarity: 3, rapport: 3, authenticity: 3 };
+const emptyReflection: PracticeReflection = {
+  humanNote: '',
+  nervesNote: '',
+  nextFocus: '',
+  wins: '',
+};
 const NOTICE_RESET_MS = 3500;
+const DRAFT_MAX_LENGTH = 1500;
 
 function scenarioToVersion(scenario: Scenario, title?: string): NetworkingPracticeVersion {
   const now = new Date().toISOString();
@@ -50,19 +84,24 @@ function useHydratedState<T>(initial: T, loader: () => T) {
   return [state, setState] as const;
 }
 
+const FALLBACK_SCENARIO: Scenario = {
+  id: 'default',
+  title: 'Default Scenario',
+  mode: 'Practice',
+  focus: 'Clarity',
+  audience: 'student',
+  who: 'You + Guest',
+  where: 'Networking Event',
+  what: ['Introduce yourself', 'Share your goal', 'Ask a question'],
+  ingredients: [],
+  rapportSamples: [],
+  questionTemplates: [],
+};
+
 export function useNetworkingPractice() {
-  const scenarios: Scenario[] = scenarioData;
+  const scenarios = scenarioData as Scenario[];
   const fallbackVersion = React.useMemo(
-    () =>
-      scenarioToVersion(
-        scenarios[0] ?? {
-          id: 'default',
-          title: 'Default Scenario',
-          who: 'You + Guest',
-          where: 'Networking Event',
-          what: ['Introduce yourself', 'Share goal', 'Ask a question'],
-        }
-      ),
+    () => scenarioToVersion(scenarios[0] ?? FALLBACK_SCENARIO),
     [scenarios]
   );
 
@@ -79,7 +118,8 @@ export function useNetworkingPractice() {
   const [storageNotice, setStorageNotice] = React.useState<string | null>(null);
   const [currentVersionId, setCurrentVersionId] = React.useState<string>(fallbackVersion.id);
   const [ratings, setRatings] = React.useState<Ratings>(defaultRatings);
-  const [reflection, setReflection] = React.useState('');
+  const [reflection, setReflection] = React.useState<PracticeReflection>(emptyReflection);
+  const [draft, setDraftState] = React.useState('');
 
   const { timer, resetTimer, startTimer, pauseTimer } = useTimer();
   const { copiedKey, handleCopy } = useClipboard();
@@ -93,6 +133,7 @@ export function useNetworkingPractice() {
     [currentVersion?.scenarioId, scenarios]
   );
   const scenarioSteps = currentScenario?.what ?? [];
+  const ingredients = currentScenario?.ingredients ?? [];
   const rapportSamples = currentScenario?.rapportSamples ?? [];
   const questionTemplates = currentScenario?.questionTemplates ?? [];
 
@@ -107,6 +148,10 @@ export function useNetworkingPractice() {
     const timeout = window.setTimeout(() => setStorageNotice(null), NOTICE_RESET_MS);
     return () => window.clearTimeout(timeout);
   }, [storageNotice]);
+
+  const setDraft = React.useCallback((value: string) => {
+    setDraftState(value.slice(0, DRAFT_MAX_LENGTH));
+  }, []);
 
   const handleScenarioChange = React.useCallback(
     (scenarioId: string) => {
@@ -175,6 +220,13 @@ export function useNetworkingPractice() {
 
   const saveCurrentSession = React.useCallback(() => {
     if (!currentVersion) return;
+    const trimmedDraft = draft.trim();
+    if (!trimmedDraft) {
+      setStorageNotice(
+        'Write your intro draft before saving. The history tracks your actual words, not the sample lines.'
+      );
+      return;
+    }
     const scenario =
       scenarios.find((item) => item.id === currentVersion.scenarioId) ?? scenarios[0];
     const session: NetworkingPracticeSession = {
@@ -185,18 +237,18 @@ export function useNetworkingPractice() {
       attempts: [
         {
           id: generateId(),
-          label: 'Round 1',
-          script: currentVersion.what,
-          durationSeconds: TOTAL_SECONDS - timer.remaining,
+          label: 'Rep',
+          script: trimmedDraft,
+          durationSeconds: Math.min(timer.elapsed, 600),
           createdAt: new Date().toISOString(),
         },
       ],
       ratings,
       reflection: {
-        humanNote: reflection,
-        nervesNote: '',
-        nextFocus: '',
-        wins: '',
+        humanNote: reflection.humanNote.trim(),
+        nervesNote: reflection.nervesNote.trim(),
+        nextFocus: reflection.nextFocus.trim(),
+        wins: reflection.wins.trim(),
       },
       createdAt: new Date().toISOString(),
     };
@@ -208,9 +260,9 @@ export function useNetworkingPractice() {
       return;
     }
     setSessions((prev) => [session, ...prev].slice(0, SESSION_LIMIT));
-    setReflection('');
-    setStorageNotice('Session saved to your local history.');
-  }, [currentVersion, scenarios, timer.remaining, ratings, reflection, setSessions]);
+    setReflection(emptyReflection);
+    setStorageNotice('Session saved to your local history. Your draft stays for the next rep.');
+  }, [currentVersion, scenarios, draft, timer.elapsed, ratings, reflection, setSessions]);
 
   const removeSession = React.useCallback(
     (id: string) => {
@@ -260,10 +312,17 @@ export function useNetworkingPractice() {
     setRatings((prev) => ({ ...prev, [key]: value }));
   }, []);
 
+  const handleReflectionField = React.useCallback(
+    (key: keyof PracticeReflection, value: string) => {
+      setReflection((prev) => ({ ...prev, [key]: value }));
+    },
+    []
+  );
+
   const handleResetReview = React.useCallback(() => {
     resetTimer();
     setRatings(defaultRatings);
-    setReflection('');
+    setReflection(emptyReflection);
   }, [resetTimer]);
 
   const sessionsAtCapacity = sessions.length >= SESSION_LIMIT;
@@ -278,11 +337,13 @@ export function useNetworkingPractice() {
     timer,
     ratings,
     reflection,
-    setReflection,
+    draft,
+    setDraft,
     copiedKey,
     currentVersion,
     currentScenario,
     scenarioSteps,
+    ingredients,
     rapportSamples,
     questionTemplates,
     sessionsAtCapacity,
@@ -299,6 +360,7 @@ export function useNetworkingPractice() {
     exportSessions,
     clearSessionHistory,
     handleRatingChange,
+    handleReflectionField,
     handleResetReview,
   };
 }

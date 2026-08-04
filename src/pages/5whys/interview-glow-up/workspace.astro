@@ -19,7 +19,7 @@ import WithToasts from '../../../components/WithToasts';
     <section class="mx-auto w-full max-w-7xl">
       <ErrorBoundary client:load>
         <WithToasts client:load>
-          <InterviewGlowUpWorkspace />
+          <InterviewGlowUpWorkspace client:load />
         </WithToasts>
       </ErrorBoundary>
     </section>
@@ -95,7 +95,7 @@ import WithToasts from '../../../components/WithToasts';
       <p>
         Static context on this page helps technical SEO audits understand that the route is an
         interview preparation tool rather than a thin placeholder for a React app. It documents the
-        relationship between job description decoding, STAR-style story preparation, story vault
+        relationship between job description decoding, Play + Proof story preparation, story vault
         management, packet review, and the panic-proof heads-up display that supports calm pre-call
         review.
       </p>

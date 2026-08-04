@@ -51,6 +51,8 @@ function formatDate(iso: string | null): string {
 }
 
 function ScoreRing({ value, label, color }: { value: number; label: string; color: string }) {
+  // Scores are clamped at the source, but clamp here too so the arc never overflows.
+  const clamped = Math.max(0, Math.min(100, Math.round(value)));
   return (
     <div className="flex flex-col items-center gap-1">
       <div className="relative flex h-20 w-20 items-center justify-center rounded-full border-4 border-[hsl(var(--border)/0.3)]">
@@ -72,11 +74,11 @@ function ScoreRing({ value, label, color }: { value: number; label: string; colo
             stroke="currentColor"
             strokeWidth="8"
             strokeLinecap="round"
-            strokeDasharray={`${value * 2.64} 264`}
+            strokeDasharray={`${clamped * 2.64} 264`}
             className={color}
           />
         </svg>
-        <span className="relative text-xl font-bold">{value}</span>
+        <span className="relative text-xl font-bold">{clamped}</span>
       </div>
       <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{label}</span>
     </div>
@@ -152,6 +154,7 @@ export default function CareerDashboard() {
               />
               <div className="mt-3 text-center text-xs text-muted-foreground">
                 {data.resume.bulletCount} bullets analyzed
+                {data.resume.lastAnalyzedAt ? ` · ${formatDate(data.resume.lastAnalyzedAt)}` : ''}
               </div>
             </CardContent>
           </Card>
@@ -238,6 +241,31 @@ export default function CareerDashboard() {
         </Card>
       )}
 
+      {/* Saved reflection */}
+      {data.reflection?.whyStatement && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Your saved reflection</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {data.reflection.latestTopic && (
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                {data.reflection.latestTopic}
+              </p>
+            )}
+            <blockquote className="border-l-2 border-[hsl(var(--foam)/0.5)] pl-4 text-sm italic leading-relaxed text-foreground">
+              &ldquo;{data.reflection.whyStatement}&rdquo;
+            </blockquote>
+            <p className="text-xs text-muted-foreground">
+              The deepest answer from your last 5 Whys session.{' '}
+              <a href="/career/" className="font-medium text-[hsl(var(--foam))] hover:underline">
+                Revisit it
+              </a>
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Recent activity */}
       {data.recentActivity.length > 0 && (
         <Card>
@@ -319,10 +347,10 @@ function EmptyState() {
         </div>
       </div>
       <div className="space-y-3">
-        <h2 className="text-3xl font-semibold tracking-tight">Welcome to your Career Dashboard</h2>
+        <h2 className="text-3xl font-semibold tracking-tight">Nothing saved yet</h2>
         <p className="text-muted-foreground">
-          Your career dashboard is waiting. Take the 2-minute career review to get personalized
-          recommendations.
+          This page summarizes work you save in the four tools, and it all stays in this browser.
+          Take the short career review to pick a starting point.
         </p>
       </div>
 

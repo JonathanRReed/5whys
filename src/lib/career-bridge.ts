@@ -1,5 +1,5 @@
 /**
- * Career Bridge , Unified data reader across all 5 Whys tools.
+ * Career Bridge: unified data reader across all 5 Whys tools.
  * Reads from each tool's localStorage namespace and exposes a
  * single dashboard-friendly view of the user's career data.
  */
@@ -260,26 +260,81 @@ export function readCareerDashboard(): CareerDashboardData {
     return new Date(b.date).getTime() - new Date(a.date).getTime();
   });
 
-  // Recommendations based on what's missing
+  // Recommendations built from what the user actually saved, most specific first.
   const recommendations: string[] = [];
-  if (!resume?.bullets?.length) {
-    recommendations.push('Analyze your resume to discover hidden strengths.');
+  const clip = (text: string, max: number): string => {
+    const trimmed = text.trim();
+    return trimmed.length > max ? `${trimmed.slice(0, max).trimEnd()}...` : trimmed;
+  };
+
+  // Point at the real lowest-scoring bullet.
+  if (resume?.bullets?.length) {
+    const weakest = [...resume.bullets].sort(
+      (a, b) => (a.improvedScore ?? 0) - (b.improvedScore ?? 0)
+    )[0];
+    const weakestScore = weakest?.improvedScore ?? 0;
+    if (weakest && weakestScore < 60) {
+      const excerpt = clip(weakest.improved || weakest.original || '', 70);
+      recommendations.push(
+        excerpt
+          ? `Your lowest bullet scores ${weakestScore}: "${excerpt}". Rewrite it in the Resume Game.`
+          : `Your lowest bullet scores ${weakestScore}. Rewrite it in the Resume Game.`
+      );
+    }
   }
-  if (resume?.bullets?.length && avgScore < 60) {
-    recommendations.push('Your resume bullets have room to improve. Try the structured rewrite.');
-  }
-  if (!why?.snapshots?.length) {
-    recommendations.push('Start with Career 5 Whys to clarify your core motivation.');
-  }
-  if (!glowup?.storyCount) {
-    recommendations.push('Build proof-based stories in Interview Glow Up for your next interview.');
-  }
-  if (!networking?.sessionCount) {
-    recommendations.push('Practice your elevator pitch with the Networking timer.');
-  }
-  if (resume?.signalReport?.hardSkills?.length && glowup && !glowup.storyCount) {
+
+  // Name the actual detected skills and turn them into stories.
+  const hardSkills = resume?.signalReport?.hardSkills ?? [];
+  if (hardSkills.length && !glowup?.storyCount) {
+    const named = hardSkills.slice(0, 3).join(', ');
+    const extra = hardSkills.length > 3 ? ` and ${hardSkills.length - 3} more` : '';
     recommendations.push(
-      `Great , you have ${resume.signalReport.hardSkills.length} hard skills detected. Turn them into interview stories.`
+      hardSkills.length === 1
+        ? `Your resume shows ${named}. Turn it into an interview story in Interview Glow Up.`
+        : `Your resume shows ${named}${extra}. Turn the strongest one into an interview story in Interview Glow Up.`
+    );
+  }
+
+  // Quote the saved root cause and give it a next step.
+  const rootCause =
+    why?.snapshots?.[0]?.theme ||
+    (why?.session && why.session.responses?.filter(Boolean).length >= 4
+      ? why.session.responses[why.session.responses.length - 1]
+      : null);
+  if (rootCause) {
+    recommendations.push(
+      `Your last reflection landed on "${clip(rootCause, 80)}". Check that your strongest bullets and stories point the same way.`
+    );
+  }
+
+  // Stories exist but no packet assembled yet.
+  if (glowup?.storyCount && !glowup.packetCount) {
+    const role = glowup.currentRoleTitle ? ` for ${glowup.currentRoleTitle}` : '';
+    recommendations.push(
+      `You have ${glowup.storyCount === 1 ? '1 story' : `${glowup.storyCount} stories`}${role}. Assemble them into a packet before your next interview.`
+    );
+  }
+
+  // Real practice numbers, or a drafted intro that has never been spoken.
+  if (networking?.sessionCount && networking.averageRating !== null) {
+    recommendations.push(
+      `You average ${networking.averageRating}/5 across ${networking.sessionCount === 1 ? '1 practice round' : `${networking.sessionCount} practice rounds`}. Run one more rep and try to beat it.`
+    );
+  } else if (!networking?.sessionCount && networking?.versionCount) {
+    recommendations.push(
+      'You drafted an intro in Networking Practice but never ran it against the timer. One two-minute rep will tell you if it works out loud.'
+    );
+  }
+
+  // Quiet pointers for tools with nothing saved yet.
+  if (!resume?.bullets?.length) {
+    recommendations.push(
+      'No resume in the Resume Game yet. Paste yours to see which bullets carry proof.'
+    );
+  }
+  if (!why?.snapshots?.length && !why?.session) {
+    recommendations.push(
+      'No saved reflection yet. A five-round "why" session gives the other tools a direction.'
     );
   }
 

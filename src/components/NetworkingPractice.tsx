@@ -9,6 +9,7 @@ import ScenarioBlueprint from './networking/ScenarioBlueprint';
 import ConversationIngredients from './networking/ConversationIngredients';
 import RapportWarmups from './networking/RapportWarmups';
 import QuestionPrompts from './networking/QuestionPrompts';
+import IntroDraft from './networking/IntroDraft';
 import PracticeTimer from './networking/PracticeTimer';
 import RatingsPanel from './networking/RatingsPanel';
 import ReflectionPanel from './networking/ReflectionPanel';
@@ -101,21 +102,27 @@ export default function NetworkingPractice({
             onPause={state.pauseTimer}
             onReset={state.resetTimer}
           />
+          <IntroDraft draft={state.draft} onDraftChange={state.setDraft} />
+        </section>
+
+        <section className="w-full mb-10">
           <Card className="border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.3)]">
             <CardHeader>
               <CardTitle className="text-[hsl(var(--iris))]">Self-Review</CardTitle>
               <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">
-                Slide to score this round. Target green across the board.
+                Score the rep honestly. Green means 4 or higher, and that is the target. The next
+                step below tracks your lowest score.
               </p>
             </CardHeader>
-            <CardContent className="grid gap-6">
+            <CardContent className="grid gap-6 lg:grid-cols-2">
               <RatingsPanel ratings={state.ratings} onRatingChange={state.handleRatingChange} />
               <ReflectionPanel
                 reflection={state.reflection}
-                onReflectionChange={state.setReflection}
+                onReflectionField={state.handleReflectionField}
                 onSaveSession={state.saveCurrentSession}
                 onResetReview={state.handleResetReview}
                 sessionsAtCapacity={state.sessionsAtCapacity}
+                draftEmpty={state.draft.trim().length === 0}
               />
             </CardContent>
           </Card>

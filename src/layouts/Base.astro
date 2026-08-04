@@ -19,6 +19,7 @@ const {
   type = 'website',
   structuredData = [],
   breadcrumbs = [{ label: 'Home', href: '/' }],
+  noScriptContext = [],
 } = Astro.props;
 
 const canonicalUrl = canonical ?? new URL(Astro.url.pathname, siteConfig.siteUrl).toString();
@@ -59,6 +60,18 @@ const schemaPayload = [
   ...(breadcrumbSchema ? [breadcrumbSchema] : []),
   ...additionalSchemas.filter(Boolean),
 ];
+
+const defaultNoScriptContext = [
+  '5 Whys Career Studio is a static, browser-first set of career tools from Jonathan R. Reed. The site helps people slow down practical career work without creating an account: clarify a decision with the five whys method, turn rough resume bullets into stronger evidence, rehearse networking conversations, and prepare interview stories with more concrete proof.',
+  'The public tools are designed around local browser work. Reflection drafts, resume text, practice notes, and exported files stay on the device during normal use. The site can be read as a field guide without JavaScript, while the full interactive editors, timers, scoring panels, saved sessions, and export controls require JavaScript in the browser.',
+  'The shared voice across these pages is practical and direct. The studio avoids motivational fluff and keeps the focus on usable career artifacts: named motivations, clearer constraints, stronger resume bullets, better follow-up notes, interview stories with evidence, and lightweight privacy boundaries that are easy to understand.',
+  'This project fits the broader Jonathan R. Reed portfolio by treating career work like a small systems problem. Each page tries to make the next action concrete: define the real reason behind a decision, identify the proof inside a past project, practice a short explanation, preserve useful notes locally, and move only the strongest material into a resume, portfolio page, outreach message, or interview answer. Similar browser-local projects use the same voice: calm, specific, privacy-aware, and focused on outputs someone can actually use.',
+  'Useful starting points are the career reflection page for decision clarity, the resume game for bullet-level proof, the networking practice studio for short speaking reps, the interview workspace for story preparation, the privacy page for local-storage boundaries, and the subprocessor page for the current hosting and analytics disclosure.',
+];
+const pageNoScriptContext = Array.isArray(noScriptContext)
+  ? noScriptContext
+  : [noScriptContext].filter(Boolean);
+const noScriptParagraphs = [...defaultNoScriptContext, ...pageNoScriptContext].filter(Boolean);
 ---
 
 <html
@@ -112,6 +125,34 @@ const schemaPayload = [
     </div>
     <div class="relative flex min-h-screen flex-col">
       <Navigation client:load currentPath={Astro.url.pathname} />
+      <noscript>
+        <section
+          class="relative z-10 mx-auto mt-6 w-full max-w-6xl px-4"
+          aria-label="Static site context"
+        >
+          <div
+            class="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.72)] p-6"
+          >
+            <p class="eyebrow eyebrow-accent">Static site context</p>
+            <div class="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground">
+              {noScriptParagraphs.map((paragraph) => <p>{paragraph}</p>)}
+            </div>
+            <nav
+              class="mt-5 flex flex-wrap gap-3 text-sm font-semibold text-foreground"
+              aria-label="Static career tool links"
+            >
+              <a class="hover:text-accent" href="/career/">Career reflection</a>
+              <a class="hover:text-accent" href="/resume-game/">Resume game</a>
+              <a class="hover:text-accent" href="/networking-practice/">Networking practice</a>
+              <a class="hover:text-accent" href="/5whys/interview-glow-up/workspace/"
+                >Interview workspace</a
+              >
+              <a class="hover:text-accent" href="/privacy/">Privacy</a>
+              <a class="hover:text-accent" href="/subprocessors/">Subprocessors</a>
+            </nav>
+          </div>
+        </section>
+      </noscript>
       <main id="main-content" class="relative z-10 flex-1" transition:name="page-content">
         <slot />
       </main>
@@ -170,6 +211,11 @@ const schemaPayload = [
               <p class="eyebrow">Studio</p>
               <ul class="space-y-2.5 text-sm">
                 <li>
+                  <a href="/" class="text-muted-foreground transition-colors hover:text-foreground"
+                    >Home</a
+                  >
+                </li>
+                <li>
                   <a
                     href="/about/"
                     class="text-muted-foreground transition-colors hover:text-foreground">About</a
@@ -189,9 +235,23 @@ const schemaPayload = [
                 </li>
                 <li>
                   <a
+                    href="/subprocessors/"
+                    class="text-muted-foreground transition-colors hover:text-foreground"
+                    >Subprocessors</a
+                  >
+                </li>
+                <li>
+                  <a
                     href="/start/"
                     class="text-muted-foreground transition-colors hover:text-foreground"
                     >Start here</a
+                  >
+                </li>
+                <li>
+                  <a
+                    href="/5whys/interview-glow-up/workspace/"
+                    class="text-muted-foreground transition-colors hover:text-foreground"
+                    >Interview workspace</a
                   >
                 </li>
               </ul>
@@ -235,7 +295,7 @@ const schemaPayload = [
                 >Jonathan R. Reed</a
               >
             </p>
-            <p class="eyebrow text-[0.62rem]">No account · No tracking · Open source</p>
+            <p class="eyebrow text-[0.62rem]">No account · Local-only · Open source</p>
           </div>
         </div>
       </footer>

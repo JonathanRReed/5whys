@@ -8,9 +8,16 @@ import {
   createRole,
   updateRole,
   getSkillFrequencyMap,
+  getTaggedBulletCount,
   getTopGaps,
 } from '../../lib/glowup-store';
-import { SKILL_BANK, getSkillName, detectSkillsFromText } from '../../lib/glowup-banks';
+import {
+  SKILL_BANK,
+  getSkillName,
+  detectSkillsFromText,
+  extractRequirementLines,
+  getRepeatedTerms,
+} from '../../lib/glowup-banks';
 import { PartyIcon, SearchIcon } from './icons';
 
 type Props = {
@@ -26,31 +33,24 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
   const [rawJdText, setRawJdText] = React.useState(currentRole?.rawJdText ?? '');
   const [bullets, setBullets] = React.useState<DecodedBullet[]>(currentRole?.bullets ?? []);
   const [selectedBullets, setSelectedBullets] = React.useState<Set<string>>(new Set());
+  const [skippedCount, setSkippedCount] = React.useState<number | null>(null);
 
   const parseJD = () => {
     if (!rawJdText.trim()) return;
-    const lines = rawJdText
-      .split(/\n/)
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0);
-    const parsed: DecodedBullet[] = [];
-    for (const line of lines) {
-      const cleanLine = line
-        .replace(/^[\u2022\-\*\u25E6\u25CB\u25CF]\s*/, '')
-        .replace(/^\d+[\.\)]\s*/, '')
-        .trim();
-      if (!cleanLine) continue;
-      const suggestions = detectSkillsFromText(cleanLine);
-      parsed.push({
+    const { requirements, skippedCount: skipped } = extractRequirementLines(rawJdText);
+    const parsed: DecodedBullet[] = requirements.map((line) => {
+      const suggestions = detectSkillsFromText(line);
+      return {
         id: generateId(),
-        text: cleanLine,
-        status: 'active',
+        text: line,
+        status: 'active' as const,
         primarySkillId: suggestions[0]?.skillId ?? null,
         secondarySkillIds: suggestions.slice(1).map((s) => s.skillId),
         suggestion: suggestions,
-      });
-    }
+      };
+    });
     setBullets(parsed);
+    setSkippedCount(skipped);
   };
 
   const saveRole = () => {
@@ -63,9 +63,18 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
     }
   };
 
-  const skillFreq = currentRole ? getSkillFrequencyMap(currentRole) : new Map();
-  const totalBullets = bullets.filter((b) => b.status === 'active' && b.primarySkillId).length;
-  const topGaps = currentRole ? getTopGaps(data, currentRole) : [];
+  // Frequency, totals, and gaps all read the same unsaved editor state, so
+  // the percentages stay consistent before and after Save Role.
+  const skillFreq = getSkillFrequencyMap(bullets);
+  const taggedBullets = getTaggedBulletCount(bullets);
+  const topGaps = getTopGaps(data, bullets);
+
+  const repeatedTerms = React.useMemo(
+    () => (rawJdText.trim() ? getRepeatedTerms(rawJdText) : []),
+    [rawJdText]
+  );
+
+  // Legacy saved roles may still contain very short lines; flag them.
   const isNoise = (text: string) => text.split(/\s+/).length < 4;
 
   const handleBulkTag = (skillId: string) => {
@@ -133,7 +142,8 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
           Paste Full Job Description
         </label>
         <p className="mb-1 text-xs text-muted-foreground">
-          Paste the entire JD , we’ll auto-extract bullets and suggest skill tags.
+          Paste the entire JD. We extract the requirement lines, skip headings and boilerplate,
+          and suggest skill tags.
         </p>
         <textarea
           id="jd-text"
@@ -176,12 +186,42 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
         </div>
       )}
 
+      {repeatedTerms.length > 0 && (
+        <div className="rounded-xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.15)] p-4">
+          <h4 className="mb-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Repeated Phrases
+          </h4>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Phrases that keep showing up in the JD. If a phrase repeats, expect a question about
+            it: prepare a story that covers it.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {repeatedTerms.map(({ term, count }) => (
+              <span
+                key={term}
+                className="rounded-full bg-[hsl(var(--foam)/0.12)] px-2.5 py-1 text-xs text-[hsl(var(--foam))]"
+              >
+                {term} <span className="font-semibold">&times;{count}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {bullets.length > 0 && (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-lg font-semibold text-foreground">
-              Parsed Bullets ({bullets.length})
-            </h3>
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">
+                Parsed Requirements ({bullets.length})
+              </h3>
+              {skippedCount !== null && skippedCount > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Skipped {skippedCount} {skippedCount === 1 ? 'line' : 'lines'} of headings,
+                  benefits, and boilerplate.
+                </p>
+              )}
+            </div>
             {selectedBullets.size > 0 && (
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">
@@ -288,9 +328,20 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                                 )
                               );
                             }}
+                            title={
+                              s.matchedKeywords && s.matchedKeywords.length > 0
+                                ? `Matched: ${s.matchedKeywords.join(', ')}`
+                                : undefined
+                            }
                             className="rounded-full bg-[hsl(var(--foam)/0.15)] px-2 py-0.5 text-xs text-[hsl(var(--foam))] transition-colors hover:bg-[hsl(var(--foam)/0.25)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
                           >
-                            {getSkillName(s.skillId)} ({s.confidence}%)
+                            {getSkillName(s.skillId)}
+                            {s.matchedKeywords && s.matchedKeywords.length > 0 && (
+                              <span className="text-[hsl(var(--foam)/0.7)]">
+                                {' '}
+                                &middot; {s.matchedKeywords[0]}
+                              </span>
+                            )}
                           </button>
                         ))}
                       </div>
@@ -321,15 +372,18 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
       {skillFreq.size > 0 && (
         <div className="grid gap-4 md:grid-cols-2">
           <div className="rounded-xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.15)] p-4">
-            <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            <h4 className="mb-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Skill Frequency Map
             </h4>
+            <p className="mb-3 text-xs text-muted-foreground">
+              Share of tagged requirements that mention each skill.
+            </p>
             <div className="space-y-2">
               {Array.from(skillFreq.entries())
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, 8)
                 .map(([skillId, count]) => {
-                  const pct = totalBullets > 0 ? Math.round((count / totalBullets) * 100) : 0;
+                  const pct = taggedBullets > 0 ? Math.round((count / taggedBullets) * 100) : 0;
                   return (
                     <div key={skillId} className="flex items-center gap-2">
                       <span className="w-24 truncate text-sm text-foreground">
@@ -338,7 +392,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                       <div className="flex-1 h-2 rounded-full bg-[hsl(var(--overlay)/0.4)]">
                         <div
                           className="h-full rounded-full bg-[hsl(var(--foam))]"
-                          style={{ width: `${pct}%` }}
+                          style={{ width: `${Math.min(100, pct)}%` }}
                         />
                       </div>
                       <span className="w-10 text-right text-xs text-muted-foreground">{pct}%</span>

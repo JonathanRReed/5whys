@@ -34,24 +34,24 @@ export default function CareerHeader({
           <p className="eyebrow eyebrow-accent justify-self-center">Career 5 Whys</p>
           <h1 className="text-4xl font-semibold tracking-tight">Discover your why</h1>
           <p className="mx-auto max-w-2xl text-[hsl(var(--muted-foreground))]">
-            Guided reasoning for uncovering the motivation behind your next career move. Choose a
-            track, document five layers of reasoning, and leave with a statement you can reuse
-            across resume, interview, and networking prep.
+            Five questions, each one built from your previous answer. Choose a track, follow the
+            chain from surface reason to root reason, and leave with a statement and a next step
+            you can reuse across resume, interview, and networking prep.
           </p>
           <QuickStartTiles
             className="max-w-4xl"
             items={[
               {
                 title: 'Pick your lens',
-                body: 'Select "Career" when you\u2019re validating a defined role, or "Interest" when you\u2019re still exploring themes.',
+                body: 'Select "Career" when you have a target role to pressure-test, or "Interest" when all you have is "I like biology."',
               },
               {
-                title: 'Answer sequentially',
-                body: 'Move down the prompts in order. The sidebar tracks depth so you can spot gaps quickly.',
+                title: 'Answer in order',
+                body: 'Each question quotes your last answer and asks why again. The sidebar tracks depth so you can spot gaps quickly.',
               },
               {
                 title: 'Save or export',
-                body: 'Capture snapshots as you go, then export a JSON bundle once you land on language that resonates.',
+                body: 'Capture snapshots as you go, then export a JSON bundle with your full chain, root reason, and next step.',
               },
             ]}
           />

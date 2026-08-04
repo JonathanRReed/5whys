@@ -2,33 +2,37 @@ import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
+import { condenseAnswer, getAnswerNudge, type TrackExample } from './shared';
 
 type WhyFormProps = {
   responses: string[];
   sequentialCount: number;
   prompts: readonly string[];
-  hints: readonly string[];
-  hintOpen: Record<number, boolean>;
+  example: TrackExample;
+  exampleOpen: Record<number, boolean>;
   onResponseChange: (index: number, value: string) => void;
-  onToggleHint: (index: number) => void;
+  onToggleExample: (index: number) => void;
 };
 
 export default function WhyForm({
   responses,
   sequentialCount,
   prompts,
-  hints,
-  hintOpen,
+  example,
+  exampleOpen,
   onResponseChange,
-  onToggleHint,
+  onToggleExample,
 }: WhyFormProps) {
   return (
     <>
       {responses.map((response, index) => {
-        const hint = hints[index];
         const prompt = prompts[index];
-        const isHintVisible = hintOpen[index];
+        const isExampleVisible = exampleOpen[index];
         const locked = index > sequentialCount;
+        const previousAnswer = index > 0 ? (responses[index - 1] ?? '') : '';
+        const nudge = locked ? null : getAnswerNudge(response, previousAnswer);
+        const exampleAnswer = example.answers[index] ?? '';
+        const examplePrevious = index > 0 ? condenseAnswer(example.answers[index - 1] ?? '') : '';
         return (
           <Card
             key={index}
@@ -46,11 +50,6 @@ export default function WhyForm({
               </span>
             </CardHeader>
             <CardContent className="space-y-4">
-              {index > 0 && responses[index - 1].trim().length > 0 && (
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                  Build on: {responses[index - 1]}
-                </p>
-              )}
               <Textarea
                 aria-label={`Depth ${index + 1} response`}
                 value={response}
@@ -64,19 +63,30 @@ export default function WhyForm({
                   Complete the previous depth before continuing.
                 </p>
               )}
+              {nudge && (
+                <p className="text-xs leading-relaxed text-[hsl(var(--gold))]">{nudge}</p>
+              )}
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => onToggleHint(index)}
-                aria-expanded={isHintVisible}
+                onClick={() => onToggleExample(index)}
+                aria-expanded={isExampleVisible}
                 className="w-full justify-between rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
               >
-                Show example reasoning
-                <span aria-hidden>{isHintVisible ? '\u2212' : '+'}</span>
+                Show a worked example
+                <span aria-hidden>{isExampleVisible ? '−' : '+'}</span>
               </Button>
-              {isHintVisible && (
-                <div className="rounded-xl border border-[hsl(var(--primary)/0.3)] bg-[hsl(var(--primary)/0.05)] p-4 text-sm text-[hsl(var(--foreground))]">
-                  {hint}
+              {isExampleVisible && (
+                <div className="space-y-3 rounded-xl border border-[hsl(var(--primary)/0.3)] bg-[hsl(var(--primary)/0.05)] p-4 text-sm text-[hsl(var(--foreground))]">
+                  <p className="text-xs uppercase tracking-[0.2em] text-[hsl(var(--muted-foreground))]">
+                    {example.persona}
+                  </p>
+                  {index > 0 && examplePrevious && (
+                    <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                      Their depth {index} answer, condensed: "{examplePrevious}"
+                    </p>
+                  )}
+                  <p className="leading-relaxed">{exampleAnswer}</p>
                 </div>
               )}
             </CardContent>
