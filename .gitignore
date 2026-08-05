@@ -6,9 +6,10 @@ dist/
 # dependencies
 node_modules/
 
-# this project uses bun (bun.lock) — keep other package managers' lockfiles out
-# so Cloudflare Pages and CI all resolve from bun.lock
-package-lock.json
+# local dev and CI use bun (bun.lock). package-lock.json is committed on
+# purpose: Cloudflare Pages only detects bun.lockb, not the text-format
+# bun.lock, so without a package-lock.json it falls back to a bare
+# `npm install` that crashes on this dependency graph.
 yarn.lock
 pnpm-lock.yaml
 
