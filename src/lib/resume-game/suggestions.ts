@@ -144,13 +144,17 @@ export function generateBulletSuggestions(bullet: BulletRecord): BulletSuggestio
   }
 
   // Missing impact
-  if (!fields.impact.trim() && !/(\bby\b|\bto\b|\bresult(ing)? in\b|\bleading to\b)/i.test(current)) {
+  if (
+    !fields.impact.trim() &&
+    !/(\bby\b|\bto\b|\bresult(ing)? in\b|\bleading to\b)/i.test(current)
+  ) {
     const changeWord = current.match(
       /\b(improved|reduced|increased|streamlined|automated|saved|cut|grew|doubled|eliminated)\w*\b/i
     )?.[0];
     suggestions.push({
       type: 'missing-impact',
-      message: 'The action is here; the result is not. What changed because of this work, and for whom?',
+      message:
+        'The action is here; the result is not. What changed because of this work, and for whom?',
       fix: changeWord
         ? `You mention "${changeWord}". Say what changed and for whom in the outcome field.`
         : fields.quantifier.trim()

@@ -35,8 +35,8 @@ export default function CareerHeader({
           <h1 className="text-4xl font-semibold tracking-tight">Discover your why</h1>
           <p className="mx-auto max-w-2xl text-[hsl(var(--muted-foreground))]">
             Five questions, each one built from your previous answer. Choose a track, follow the
-            chain from surface reason to root reason, and leave with a statement and a next step
-            you can reuse across resume, interview, and networking prep.
+            chain from surface reason to root reason, and leave with a statement and a next step you
+            can reuse across resume, interview, and networking prep.
           </p>
           <QuickStartTiles
             className="max-w-4xl"

@@ -384,7 +384,11 @@ export function getTaggedBulletCount(bullets: DecodedBullet[]): number {
   ).length;
 }
 
-export function getTopGaps(data: GlowUpData, bullets: DecodedBullet[], count: number = 3): string[] {
+export function getTopGaps(
+  data: GlowUpData,
+  bullets: DecodedBullet[],
+  count: number = 3
+): string[] {
   const freq = getSkillFrequencyMap(bullets);
   const storySkills = new Set<string>();
 

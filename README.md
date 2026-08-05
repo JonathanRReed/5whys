@@ -38,19 +38,19 @@ The site runs at `http://localhost:4321`.
 
 All commands run from the project root:
 
-| Command                | Description                                |
-| :--------------------- | :----------------------------------------- |
-| `bun run dev`          | Start the local development server         |
-| `bun run build`        | Produce a production build in `./dist/`    |
-| `bun run preview`      | Preview the production build locally       |
-| `bun run test`         | Run the Vitest suite once                  |
-| `bun run test:watch`   | Run tests in watch mode                    |
-| `bun run lint`         | Lint with ESLint                           |
-| `bun run lint:fix`     | Lint and autofix                           |
-| `bun run typecheck`    | TypeScript check plus `astro check`        |
-| `bun run format`       | Format with Prettier                       |
-| `bun run format:check` | Check formatting without writing           |
-| `bun run astro ...`    | Run Astro CLI commands                     |
+| Command                | Description                             |
+| :--------------------- | :-------------------------------------- |
+| `bun run dev`          | Start the local development server      |
+| `bun run build`        | Produce a production build in `./dist/` |
+| `bun run preview`      | Preview the production build locally    |
+| `bun run test`         | Run the Vitest suite once               |
+| `bun run test:watch`   | Run tests in watch mode                 |
+| `bun run lint`         | Lint with ESLint                        |
+| `bun run lint:fix`     | Lint and autofix                        |
+| `bun run typecheck`    | TypeScript check plus `astro check`     |
+| `bun run format`       | Format with Prettier                    |
+| `bun run format:check` | Check formatting without writing        |
+| `bun run astro ...`    | Run Astro CLI commands                  |
 
 ## Project structure
 

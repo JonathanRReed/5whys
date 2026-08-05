@@ -198,7 +198,12 @@ export function computeBenchmarkScore(bullets: BulletRecord[]): {
   const weakPenalty = clamp(totalWeakWords * 2, 0, 10);
 
   const rawScore =
-    numberScore + varietyScore + strongScore + lengthScore + passiveScore + impactScore -
+    numberScore +
+    varietyScore +
+    strongScore +
+    lengthScore +
+    passiveScore +
+    impactScore -
     weakPenalty;
   const score = clamp(Math.round(rawScore), 0, 100);
 

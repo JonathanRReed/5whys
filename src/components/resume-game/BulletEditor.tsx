@@ -116,7 +116,9 @@ export default function BulletEditor({ bullet, onFieldChange }: Props) {
                   onChange={(event) => onFieldChange(bullet.id, 'quantifier', event.target.value)}
                   className="mt-2 border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
                   placeholder={
-                    detectedNumber ? `From your line: ${detectedNumber}` : 'e.g., 32%, 120 users, $500K'
+                    detectedNumber
+                      ? `From your line: ${detectedNumber}`
+                      : 'e.g., 32%, 120 users, $500K'
                   }
                 />
                 <p className="mt-1 text-xs text-muted-foreground">

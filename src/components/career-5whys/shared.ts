@@ -102,9 +102,9 @@ export const TRACKS: Record<'career' | 'interest', TrackConfig> = {
       answers: [
         'Not the memorization. The part where a tiny mechanism explains a huge visible thing, like one misfolded protein causing a whole disease.',
         'Chemistry has mechanisms too, but I do not care until it connects to a living thing. The explaining-life part is what sticks, not the lab technique.',
-        'Tenth grade. My grandmother got a Parkinson\'s diagnosis and the doctor drew the dopamine pathway on a napkin. It was the first time something scary became something understandable.',
+        "Tenth grade. My grandmother got a Parkinson's diagnosis and the doctor drew the dopamine pathway on a napkin. It was the first time something scary became something understandable.",
         'I need work that turns confusing, scary things into explanations people can act on. Understanding as a form of help, not just curiosity.',
-        'A path fits if I can trace a line from mechanism to a person\'s outcome. Genetic counseling, medical research, and science writing all qualify. Pure bench work with no human on the other end probably does not.',
+        "A path fits if I can trace a line from mechanism to a person's outcome. Genetic counseling, medical research, and science writing all qualify. Pure bench work with no human on the other end probably does not.",
       ],
     },
   },

@@ -33,8 +33,8 @@ export default function NetworkingHeader({ showHeader = true }: Props) {
       </h1>
       <p className="mx-auto max-w-3xl text-base text-[hsl(var(--muted-foreground))]">
         Twelve scenarios, from a career fair with a line behind you to a cold email to a professor.
-        Draft the intro in your own words, run it against a two-minute timer, score it honestly,
-        and keep every rep so you can watch the intro improve.
+        Draft the intro in your own words, run it against a two-minute timer, score it honestly, and
+        keep every rep so you can watch the intro improve.
       </p>
       <QuickStartTiles
         className="max-w-3xl"

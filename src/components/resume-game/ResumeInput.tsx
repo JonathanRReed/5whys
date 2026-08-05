@@ -105,7 +105,11 @@ export default function ResumeInput({
             {isScanning ? 'Analyzing...' : 'Analyze resume'}
           </Button>
           <p className="text-sm text-muted-foreground md:ml-4">
-            {isScanning ? 'Analyzing...' : scanComplete ? 'Analysis complete' : 'Ready when you are'}
+            {isScanning
+              ? 'Analyzing...'
+              : scanComplete
+                ? 'Analysis complete'
+                : 'Ready when you are'}
             {needsRescan && scanComplete && (
               <span className="ml-2 text-xs text-[hsl(var(--gold))]">
                 Resume changed. Tap &quot;Analyze resume&quot; to update scores.

@@ -142,8 +142,8 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
           Paste Full Job Description
         </label>
         <p className="mb-1 text-xs text-muted-foreground">
-          Paste the entire JD. We extract the requirement lines, skip headings and boilerplate,
-          and suggest skill tags.
+          Paste the entire JD. We extract the requirement lines, skip headings and boilerplate, and
+          suggest skill tags.
         </p>
         <textarea
           id="jd-text"
@@ -192,8 +192,8 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
             Repeated Phrases
           </h4>
           <p className="mb-3 text-xs text-muted-foreground">
-            Phrases that keep showing up in the JD. If a phrase repeats, expect a question about
-            it: prepare a story that covers it.
+            Phrases that keep showing up in the JD. If a phrase repeats, expect a question about it:
+            prepare a story that covers it.
           </p>
           <div className="flex flex-wrap gap-2">
             {repeatedTerms.map(({ term, count }) => (

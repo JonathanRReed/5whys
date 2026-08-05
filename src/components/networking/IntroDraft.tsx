@@ -19,7 +19,7 @@ function countWords(value: string) {
 
 function estimateSpokenSeconds(words: number) {
   if (words === 0) return 0;
-  return Math.max(5, Math.round((words / WORDS_PER_MINUTE) * 60 / 5) * 5);
+  return Math.max(5, Math.round(((words / WORDS_PER_MINUTE) * 60) / 5) * 5);
 }
 
 export default function IntroDraft({ draft, onDraftChange }: Props) {

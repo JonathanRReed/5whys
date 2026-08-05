@@ -267,13 +267,9 @@ export default function PacketSection({
                 + Add question
               </button>
             </div>
-            {SUGGESTED_QUESTIONS_TO_ASK.some(
-              (q) => !currentPacket.customQuestions.includes(q)
-            ) && (
+            {SUGGESTED_QUESTIONS_TO_ASK.some((q) => !currentPacket.customQuestions.includes(q)) && (
               <div className="space-y-1">
-                <span className="text-xs text-muted-foreground">
-                  Suggestions (click to add):
-                </span>
+                <span className="text-xs text-muted-foreground">Suggestions (click to add):</span>
                 <div className="flex flex-col items-start gap-1">
                   {SUGGESTED_QUESTIONS_TO_ASK.filter(
                     (q) => !currentPacket.customQuestions.includes(q)
@@ -349,9 +345,7 @@ export default function PacketSection({
                       className="rounded-xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.15)] p-4"
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <p className="font-medium text-foreground">
-                          {story.trigger || 'Untitled'}
-                        </p>
+                        <p className="font-medium text-foreground">{story.trigger || 'Untitled'}</p>
                         <span className="text-xs text-muted-foreground">{story.confidence}%</span>
                       </div>
                       {story.questionPrompts.length > 0 && (

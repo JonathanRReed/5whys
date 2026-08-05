@@ -63,9 +63,7 @@ export default function WhyForm({
                   Complete the previous depth before continuing.
                 </p>
               )}
-              {nudge && (
-                <p className="text-xs leading-relaxed text-[hsl(var(--gold))]">{nudge}</p>
-              )}
+              {nudge && <p className="text-xs leading-relaxed text-[hsl(var(--gold))]">{nudge}</p>}
               <Button
                 type="button"
                 variant="ghost"

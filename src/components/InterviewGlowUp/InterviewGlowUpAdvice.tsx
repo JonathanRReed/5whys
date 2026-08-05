@@ -201,9 +201,9 @@ export default function InterviewGlowUpAdvice() {
             (Play), which reduced login failures by 40% and support tickets by 25% (Proof)."
           </p>
           <p className="mt-2 text-sm">
-            <strong>Student example:</strong> "Our capstone group was three weeks behind, so I
-            split the app into modules and took the data layer myself (Play). We demoed on time,
-            and the professor now uses our project as the example for next semester (Proof)."
+            <strong>Student example:</strong> "Our capstone group was three weeks behind, so I split
+            the app into modules and took the data layer myself (Play). We demoed on time, and the
+            professor now uses our project as the example for next semester (Proof)."
           </p>
         </Callout>
       </Section>
@@ -212,8 +212,8 @@ export default function InterviewGlowUpAdvice() {
       <Section title="No industry experience? You still have proof">
         <p className="leading-relaxed">
           Play + Proof does not care where the story happened. It cares that you did something
-          specific and can show the receipt. If you are still in school, you have four story
-          sources most candidates ignore:
+          specific and can show the receipt. If you are still in school, you have four story sources
+          most candidates ignore:
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] p-4">

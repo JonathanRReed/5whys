@@ -81,10 +81,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
   const skillQuestionSuggestions: QuestionPrompt[] = [];
   for (const skillId of coveredSkillIds) {
     for (const q of getQuestionsForSkill(skillId)) {
-      if (
-        !attachedPrompts.includes(q.id) &&
-        !skillQuestionSuggestions.some((x) => x.id === q.id)
-      ) {
+      if (!attachedPrompts.includes(q.id) && !skillQuestionSuggestions.some((x) => x.id === q.id)) {
         skillQuestionSuggestions.push(q);
       }
     }
@@ -191,9 +188,9 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                 </li>
               </ul>
               <p>
-                Proof without business metrics: a grade, the scope (people, hours, budget), a
-                before and after state, classmates adopting your work, or instructor feedback.
-                "Professor used our project as next semester's example" is a receipt.
+                Proof without business metrics: a grade, the scope (people, hours, budget), a before
+                and after state, classmates adopting your work, or instructor feedback. "Professor
+                used our project as next semester's example" is a receipt.
               </p>
             </div>
           </details>
