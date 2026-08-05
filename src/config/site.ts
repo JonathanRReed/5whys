@@ -38,13 +38,13 @@ export const baseSchemas = {
       '5 Whys is a small studio of career reflection tools by Jonathan R. Reed that helps job seekers clarify direction, improve resumes, and prepare stronger interview stories.',
     inLanguage: 'en-US',
     publisher: {
-      '@id': 'https://jonathanrreed.com/#person',
+      '@id': 'https://jonathanrreed.com/about/#person',
     },
   },
   creator: {
     '@context': 'https://schema.org',
     '@type': 'Person',
-    '@id': 'https://jonathanrreed.com/#person',
+    '@id': 'https://jonathanrreed.com/about/#person',
     name: 'Jonathan R. Reed',
     url: 'https://jonathanrreed.com',
   },
