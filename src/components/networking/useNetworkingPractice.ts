@@ -158,8 +158,14 @@ export function useNetworkingPractice() {
       if (!currentVersion) return;
       const scenario = scenarios.find((item) => item.id === scenarioId);
       if (!scenario) return;
+      // Only rename the version when the user never gave it a custom name.
+      // Otherwise the version label keeps pointing at the old scenario.
+      const previousScenario = scenarios.find((item) => item.id === currentVersion.scenarioId);
+      const usesDefaultTitle =
+        !currentVersion.title.trim() || currentVersion.title === previousScenario?.title;
       const updated: NetworkingPracticeVersion = {
         ...currentVersion,
+        title: usesDefaultTitle ? scenario.title : currentVersion.title,
         scenarioId: scenario.id,
         who: scenario.who,
         where: scenario.where,
