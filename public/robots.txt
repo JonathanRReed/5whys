@@ -13,7 +13,6 @@ Allow: /*.css$
 Disallow: /search/
 Disallow: /*?s=
 Disallow: /*?q=
-Sitemap: https://5whys.jonathanrreed.com/sitemap.xml
 
 User-agent: Bingbot
 Allow: /*.js$
@@ -101,5 +100,5 @@ Disallow: /*?s=
 Disallow: /*?q=
 Allow: /
 
-# Global sitemap reference
-Sitemap: https://5whys.jonathanrreed.com/sitemap.xml
+# Global sitemap reference (single canonical entry point)
+Sitemap: https://5whys.jonathanrreed.com/sitemap-index.xml
