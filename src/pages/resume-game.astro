@@ -30,7 +30,7 @@ const resumeSchemas = [
         name: 'Is my resume data private?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Absolutely. All text is processed in your browser. No data is sent to any server.',
+          text: 'Yes. All text is processed in your browser. No data is sent to any server.',
         },
       },
     ],
@@ -38,10 +38,10 @@ const resumeSchemas = [
 ];
 
 const resumeNoScriptContext = [
-  'Resume Bullet Game is the proof-building tool in 5 Whys Career Studio. It focuses on one practical problem: many resume bullets describe responsibility, but not evidence. The interactive version scores each line for action verbs, measurable signal, scope, clarity, and impact. The goal is not to make every bullet loud. The goal is to make the useful work easier for a recruiter, hiring manager, or interviewer to understand.',
+  'Resume Bullet Game is the proof-building tool in 5 Whys Career Studio. It focuses on one practical problem: many resume bullets describe responsibility without showing evidence. The interactive version scores each line for action verbs, measurable signal, scope, clarity, and impact. The point is to make the useful work easy for a recruiter, hiring manager, or interviewer to understand. A loud bullet does not help if nobody can tell what you did.',
   'Without JavaScript, you can still use the same review pattern manually. Take one bullet at a time and check whether it names the action, the object of the work, the constraint or audience, and the result. Stronger bullets usually include a specific verb, a system or process, a scale marker, and an outcome. Weak bullets often hide behind words like helped, worked on, responsible for, supported, assisted, or managed without explaining what changed.',
   'A practical rewrite flow is simple: paste or write the existing bullet, underline the real contribution, add a concrete scope detail, replace generic verbs with accurate action, and make the outcome visible if it is known. If a number would be fake, use a bounded qualitative signal instead: faster review cycles, fewer manual steps, clearer handoff, safer release process, better support coverage, cleaner audit trail, or more reliable onboarding.',
-  'The tool is private by design during normal use. Resume text can include employers, clients, systems, metrics, and personal history, so the browser-local boundary is intentional. Exported files are controlled by the software you use after leaving the page. Review every generated or rewritten bullet before sending it anywhere, and keep the final voice direct, specific, and honest.',
+  'Resume text can include employers, clients, systems, metrics, and personal history. That is why the tool keeps everything in the browser during normal use. Exported files are controlled by whatever software you open them in after leaving the page. Review every generated or rewritten bullet before sending it anywhere, and keep the final voice direct, specific, and honest.',
 ];
 ---
 
@@ -252,9 +252,10 @@ const resumeNoScriptContext = [
           </div>
           <h3 class="text-xl font-semibold text-foreground">What the score means</h3>
           <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-            The score is a drafting aid, not a hiring prediction. Strong bullets usually name the
-            work, show scale, explain the result, and avoid vague verbs. A lower score points to the
-            next rewrite target so you can improve the line without guessing what feels weak.
+            The score tells you which line to rewrite next. It does not predict whether you get the
+            job. Strong bullets usually name the work, show scale, explain the result, and avoid
+            vague verbs, so a lower score points at the part that is still missing instead of
+            leaving you to guess.
           </p>
           <div
             class="mt-4 rounded-lg border border-[hsl(var(--gold)/0.2)] bg-[hsl(var(--gold)/0.06)] p-3"
@@ -291,7 +292,7 @@ const resumeNoScriptContext = [
           <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
             Rewrite one part at a time. Start with the verb, add the system or audience, name the
             measurable result, then trim words that do not help a recruiter understand scope. The
-            best version should still sound like your work, just clearer and easier to verify.
+            rewrite should still sound like your work. It should just be easier to check.
           </p>
           <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
             When numbers are not available, use concrete scope instead: the team affected, the

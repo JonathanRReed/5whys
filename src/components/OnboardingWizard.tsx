@@ -11,7 +11,7 @@ interface Step {
 const STEPS: Step[] = [
   {
     question: 'Where are you in your career?',
-    subtitle: 'This helps us recommend the right tools.',
+    subtitle: 'This changes which tool you should start with.',
     options: [
       {
         label: 'Student',
@@ -42,7 +42,7 @@ const STEPS: Step[] = [
   },
   {
     question: 'What is your biggest challenge right now?',
-    subtitle: 'We will tailor your starting point.',
+    subtitle: 'Your answer picks the starting point.',
     options: [
       {
         label: 'Unclear direction',
@@ -136,7 +136,7 @@ function getRecommendation(level: string, challenge: string): Recommendation {
         ? 'Class projects, internships, and part-time work all count. Score what you have and make each line carry proof.'
         : level === 'transition'
           ? 'Translate your old-domain bullets into evidence the new field can read. Score them, then rewrite the weak ones.'
-          : 'Analyze your bullets, detect skills, and rewrite for impact.',
+          : 'Score your bullets, pull out the skills they already show, and rewrite the weak ones.',
       url: '/resume-game/',
       accent: 'love',
       steps: [
@@ -189,7 +189,7 @@ function getRecommendation(level: string, challenge: string): Recommendation {
         ? 'Career fairs and cold intros get easier with reps. Practice a short introduction before you need it live.'
         : level === 'senior'
           ? 'Peer intros and panels need a sharper opener than your title. Rehearse it against the clock.'
-          : 'Timed scenarios and ratings to build confident delivery.',
+          : 'Timed scenarios and honest self-ratings, one rep at a time.',
     url: '/networking-practice/',
     accent: 'gold',
     steps: [
