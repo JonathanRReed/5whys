@@ -70,8 +70,7 @@ export default function InterviewGlowUpAdvice() {
       <Section title="It's normal to feel nervous">
         <p className="leading-relaxed">
           If interviews make you anxious, you're not alone. Most people treat interviews like an
-          exam, triggering fight, flight, or freeze mode. You start rambling, blanking, or worse:
-          giving rehearsed answers that sound robotic.
+          exam, triggering fight, flight, or freeze mode.
         </p>
         <p className="mt-3 leading-relaxed">
           It is also fixable. With the right preparation, you can walk in calm and ready to have a
