@@ -6,7 +6,6 @@
 
 - **Name**: Jonathan R. Reed
 - **Canonical site**: https://jonathanrreed.com/
-- **Related work**: AI safety, secure AI deployment, career tools, model evaluation, and public-facing technical writing
 
 ## Usage guidance
 

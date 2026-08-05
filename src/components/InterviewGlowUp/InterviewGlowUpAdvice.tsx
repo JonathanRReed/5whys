@@ -165,7 +165,7 @@ export default function InterviewGlowUpAdvice() {
           </p>
         </Callout>
         <p className="mt-4 leading-relaxed">
-          Once you decode the JD, you know 80% of the questions before you walk in.
+          Once you decode the JD, most of the questions stop being surprises.
         </p>
       </Section>
 
