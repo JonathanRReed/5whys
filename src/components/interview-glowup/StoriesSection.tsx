@@ -200,10 +200,14 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">
+              <label
+                htmlFor="story-primary-skill"
+                className="mb-1 block text-sm font-medium text-foreground"
+              >
                 Primary Skill *
               </label>
               <select
+                id="story-primary-skill"
                 value={formData.primarySkillId ?? ''}
                 onChange={(e) => setFormData({ ...formData, primarySkillId: e.target.value })}
                 className={inputClass}
@@ -217,10 +221,14 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">
+              <label
+                htmlFor="story-confidence"
+                className="mb-1 block text-sm font-medium text-foreground"
+              >
                 Confidence (1-100)
               </label>
               <input
+                id="story-confidence"
                 type="number"
                 min={1}
                 max={100}
@@ -285,13 +293,17 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">
+              <label
+                htmlFor="story-trigger"
+                className="mb-1 block text-sm font-medium text-foreground"
+              >
                 Trigger (1-3 words)
               </label>
               <p className="mb-1 text-xs text-muted-foreground">
                 A short label you use to recall this story quickly.
               </p>
               <input
+                id="story-trigger"
                 type="text"
                 value={formData.trigger ?? ''}
                 onChange={(e) => setFormData({ ...formData, trigger: e.target.value })}
@@ -300,13 +312,17 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">
+              <label
+                htmlFor="story-hook"
+                className="mb-1 block text-sm font-medium text-foreground"
+              >
                 Hook (~25 words)
               </label>
               <p className="mb-1 text-xs text-muted-foreground">
                 The setup: what was the situation or problem?
               </p>
               <input
+                id="story-hook"
                 type="text"
                 value={formData.hook ?? ''}
                 onChange={(e) => setFormData({ ...formData, hook: e.target.value })}
@@ -315,13 +331,17 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">
+              <label
+                htmlFor="story-proof-snippet"
+                className="mb-1 block text-sm font-medium text-foreground"
+              >
                 Proof Snippet (~10 words)
               </label>
               <p className="mb-1 text-xs text-muted-foreground">
                 The result in one line: a number, a grade, a before and after.
               </p>
               <input
+                id="story-proof-snippet"
                 type="text"
                 value={formData.proofSnippet ?? ''}
                 onChange={(e) => setFormData({ ...formData, proofSnippet: e.target.value })}
@@ -332,7 +352,10 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
           </div>
 
           <div>
-            <label className="mb-1 flex items-center justify-between text-sm font-medium text-foreground">
+            <label
+              htmlFor="story-play"
+              className="mb-1 flex items-center justify-between text-sm font-medium text-foreground"
+            >
               <span>Play (What You Did) *</span>
               {playSentences > 4 && (
                 <span className="flex items-center gap-1 text-xs text-[hsl(var(--gold))]">
@@ -345,6 +368,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
               The core of your story: your actions, decisions, and approach. "I", not "we".
             </p>
             <textarea
+              id="story-play"
               value={formData.play ?? ''}
               onChange={(e) => setFormData({ ...formData, play: e.target.value })}
               placeholder="What was the challenge? What exactly did you do?"
@@ -359,7 +383,10 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
           </div>
 
           <div>
-            <label className="mb-1 flex items-center justify-between text-sm font-medium text-foreground">
+            <label
+              htmlFor="story-proof"
+              className="mb-1 flex items-center justify-between text-sm font-medium text-foreground"
+            >
               <span>Proof (The Receipt)</span>
               {!hasNumbers && formData.proof && formData.proof.length > 10 && (
                 <span className="flex items-center gap-1 text-xs text-[hsl(var(--gold))]">
@@ -373,6 +400,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
               before and after states, and instructor feedback count too.
             </p>
             <textarea
+              id="story-proof"
               value={formData.proof ?? ''}
               onChange={(e) => setFormData({ ...formData, proof: e.target.value })}
               placeholder="Time saved, revenue, a grade, adoption by classmates, specific praise..."
@@ -462,6 +490,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
             <div className="flex gap-2 pt-1">
               <input
                 type="text"
+                aria-label="Add your own interview question"
                 value={customQuestion}
                 onChange={(e) => setCustomQuestion(e.target.value)}
                 onKeyDown={(e) => {
