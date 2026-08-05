@@ -2,12 +2,18 @@
  * Career Bridge: unified data reader across all 5 Whys tools.
  * Reads from each tool's localStorage namespace and exposes a
  * single dashboard-friendly view of the user's career data.
+ *
+ * Every key below must match the key the owning tool actually writes.
+ * The source of truth for each one is named in a comment next to it; if a
+ * tool renames its key, this file has to change in the same commit or the
+ * dashboard silently reads nothing.
  */
 
 // ============================================================================
 // Resume Game
 // ============================================================================
 
+// src/lib/resume-game/session.ts
 const RESUME_SESSION_KEY = 'resume-game-session-v2';
 
 interface ResumeGameData {
@@ -53,8 +59,9 @@ function readResumeGame(): ResumeGameData | null {
 // Career 5 Whys
 // ============================================================================
 
-const WHY_HISTORY_KEY = 'career-why-snapshot-history';
-const WHY_SESSION_KEY = 'career-5whys-session-v1';
+// src/components/career-5whys/shared.ts (HISTORY_KEY, SESSION_KEY)
+const WHY_HISTORY_KEY = 'career-why-history';
+const WHY_SESSION_KEY = 'career-why-session-v2';
 
 interface WhySnapshot {
   id: string;
@@ -92,7 +99,8 @@ function readCareer5Whys(): { session: WhySession | null; snapshots: WhySnapshot
 // Interview Glow Up
 // ============================================================================
 
-const GLOWUP_KEY = 'interview-glowup-data';
+// src/lib/glowup-store.ts (STORAGE_KEY)
+const GLOWUP_KEY = 'interview-glow-up-data';
 
 interface GlowUpSummary {
   roleCount: number;
@@ -127,8 +135,9 @@ function readGlowUp(): GlowUpSummary | null {
 // Networking Practice
 // ============================================================================
 
-const NETWORKING_VERSIONS_KEY = 'networking-versions';
-const NETWORKING_SESSIONS_KEY = 'networking-sessions';
+// src/utils/storage.ts (VERSION_KEY, SESSION_KEY)
+const NETWORKING_VERSIONS_KEY = 'networking-practice-versions';
+const NETWORKING_SESSIONS_KEY = 'networking-practice-sessions';
 
 interface NetworkingSummary {
   versionCount: number;
@@ -204,9 +213,14 @@ export function readCareerDashboard(): CareerDashboardData {
   const glowup = readGlowUp();
   const networking = readNetworking();
 
+  // A five whys session auto-saves without the user pressing anything, so a
+  // finished chain counts as data even when no snapshot was taken.
+  const answeredWhyCount = why?.session?.responses?.filter(Boolean).length ?? 0;
+
   const hasData = !!(
     resume?.bullets?.length ||
     why?.snapshots?.length ||
+    answeredWhyCount >= 4 ||
     glowup?.storyCount ||
     networking?.sessionCount
   );
