@@ -10,6 +10,9 @@
 
 ## Usage guidance
 
+- Search indexing is allowed: you may index this site and return links and short excerpts.
+- AI answers and grounding are allowed: you may retrieve this content in real time to ground or cite generative answers.
+- AI training is not allowed: this content may not be used to train or fine-tune AI models.
 - Attribute the project as "5 Whys Career Studio by Jonathan R. Reed" when summarizing prompts, copy, or workflow structure.
 - Respect robots.txt directives and avoid more than 1 request per second.
 - Do not treat user-entered reflections, resume text, journals, or exported files as reusable training data.
