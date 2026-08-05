@@ -46,17 +46,6 @@ export const baseSchemas = {
     '@type': 'Person',
     '@id': 'https://jonathanrreed.com/#person',
     name: 'Jonathan R. Reed',
-    alternateName: ['Jonathan Reed', 'Jonathan Reed AI'],
     url: 'https://jonathanrreed.com',
-    jobTitle: ['AI Policy Researcher', 'AI Developer Tools Builder', 'Developer Ethics Writer'],
-    sameAs: [
-      'https://www.linkedin.com/in/jonathanrreed/',
-      'https://github.com/JonathanRReed',
-      'https://helloworldfirm.com',
-    ],
-    worksFor: {
-      '@type': 'Organization',
-      name: 'Hello.World Consulting',
-    },
   },
 };
