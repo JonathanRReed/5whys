@@ -33,14 +33,6 @@
 User-agent: *
 Content-Signal: search=yes, ai-input=yes, ai-train=no, use=reference
 Allow: /
-Disallow: /cgi-bin/
-Disallow: /wp-admin/
-Disallow: /admin/
-Disallow: /backend/
-Disallow: /login/
-Disallow: /private/
-Disallow: /temp/
-Disallow: /includes/
 Disallow: /search/
 Disallow: /*?s=
 Disallow: /*?q=
@@ -58,14 +50,6 @@ Disallow: /*?q=
 User-agent: OAI-SearchBot
 Content-Signal: search=yes, ai-input=yes, ai-train=no, use=reference
 Allow: /
-Disallow: /cgi-bin/
-Disallow: /wp-admin/
-Disallow: /admin/
-Disallow: /backend/
-Disallow: /login/
-Disallow: /private/
-Disallow: /temp/
-Disallow: /includes/
 Disallow: /search/
 Disallow: /*?s=
 Disallow: /*?q=
@@ -74,14 +58,6 @@ Disallow: /*?q=
 User-agent: Claude-SearchBot
 Content-Signal: search=yes, ai-input=yes, ai-train=no, use=reference
 Allow: /
-Disallow: /cgi-bin/
-Disallow: /wp-admin/
-Disallow: /admin/
-Disallow: /backend/
-Disallow: /login/
-Disallow: /private/
-Disallow: /temp/
-Disallow: /includes/
 Disallow: /search/
 Disallow: /*?s=
 Disallow: /*?q=
@@ -90,14 +66,6 @@ Disallow: /*?q=
 User-agent: PerplexityBot
 Content-Signal: search=yes, ai-input=yes, ai-train=no, use=reference
 Allow: /
-Disallow: /cgi-bin/
-Disallow: /wp-admin/
-Disallow: /admin/
-Disallow: /backend/
-Disallow: /login/
-Disallow: /private/
-Disallow: /temp/
-Disallow: /includes/
 Disallow: /search/
 Disallow: /*?s=
 Disallow: /*?q=
@@ -106,14 +74,6 @@ Disallow: /*?q=
 User-agent: meta-webindexer
 Content-Signal: search=yes, ai-input=yes, ai-train=no, use=reference
 Allow: /
-Disallow: /cgi-bin/
-Disallow: /wp-admin/
-Disallow: /admin/
-Disallow: /backend/
-Disallow: /login/
-Disallow: /private/
-Disallow: /temp/
-Disallow: /includes/
 Disallow: /search/
 Disallow: /*?s=
 Disallow: /*?q=
@@ -122,14 +82,6 @@ Disallow: /*?q=
 User-agent: Amzn-SearchBot
 Content-Signal: search=yes, ai-input=yes, ai-train=no, use=reference
 Allow: /
-Disallow: /cgi-bin/
-Disallow: /wp-admin/
-Disallow: /admin/
-Disallow: /backend/
-Disallow: /login/
-Disallow: /private/
-Disallow: /temp/
-Disallow: /includes/
 Disallow: /search/
 Disallow: /*?s=
 Disallow: /*?q=
@@ -142,14 +94,6 @@ Disallow: /*?q=
 User-agent: ChatGPT-User
 Content-Signal: search=yes, ai-input=yes, ai-train=no, use=reference
 Allow: /
-Disallow: /cgi-bin/
-Disallow: /wp-admin/
-Disallow: /admin/
-Disallow: /backend/
-Disallow: /login/
-Disallow: /private/
-Disallow: /temp/
-Disallow: /includes/
 Disallow: /search/
 Disallow: /*?s=
 Disallow: /*?q=
@@ -157,14 +101,6 @@ Disallow: /*?q=
 User-agent: Claude-User
 Content-Signal: search=yes, ai-input=yes, ai-train=no, use=reference
 Allow: /
-Disallow: /cgi-bin/
-Disallow: /wp-admin/
-Disallow: /admin/
-Disallow: /backend/
-Disallow: /login/
-Disallow: /private/
-Disallow: /temp/
-Disallow: /includes/
 Disallow: /search/
 Disallow: /*?s=
 Disallow: /*?q=
@@ -172,14 +108,6 @@ Disallow: /*?q=
 User-agent: Perplexity-User
 Content-Signal: search=yes, ai-input=yes, ai-train=no, use=reference
 Allow: /
-Disallow: /cgi-bin/
-Disallow: /wp-admin/
-Disallow: /admin/
-Disallow: /backend/
-Disallow: /login/
-Disallow: /private/
-Disallow: /temp/
-Disallow: /includes/
 Disallow: /search/
 Disallow: /*?s=
 Disallow: /*?q=
@@ -187,14 +115,6 @@ Disallow: /*?q=
 User-agent: Amzn-User
 Content-Signal: search=yes, ai-input=yes, ai-train=no, use=reference
 Allow: /
-Disallow: /cgi-bin/
-Disallow: /wp-admin/
-Disallow: /admin/
-Disallow: /backend/
-Disallow: /login/
-Disallow: /private/
-Disallow: /temp/
-Disallow: /includes/
 Disallow: /search/
 Disallow: /*?s=
 Disallow: /*?q=
