@@ -865,17 +865,17 @@ input[type="range"]::-moz-range-thumb {
     line-height: 1.5;
   }
 
-  /* Skill badges */
-  [class*="bg-cyan"],
-  [class*="bg-\\[hsl\\(var\\(--foam"] {
-    background: #e0f7fa !important;
-    color: #006064 !important;
-    border: 1px solid #00acc1 !important;
+  /* Skill badges: keep the pine family on paper, never blue */
+  [class*="bg-iris"],
+  [class*="bg-foam"] {
+    background: #eef4ef !important;
+    color: #1f5f45 !important;
+    border: 1px solid #3f9f78 !important;
   }
 
   /* Proof text */
-  [class*="text-cyan"] {
-    color: #00838f !important;
+  [class*="text-foam"] {
+    color: #1f5f45 !important;
     font-weight: 600;
   }
 

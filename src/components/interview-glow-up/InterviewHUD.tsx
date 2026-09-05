@@ -187,7 +187,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
               {keywords.map((kw, i) => (
                 <span
                   key={i}
-                  className="rounded-full bg-iris/20 px-2 py-0.5 text-xs font-medium text-iris print:bg-cyan-100 print:text-cyan-800"
+                  className="rounded-full bg-iris/20 px-2 py-0.5 text-xs font-medium text-iris print:bg-gray-100 print:text-gray-800"
                 >
                   {kw}
                 </span>
