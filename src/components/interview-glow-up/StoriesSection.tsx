@@ -12,7 +12,12 @@ import {
   type DecodedRole,
   type GlowUpData,
   getTopGaps,
+  type InterviewPacket,
+  READINESS,
+  readinessLabel,
+  readinessOf,
   type Story,
+  toggleStoryInPacket,
   updateStory,
 } from '../../lib/glowup-store';
 import { cn } from '../../lib/utils';
@@ -22,17 +27,25 @@ type Props = {
   data: GlowUpData;
   setData: React.Dispatch<React.SetStateAction<GlowUpData>>;
   currentRole: DecodedRole | undefined;
+  currentPacket: InterviewPacket | undefined;
+  onGoToDecode: () => void;
 };
 
 const MAX_SKILL_SUGGESTIONS = 8;
 
-export default function StoriesSection({ data, setData, currentRole }: Props) {
+export default function StoriesSection({
+  data,
+  setData,
+  currentRole,
+  currentPacket,
+  onGoToDecode,
+}: Props) {
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [formData, setFormData] = React.useState<Partial<Story>>({});
   const [customQuestion, setCustomQuestion] = React.useState('');
   const [showGeneralQuestions, setShowGeneralQuestions] = React.useState(false);
 
-  const recentStories = [...data.stories].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 5);
+  const recentStories = [...data.stories].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 6);
 
   const startNew = (skillId?: string) => {
     setEditingId('new');
@@ -46,7 +59,8 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
       proofSnippet: '',
       play: '',
       proof: '',
-      confidence: 70,
+      confidence: 30,
+      readiness: 'rough',
       questionPrompts: [],
       tags: [],
     });
@@ -54,11 +68,22 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
 
   const saveStory = () => {
     if (!formData.primarySkillId || !formData.play) return;
+    const readiness = formData.readiness ?? readinessOf(formData);
+    const payload = {
+      ...formData,
+      readiness,
+      confidence: READINESS.find((r) => r.id === readiness)?.confidence ?? 60,
+    };
 
     if (editingId === 'new') {
-      setData(createStory(data, formData as Omit<Story, 'id' | 'createdAt' | 'updatedAt'>));
+      const next = createStory(data, payload as Omit<Story, 'id' | 'createdAt' | 'updatedAt'>);
+      // A new story goes straight into the current packet; it can be removed later.
+      const created = next.stories[next.stories.length - 1];
+      setData(
+        currentPacket && created ? toggleStoryInPacket(next, currentPacket.id, created.id) : next
+      );
     } else if (editingId) {
-      setData(updateStory(data, editingId, formData));
+      setData(updateStory(data, editingId, payload));
     }
     setEditingId(null);
     setFormData({});
@@ -122,11 +147,11 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
             onClick={() => startNew()}
             className="rounded-lg bg-foam px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-foam/90 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
           >
-            + New Story
+            + New story
           </button>
           {topGaps.length > 0 && (
             <>
-              <span className="text-sm text-muted-foreground">Start with gap:</span>
+              <span className="text-sm text-muted-foreground">Start with a gap:</span>
               {topGaps.map((skillId) => (
                 <button
                   key={skillId}
@@ -146,7 +171,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
         <div className="space-y-4 rounded-xl border border-foam/30 bg-foam/5 p-5">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-foreground">
-              {editingId === 'new' ? 'New Story' : 'Edit Story'}
+              {editingId === 'new' ? 'New story' : 'Edit story'}
             </h3>
             <button
               type="button"
@@ -217,23 +242,46 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                 ))}
               </select>
             </div>
-            <div>
-              <label
-                htmlFor="story-confidence"
-                className="mb-1 block text-sm font-medium text-foreground"
-              >
-                Confidence (1-100)
-              </label>
-              <input
-                id="story-confidence"
-                type="number"
-                min={1}
-                max={100}
-                value={formData.confidence ?? 70}
-                onChange={(e) => setFormData({ ...formData, confidence: Number(e.target.value) })}
-                className={inputClass}
-              />
-            </div>
+            <fieldset>
+              <legend className="mb-1 block text-sm font-medium text-foreground">
+                How ready is it?
+              </legend>
+              <div className="grid gap-1">
+                {READINESS.map((option) => {
+                  const checked = (formData.readiness ?? readinessOf(formData)) === option.id;
+                  return (
+                    <label
+                      key={option.id}
+                      className={cn(
+                        'flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 text-sm transition-colors',
+                        checked
+                          ? 'border-foam/50 bg-foam/10 text-foreground'
+                          : 'border-border/40 bg-overlay/20 text-muted-foreground hover:border-border/60'
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="story-readiness"
+                        value={option.id}
+                        checked={checked}
+                        onChange={() =>
+                          setFormData({
+                            ...formData,
+                            readiness: option.id,
+                            confidence: option.confidence,
+                          })
+                        }
+                        className="mt-0.5 accent-foam"
+                      />
+                      <span>
+                        <span className="font-medium text-foreground">{option.label}</span>
+                        <span className="block text-xs">{option.hint}</span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
           </div>
 
           <div>
@@ -526,7 +574,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
               disabled={!formData.primarySkillId || !formData.play}
               className="rounded-lg bg-foam px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-foam/90 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
             >
-              Save Story
+              {editingId === 'new' && currentPacket ? 'Save and add to packet' : 'Save story'}
             </button>
           </div>
         </div>
@@ -559,7 +607,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                     )}
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <span className="text-xs text-muted-foreground">{story.confidence}%</span>
+                    <span className="text-xs text-muted-foreground">{readinessLabel(story)}</span>
                     <button
                       type="button"
                       onClick={() => {
@@ -572,11 +620,36 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                     >
                       Edit
                     </button>
+                    {currentPacket && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setData(toggleStoryInPacket(data, currentPacket.id, story.id))
+                        }
+                        className={cn(
+                          'rounded-lg border px-2 py-1 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2',
+                          currentPacket.topStoryIds.includes(story.id)
+                            ? 'border-foam/50 bg-foam/15 text-foam hover:bg-foam/25'
+                            : 'border-border/50 bg-overlay/30 text-foreground hover:bg-overlay/50'
+                        )}
+                      >
+                        {currentPacket.topStoryIds.includes(story.id)
+                          ? 'In packet'
+                          : 'Add to packet'}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
             ))}
           </div>
+          {data.stories.length > recentStories.length && (
+            <p className="text-xs text-muted-foreground">
+              {data.stories.length - recentStories.length} older{' '}
+              {data.stories.length - recentStories.length === 1 ? 'story is' : 'stories are'} in the
+              Library tab.
+            </p>
+          )}
         </div>
       )}
 
@@ -587,13 +660,22 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
           </div>
           <p className="text-sm font-medium text-foreground">No stories yet</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Click "+ New Story" to build your first Play + Proof story. Know STAR? Situation and
-            Task map to the Trigger and Hook, Action is the Play, Result is the Proof.
+            {currentRole
+              ? 'Start with a gap above, or click "+ New story". Know STAR? Situation and Task map to the Trigger and Hook, Action is the Play, Result is the Proof.'
+              : 'Stories work best against a real posting, so the skills it tests become your list.'}
           </p>
+          {!currentRole && (
+            <button
+              type="button"
+              onClick={onGoToDecode}
+              className="mt-3 rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+            >
+              Decode a job first
+            </button>
+          )}
           <p className="mt-2 text-xs text-muted-foreground">
             No work experience yet? Class projects, internships, club events, part-time jobs, and
-            volunteering all produce stories. Start with a gap from Decode to target the role's
-            needs.
+            volunteering all produce stories.
           </p>
         </div>
       )}

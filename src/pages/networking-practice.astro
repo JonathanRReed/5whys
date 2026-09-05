@@ -2,7 +2,6 @@
 import Base from '../layouts/Base.astro';
 import NetworkingPracticeApp from '../components/NetworkingPractice';
 import ErrorBoundary from '../components/shared/ErrorBoundary';
-import WithToasts from '../components/WithToasts';
 
 const networkingSchemas = [
   {
@@ -67,9 +66,7 @@ const networkingNoScriptContext = [
     <h1 class="sr-only">Networking Practice Studio</h1>
     <section class="mx-auto w-full max-w-6xl">
       <ErrorBoundary client:load>
-        <WithToasts client:load>
-          <NetworkingPracticeApp client:load showHeader={false} className="pb-8" />
-        </WithToasts>
+        <NetworkingPracticeApp client:load showHeader={false} className="pb-8" />
       </ErrorBoundary>
     </section>
 

@@ -1,55 +1,99 @@
 import * as React from 'react';
-import { type GlowUpData, loadData, saveData } from '../../lib/glowup-store';
-import DecodeSection from '../interview-glow-up/DecodeSection';
-import PacketSection from '../interview-glow-up/PacketSection';
-import StoriesSection from '../interview-glow-up/StoriesSection';
-import VaultSection from '../interview-glow-up/VaultSection';
-import WorkspaceHeader from '../interview-glow-up/WorkspaceHeader';
-import WorkspaceTabs, { type Tab } from '../interview-glow-up/WorkspaceTabs';
+import { createPortal } from 'react-dom';
+import {
+  createDefaultData,
+  ensurePacketForRole,
+  type GlowUpData,
+  loadData,
+  saveData,
+} from '../../lib/glowup-store';
+import DecodeSection from './DecodeSection';
 import InterviewHUD from './InterviewHUD';
+import PacketSection from './PacketSection';
+import StoriesSection from './StoriesSection';
+import VaultSection from './VaultSection';
+import WorkspaceHeader from './WorkspaceHeader';
+import WorkspaceTabs, { type Tab } from './WorkspaceTabs';
+
+const SAVE_DEBOUNCE_MS = 300;
+const TABS: Tab[] = ['decode', 'stories', 'packet', 'vault'];
+
+function readTabFromUrl(): Tab | null {
+  if (typeof window === 'undefined') return null;
+  const wanted = new URLSearchParams(window.location.search).get('tab');
+  return TABS.includes(wanted as Tab) ? (wanted as Tab) : null;
+}
 
 export default function InterviewGlowUpWorkspace() {
-  const [data, setData] = React.useState<GlowUpData>(() => loadData());
+  // Start from empty data on both server and client so hydration matches,
+  // then load the saved workspace once mounted (this used to throw React #418).
+  const [data, setData] = React.useState<GlowUpData>(() => createDefaultData());
+  const [hydrated, setHydrated] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<Tab>('decode');
   const [showHUD, setShowHUD] = React.useState(false);
-
   const saveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestRef = React.useRef<GlowUpData | null>(null);
 
   React.useEffect(() => {
-    if (!data) return;
+    let loaded = loadData();
+    if (loaded.currentRoleId) loaded = ensurePacketForRole(loaded, loaded.currentRoleId);
+    setData(loaded);
+    setHydrated(true);
+    const fromUrl = readTabFromUrl();
+    if (fromUrl) setActiveTab(fromUrl);
+    else if (loaded.currentRoleId && loaded.stories.length === 0) setActiveTab('stories');
+  }, []);
+
+  // Debounced save, flushed when the page is hidden or the island unmounts so
+  // a quick tab switch or a closed laptop never drops the last edit.
+  React.useEffect(() => {
+    if (!hydrated) return;
+    latestRef.current = data;
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
       saveData(data);
-    }, 800);
+      saveTimeoutRef.current = null;
+    }, SAVE_DEBOUNCE_MS);
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
-  }, [data]);
+  }, [data, hydrated]);
 
-  if (!data) {
+  React.useEffect(() => {
+    const flush = () => {
+      if (latestRef.current) saveData(latestRef.current);
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') flush();
+    };
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('pagehide', flush);
+      document.removeEventListener('visibilitychange', onVisibility);
+      flush();
+    };
+  }, []);
+
+  const currentRole = data.roles.find((r) => r.id === data.currentRoleId);
+  const currentPacket = data.packets.find((p) => p.id === data.currentPacketId);
+  const packetStoryCount = currentPacket
+    ? currentPacket.topStoryIds.filter((id) => data.stories.some((s) => s.id === id)).length
+    : 0;
+
+  if (!hydrated) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="text-muted-foreground">Loading...</div>
+      <div className="space-y-6" aria-busy="true">
+        <div className="h-9 w-64 animate-pulse rounded-lg bg-overlay/40" />
+        <div className="h-12 w-full animate-pulse rounded-xl bg-overlay/30" />
+        <div className="h-72 w-full animate-pulse rounded-2xl bg-overlay/25" />
       </div>
     );
   }
 
-  const currentRole = data.roles.find((r) => r.id === data.currentRoleId);
-  const currentPacket = data.packets.find((p) => p.id === data.currentPacketId);
-
-  if (showHUD && currentPacket) {
-    return (
-      <InterviewHUD
-        packet={currentPacket}
-        stories={data.stories}
-        role={currentRole}
-        onClose={() => setShowHUD(false)}
-      />
-    );
-  }
-
   const handleClearData = () => {
-    setData(loadData());
+    setData(createDefaultData());
+    setActiveTab('decode');
   };
 
   return (
@@ -72,23 +116,35 @@ export default function InterviewGlowUpWorkspace() {
           />
         </svg>
         <span>
-          <strong>No data leaves your browser.</strong> Everything is stored locally.
+          <strong>No data leaves your browser.</strong> Everything saves here as you type.
         </span>
       </div>
 
       <WorkspaceTabs
         activeTab={activeTab}
         onChange={setActiveTab}
-        showHUD={!!currentPacket}
+        showHUD={packetStoryCount > 0}
         onLaunchHUD={() => setShowHUD(true)}
+        counts={{
+          decode: currentRole ? currentRole.bullets.filter((b) => b.status === 'active').length : 0,
+          stories: data.stories.length,
+          packet: packetStoryCount,
+          vault: data.stories.length,
+        }}
       />
 
-      <div className="rounded-2xl border border-border/35 bg-overlay/20 p-6">
+      <div className="rounded-2xl border border-border/35 bg-overlay/20 p-4 sm:p-6">
         {activeTab === 'decode' && (
           <DecodeSection data={data} setData={setData} currentRole={currentRole} />
         )}
         {activeTab === 'stories' && (
-          <StoriesSection data={data} setData={setData} currentRole={currentRole} />
+          <StoriesSection
+            data={data}
+            setData={setData}
+            currentRole={currentRole}
+            currentPacket={currentPacket}
+            onGoToDecode={() => setActiveTab('decode')}
+          />
         )}
         {activeTab === 'vault' && (
           <VaultSection data={data} setData={setData} currentPacket={currentPacket} />
@@ -100,9 +156,23 @@ export default function InterviewGlowUpWorkspace() {
             currentRole={currentRole}
             currentPacket={currentPacket}
             onLaunchHUD={() => setShowHUD(true)}
+            onGoToStories={() => setActiveTab('stories')}
+            onGoToDecode={() => setActiveTab('decode')}
           />
         )}
       </div>
+
+      {showHUD &&
+        currentPacket &&
+        createPortal(
+          <InterviewHUD
+            packet={currentPacket}
+            stories={data.stories}
+            role={currentRole}
+            onClose={() => setShowHUD(false)}
+          />,
+          document.body
+        )}
     </div>
   );
 }

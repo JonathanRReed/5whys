@@ -105,7 +105,15 @@ const pick = <T>(list: T[], seed: string): T => {
   return list[hash % list.length];
 };
 
-export function generateBulletSuggestions(bullet: BulletRecord): BulletSuggestion[] {
+/**
+ * @param seed rotates the worked examples; pass the bullet's position in the
+ * list so neighbours show different sentences. Defaults to the text itself.
+ */
+export function generateBulletSuggestions(
+  bullet: BulletRecord,
+  seed: string | number = bullet.original
+): BulletSuggestion[] {
+  const exampleSeed = String(seed);
   const suggestions: BulletSuggestion[] = [];
   const { fields } = bullet;
   // Analyze the current state of the bullet, so suggestions clear as the
@@ -165,8 +173,8 @@ export function generateBulletSuggestions(bullet: BulletRecord): BulletSuggestio
       type: 'missing-number',
       message: 'No measure yet. One concrete figure makes this line easier to trust.',
       fix: metricPromptFor(current),
-      studentExample: pick(NUMBER_EXAMPLES.student, bullet.id),
-      professionalExample: pick(NUMBER_EXAMPLES.professional, bullet.id),
+      studentExample: pick(NUMBER_EXAMPLES.student, exampleSeed),
+      professionalExample: pick(NUMBER_EXAMPLES.professional, exampleSeed),
     });
   }
 
@@ -184,8 +192,8 @@ export function generateBulletSuggestions(bullet: BulletRecord): BulletSuggestio
         : fields.quantifier.trim()
           ? `Tie your number (${fields.quantifier.trim()}) to the outcome it produced.`
           : 'Finish the thought: "...which meant ___ for the team, customer, or class."',
-      studentExample: pick(IMPACT_EXAMPLES.student, bullet.id),
-      professionalExample: pick(IMPACT_EXAMPLES.professional, bullet.id),
+      studentExample: pick(IMPACT_EXAMPLES.student, exampleSeed),
+      professionalExample: pick(IMPACT_EXAMPLES.professional, exampleSeed),
     });
   }
 

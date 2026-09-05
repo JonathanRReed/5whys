@@ -134,11 +134,9 @@ export const ACTION_VERBS = [
   'won',
 ] as const;
 
-export const POWER_WORDS = ACTION_VERBS;
-
 const REGEX_SPECIAL_CHARS = /[.*+?^${}()|[\]\\]/g;
 const escapeRegExp = (value: string) => value.replace(REGEX_SPECIAL_CHARS, '\\$&');
-const powerWordsPattern = POWER_WORDS.map(escapeRegExp).join('|');
+const powerWordsPattern = ACTION_VERBS.map(escapeRegExp).join('|');
 
 export const POWER_VERB_PATTERN = new RegExp(`\\b(${powerWordsPattern})\\b`, 'i');
 export const POWER_VERB_GLOBAL_PATTERN = new RegExp(`\\b(${powerWordsPattern})\\b`, 'gi');
@@ -165,7 +163,7 @@ export const INVOLVEMENT_VERBS = [
   'tasked',
   'contributed',
 ];
-const bulletStartPattern = [...POWER_WORDS, ...INVOLVEMENT_VERBS].map(escapeRegExp).join('|');
+const bulletStartPattern = [...ACTION_VERBS, ...INVOLVEMENT_VERBS].map(escapeRegExp).join('|');
 /** Matches a line that opens with any action or involvement verb. */
 export const BULLET_START_PATTERN = new RegExp(`^(${bulletStartPattern})\\b`, 'i');
 

@@ -2,6 +2,7 @@ import * as React from 'react';
 import { type CareerDashboardData, readCareerDashboard } from '../lib/career-bridge';
 import { FOCUS_LABELS, STAGE_LABELS } from '../lib/profile';
 import { cn } from '../lib/utils';
+import BackupControls from './BackupControls';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
 const TOOL_LINKS = [
@@ -114,7 +115,7 @@ export default function CareerDashboard() {
   }
 
   if (!data.hasData) {
-    return <EmptyState />;
+    return <EmptyState onRestored={() => setData(readCareerDashboard())} />;
   }
 
   return (
@@ -350,6 +351,8 @@ export default function CareerDashboard() {
         </Card>
       )}
 
+      <BackupControls onRestored={() => setData(readCareerDashboard())} />
+
       {/* Quick links */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {TOOL_LINKS.map((tool) => (
@@ -384,7 +387,7 @@ export default function CareerDashboard() {
   );
 }
 
-function EmptyState() {
+function EmptyState({ onRestored }: { onRestored: () => void }) {
   return (
     <div className="mx-auto w-full max-w-2xl space-y-8 text-center">
       {/* Large themed icon */}
@@ -432,6 +435,8 @@ function EmptyState() {
           </svg>
         </a>
       </div>
+
+      <BackupControls onRestored={onRestored} className="text-left" />
 
       <div className="grid gap-4 sm:grid-cols-2">
         {TOOL_LINKS.map((tool) => (

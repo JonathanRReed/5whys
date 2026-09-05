@@ -1,6 +1,11 @@
 import * as React from 'react';
 import { getSkillName, resolveQuestionText } from '../../lib/glowup-banks';
-import type { DecodedRole, InterviewPacket, Story } from '../../lib/glowup-store';
+import {
+  type DecodedRole,
+  type InterviewPacket,
+  readinessLabel,
+  type Story,
+} from '../../lib/glowup-store';
 import { cn } from '../../lib/utils';
 import { ChartIcon, WarningIcon } from '../interview-glow-up/icons';
 
@@ -264,7 +269,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
                             {getSkillName(story.primarySkillId)}
                           </span>
                           <span className="text-xs text-muted-foreground/60">
-                            {story.confidence}%
+                            {readinessLabel(story)}
                           </span>
                         </div>
                         <p className="mt-2 text-lg font-semibold text-foreground">

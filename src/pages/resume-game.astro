@@ -2,7 +2,6 @@
 import Base from '../layouts/Base.astro';
 import ResumeGameApp from '../components/ResumeGame';
 import ErrorBoundary from '../components/shared/ErrorBoundary';
-import WithToasts from '../components/WithToasts';
 
 const resumeSchemas = [
   {
@@ -59,13 +58,11 @@ const resumeNoScriptContext = [
     <h1 class="sr-only">Resume Bullet Game</h1>
     <section class="mx-auto w-full max-w-6xl">
       <ErrorBoundary client:load>
-        <WithToasts client:load>
-          <ResumeGameApp
-            client:load
-            showHeader={false}
-            className="px-0 pb-8 pt-0 overflow-hidden"
-          />
-        </WithToasts>
+        <ResumeGameApp
+          client:load
+          showHeader={false}
+          className="px-0 pb-8 pt-0 overflow-hidden"
+        />
       </ErrorBoundary>
     </section>
 

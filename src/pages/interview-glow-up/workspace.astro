@@ -2,7 +2,6 @@
 import Base from '../../layouts/Base.astro';
 import InterviewGlowUpWorkspace from '../../components/interview-glow-up/InterviewGlowUpWorkspace';
 import ErrorBoundary from '../../components/shared/ErrorBoundary';
-import WithToasts from '../../components/WithToasts';
 ---
 
 <Base
@@ -18,9 +17,7 @@ import WithToasts from '../../components/WithToasts';
   <div class="relative space-y-10 overflow-hidden px-4 pb-16 pt-4 sm:pt-6">
     <section class="mx-auto w-full max-w-7xl">
       <ErrorBoundary client:load>
-        <WithToasts client:load>
-          <InterviewGlowUpWorkspace client:load />
-        </WithToasts>
+        <InterviewGlowUpWorkspace client:load />
       </ErrorBoundary>
     </section>
     <section class="mx-auto grid w-full max-w-6xl gap-6 md:grid-cols-3">

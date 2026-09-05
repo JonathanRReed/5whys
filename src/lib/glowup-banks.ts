@@ -95,7 +95,7 @@ export const SKILL_BANK: Skill[] = [
     id: 'api',
     name: 'API Design',
     category: 'technical',
-    keywords: ['api', 'apis', 'rest', 'graphql', 'grpc', 'microservices', 'integration'],
+    keywords: ['api', 'apis', 'rest', 'graphql', 'grpc', 'microservices', 'api integration'],
   },
   {
     id: 'frontend',
@@ -158,7 +158,14 @@ export const SKILL_BANK: Skill[] = [
     id: 'teamwork',
     name: 'Teamwork',
     category: 'soft',
-    keywords: ['teamwork', 'team', 'collaborate', 'collaboration', 'cross-functional', 'partner'],
+    keywords: [
+      'teamwork',
+      'team player',
+      'collaborate',
+      'collaboration',
+      'cross-functional',
+      'partner with',
+    ],
   },
   {
     id: 'problem-solving',
@@ -249,10 +256,6 @@ export const SKILL_BANK: Skill[] = [
 ];
 
 export const SKILL_MAP = new Map(SKILL_BANK.map((s) => [s.id, s]));
-
-export function getSkillById(id: string): Skill | undefined {
-  return SKILL_MAP.get(id);
-}
 
 export function getSkillName(id: string): string {
   return SKILL_MAP.get(id)?.name ?? id;
@@ -375,6 +378,18 @@ export interface JdExtractionResult {
   skippedCount: number;
 }
 
+/**
+ * "Brightline Health - Remote (US)" or "Software Engineer II | New York" is a
+ * header, not a requirement: short, mostly capitalized, no verb-shaped words.
+ */
+function looksLikeHeaderLine(line: string): boolean {
+  const words = line.split(/\s+/).filter((w) => /[a-zA-Z]/.test(w));
+  if (words.length === 0 || words.length > 8) return false;
+  const capitalized = words.filter((w) => /^[A-Z(]/.test(w)).length;
+  const hasSeparator = /[|\-–—]/.test(line) || /\((?:US|USA|UK|EU|CA|Remote)\)/i.test(line);
+  return capitalized / words.length >= 0.7 && (hasSeparator || words.length <= 4);
+}
+
 const MAX_REQUIREMENT_LINES = 40;
 
 export function extractRequirementLines(rawText: string): JdExtractionResult {
@@ -394,7 +409,7 @@ export function extractRequirementLines(rawText: string): JdExtractionResult {
 
   for (const line of lines) {
     const tooShort = line.split(/\s+/).length < 4;
-    if (tooShort || isSectionHeader(line) || isBoilerplate(line)) {
+    if (tooShort || isSectionHeader(line) || isBoilerplate(line) || looksLikeHeaderLine(line)) {
       skippedCount++;
       continue;
     }

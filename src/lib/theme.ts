@@ -20,17 +20,6 @@ export function readAppliedTheme(): Theme | null {
   return isTheme(applied) ? applied : null;
 }
 
-/** The theme the visitor saved, or null if they never chose one. */
-export function readStoredTheme(): Theme | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-    return isTheme(stored) ? stored : null;
-  } catch {
-    return null;
-  }
-}
-
 /**
  * Apply a theme to the document. Colour transitions are suppressed for one
  * frame so the whole page flips at once instead of fading element by element.

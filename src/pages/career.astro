@@ -2,7 +2,6 @@
 import Base from '../layouts/Base.astro';
 import Career5Whys from '../components/Career5Whys';
 import ErrorBoundary from '../components/shared/ErrorBoundary';
-import WithToasts from '../components/WithToasts';
 import { siteConfig } from '../config/site';
 import { ogImageFor } from '../config/og';
 
@@ -79,9 +78,7 @@ const careerNoScriptContext = [
     <h1 class="sr-only">Career Reflection Five Whys</h1>
     <section id="why-flow" class="mx-auto w-full max-w-6xl">
       <ErrorBoundary client:load>
-        <WithToasts client:load>
-          <Career5Whys client:load showHeader={false} showFooter={false} className="pb-8" />
-        </WithToasts>
+        <Career5Whys client:load showHeader={false} showFooter={false} className="pb-8" />
       </ErrorBoundary>
     </section>
 

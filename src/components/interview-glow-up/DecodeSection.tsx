@@ -10,13 +10,16 @@ import {
   createRole,
   type DecodedBullet,
   type DecodedRole,
+  ensurePacketForRole,
   type GlowUpData,
   generateId,
   getSkillFrequencyMap,
   getTaggedBulletCount,
   getTopGaps,
+  switchRole,
   updateRole,
 } from '../../lib/glowup-store';
+import { isStudentLike, readProfile } from '../../lib/profile';
 import { cn } from '../../lib/utils';
 import { PartyIcon, SearchIcon } from './icons';
 
@@ -26,18 +29,74 @@ type Props = {
   currentRole: DecodedRole | undefined;
 };
 
+type RoleFields = Pick<DecodedRole, 'jobTitle' | 'company' | 'jdUrl' | 'rawJdText'>;
+
+/** A title for the role when none was typed: the first short line of the JD. */
+function deriveTitle(rawJdText: string): string {
+  const first = rawJdText
+    .split('\n')
+    .map((line) => line.trim())
+    .find((line) => line.length > 0 && line.split(/\s+/).length <= 8);
+  return first
+    ? first
+        .replace(/[|–—-].*$/, '')
+        .trim()
+        .slice(0, 80)
+    : '';
+}
+
+const EMPTY_FIELDS: RoleFields = { jobTitle: '', company: '', jdUrl: '', rawJdText: '' };
+
 export default function DecodeSection({ data, setData, currentRole }: Props) {
-  const [jobTitle, setJobTitle] = React.useState(currentRole?.jobTitle ?? '');
-  const [company, setCompany] = React.useState(currentRole?.company ?? '');
-  const [jdUrl, setJdUrl] = React.useState(currentRole?.jdUrl ?? '');
-  const [rawJdText, setRawJdText] = React.useState(currentRole?.rawJdText ?? '');
-  const [bullets, setBullets] = React.useState<DecodedBullet[]>(currentRole?.bullets ?? []);
+  const student = isStudentLike(readProfile());
+  // Before a role exists, edits live here; the first keystroke creates the
+  // role and from then on every field is read from and written to the store.
+  const [pending, setPending] = React.useState<RoleFields>(EMPTY_FIELDS);
   const [selectedBullets, setSelectedBullets] = React.useState<Set<string>>(new Set());
   const [skippedCount, setSkippedCount] = React.useState<number | null>(null);
+  const [savedAt, setSavedAt] = React.useState<number | null>(null);
+
+  const fields: RoleFields = currentRole
+    ? {
+        jobTitle: currentRole.jobTitle,
+        company: currentRole.company,
+        jdUrl: currentRole.jdUrl ?? '',
+        rawJdText: currentRole.rawJdText,
+      }
+    : pending;
+  const bullets = currentRole?.bullets ?? [];
+
+  const commit = (partial: Partial<RoleFields>, nextBullets?: DecodedBullet[]) => {
+    setSavedAt(Date.now());
+    if (currentRole) {
+      setData(
+        updateRole(data, currentRole.id, {
+          ...partial,
+          ...(nextBullets ? { bullets: nextBullets } : {}),
+        })
+      );
+      return;
+    }
+    const merged = { ...pending, ...partial };
+    setPending(merged);
+    // Autosave: the role exists as soon as there is anything to keep.
+    if (!merged.jobTitle && !merged.company && !merged.rawJdText && !nextBullets) return;
+    const created = createRole(data, {
+      jobTitle: merged.jobTitle,
+      company: merged.company,
+      jdUrl: merged.jdUrl || undefined,
+      rawJdText: merged.rawJdText,
+      bullets: nextBullets ?? [],
+    });
+    setData(ensurePacketForRole(created, created.currentRoleId as string));
+    setPending(EMPTY_FIELDS);
+  };
+
+  const setBullets = (next: DecodedBullet[]) => commit({}, next);
 
   const parseJD = () => {
-    if (!rawJdText.trim()) return;
-    const { requirements, skippedCount: skipped } = extractRequirementLines(rawJdText);
+    if (!fields.rawJdText.trim()) return;
+    const { requirements, skippedCount: skipped } = extractRequirementLines(fields.rawJdText);
     const parsed: DecodedBullet[] = requirements.map((line) => {
       const suggestions = detectSkillsFromText(line);
       return {
@@ -49,29 +108,25 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
         suggestion: suggestions,
       };
     });
-    setBullets(parsed);
     setSkippedCount(skipped);
+    const title = fields.jobTitle.trim() ? {} : { jobTitle: deriveTitle(fields.rawJdText) };
+    commit(title, parsed);
   };
 
-  const saveRole = () => {
-    if (!jobTitle.trim()) return;
-    const payload = { jobTitle, company, jdUrl: jdUrl || undefined, rawJdText, bullets };
-    if (currentRole) {
-      setData(updateRole(data, currentRole.id, payload));
-    } else {
-      setData(createRole(data, payload));
-    }
+  const startNewRole = () => {
+    setPending(EMPTY_FIELDS);
+    setSkippedCount(null);
+    setData({ ...data, currentRoleId: null, currentPacketId: null });
   };
 
-  // Frequency, totals, and gaps all read the same unsaved editor state, so
-  // the percentages stay consistent before and after Save Role.
+  // Frequency, totals, and gaps all read the same saved bullets.
   const skillFreq = getSkillFrequencyMap(bullets);
   const taggedBullets = getTaggedBulletCount(bullets);
   const topGaps = getTopGaps(data, bullets);
 
   const repeatedTerms = React.useMemo(
-    () => (rawJdText.trim() ? getRepeatedTerms(rawJdText) : []),
-    [rawJdText]
+    () => (fields.rawJdText.trim() ? getRepeatedTerms(fields.rawJdText) : []),
+    [fields.rawJdText]
   );
 
   // Legacy saved roles may still contain very short lines; flag them.
@@ -96,19 +151,62 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
 
   return (
     <div className="space-y-6">
+      {/* Which role, and the autosave state */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {data.roles.length > 1 && (
+            <select
+              aria-label="Switch role"
+              value={currentRole?.id ?? ''}
+              onChange={(e) => {
+                if (e.target.value) setData(switchRole(data, e.target.value));
+              }}
+              className="rounded-lg border border-border/50 bg-overlay/30 px-3 py-2 text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+            >
+              {!currentRole && <option value="">New role</option>}
+              {data.roles.map((role) => (
+                <option key={role.id} value={role.id}>
+                  {role.jobTitle || 'Untitled role'}
+                  {role.company ? ` at ${role.company}` : ''}
+                </option>
+              ))}
+            </select>
+          )}
+          {currentRole && (
+            <button
+              type="button"
+              onClick={startNewRole}
+              className="rounded-lg border border-border/50 bg-overlay/30 px-3 py-2 text-sm text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+            >
+              Decode another job
+            </button>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground" aria-live="polite">
+          {currentRole
+            ? savedAt
+              ? 'Saved'
+              : 'Saved in this browser'
+            : 'Saves as soon as you type'}
+        </p>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2">
         <div>
           <label htmlFor="job-title" className="mb-1 block text-sm font-medium text-foreground">
-            Job Title
+            Job title
           </label>
           <input
             id="job-title"
             type="text"
-            value={jobTitle}
-            onChange={(e) => setJobTitle(e.target.value)}
-            placeholder="e.g., Senior Software Engineer"
+            value={fields.jobTitle}
+            onChange={(e) => commit({ jobTitle: e.target.value })}
+            placeholder={student ? 'e.g., Marketing Intern' : 'e.g., Product Analyst'}
             className={inputClass}
           />
+          <p className="mt-1 text-xs text-muted-foreground">
+            Leave it blank and the first line of the posting is used.
+          </p>
         </div>
         <div>
           <label htmlFor="company" className="mb-1 block text-sm font-medium text-foreground">
@@ -117,71 +215,68 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
           <input
             id="company"
             type="text"
-            value={company}
-            onChange={(e) => setCompany(e.target.value)}
-            placeholder="e.g., Acme Corp"
+            value={fields.company}
+            onChange={(e) => commit({ company: e.target.value })}
+            placeholder={student ? 'e.g., City Parks Department' : 'e.g., Acme Corp'}
             className={inputClass}
           />
         </div>
       </div>
       <div>
         <label htmlFor="jd-url" className="mb-1 block text-sm font-medium text-foreground">
-          Job Description URL (optional)
+          Posting link (optional)
         </label>
         <input
           id="jd-url"
           type="url"
-          value={jdUrl}
-          onChange={(e) => setJdUrl(e.target.value)}
+          value={fields.jdUrl}
+          onChange={(e) => commit({ jdUrl: e.target.value })}
           placeholder="https://..."
           className={inputClass}
         />
       </div>
       <div>
         <label htmlFor="jd-text" className="mb-1 block text-sm font-medium text-foreground">
-          Paste Full Job Description
+          Paste the job posting
         </label>
         <p className="mb-1 text-xs text-muted-foreground">
-          Paste the entire JD. We extract the requirement lines, skip headings and boilerplate, and
-          suggest skill tags.
+          Paste the whole thing. The requirement lines are pulled out, headings and boilerplate are
+          skipped, and each line gets a suggested skill tag.
         </p>
         <textarea
           id="jd-text"
-          value={rawJdText}
-          onChange={(e) => setRawJdText(e.target.value)}
-          placeholder="Paste the entire job description here. Include bullet points, requirements, responsibilities..."
-          rows={6}
-          className={`${inputClass} md:rows-[8]`}
+          value={fields.rawJdText}
+          onChange={(e) => commit({ rawJdText: e.target.value })}
+          placeholder="Paste the entire posting here: responsibilities, requirements, nice-to-haves..."
+          rows={8}
+          className={inputClass}
         />
-        <div className="mt-2 flex gap-2">
+        <div className="mt-2 flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={parseJD}
-            className="rounded-lg bg-foam px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-foam/90 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+            disabled={!fields.rawJdText.trim()}
+            className="rounded-lg bg-foam px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-foam/90 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
           >
-            Parse Bullets
+            {bullets.length > 0 ? 'Parse again' : 'Parse the requirements'}
           </button>
-          <button
-            type="button"
-            onClick={saveRole}
-            disabled={!jobTitle.trim()}
-            aria-disabled={!jobTitle.trim()}
-            className="rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
-          >
-            Save Role
-          </button>
+          {bullets.length > 0 && (
+            <span className="text-xs text-muted-foreground">
+              Parsing again replaces the tags below.
+            </span>
+          )}
         </div>
       </div>
 
-      {bullets.length === 0 && rawJdText.trim() === '' && (
+      {bullets.length === 0 && fields.rawJdText.trim() === '' && (
         <div className="rounded-xl border border-dashed border-border/40 p-8 text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-foam/10">
             <SearchIcon className="h-6 w-6 text-foam" />
           </div>
-          <p className="text-sm font-medium text-foreground">No job description decoded yet</p>
+          <p className="text-sm font-medium text-foreground">No posting decoded yet</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Fill in the role details, paste the JD, then click Parse Bullets to extract
-            requirements.
+            Paste a job posting above and parse it. The skills it tests become the list your stories
+            need to cover.
           </p>
         </div>
       )}
@@ -189,11 +284,11 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
       {repeatedTerms.length > 0 && (
         <div className="rounded-xl border border-border/30 bg-overlay/15 p-4">
           <h4 className="mb-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Repeated Phrases
+            Repeated phrases
           </h4>
           <p className="mb-3 text-xs text-muted-foreground">
-            Phrases that keep showing up in the JD. If a phrase repeats, expect a question about it:
-            prepare a story that covers it.
+            Phrases that keep showing up in the posting. If a phrase repeats, expect a question
+            about it: prepare a story that covers it.
           </p>
           <div className="flex flex-wrap gap-2">
             {repeatedTerms.map(({ term, count }) => (
@@ -210,7 +305,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <h3 className="text-lg font-semibold text-foreground">
-                Parsed Requirements ({bullets.length})
+                Requirements ({bullets.length})
               </h3>
               {skippedCount !== null && skippedCount > 0 && (
                 <p className="text-xs text-muted-foreground">
@@ -225,14 +320,14 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                   {selectedBullets.size} selected
                 </span>
                 <select
-                  aria-label="Bulk tag selected bullets"
+                  aria-label="Tag selected requirements"
                   onChange={(e) => {
                     if (e.target.value) handleBulkTag(e.target.value);
                   }}
                   className="rounded-lg border border-border/50 bg-overlay/30 px-2 py-1 text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                   defaultValue=""
                 >
-                  <option value="">Bulk tag...</option>
+                  <option value="">Tag all as...</option>
                   {SKILL_BANK.map((skill) => (
                     <option key={skill.id} value={skill.id}>
                       {skill.name}
@@ -264,7 +359,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
               >
                 <input
                   type="checkbox"
-                  aria-label={`Select bullet: ${bullet.text.substring(0, 50)}`}
+                  aria-label={`Select requirement: ${bullet.text.substring(0, 50)}`}
                   checked={selectedBullets.has(bullet.id)}
                   onChange={(e) => {
                     const newSet = new Set(selectedBullets);
@@ -292,6 +387,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                   </p>
                   <div className="flex flex-wrap items-center gap-2">
                     <select
+                      aria-label="Skill this requirement tests"
                       value={bullet.primarySkillId ?? ''}
                       onChange={(e) => {
                         setBullets(
@@ -304,7 +400,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                       }}
                       className="rounded-lg border border-border/50 bg-overlay/30 px-2 py-1 text-xs text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                     >
-                      <option value="">Select skill...</option>
+                      <option value="">Pick a skill...</option>
                       {SKILL_BANK.map((skill) => (
                         <option key={skill.id} value={skill.id}>
                           {skill.name}
@@ -367,7 +463,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="rounded-xl border border-border/30 bg-overlay/15 p-4">
             <h4 className="mb-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Skill Frequency Map
+              What this job tests
             </h4>
             <p className="mb-3 text-xs text-muted-foreground">
               Share of tagged requirements that mention each skill.
@@ -397,11 +493,11 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
           </div>
           <div className="rounded-xl border border-destructive/25 bg-destructive/5 p-4">
             <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-destructive">
-              Top 3 Gaps (No Stories Yet)
+              Skills with no story yet
             </h4>
             {topGaps.length === 0 ? (
               <p className="flex items-center gap-1 text-sm text-muted-foreground">
-                All skills covered! <PartyIcon className="h-4 w-4" />
+                Every tagged skill has a story. <PartyIcon className="h-4 w-4" />
               </p>
             ) : (
               <ul className="space-y-1">
@@ -413,6 +509,9 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                 ))}
               </ul>
             )}
+            <p className="mt-3 text-xs text-muted-foreground">
+              Next: open Build stories. Each gap has a start button there.
+            </p>
           </div>
         </div>
       )}

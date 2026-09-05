@@ -305,15 +305,17 @@ describe('generateBulletSuggestions', () => {
   });
 
   it('rotates worked examples across bullets', () => {
-    const a = generateBulletSuggestions(createBulletRecord('Helped with events', 0)).find(
+    const a = generateBulletSuggestions(createBulletRecord('Helped with events', 0), 0).find(
       (s) => s.type === 'missing-number'
     );
-    const b = generateBulletSuggestions(createBulletRecord('Helped with the newsletter', 1)).find(
-      (s) => s.type === 'missing-number'
-    );
-    const c = generateBulletSuggestions(createBulletRecord('Helped with the fundraiser', 2)).find(
-      (s) => s.type === 'missing-number'
-    );
+    const b = generateBulletSuggestions(
+      createBulletRecord('Helped with the newsletter', 1),
+      1
+    ).find((s) => s.type === 'missing-number');
+    const c = generateBulletSuggestions(
+      createBulletRecord('Helped with the fundraiser', 2),
+      2
+    ).find((s) => s.type === 'missing-number');
     const examples = new Set([a?.studentExample, b?.studentExample, c?.studentExample]);
     expect(examples.size).toBeGreaterThan(1);
   });

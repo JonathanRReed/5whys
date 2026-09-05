@@ -8,6 +8,8 @@ import { Textarea } from '../ui/textarea';
 
 type Props = {
   bullet: BulletRecord | null;
+  /** Position in the bullet list; rotates the worked examples. */
+  index?: number;
   onFieldChange: (
     id: string,
     field: 'verb' | 'quantifier' | 'task' | 'impact',
@@ -15,9 +17,9 @@ type Props = {
   ) => void;
 };
 
-export default function BulletEditor({ bullet, onFieldChange }: Props) {
+export default function BulletEditor({ bullet, index, onFieldChange }: Props) {
   const register = isStudentLike(readProfile()) ? 'student' : 'professional';
-  const suggestions = bullet ? generateBulletSuggestions(bullet) : [];
+  const suggestions = bullet ? generateBulletSuggestions(bullet, index ?? bullet.original) : [];
   // Hints pulled from the user's own text: if their line already contains a
   // number, surface it as the quantifier candidate.
   const detectedNumber = bullet?.original.match(/\$?\d[\d,]*\.?\d*%?/)?.[0] ?? null;

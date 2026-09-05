@@ -6,7 +6,7 @@ type Props = {
 
 export default function WorkspaceHeader({ onClearData }: Props) {
   const handleClear = () => {
-    if (confirm('Clear all data? This cannot be undone.')) {
+    if (confirm('Clear every role, story, and packet from this browser? This cannot be undone.')) {
       clearAllData();
       onClearData();
     }
@@ -19,7 +19,8 @@ export default function WorkspaceHeader({ onClearData }: Props) {
           Interview Workspace
         </h1>
         <p className="mt-1 text-muted-foreground">
-          Decode → Build Stories → Save to Vault → Create Packet
+          Decode the job, build stories that prove the skills it tests, then pack the best five for
+          the call.
         </p>
       </div>
       <div className="flex items-center gap-2">
@@ -35,7 +36,7 @@ export default function WorkspaceHeader({ onClearData }: Props) {
           onClick={handleClear}
           className="rounded-lg border border-destructive/30 bg-destructive/8 px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/15 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
         >
-          Clear Data
+          Clear data
         </button>
       </div>
     </div>

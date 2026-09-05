@@ -336,7 +336,11 @@ ${improved.join('\n')}
             selectedBulletId={selectedBulletId}
             onSelect={setSelectedBulletId}
           />
-          <BulletEditor bullet={selectedBullet} onFieldChange={updateBulletField} />
+          <BulletEditor
+            bullet={selectedBullet}
+            index={bullets.findIndex((b) => b.id === selectedBulletId)}
+            onFieldChange={updateBulletField}
+          />
         </div>
       )}
 

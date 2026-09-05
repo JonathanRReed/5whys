@@ -16,8 +16,6 @@ import SessionHistory from './networking/SessionHistory';
 import { useNetworkingPractice } from './networking/useNetworkingPractice';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
-export type { Scenario } from './networking/useNetworkingPractice';
-
 type NetworkingPracticeProps = {
   showHeader?: boolean;
   className?: string;

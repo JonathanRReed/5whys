@@ -188,19 +188,6 @@ export function downloadJson(filename: string, payload: unknown) {
   URL.revokeObjectURL(url);
 }
 
-export function formatSnapshotTime(value: string) {
-  try {
-    return new Intl.DateTimeFormat(undefined, {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    }).format(new Date(value));
-  } catch {
-    return value;
-  }
-}
-
 export function normalizeSnapshot(entry: unknown): WhySnapshot | null {
   if (!entry || typeof entry !== 'object') return null;
   const data = entry as Record<string, unknown>;

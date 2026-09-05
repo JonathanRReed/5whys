@@ -4,6 +4,8 @@ import {
   deleteStory,
   type GlowUpData,
   type InterviewPacket,
+  readinessLabel,
+  toggleStoryInPacket,
   updatePacket,
 } from '../../lib/glowup-store';
 import { cn } from '../../lib/utils';
@@ -160,10 +162,24 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
                   <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
                     {story.hook || story.play}
                   </p>
-                  <div className="mt-2 flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">
-                      Confidence: {story.confidence}%
-                    </span>
+                  <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-xs text-muted-foreground">{readinessLabel(story)}</span>
+                    {currentPacket && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setData(toggleStoryInPacket(data, currentPacket.id, story.id))
+                        }
+                        className={cn(
+                          'rounded-lg border px-3 py-1 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2',
+                          inPacket
+                            ? 'border-foam/50 bg-foam/15 text-foam hover:bg-foam/25'
+                            : 'border-border/50 bg-overlay/30 text-foreground hover:bg-overlay/50'
+                        )}
+                      >
+                        {inPacket ? 'Remove from packet' : 'Add to packet'}
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => {
@@ -191,10 +207,10 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-foam/10">
                 <ArchiveIcon className="h-6 w-6 text-foam" />
               </div>
-              <p className="text-sm font-medium text-foreground">Your vault is empty</p>
+              <p className="text-sm font-medium text-foreground">Your library is empty</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Go to Build Stories to write Play + Proof stories, then come back to organize and
-                select them for your packet.
+                Every story you write lands here. Use it to search, filter by skill, and select them
+                for your packet.
               </p>
             </>
           ) : (

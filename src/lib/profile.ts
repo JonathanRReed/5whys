@@ -51,15 +51,6 @@ export function writeProfile(stage: CareerStage, focus: CareerFocus): CareerProf
   return profile;
 }
 
-export function clearProfile() {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.removeItem(PROFILE_STORAGE_KEY);
-  } catch {
-    /* ignore */
-  }
-}
-
 /** Students and early-career people get the student register everywhere. */
 export function isStudentLike(profile: CareerProfile | null): boolean {
   return profile?.stage === 'student' || profile?.stage === 'early';

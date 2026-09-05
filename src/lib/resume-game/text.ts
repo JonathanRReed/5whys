@@ -59,12 +59,6 @@ export function normalizeLine(raw: string) {
   return decoded;
 }
 
-export function normalizeTextLine(raw: string): string {
-  const normalized = normalizeLine(raw);
-  if (!normalized) return '';
-  return `• ${normalized}`;
-}
-
 export function highlightResume(text: string) {
   if (!text) return '';
   const escaped = escapeHtml(decodeEntities(text));

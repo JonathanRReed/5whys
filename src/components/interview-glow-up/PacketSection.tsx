@@ -5,11 +5,13 @@ import {
   SUGGESTED_QUESTIONS_TO_ASK,
 } from '../../lib/glowup-banks';
 import {
-  createPacket,
   type DecodedRole,
+  ensurePacketForRole,
   type GlowUpData,
   type InterviewPacket,
+  readinessLabel,
   type Story,
+  toggleStoryInPacket,
   updatePacket,
 } from '../../lib/glowup-store';
 import { cn } from '../../lib/utils';
@@ -21,6 +23,8 @@ type Props = {
   currentRole: DecodedRole | undefined;
   currentPacket: InterviewPacket | undefined;
   onLaunchHUD: () => void;
+  onGoToStories: () => void;
+  onGoToDecode: () => void;
 };
 
 export default function PacketSection({
@@ -29,65 +33,39 @@ export default function PacketSection({
   currentRole,
   currentPacket,
   onLaunchHUD,
+  onGoToStories,
+  onGoToDecode,
 }: Props) {
   const [mode, setMode] = React.useState<'prep' | 'review'>('prep');
 
-  const createNewPacket = () => {
-    if (!currentRole) return;
+  // The packet is created with the role; this only runs for data saved before that.
+  React.useEffect(() => {
+    if (currentRole && !currentPacket) setData(ensurePacketForRole(data, currentRole.id));
+  }, [currentRole, currentPacket, data, setData]);
 
-    setData(
-      createPacket(data, {
-        roleId: currentRole.id,
-        mode: 'prep',
-        topStoryIds: [],
-        customQuestions: [],
-        notes: '',
-        panicAnswer: '',
-        companyIntel: {
-          keywords: [],
-          notes: '',
-          links: [],
-        },
-      })
-    );
-  };
-
-  if (!currentRole) {
+  if (!currentRole || !currentPacket) {
     return (
       <div className="rounded-xl border border-dashed border-border/40 p-8 text-center">
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-foam/10">
           <ClipboardIcon className="h-6 w-6 text-foam" />
         </div>
-        <p className="text-sm font-medium text-foreground">No role decoded yet</p>
+        <p className="text-sm font-medium text-foreground">No job decoded yet</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Head to Decode JD first to analyze a job description, then create your interview packet.
-        </p>
-      </div>
-    );
-  }
-
-  if (!currentPacket) {
-    return (
-      <div className="rounded-xl border border-dashed border-border/40 p-8 text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-foam/10">
-          <ClipboardIcon className="h-6 w-6 text-foam" />
-        </div>
-        <p className="text-sm font-medium text-foreground">No packet yet for this role</p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Create a packet to compile your best stories, company intel, and questions to ask.
+          The packet belongs to a posting. Decode one first and it appears here.
         </p>
         <button
           type="button"
-          onClick={createNewPacket}
+          onClick={onGoToDecode}
           className="mt-4 rounded-lg bg-foam px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-foam/90 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
         >
-          Create Interview Packet
+          Decode a job
         </button>
       </div>
     );
   }
 
   const packetStories = data.stories.filter((s) => currentPacket.topStoryIds.includes(s.id));
+  const otherStories = data.stories.filter((s) => !currentPacket.topStoryIds.includes(s.id));
 
   // Group packet stories by primary skill for a scannable rehearsal order.
   const storiesBySkill: [string, Story[]][] = [];
@@ -105,10 +83,13 @@ export default function PacketSection({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold text-foreground">
-            {currentRole.company}: {currentRole.jobTitle}
+            {[currentRole.jobTitle || 'Untitled role', currentRole.company]
+              .filter(Boolean)
+              .join(' at ')}
           </h3>
           <p className="text-sm text-muted-foreground">
-            {packetStories.length} stories in packet (target: 5)
+            {packetStories.length === 1 ? '1 story' : `${packetStories.length} stories`} in the
+            packet. Five is plenty for one interview.
           </p>
         </div>
         <div className="flex gap-2">
@@ -149,6 +130,88 @@ export default function PacketSection({
 
       {mode === 'prep' && (
         <div className="space-y-6">
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Stories in this packet
+            </h4>
+            {packetStories.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border/40 p-5 text-sm text-muted-foreground">
+                Nothing packed yet.{' '}
+                {data.stories.length > 0 ? (
+                  'Add stories below, or from any story card.'
+                ) : (
+                  <button
+                    type="button"
+                    onClick={onGoToStories}
+                    className="font-medium text-foam underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+                  >
+                    Write your first story
+                  </button>
+                )}
+              </div>
+            ) : (
+              <ul className="grid gap-2 sm:grid-cols-2">
+                {packetStories.map((story) => (
+                  <li
+                    key={story.id}
+                    className="flex items-start justify-between gap-2 rounded-xl border border-foam/30 bg-foam/5 p-3"
+                  >
+                    <div>
+                      <span className="rounded-full bg-foam/15 px-2 py-0.5 text-xs font-medium text-foam">
+                        {getSkillName(story.primarySkillId)}
+                      </span>
+                      <p className="mt-1 text-sm font-medium text-foreground">
+                        {story.trigger || 'Untitled'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{readinessLabel(story)}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setData(toggleStoryInPacket(data, currentPacket.id, story.id))}
+                      className="rounded px-2 py-1 text-xs text-muted-foreground hover:text-destructive focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
+                    >
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {otherStories.length > 0 && (
+              <details className="rounded-xl border border-border/30 bg-overlay/15 p-3">
+                <summary className="cursor-pointer text-sm text-foreground">
+                  Add from your other {otherStories.length === 1 ? 'story' : 'stories'} (
+                  {otherStories.length})
+                </summary>
+                <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+                  {otherStories.map((story) => (
+                    <li
+                      key={story.id}
+                      className="flex items-start justify-between gap-2 rounded-lg border border-border/30 bg-overlay/20 p-3"
+                    >
+                      <div>
+                        <span className="rounded-full bg-overlay/50 px-2 py-0.5 text-xs text-muted-foreground">
+                          {getSkillName(story.primarySkillId)}
+                        </span>
+                        <p className="mt-1 text-sm text-foreground">
+                          {story.trigger || 'Untitled'}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setData(toggleStoryInPacket(data, currentPacket.id, story.id))
+                        }
+                        className="rounded-lg border border-border/50 bg-overlay/30 px-2 py-1 text-xs text-foreground hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+                      >
+                        Add
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
+          </div>
+
           <div className="space-y-3">
             <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Company Intel
@@ -318,7 +381,7 @@ export default function PacketSection({
                 className="flex items-center gap-2 rounded-lg bg-foam px-4 py-2.5 text-sm font-semibold text-background shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
               >
                 <TargetIcon className="h-4 w-4" />
-                Launch HUD
+                Open the HUD
               </button>
             </div>
           </div>
@@ -332,9 +395,9 @@ export default function PacketSection({
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-foam/10">
                 <ClipboardIcon className="h-6 w-6 text-foam" />
               </div>
-              <p className="text-sm font-medium text-foreground">No stories in packet yet</p>
+              <p className="text-sm font-medium text-foreground">No stories in the packet yet</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Go to the Vault tab to browse your stories and add the best ones to this packet.
+                Switch to Prep to add stories, or write one in Build stories.
               </p>
             </div>
           ) : (
@@ -355,7 +418,9 @@ export default function PacketSection({
                     >
                       <div className="flex items-start justify-between gap-2">
                         <p className="font-medium text-foreground">{story.trigger || 'Untitled'}</p>
-                        <span className="text-xs text-muted-foreground">{story.confidence}%</span>
+                        <span className="text-xs text-muted-foreground">
+                          {readinessLabel(story)}
+                        </span>
                       </div>
                       {story.questionPrompts.length > 0 && (
                         <ul className="mt-2 space-y-1 rounded-lg bg-iris/8 p-2">

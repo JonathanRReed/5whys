@@ -15,6 +15,41 @@
 
 export type BulletStatus = 'active' | 'ignored';
 
+/** How ready a story is to be told out loud. Three honest states, no percentage. */
+export type Readiness = 'rough' | 'solid' | 'rehearsed';
+
+export const READINESS: { id: Readiness; label: string; hint: string; confidence: number }[] = [
+  {
+    id: 'rough',
+    label: 'Rough',
+    hint: 'Notes only. You would stumble telling it.',
+    confidence: 30,
+  },
+  {
+    id: 'solid',
+    label: 'Solid',
+    hint: 'You can tell it, but you have not said it out loud.',
+    confidence: 60,
+  },
+  {
+    id: 'rehearsed',
+    label: 'Rehearsed',
+    hint: 'Said out loud at least twice. Ready.',
+    confidence: 90,
+  },
+];
+
+export function readinessOf(story: { readiness?: Readiness; confidence?: number }): Readiness {
+  if (story.readiness) return story.readiness;
+  const c = story.confidence ?? 60;
+  return c <= 40 ? 'rough' : c <= 75 ? 'solid' : 'rehearsed';
+}
+
+export function readinessLabel(story: { readiness?: Readiness; confidence?: number }): string {
+  const id = readinessOf(story);
+  return READINESS.find((r) => r.id === id)?.label ?? 'Solid';
+}
+
 export interface DecodedBullet {
   id: string;
   text: string;
@@ -51,7 +86,9 @@ export interface Story {
   proofSnippet: string; // ~10 words
   play: string;
   proof: string;
+  /** Kept for older saves; the UI uses readiness (see readinessOf). */
   confidence: number; // 1-100
+  readiness?: Readiness;
   questionPrompts: string[];
   tags: string[];
   successRate?: { usedCount: number; positiveCount: number };
@@ -175,23 +212,6 @@ export function exportJSON(): void {
   URL.revokeObjectURL(url);
 }
 
-export function importJSON(file: File): Promise<GlowUpData> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target?.result as string) as GlowUpData;
-        saveData(data);
-        resolve(data);
-      } catch {
-        reject(new Error('Invalid JSON file'));
-      }
-    };
-    reader.onerror = () => reject(new Error('Failed to read file'));
-    reader.readAsText(file);
-  });
-}
-
 // ============================================================================
 // Data Migration (placeholder for future versions)
 // ============================================================================
@@ -245,15 +265,6 @@ export function updateRole(
     roles: data.roles.map((r) =>
       r.id === roleId ? { ...r, ...updates, updatedAt: Date.now() } : r
     ),
-  };
-}
-
-export function deleteRole(data: GlowUpData, roleId: string): GlowUpData {
-  return {
-    ...data,
-    roles: data.roles.filter((r) => r.id !== roleId),
-    currentRoleId: data.currentRoleId === roleId ? null : data.currentRoleId,
-    packets: data.packets.filter((p) => p.roleId !== roleId),
   };
 }
 
@@ -329,31 +340,9 @@ export function updatePacket(
   };
 }
 
-export function deletePacket(data: GlowUpData, packetId: string): GlowUpData {
-  return {
-    ...data,
-    packets: data.packets.filter((p) => p.id !== packetId),
-    currentPacketId: data.currentPacketId === packetId ? null : data.currentPacketId,
-  };
-}
-
 // ============================================================================
 // Query Helpers
 // ============================================================================
-
-export function getStoriesBySkill(data: GlowUpData, skillId: string): Story[] {
-  return data.stories.filter(
-    (s) => s.primarySkillId === skillId || s.otherSkillIds.includes(skillId)
-  );
-}
-
-export function getUnusedStories(data: GlowUpData, packetId: string): Story[] {
-  const packet = data.packets.find((p) => p.id === packetId);
-  if (!packet) return data.stories;
-
-  const usedIds = new Set(packet.topStoryIds);
-  return data.stories.filter((s) => !usedIds.has(s.id));
-}
 
 /**
  * Skill frequency across a set of bullets. Takes the bullet array directly so
@@ -409,4 +398,51 @@ export function getTopGaps(
   gaps.sort((a, b) => b[1] - a[1]);
 
   return gaps.slice(0, count).map(([skillId]) => skillId);
+}
+
+// ============================================================================
+// Flow helpers: one packet per role, stories added from their cards
+// ============================================================================
+
+/** The packet for a role, created on demand so "add to packet" always has a target. */
+export function ensurePacketForRole(data: GlowUpData, roleId: string): GlowUpData {
+  const existing = data.packets.find((p) => p.roleId === roleId);
+  if (existing) {
+    return data.currentPacketId === existing.id ? data : { ...data, currentPacketId: existing.id };
+  }
+  return createPacket(data, {
+    roleId,
+    mode: 'prep',
+    topStoryIds: [],
+    customQuestions: [],
+    notes: '',
+    panicAnswer: '',
+    companyIntel: { keywords: [], notes: '', links: [] },
+  });
+}
+
+/** Make a role current and point at its packet. */
+export function switchRole(data: GlowUpData, roleId: string): GlowUpData {
+  if (!data.roles.some((r) => r.id === roleId)) return data;
+  return ensurePacketForRole({ ...data, currentRoleId: roleId }, roleId);
+}
+
+export function toggleStoryInPacket(
+  data: GlowUpData,
+  packetId: string,
+  storyId: string
+): GlowUpData {
+  const packet = data.packets.find((p) => p.id === packetId);
+  if (!packet) return data;
+  const inPacket = packet.topStoryIds.includes(storyId);
+  const topStoryIds = inPacket
+    ? packet.topStoryIds.filter((id) => id !== storyId)
+    : [...packet.topStoryIds, storyId];
+  const updated = updatePacket(data, packetId, { topStoryIds });
+  return {
+    ...updated,
+    stories: updated.stories.map((s) =>
+      s.id === storyId && !inPacket ? { ...s, lastUsedAt: Date.now() } : s
+    ),
+  };
 }

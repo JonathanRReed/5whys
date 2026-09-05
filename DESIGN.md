@@ -13,9 +13,12 @@ the brand; warm brass is the secondary accent. Neutrals are tinted warm and
 green, never blue. Tool accents fan out across green, brass, terracotta, and a
 muted plum so the four tools stay distinguishable without a rainbow.
 
-The source of truth is `src/styles/globals.css`. These same values are mirrored
-in `public/career-tools-theme.js` (an inline anti-FOUC script that applies the
-palette before the stylesheet loads). Keep the two in sync.
+The source of truth is `src/styles/globals.css`, and only there. The Night
+values sit on `:root`, the Dawn values on `:root[data-theme="dawn"]`, and an
+inline `@theme` block registers each one as a named Tailwind color, so
+utilities read `bg-foam/15` or `border-border/40`. Never write an arbitrary
+`hsl(var(--x))` class. The boot script in `src/scripts/theme-init.js` only sets
+`data-theme`; it carries no colors.
 
 ### Night (Default)
 
