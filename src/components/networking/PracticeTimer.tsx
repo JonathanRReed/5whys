@@ -1,6 +1,6 @@
-import * as React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import type * as React from 'react';
 import { Button } from '../ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import type { TimerState } from './useTimer';
 
 const TOTAL_SECONDS = 120;
@@ -30,13 +30,13 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset }: Prop
   };
 
   return (
-    <Card className="border-[hsl(var(--primary)/0.6)] bg-[hsl(var(--overlay)/0.3)]">
+    <Card className="border-primary/60 bg-overlay/30">
       <CardHeader className="text-center">
-        <CardTitle className="text-[hsl(var(--primary))]">Two-Minute Timer</CardTitle>
+        <CardTitle className="text-primary">Two-Minute Timer</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-4">
         <div
-          className="relative flex items-center justify-center w-48 h-48 rounded-full border border-[hsl(var(--border)/0.6)]"
+          className="relative flex items-center justify-center w-48 h-48 rounded-full border border-border/60"
           role="progressbar"
           aria-label="Practice timer progress"
           aria-valuenow={Math.round(progress * 100)}
@@ -50,13 +50,13 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset }: Prop
             aria-hidden="true"
           />
           <div
-            className="relative flex flex-col items-center justify-center w-40 h-40 rounded-full bg-[hsl(var(--overlay)/0.3)] text-3xl font-semibold"
+            className="relative flex flex-col items-center justify-center w-40 h-40 rounded-full bg-overlay/30 text-3xl font-semibold"
             role="timer"
             aria-live="polite"
             aria-label="Time remaining"
           >
             {formatTime(timer.remaining)}
-            <span className="mt-2 text-xs uppercase tracking-[0.2em] text-[hsl(var(--muted-foreground))]">
+            <span className="mt-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
               {isComplete ? "Time's up!" : 'seconds left'}
             </span>
           </div>
@@ -66,7 +66,7 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset }: Prop
             onClick={onStart}
             disabled={timer.isRunning || isComplete}
             aria-pressed={timer.isRunning}
-            className="bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.8)] disabled:bg-[hsl(var(--primary)/0.4)] disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+            className="bg-primary hover:bg-primary/80 disabled:bg-primary/40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
           >
             {timer.isRunning ? 'Running' : isComplete ? 'Done' : 'Start'}
           </Button>
@@ -74,24 +74,24 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset }: Prop
             onClick={onPause}
             disabled={!timer.isRunning}
             variant="outline"
-            className="border-[hsl(var(--border)/0.6)] text-[hsl(var(--foreground))] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+            className="border-border/60 text-foreground disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
           >
             Pause
           </Button>
           <Button
             onClick={onReset}
             variant="outline"
-            className="border-[hsl(var(--border)/0.6)] text-[hsl(var(--foreground))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+            className="border-border/60 text-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
           >
             Reset
           </Button>
         </div>
         {timer.elapsed > 0 ? (
-          <p className="text-sm font-medium text-[hsl(var(--foam))]" aria-live="polite">
+          <p className="text-sm font-medium text-foam" aria-live="polite">
             {formatTime(timer.elapsed)} practiced this rep
           </p>
         ) : null}
-        <p className="text-sm text-center text-[hsl(var(--muted-foreground))]">
+        <p className="text-sm text-center text-muted-foreground">
           Practice aloud or time your written outreach draft. Your practice time is saved with the
           session. Reset clears it.
         </p>

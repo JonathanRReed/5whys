@@ -1,12 +1,12 @@
 import * as React from 'react';
 import { type GlowUpData, loadData, saveData } from '../../lib/glowup-store';
-import InterviewHUD from './InterviewHUD';
-import WorkspaceHeader from '../interview-glowup/WorkspaceHeader';
-import WorkspaceTabs, { type Tab } from '../interview-glowup/WorkspaceTabs';
 import DecodeSection from '../interview-glowup/DecodeSection';
+import PacketSection from '../interview-glowup/PacketSection';
 import StoriesSection from '../interview-glowup/StoriesSection';
 import VaultSection from '../interview-glowup/VaultSection';
-import PacketSection from '../interview-glowup/PacketSection';
+import WorkspaceHeader from '../interview-glowup/WorkspaceHeader';
+import WorkspaceTabs, { type Tab } from '../interview-glowup/WorkspaceTabs';
+import InterviewHUD from './InterviewHUD';
 
 export default function InterviewGlowUpWorkspace() {
   const [data, setData] = React.useState<GlowUpData>(() => loadData());
@@ -56,9 +56,10 @@ export default function InterviewGlowUpWorkspace() {
     <div className="space-y-6">
       <WorkspaceHeader onClearData={handleClearData} />
 
-      <div className="flex items-center gap-2 rounded-lg border border-[hsl(var(--foam)/0.25)] bg-[hsl(var(--foam)/0.05)] px-4 py-2 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 rounded-lg border border-foam/25 bg-foam/5 px-4 py-2 text-sm text-muted-foreground">
         <svg
-          className="h-4 w-4 flex-shrink-0 text-[hsl(var(--foam))]"
+          aria-hidden="true"
+          className="h-4 w-4 shrink-0 text-foam"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -82,7 +83,7 @@ export default function InterviewGlowUpWorkspace() {
         onLaunchHUD={() => setShowHUD(true)}
       />
 
-      <div className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.2)] p-6">
+      <div className="rounded-2xl border border-border/35 bg-overlay/20 p-6">
         {activeTab === 'decode' && (
           <DecodeSection data={data} setData={setData} currentRole={currentRole} />
         )}

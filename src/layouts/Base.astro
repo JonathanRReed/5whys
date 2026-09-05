@@ -108,7 +108,7 @@ const noScriptParagraphs = [...defaultNoScriptContext, ...pageNoScriptContext].f
   <body class="min-h-screen bg-background text-foreground transition-colors duration-300">
     <a
       href="#main-content"
-      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-[hsl(var(--primary))] focus:px-4 focus:py-2 focus:text-[hsl(var(--primary-foreground))]"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
     >
       Skip to main content
     </a>
@@ -130,7 +130,7 @@ const noScriptParagraphs = [...defaultNoScriptContext, ...pageNoScriptContext].f
           aria-label="Static site context"
         >
           <div
-            class="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.72)] p-6"
+            class="rounded-xl border border-border/50 bg-card/72 p-6"
           >
             <p class="eyebrow eyebrow-accent">Static site context</p>
             <div class="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground">
@@ -159,13 +159,13 @@ const noScriptParagraphs = [...defaultNoScriptContext, ...pageNoScriptContext].f
         role="contentinfo"
         class="relative z-10 mx-auto mt-20 w-full max-w-6xl px-4 transition-colors duration-300"
       >
-        <div class="border-t border-[hsl(var(--border)/0.5)] pt-10">
+        <div class="border-t border-border/50 pt-10">
           <div class="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr]">
             <div class="space-y-3">
               <div class="flex items-center gap-2.5">
                 <span
                   aria-hidden="true"
-                  class="flex h-8 w-8 items-center justify-center rounded-lg border border-[hsl(var(--border)/0.6)] bg-[hsl(var(--card)/0.8)]"
+                  class="flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 bg-card/80"
                 >
                   <svg class="h-5 w-5 text-foreground" viewBox="0 0 36 36" fill="none">
                     <rect
@@ -285,12 +285,12 @@ const noScriptParagraphs = [...defaultNoScriptContext, ...pageNoScriptContext].f
           </div>
 
           <div
-            class="mt-10 flex flex-col gap-2 border-t border-[hsl(var(--border)/0.4)] pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between"
+            class="mt-10 flex flex-col gap-2 border-t border-border/40 pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between"
           >
             <p>
               Made by <a
                 href="https://jonathanrreed.com"
-                class="font-medium text-foreground transition-colors hover:text-[hsl(var(--accent))]"
+                class="font-medium text-foreground transition-colors hover:text-accent"
                 >Jonathan R. Reed</a
               >
             </p>

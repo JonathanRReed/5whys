@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { Card, CardContent } from './ui/card';
 import { cn } from '../lib/utils';
+import { Card, CardContent } from './ui/card';
 
 interface Step {
   question: string;
@@ -234,22 +234,28 @@ export default function OnboardingWizard() {
 
   if (done && recommendation) {
     const accentColors: Record<string, string> = {
-      foam: 'border-[hsl(var(--foam)/0.4)] bg-[hsl(var(--foam)/0.08)] text-[hsl(var(--foam))]',
-      love: 'border-[hsl(var(--love)/0.4)] bg-[hsl(var(--love)/0.08)] text-[hsl(var(--love))]',
-      iris: 'border-[hsl(var(--iris)/0.4)] bg-[hsl(var(--iris)/0.08)] text-[hsl(var(--iris))]',
-      gold: 'border-[hsl(var(--gold)/0.4)] bg-[hsl(var(--gold)/0.08)] text-[hsl(var(--gold))]',
+      foam: 'border-foam/40 bg-foam/8 text-foam',
+      love: 'border-love/40 bg-love/8 text-love',
+      iris: 'border-iris/40 bg-iris/8 text-iris',
+      gold: 'border-gold/40 bg-gold/8 text-gold',
     };
     const btnColor: Record<string, string> = {
-      foam: 'bg-[hsl(var(--foam))] hover:bg-[hsl(var(--foam)/0.9)] text-[hsl(var(--background))]',
-      love: 'bg-[hsl(var(--love))] hover:bg-[hsl(var(--love)/0.9)] text-[hsl(var(--background))]',
-      iris: 'bg-[hsl(var(--iris))] hover:bg-[hsl(var(--iris)/0.9)] text-[hsl(var(--background))]',
-      gold: 'bg-[hsl(var(--gold))] hover:bg-[hsl(var(--gold)/0.9)] text-[hsl(var(--background))]',
+      foam: 'bg-foam hover:bg-foam/90 text-background',
+      love: 'bg-love hover:bg-love/90 text-background',
+      iris: 'bg-iris hover:bg-iris/90 text-background',
+      gold: 'bg-gold hover:bg-gold/90 text-background',
     };
     const ringColors: Record<string, string> = {
-      foam: 'text-[hsl(var(--foam))]',
-      love: 'text-[hsl(var(--love))]',
-      iris: 'text-[hsl(var(--iris))]',
-      gold: 'text-[hsl(var(--gold))]',
+      foam: 'text-foam',
+      love: 'text-love',
+      iris: 'text-iris',
+      gold: 'text-gold',
+    };
+    const iconBackgrounds: Record<string, string> = {
+      foam: 'bg-foam/15',
+      love: 'bg-love/15',
+      iris: 'bg-iris/15',
+      gold: 'bg-gold/15',
     };
 
     return (
@@ -272,6 +278,7 @@ export default function OnboardingWizard() {
                 )}
               >
                 <svg
+                  aria-hidden="true"
                   className="h-8 w-8"
                   fill="none"
                   viewBox="0 0 24 24"
@@ -291,10 +298,11 @@ export default function OnboardingWizard() {
               <div
                 className={cn(
                   'flex h-12 w-12 items-center justify-center rounded-xl',
-                  `bg-[hsl(var(--${recommendation.accent})/0.15)]`
+                  iconBackgrounds[recommendation.accent]
                 )}
               >
                 <svg
+                  aria-hidden="true"
                   className={cn('h-6 w-6', ringColors[recommendation.accent])}
                   fill="none"
                   viewBox="0 0 24 24"
@@ -310,7 +318,7 @@ export default function OnboardingWizard() {
             <ol className="space-y-2 text-sm text-muted-foreground">
               {recommendation.steps.map((s, i) => (
                 <li key={i} className="flex items-start gap-2">
-                  <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[hsl(var(--overlay)/0.5)] text-xs font-medium">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-overlay/50 text-xs font-medium">
                     {i + 1}
                   </span>
                   {s}
@@ -322,7 +330,7 @@ export default function OnboardingWizard() {
               {recommendation.stats.map((stat, i) => (
                 <div
                   key={i}
-                  className="rounded-xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.3)] p-3 text-center"
+                  className="rounded-xl border border-border/30 bg-overlay/30 p-3 text-center"
                 >
                   <p className="text-sm font-semibold">{stat.value}</p>
                   <p className="text-xs text-muted-foreground">{stat.label}</p>
@@ -339,6 +347,7 @@ export default function OnboardingWizard() {
               >
                 Start now
                 <svg
+                  aria-hidden="true"
                   className="h-4 w-4"
                   fill="none"
                   viewBox="0 0 24 24"
@@ -366,7 +375,7 @@ export default function OnboardingWizard() {
                 <a
                   key={tool.name}
                   href={tool.url}
-                  className="rounded-xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.2)] px-4 py-3 text-sm transition hover:border-[hsl(var(--border)/0.55)] hover:bg-[hsl(var(--overlay)/0.35)]"
+                  className="rounded-xl border border-border/35 bg-overlay/20 px-4 py-3 text-sm transition hover:border-border/55 hover:bg-overlay/35"
                 >
                   <p className="font-medium">{tool.name}</p>
                   <p className="text-xs text-muted-foreground">{tool.desc}</p>
@@ -387,9 +396,9 @@ export default function OnboardingWizard() {
             Step {step + 1} of {STEPS.length}
           </span>
         </div>
-        <div className="h-1.5 w-full rounded-full bg-[hsl(var(--border)/0.3)]">
+        <div className="h-1.5 w-full rounded-full bg-border/30">
           <div
-            className="h-full rounded-full bg-[hsl(var(--foam))] transition-all duration-500"
+            className="h-full rounded-full bg-foam transition-all duration-500"
             style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
           />
         </div>
@@ -401,9 +410,10 @@ export default function OnboardingWizard() {
             <button
               type="button"
               onClick={handleBack}
-              className="flex items-center gap-1 text-sm text-muted-foreground transition hover:text-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2 rounded-md"
+              className="flex items-center gap-1 text-sm text-muted-foreground transition hover:text-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2 rounded-md"
             >
               <svg
+                aria-hidden="true"
                 className="h-4 w-4"
                 fill="none"
                 viewBox="0 0 24 24"
@@ -430,12 +440,13 @@ export default function OnboardingWizard() {
             type="button"
             onClick={() => handleSelect(option.value)}
             className={cn(
-              'flex flex-col items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)] p-6 text-center transition-all duration-200 cursor-pointer',
-              'hover:-translate-y-0.5 hover:border-[hsl(var(--foam)/0.5)] hover:shadow-lg hover:bg-[hsl(var(--overlay)/0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2'
+              'flex flex-col items-center gap-3 rounded-2xl border border-border/35 bg-overlay/25 p-6 text-center transition-all duration-200 cursor-pointer',
+              'hover:-translate-y-0.5 hover:border-foam/50 hover:shadow-lg hover:bg-overlay/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2'
             )}
           >
             <svg
-              className="h-8 w-8 text-[hsl(var(--foam))]"
+              aria-hidden="true"
+              className="h-8 w-8 text-foam"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"

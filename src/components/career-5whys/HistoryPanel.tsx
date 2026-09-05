@@ -1,7 +1,6 @@
-import * as React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { TRACKS, HISTORY_LIMIT_OPTIONS, type WhySnapshot } from './shared';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { HISTORY_LIMIT_OPTIONS, TRACKS, type WhySnapshot } from './shared';
 
 function formatSnapshotTime(value: string) {
   try {
@@ -40,19 +39,17 @@ export default function HistoryPanel({
   onDeleteSnapshot,
 }: HistoryPanelProps) {
   return (
-    <Card className="border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.86)] text-[hsl(var(--foreground))]">
+    <Card className="border-border/50 bg-card/86 text-foreground">
       <CardHeader className="space-y-4">
         <div className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
-            Snapshots
-          </p>
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Snapshots</p>
           <CardTitle className="text-xl">History dashboard</CardTitle>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
+          <p className="text-sm text-muted-foreground">
             Stored locally on this device. Up to {historyLimit} entries are kept. New saves will
             replace the oldest entries automatically.
           </p>
           {historyIsFull ? (
-            <p className="text-xs text-[hsl(var(--gold))]">
+            <p className="text-xs text-gold">
               History is at capacity. Export or clear older snapshots to keep space free.
             </p>
           ) : null}
@@ -61,7 +58,7 @@ export default function HistoryPanel({
           <div className="flex items-center gap-2">
             <label
               htmlFor="history-limit"
-              className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]"
+              className="text-xs uppercase tracking-[0.3em] text-muted-foreground"
             >
               History limit
             </label>
@@ -78,7 +75,7 @@ export default function HistoryPanel({
                   onLimitChange(nextLimit);
                 }
               }}
-              className="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] px-3 py-2 text-xs uppercase tracking-[0.3em] text-[hsl(var(--foreground))]"
+              className="rounded-xl border border-border/50 bg-overlay/20 px-3 py-2 text-xs uppercase tracking-[0.3em] text-foreground"
             >
               {HISTORY_LIMIT_OPTIONS.map((option) => (
                 <option key={option} value={option}>
@@ -93,7 +90,7 @@ export default function HistoryPanel({
               variant="outline"
               onClick={onExportHistory}
               disabled={history.length === 0}
-              className="h-10 rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+              className="h-10 rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
             >
               Export all snapshots
             </Button>
@@ -102,7 +99,7 @@ export default function HistoryPanel({
               variant="ghost"
               onClick={onClearHistory}
               disabled={history.length === 0}
-              className="h-10 rounded-lg border border-[hsl(var(--destructive)/0.3)] bg-[hsl(var(--destructive)/0.1)] px-4 py-2 text-sm text-destructive transition-colors hover:bg-[hsl(var(--destructive)/0.15)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--destructive))] focus-visible:ring-offset-2"
+              className="h-10 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive transition-colors hover:bg-destructive/15 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
             >
               Clear history
             </Button>
@@ -111,7 +108,7 @@ export default function HistoryPanel({
       </CardHeader>
       <CardContent className="space-y-3">
         {history.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.1)] p-5 text-sm text-[hsl(var(--muted-foreground))]">
+          <div className="rounded-2xl border border-dashed border-border/50 bg-overlay/10 p-5 text-sm text-muted-foreground">
             Save a completed reflection to populate your personal archive. Snapshots stay on this
             browser only.
           </div>
@@ -119,17 +116,17 @@ export default function HistoryPanel({
           history.map((entry) => (
             <div
               key={`${entry.id}-${entry.timestamp}`}
-              className="rounded-2xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] p-5"
+              className="rounded-2xl border border-border/50 bg-overlay/20 p-5"
             >
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
+                  <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                     {formatSnapshotTime(entry.timestamp)} \u2022 {TRACKS[entry.track].label}
                   </p>
-                  <p className="mt-1 text-sm font-semibold text-[hsl(var(--foreground))]">
+                  <p className="mt-1 text-sm font-semibold text-foreground">
                     {entry.topic || 'Untitled session'}
                   </p>
-                  <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">
+                  <p className="mt-2 text-sm text-muted-foreground">
                     {entry.whyStatement || 'Snapshot saved without a summary.'}
                   </p>
                 </div>
@@ -138,7 +135,7 @@ export default function HistoryPanel({
                     type="button"
                     size="sm"
                     onClick={() => onRestoreSnapshot(entry)}
-                    className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+                    className="rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                   >
                     Load snapshot
                   </Button>
@@ -147,7 +144,7 @@ export default function HistoryPanel({
                     size="sm"
                     variant="outline"
                     onClick={() => onExportSnapshot(entry)}
-                    className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+                    className="rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                   >
                     Export
                   </Button>
@@ -156,7 +153,7 @@ export default function HistoryPanel({
                     size="sm"
                     variant="ghost"
                     onClick={() => onDeleteSnapshot(entry.id)}
-                    className="rounded-lg border border-[hsl(var(--destructive)/0.3)] bg-[hsl(var(--destructive)/0.1)] px-4 py-2 text-sm text-destructive transition-colors hover:bg-[hsl(var(--destructive)/0.15)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--destructive))] focus-visible:ring-offset-2"
+                    className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive transition-colors hover:bg-destructive/15 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
                   >
                     Delete
                   </Button>

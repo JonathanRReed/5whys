@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { signalGrade, suggestStrongerVerb } from '../../lib/resume-game';
 import type { SignalReport } from '../../lib/resume-game';
+import { signalGrade, suggestStrongerVerb } from '../../lib/resume-game';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 type Props = {
   highlightedResume: string;
@@ -10,9 +10,9 @@ type Props = {
 };
 
 function benchmarkColor(value: number, goodThreshold: number, warnThreshold: number): string {
-  if (value >= goodThreshold) return 'text-[hsl(var(--foam))]';
-  if (value >= warnThreshold) return 'text-[hsl(var(--gold))]';
-  return 'text-[hsl(var(--love))]';
+  if (value >= goodThreshold) return 'text-foam';
+  if (value >= warnThreshold) return 'text-gold';
+  return 'text-love';
 }
 
 export default function ScanResults({ highlightedResume, signalReport, resumeOutOfDate }: Props) {
@@ -31,12 +31,12 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
   const verbTarget = Math.min(8, Math.max(1, signalReport.bulletCount));
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.15fr,0.85fr]">
+    <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
       <Card>
         <CardHeader>
           <CardTitle className="text-xl">Analysis visualization</CardTitle>
           {resumeOutOfDate && (
-            <p className="text-xs text-[hsl(var(--gold))]">
+            <p className="text-xs text-gold">
               Resume updated. Rerun the analysis to refresh metrics.
             </p>
           )}
@@ -44,18 +44,15 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
         <CardContent>
           <div className="mb-3 flex items-center gap-4 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
-              <mark className="rounded bg-[hsl(var(--primary)/0.3)] px-1 text-[hsl(var(--primary-foreground))]">
-                Numbers
-              </mark>
+              <mark className="rounded bg-primary/30 px-1 text-primary-foreground">Numbers</mark>
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <mark className="rounded bg-[hsl(var(--love)/0.3)] px-1 text-foreground">
-                Power Verbs
-              </mark>
+              <mark className="rounded bg-love/30 px-1 text-foreground">Power Verbs</mark>
             </span>
           </div>
           <div
-            className="min-h-[200px] rounded-2xl border border-[hsl(var(--border)/0.4)] bg-[hsl(var(--card)/0.65)] p-6 text-sm leading-relaxed"
+            className="min-h-[200px] rounded-2xl border border-border/40 bg-card/65 p-6 text-sm leading-relaxed"
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: highlightResume escapes the text before wrapping matches in mark tags
             dangerouslySetInnerHTML={{ __html: highlightedResume.replace(/\n/g, '<br/>') }}
           />
         </CardContent>
@@ -65,10 +62,8 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
         <CardHeader className="space-y-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl">Signal report</CardTitle>
-            <div
-              className={`text-4xl font-bold ${grade.color}`}
-              aria-label={`Grade: ${grade.grade}`}
-            >
+            <div className={`text-4xl font-bold `}>
+              <span className="sr-only">Grade: </span>
               {grade.grade}
             </div>
           </div>
@@ -81,16 +76,12 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
           <div>
             <div className="mb-2 flex justify-between text-xs text-muted-foreground">
               <span>Signal strength</span>
-              <span
-                className={
-                  signalReport.visible >= 70 ? 'text-[hsl(var(--love))]' : 'text-[hsl(var(--gold))]'
-                }
-              >
+              <span className={signalReport.visible >= 70 ? 'text-love' : 'text-gold'}>
                 {signalReport.visible}%
               </span>
             </div>
             <div
-              className="h-2.5 w-full overflow-hidden rounded-full border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)]"
+              className="h-2.5 w-full overflow-hidden rounded-full border border-border/35 bg-overlay/25"
               role="progressbar"
               aria-valuenow={signalReport.visible}
               aria-valuemin={0}
@@ -98,7 +89,7 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
               aria-label="Resume signal strength"
             >
               <div
-                className="h-full rounded-full bg-gradient-to-r from-[hsl(var(--foam))] via-[hsl(var(--iris))] to-[hsl(var(--love))]"
+                className="h-full rounded-full bg-linear-to-r from-foam via-iris to-love"
                 style={{ width: `${signalReport.visible}%` }}
               />
             </div>
@@ -106,25 +97,23 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
 
           {/* Metrics grid */}
           <div className="grid grid-cols-2 gap-3 text-center text-sm">
-            <div className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.45)] p-4">
+            <div className="rounded-2xl border border-border/35 bg-overlay/45 p-4">
               <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Numbers</p>
-              <p className="text-3xl font-semibold text-[hsl(var(--foam))]">
-                {signalReport.numbers}
-              </p>
+              <p className="text-3xl font-semibold text-foam">{signalReport.numbers}</p>
               <p className="mt-1 text-[10px] text-muted-foreground">Quantified</p>
             </div>
-            <div className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.45)] p-4">
+            <div className="rounded-2xl border border-border/35 bg-overlay/45 p-4">
               <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                 Power verbs
               </p>
-              <p className="text-3xl font-semibold text-[hsl(var(--iris))]">{signalReport.verbs}</p>
+              <p className="text-3xl font-semibold text-iris">{signalReport.verbs}</p>
               <p className="mt-1 text-[10px] text-muted-foreground">Detected</p>
             </div>
           </div>
 
           {/* Resume length */}
           {signalReport.wordCount > 0 && (
-            <div className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.3)] p-4">
+            <div className="rounded-2xl border border-border/35 bg-overlay/30 p-4">
               <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                 Resume length
               </p>
@@ -147,7 +136,7 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
                 </div>
               </div>
               <p
-                className={`mt-2 text-xs ${signalReport.isOptimalLength ? 'text-[hsl(var(--love))]' : 'text-[hsl(var(--gold))]'}`}
+                className={`mt-2 text-xs ${signalReport.isOptimalLength ? 'text-love' : 'text-gold'}`}
               >
                 {signalReport.lengthRecommendation}
               </p>
@@ -156,7 +145,7 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
 
           {/* Sections detected */}
           {hasSections && (
-            <div className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.3)] p-4">
+            <div className="rounded-2xl border border-border/35 bg-overlay/30 p-4">
               <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                 Sections detected
               </p>
@@ -164,7 +153,7 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
                 {signalReport.sections.map((section) => (
                   <span
                     key={section}
-                    className="rounded-full border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.4)] px-2.5 py-1 text-xs capitalize text-muted-foreground"
+                    className="rounded-full border border-border/50 bg-overlay/40 px-2.5 py-1 text-xs capitalize text-muted-foreground"
                   >
                     {section}
                   </span>
@@ -175,7 +164,7 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
 
           {/* Skills found */}
           {hasSkills && (
-            <div className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.3)] p-4">
+            <div className="rounded-2xl border border-border/35 bg-overlay/30 p-4">
               <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                 Skills found
               </p>
@@ -186,7 +175,7 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
                     {signalReport.hardSkills.map((skill) => (
                       <span
                         key={skill}
-                        className="rounded-full bg-[hsl(var(--foam)/0.15)] px-2 py-0.5 text-xs text-[hsl(var(--foam))]"
+                        className="rounded-full bg-foam/15 px-2 py-0.5 text-xs text-foam"
                       >
                         {skill}
                       </span>
@@ -201,7 +190,7 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
                     {signalReport.softSkills.map((skill) => (
                       <span
                         key={skill}
-                        className="rounded-full bg-[hsl(var(--iris)/0.15)] px-2 py-0.5 text-xs text-[hsl(var(--iris))]"
+                        className="rounded-full bg-iris/15 px-2 py-0.5 text-xs text-iris"
                       >
                         {skill}
                       </span>
@@ -213,24 +202,24 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
           )}
 
           {/* Next steps */}
-          <div className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.3)] p-4">
+          <div className="rounded-2xl border border-border/35 bg-overlay/30 p-4">
             <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Next steps</p>
             <ul className="mt-2 space-y-1.5 text-sm text-muted-foreground">
               {signalReport.numbers < 5 && signalReport.bulletCount > 0 && (
                 <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-[hsl(var(--gold))]">+</span>
+                  <span className="mt-0.5 text-gold">+</span>
                   <span>Add 2-3 more quantified metrics (%, $, #) to bullets without numbers.</span>
                 </li>
               )}
               {signalReport.verbs < signalReport.bulletCount && (
                 <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-[hsl(var(--gold))]">+</span>
+                  <span className="mt-0.5 text-gold">+</span>
                   <span>Replace weak verbs with stronger action words in the editor below.</span>
                 </li>
               )}
               {signalReport.sections.length < 3 && (
                 <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-[hsl(var(--gold))]">+</span>
+                  <span className="mt-0.5 text-gold">+</span>
                   <span>
                     Make sure your resume has clear Experience, Education, and Skills sections.
                   </span>
@@ -238,14 +227,14 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
               )}
               {signalReport.hardSkills.length < 3 && (
                 <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-[hsl(var(--gold))]">+</span>
+                  <span className="mt-0.5 text-gold">+</span>
                   <span>
                     Add more hard skills (tools, languages, frameworks) for ATS visibility.
                   </span>
                 </li>
               )}
               <li className="flex items-start gap-2">
-                <span className="mt-0.5 text-[hsl(var(--foam))]">+</span>
+                <span className="mt-0.5 text-foam">+</span>
                 <span>Select any bullet on the left to edit and watch your score update.</span>
               </li>
             </ul>
@@ -253,7 +242,7 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
 
           {/* Deep Analysis */}
           {hasDeepData && (
-            <div className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.3)] p-4">
+            <div className="rounded-2xl border border-border/35 bg-overlay/30 p-4">
               <button
                 type="button"
                 onClick={() => setDeepOpen((prev) => !prev)}
@@ -270,7 +259,7 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
                 <div className="mt-4 space-y-4">
                   {/* Resume Health Score */}
                   {signalReport.benchmarkScore !== undefined && (
-                    <div className="rounded-xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.4)] p-4">
+                    <div className="rounded-xl border border-border/35 bg-overlay/40 p-4">
                       <div className="flex items-center justify-between">
                         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                           Resume Health Score
@@ -278,18 +267,18 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
                         <span
                           className={`text-2xl font-bold ${
                             (signalReport.benchmarkScore ?? 0) >= 80
-                              ? 'text-[hsl(var(--foam))]'
+                              ? 'text-foam'
                               : (signalReport.benchmarkScore ?? 0) >= 50
-                                ? 'text-[hsl(var(--gold))]'
-                                : 'text-[hsl(var(--love))]'
+                                ? 'text-gold'
+                                : 'text-love'
                           }`}
                         >
                           {signalReport.benchmarkScore}
                         </span>
                       </div>
-                      <div className="mt-2 h-2 w-full overflow-hidden rounded-full border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)]">
+                      <div className="mt-2 h-2 w-full overflow-hidden rounded-full border border-border/35 bg-overlay/25">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-[hsl(var(--love))] via-[hsl(var(--gold))] to-[hsl(var(--foam))]"
+                          className="h-full rounded-full bg-linear-to-r from-love via-gold to-foam"
                           style={{ width: `${signalReport.benchmarkScore}%` }}
                         />
                       </div>
@@ -299,7 +288,7 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
                   {/* Benchmark grid */}
                   <div className="grid grid-cols-2 gap-3">
                     {/* Numbers coverage */}
-                    <div className="rounded-xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.4)] p-3 text-center">
+                    <div className="rounded-xl border border-border/35 bg-overlay/40 p-3 text-center">
                       <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                         Bullets with numbers
                       </p>
@@ -316,7 +305,7 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
                     </div>
 
                     {/* Unique verbs */}
-                    <div className="rounded-xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.4)] p-3 text-center">
+                    <div className="rounded-xl border border-border/35 bg-overlay/40 p-3 text-center">
                       <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                         Unique action verbs
                       </p>
@@ -335,17 +324,17 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
                     </div>
 
                     {/* Avg bullet length */}
-                    <div className="rounded-xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.4)] p-3 text-center">
+                    <div className="rounded-xl border border-border/35 bg-overlay/40 p-3 text-center">
                       <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                         Avg bullet length
                       </p>
                       <p
                         className={`text-xl font-semibold ${
                           (signalReport.avgBulletLength ?? 0) <= 30
-                            ? 'text-[hsl(var(--foam))]'
+                            ? 'text-foam'
                             : (signalReport.avgBulletLength ?? 0) <= 40
-                              ? 'text-[hsl(var(--gold))]'
-                              : 'text-[hsl(var(--love))]'
+                              ? 'text-gold'
+                              : 'text-love'
                         }`}
                       >
                         {signalReport.avgBulletLength ?? 0}
@@ -354,17 +343,17 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
                     </div>
 
                     {/* Passive voice */}
-                    <div className="rounded-xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.4)] p-3 text-center">
+                    <div className="rounded-xl border border-border/35 bg-overlay/40 p-3 text-center">
                       <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                         Passive voice
                       </p>
                       <p
                         className={`text-xl font-semibold ${
                           (signalReport.passiveVoicePercent ?? 0) === 0
-                            ? 'text-[hsl(var(--foam))]'
+                            ? 'text-foam'
                             : (signalReport.passiveVoicePercent ?? 0) <= 20
-                              ? 'text-[hsl(var(--gold))]'
-                              : 'text-[hsl(var(--love))]'
+                              ? 'text-gold'
+                              : 'text-love'
                         }`}
                       >
                         {signalReport.passiveVoicePercent ?? 0}%
@@ -375,12 +364,12 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
 
                   {/* Weak words */}
                   {(signalReport.weakWordCount ?? 0) > 0 && (
-                    <div className="rounded-xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.4)] p-4">
+                    <div className="rounded-xl border border-border/35 bg-overlay/40 p-4">
                       <div className="flex items-center justify-between">
                         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                           Weak / Hedging Words
                         </p>
-                        <span className="text-lg font-semibold text-[hsl(var(--love))]">
+                        <span className="text-lg font-semibold text-love">
                           {signalReport.weakWordCount}
                         </span>
                       </div>
@@ -394,7 +383,7 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
 
                   {/* Repetitive verbs */}
                   {signalReport.repetitiveVerbs && signalReport.repetitiveVerbs.length > 0 && (
-                    <div className="rounded-xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.4)] p-4">
+                    <div className="rounded-xl border border-border/35 bg-overlay/40 p-4">
                       <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                         Repetitive Verbs
                       </p>
@@ -403,7 +392,7 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
                           const suggestion = suggestStrongerVerb(rv.verb);
                           return (
                             <li key={rv.verb} className="flex items-start gap-2">
-                              <span className="mt-0.5 text-[hsl(var(--gold))]">!</span>
+                              <span className="mt-0.5 text-gold">!</span>
                               <span>
                                 <span className="font-medium capitalize text-foreground">
                                   {rv.verb}
@@ -412,7 +401,7 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
                                 {suggestion ? (
                                   <span>
                                     Try alternating with:{' '}
-                                    <span className="text-[hsl(var(--foam))]">{suggestion}</span>
+                                    <span className="text-foam">{suggestion}</span>
                                   </span>
                                 ) : (
                                   'Try varying your language with stronger alternatives.'
@@ -427,16 +416,16 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
 
                   {/* Impact coverage */}
                   {signalReport.impactCoverage !== undefined && (
-                    <div className="rounded-xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.4)] p-4">
+                    <div className="rounded-xl border border-border/35 bg-overlay/40 p-4">
                       <div className="mb-2 flex justify-between text-xs text-muted-foreground">
                         <span>Impact coverage</span>
                         <span className={benchmarkColor(signalReport.impactCoverage, 70, 50)}>
                           {signalReport.impactCoverage}%
                         </span>
                       </div>
-                      <div className="h-2 w-full overflow-hidden rounded-full border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.25)]">
+                      <div className="h-2 w-full overflow-hidden rounded-full border border-border/35 bg-overlay/25">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-[hsl(var(--love))] via-[hsl(var(--gold))] to-[hsl(var(--foam))]"
+                          className="h-full rounded-full bg-linear-to-r from-love via-gold to-foam"
                           style={{ width: `${signalReport.impactCoverage}%` }}
                         />
                       </div>
@@ -448,7 +437,7 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
 
                   {/* Keyword density */}
                   {signalReport.keywordDensity && signalReport.keywordDensity.length > 0 && (
-                    <div className="rounded-xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.4)] p-4">
+                    <div className="rounded-xl border border-border/35 bg-overlay/40 p-4">
                       <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                         Keyword Density
                       </p>
@@ -456,10 +445,10 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
                         {signalReport.keywordDensity.map((kw) => (
                           <span
                             key={kw.word}
-                            className="inline-flex items-center gap-1 rounded-full border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.4)] px-2.5 py-1 text-xs text-muted-foreground"
+                            className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-overlay/40 px-2.5 py-1 text-xs text-muted-foreground"
                           >
                             <span>{kw.word}</span>
-                            <span className="rounded-full bg-[hsl(var(--primary)/0.15)] px-1.5 py-0.5 text-[10px] text-[hsl(var(--primary))]">
+                            <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] text-primary">
                               {kw.count}
                             </span>
                           </span>

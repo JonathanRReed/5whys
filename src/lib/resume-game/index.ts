@@ -1,63 +1,63 @@
 export {
+  buildBullet,
+  buildDeepSignalReport,
+  combinedBulletScore,
+  computeBenchmarkScore,
+  computeKeywordDensity,
+  createBulletRecord,
+  detectAtsKeywords,
+  detectImpact,
+  detectRepetitiveVerbs,
+  detectWeakWords,
+  editBonus,
+  enrichBulletRecords,
+  extractBullets,
+  fieldBonus,
+  seedFields,
+} from './analysis';
+export {
   ACTION_VERBS,
-  POWER_WORDS,
+  ATS_KEYWORDS,
+  BUZZWORDS,
+  extractSkills,
+  getVerbStrength,
+  matchesTerm,
   POWER_VERB_PATTERN,
   POWER_VERBS_STRONG,
   POWER_VERBS_WEAK,
-  WEAK_WORDS,
-  BUZZWORDS,
-  ATS_KEYWORDS,
+  POWER_WORDS,
   STOPWORDS,
-  getVerbStrength,
-  matchesTerm,
   suggestStrongerVerb,
+  WEAK_WORDS,
 } from './constants';
-export {
-  extractBullets,
-  seedFields,
-  buildBullet,
-  fieldBonus,
-  editBonus,
-  combinedBulletScore,
-  createBulletRecord,
-  detectWeakWords,
-  detectImpact,
-  detectRepetitiveVerbs,
-  enrichBulletRecords,
-  computeKeywordDensity,
-  detectAtsKeywords,
-  computeBenchmarkScore,
-  buildDeepSignalReport,
-} from './analysis';
-export { scoreBullet, scoreLabel } from './scoring';
-export { analyzeReadability } from './readability';
+export { downloadTextFile, exportDocx } from './exporters';
 export { analyzeResumeLength, detectSections } from './length';
-export { generateBulletSuggestions, signalGrade } from './suggestions';
-export type { BulletSuggestion } from './suggestions';
-export { extractSkills } from './constants';
+export { analyzeReadability } from './readability';
+export { scoreBullet, scoreLabel } from './scoring';
 export {
-  highlightResume,
+  EMPTY_SESSION,
+  EMPTY_SIGNAL_REPORT,
+  SESSION_STORAGE_KEY,
+  useResumeSession,
+} from './session';
+export type { BulletSuggestion } from './suggestions';
+export { generateBulletSuggestions, signalGrade } from './suggestions';
+export {
+  capitalizeWord,
   countPowerVerbs,
   decodeEntities,
   escapeHtml,
   escapeRegExp,
+  highlightResume,
   normalizeLine,
   normalizeTextLine,
   uniqueId,
-  capitalizeWord,
 } from './text';
-export { exportDocx, downloadTextFile } from './exporters';
-export {
-  useResumeSession,
-  EMPTY_SESSION,
-  EMPTY_SIGNAL_REPORT,
-  SESSION_STORAGE_KEY,
-} from './session';
 export type {
   BulletFields,
   BulletRecord,
-  RepetitiveVerb,
   KeywordDensityItem,
+  RepetitiveVerb,
   SignalReport,
   StoredResumeSession,
 } from './types';

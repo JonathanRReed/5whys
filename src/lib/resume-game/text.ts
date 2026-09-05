@@ -71,11 +71,11 @@ export function highlightResume(text: string) {
   return escaped
     .replace(
       /\d+\.?\d*%?/g,
-      '<mark class="bg-[hsl(var(--primary)/0.3)] text-[hsl(var(--primary-foreground))] px-1 rounded">$&</mark>'
+      '<mark class="bg-primary/30 text-primary-foreground px-1 rounded">$&</mark>'
     )
     .replace(
       POWER_VERB_GLOBAL_PATTERN,
-      '<mark class="bg-[hsl(var(--love)/0.3)] text-foreground px-1 rounded">$&</mark>'
+      '<mark class="bg-love/30 text-foreground px-1 rounded">$&</mark>'
     );
 }
 

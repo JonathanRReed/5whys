@@ -383,7 +383,7 @@ export function extractRequirementLines(rawText: string): JdExtractionResult {
     .map((line) =>
       line
         .trim()
-        .replace(/^[•\-\*◦○●‣⁃]\s*/, '')
+        .replace(/^[•\-*◦○●‣⁃]\s*/, '')
         .replace(/^\d+[.)]\s*/, '')
         .trim()
     )

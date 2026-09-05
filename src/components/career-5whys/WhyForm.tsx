@@ -1,7 +1,6 @@
-import * as React from 'react';
+import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Textarea } from '../ui/textarea';
-import { Button } from '../ui/button';
 import { condenseAnswer, getAnswerNudge, type TrackExample } from './shared';
 
 type WhyFormProps = {
@@ -36,16 +35,16 @@ export default function WhyForm({
         return (
           <Card
             key={index}
-            className="bg-[hsl(var(--card)/0.98)] border-[hsl(var(--border)/0.55)] text-[hsl(var(--foreground))] shadow-inner shadow-[hsl(var(--background)/0.16)]"
+            className="bg-card/98 border-border/55 text-foreground shadow-inner shadow-background/16"
           >
             <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
+                <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                   Depth {index + 1}
                 </p>
-                <CardTitle className="text-lg text-[hsl(var(--foreground))]">{prompt}</CardTitle>
+                <CardTitle className="text-lg text-foreground">{prompt}</CardTitle>
               </div>
-              <span className="rounded-full border border-[hsl(var(--border)/0.5)] px-4 py-1 text-xs text-[hsl(var(--muted-foreground))]">
+              <span className="rounded-full border border-border/50 px-4 py-1 text-xs text-muted-foreground">
                 {response.trim().length ? 'Captured' : 'Pending'}
               </span>
             </CardHeader>
@@ -56,31 +55,31 @@ export default function WhyForm({
                 onChange={(event) => onResponseChange(index, event.target.value)}
                 placeholder="Document your reasoning. Be specific and concrete."
                 disabled={locked}
-                className="min-h-[120px] resize-none border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2 disabled:opacity-60"
+                className="min-h-[120px] resize-none border-border/50 bg-overlay/30 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2 disabled:opacity-60"
               />
               {locked && (
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                <p className="text-xs text-muted-foreground">
                   Complete the previous depth before continuing.
                 </p>
               )}
-              {nudge && <p className="text-xs leading-relaxed text-[hsl(var(--gold))]">{nudge}</p>}
+              {nudge && <p className="text-xs leading-relaxed text-gold">{nudge}</p>}
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => onToggleExample(index)}
                 aria-expanded={isExampleVisible}
-                className="w-full justify-between rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+                className="w-full justify-between rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
               >
                 Show a worked example
                 <span aria-hidden>{isExampleVisible ? '−' : '+'}</span>
               </Button>
               {isExampleVisible && (
-                <div className="space-y-3 rounded-xl border border-[hsl(var(--primary)/0.3)] bg-[hsl(var(--primary)/0.05)] p-4 text-sm text-[hsl(var(--foreground))]">
-                  <p className="text-xs uppercase tracking-[0.2em] text-[hsl(var(--muted-foreground))]">
+                <div className="space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm text-foreground">
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                     {example.persona}
                   </p>
                   {index > 0 && examplePrevious && (
-                    <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                    <p className="text-xs text-muted-foreground">
                       Their depth {index} answer, condensed: "{examplePrevious}"
                     </p>
                   )}

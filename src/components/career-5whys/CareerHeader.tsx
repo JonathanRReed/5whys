@@ -1,10 +1,9 @@
-import * as React from 'react';
+import { cn } from '../../lib/utils';
+import QuickStartTiles from '../QuickStartTiles';
 import { Card, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import QuickStartTiles from '../QuickStartTiles';
-import { cn } from '../../lib/utils';
-import { TRACKS, WHY_COUNT, type Track } from './shared';
+import { TRACKS, type Track, WHY_COUNT } from './shared';
 
 type CareerHeaderProps = {
   showHeader: boolean;
@@ -33,7 +32,7 @@ export default function CareerHeader({
         <header className="space-y-4 text-center">
           <p className="eyebrow eyebrow-accent justify-self-center">Career 5 Whys</p>
           <h1 className="text-4xl font-semibold tracking-tight">Discover your why</h1>
-          <p className="mx-auto max-w-2xl text-[hsl(var(--muted-foreground))]">
+          <p className="mx-auto max-w-2xl text-muted-foreground">
             Five questions, each one built from your previous answer. Choose a track, follow the
             chain from surface reason to root reason, and leave with a statement and a next step you
             can reuse across resume, interview, and networking prep.
@@ -58,11 +57,11 @@ export default function CareerHeader({
         </header>
       )}
 
-      <Card className="bg-[hsl(var(--card)/0.98)] border-[hsl(var(--border)/0.55)] text-[hsl(var(--foreground))] shadow-[0_20px_80px_hsl(var(--background)/0.28)]">
+      <Card className="bg-card/98 border-border/55 text-foreground shadow-[0_20px_80px_hsl(var(--background)/0.28)]">
         <CardHeader className="space-y-6">
           <div>
             <CardTitle className="text-2xl font-semibold">Select your track</CardTitle>
-            <p className="text-sm text-[hsl(var(--muted-foreground))]">
+            <p className="text-sm text-muted-foreground">
               The prompts adapt to how defined your path currently is.
             </p>
           </div>
@@ -76,16 +75,14 @@ export default function CareerHeader({
                   onClick={() => onTrackChange(key as Track)}
                   className={cn(
                     'flex-1 rounded-2xl border px-4 py-5 text-left transition-all',
-                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[hsl(var(--primary))]',
+                    'focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-primary',
                     isActive
-                      ? 'border-[hsl(var(--primary)/0.8)] bg-[hsl(var(--primary)/0.1)] shadow-inner text-[hsl(var(--foreground))]'
-                      : 'border-[hsl(var(--border)/0.5)] bg-transparent text-[hsl(var(--foreground))] hover:border-[hsl(var(--border)/0.7)]'
+                      ? 'border-primary/80 bg-primary/10 shadow-inner text-foreground'
+                      : 'border-border/50 bg-transparent text-foreground hover:border-border/70'
                   )}
                 >
                   <p className="text-sm font-semibold">{config.label}</p>
-                  <p className="text-xs text-[hsl(var(--muted-foreground))] mt-2">
-                    {config.description}
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">{config.description}</p>
                 </button>
               );
             })}
@@ -94,7 +91,7 @@ export default function CareerHeader({
             <div>
               <Label
                 htmlFor="career-topic"
-                className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]"
+                className="text-xs uppercase tracking-[0.3em] text-muted-foreground"
               >
                 {activeTrack.topicLabel}
               </Label>
@@ -103,24 +100,22 @@ export default function CareerHeader({
                 value={topic}
                 onChange={(event) => onTopicChange(event.target.value)}
                 placeholder={activeTrack.topicPlaceholder}
-                className="mt-2 bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--border)/0.5)] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))]"
+                className="mt-2 bg-overlay/30 border-border/50 text-foreground placeholder:text-muted-foreground"
               />
             </div>
             <div>
-              <Label className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
+              <Label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                 Progress
               </Label>
-              <div className="mt-2 flex items-center gap-3 rounded-2xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] px-4 py-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[hsl(var(--primary)/0.5)] bg-[hsl(var(--primary)/0.1)] text-lg font-semibold text-[hsl(var(--foreground))]">
+              <div className="mt-2 flex items-center gap-3 rounded-2xl border border-border/50 bg-overlay/20 px-4 py-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full border border-primary/50 bg-primary/10 text-lg font-semibold text-foreground">
                   {sequentialCount}
                 </div>
                 <div>
-                  <p className="text-sm text-[hsl(var(--foreground))]">
+                  <p className="text-sm text-foreground">
                     {sequentialCount === WHY_COUNT ? 'Depth found' : 'Reasoning depth'}
                   </p>
-                  <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                    {progressPercent}% complete
-                  </p>
+                  <p className="text-xs text-muted-foreground">{progressPercent}% complete</p>
                 </div>
               </div>
             </div>

@@ -1,4 +1,4 @@
-import * as React from 'react';
+import type * as React from 'react';
 import { cn } from '../../lib/utils';
 
 type EmptyStateProps = {
@@ -22,16 +22,16 @@ export default function EmptyState({
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-[hsl(var(--border)/0.4)] bg-[hsl(var(--overlay)/0.15)] p-10 text-center',
+        'flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border/40 bg-overlay/15 p-10 text-center',
         className
       )}
     >
       {icon ? (
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[hsl(var(--primary)/0.1)] text-[hsl(var(--primary))]">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
           {icon}
         </div>
       ) : (
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[hsl(var(--primary)/0.1)] text-[hsl(var(--primary))]">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
           <svg
             className="h-7 w-7"
             fill="none"
@@ -56,7 +56,7 @@ export default function EmptyState({
         <button
           type="button"
           onClick={action.onClick}
-          className="inline-flex items-center gap-2 rounded-full bg-[hsl(var(--primary))] px-5 py-2.5 text-sm font-semibold text-[hsl(var(--primary-foreground))] shadow-lg transition-transform hover:-translate-y-0.5"
+          className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg transition-transform hover:-translate-y-0.5"
         >
           {action.label}
         </button>

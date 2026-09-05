@@ -1,7 +1,7 @@
-import * as React from 'react';
+import { cn } from '../../lib/utils';
+import type { NetworkingPracticeVersion } from '../../utils/storage';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Textarea } from '../ui/textarea';
-import type { NetworkingPracticeVersion } from '../../utils/storage';
 
 type Props = {
   currentVersion: NetworkingPracticeVersion | undefined;
@@ -41,16 +41,22 @@ const FIELDS = [
   },
 ] as const;
 
+const ACCENT_STYLES = {
+  gold: { card: 'border-gold/60', title: 'text-gold' },
+  love: { card: 'border-love/60', title: 'text-love' },
+  foam: { card: 'border-foam/60', title: 'text-foam' },
+} as const;
+
 export default function ScenarioEditor({ currentVersion, onFieldChange }: Props) {
   return (
     <div className="grid gap-4 md:grid-cols-3">
       {FIELDS.map(({ field, title, icon, srLabel, ariaLabel, accent, helpText }) => (
         <Card
           key={field}
-          className={`border-[hsl(var(--${accent})/0.6)] bg-[hsl(var(--overlay)/0.4)] text-[hsl(var(--foreground))]`}
+          className={cn(ACCENT_STYLES[accent].card, 'bg-overlay/40 text-foreground')}
         >
           <CardHeader className="pb-2">
-            <CardTitle className={`flex items-center gap-2 text-[hsl(var(--${accent}))]`}>
+            <CardTitle className={cn('flex items-center gap-2', ACCENT_STYLES[accent].title)}>
               <span className="text-2xl" aria-hidden="true">
                 {icon}
               </span>
@@ -63,11 +69,9 @@ export default function ScenarioEditor({ currentVersion, onFieldChange }: Props)
               aria-label={ariaLabel}
               value={currentVersion?.[field] ?? ''}
               onChange={(event) => onFieldChange(field, event.target.value)}
-              className="min-h-[140px] bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--border)/0.5)] text-sm text-[hsl(var(--foreground))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))]"
+              className="min-h-[140px] bg-overlay/30 border-border/50 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-foam"
             />
-            <p className="text-xs text-[hsl(var(--muted-foreground))] leading-relaxed">
-              {helpText}
-            </p>
+            <p className="text-xs text-muted-foreground leading-relaxed">{helpText}</p>
           </CardContent>
         </Card>
       ))}

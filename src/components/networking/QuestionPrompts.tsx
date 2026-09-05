@@ -1,6 +1,5 @@
-import * as React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 type QuestionTemplate = {
   id: string;
@@ -18,9 +17,9 @@ type Props = {
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-10 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[hsl(var(--overlay)/0.4)]">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-overlay/40">
         <svg
-          className="h-6 w-6 text-[hsl(var(--iris))]"
+          className="h-6 w-6 text-iris"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -34,8 +33,8 @@ function EmptyState() {
           />
         </svg>
       </div>
-      <p className="mt-3 text-sm font-medium text-[hsl(var(--foreground))]">No scenario selected</p>
-      <p className="mt-1 text-sm text-[hsl(var(--muted-foreground))]">
+      <p className="mt-3 text-sm font-medium text-foreground">No scenario selected</p>
+      <p className="mt-1 text-sm text-muted-foreground">
         Select a scenario above to generate question prompts.
       </p>
     </div>
@@ -50,12 +49,10 @@ export default function QuestionPrompts({
 }: Props) {
   if (!scenarioId) {
     return (
-      <Card className="border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.28)]">
+      <Card className="border-border/60 bg-overlay/28">
         <CardHeader className="space-y-2">
-          <CardTitle className="text-[hsl(var(--iris))]">Question prompts</CardTitle>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            End every rep with a thoughtful ask.
-          </p>
+          <CardTitle className="text-iris">Question prompts</CardTitle>
+          <p className="text-sm text-muted-foreground">End every rep with a thoughtful ask.</p>
         </CardHeader>
         <CardContent>
           <EmptyState />
@@ -65,12 +62,10 @@ export default function QuestionPrompts({
   }
 
   return (
-    <Card className="border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.28)]">
+    <Card className="border-border/60 bg-overlay/28">
       <CardHeader className="space-y-2">
-        <CardTitle className="text-[hsl(var(--iris))]">Question prompts</CardTitle>
-        <p className="text-sm text-[hsl(var(--muted-foreground))]">
-          End every rep with a thoughtful ask.
-        </p>
+        <CardTitle className="text-iris">Question prompts</CardTitle>
+        <p className="text-sm text-muted-foreground">End every rep with a thoughtful ask.</p>
       </CardHeader>
       <CardContent className="space-y-3">
         {questionTemplates.length ? (
@@ -80,19 +75,17 @@ export default function QuestionPrompts({
             return (
               <div
                 key={template.id}
-                className="flex items-start justify-between gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--background)/0.6)] p-4"
+                className="flex items-start justify-between gap-3 rounded-2xl border border-border/35 bg-background/60 p-4"
               >
                 <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--iris))]">
-                    {template.label}
-                  </p>
-                  <p className="mt-2 text-sm text-[hsl(var(--foreground))]">{template.prompt}</p>
+                  <p className="text-xs uppercase tracking-[0.3em] text-iris">{template.label}</p>
+                  <p className="mt-2 text-sm text-foreground">{template.prompt}</p>
                 </div>
                 <Button
                   type="button"
                   size="sm"
                   variant="ghost"
-                  className="text-[hsl(var(--iris))] hover:text-[hsl(var(--iris))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+                  className="text-iris hover:text-iris focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                   onClick={() => onCopy(template.prompt, key)}
                 >
                   {isCopied ? 'Copied' : 'Copy'}
@@ -101,12 +94,10 @@ export default function QuestionPrompts({
             );
           })
         ) : (
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Document your go-to questions.
-          </p>
+          <p className="text-sm text-muted-foreground">Document your go-to questions.</p>
         )}
         {questionTemplates.length > 0 && (
-          <p className="text-xs text-[hsl(var(--muted-foreground)/0.7)]">
+          <p className="text-xs text-muted-foreground/70">
             Tip: Customize the scenario fields above to get more relevant suggestions.
           </p>
         )}

@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { cn } from '../../lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { WHY_COUNT } from './shared';
 
 type WhyStepperProps = {
@@ -11,14 +11,10 @@ type WhyStepperProps = {
 export default function WhyStepper({ responses, sequentialCount }: WhyStepperProps) {
   return (
     <>
-      <Card className="bg-[hsl(var(--card)/0.98)] border-[hsl(var(--border)/0.55)] text-[hsl(var(--foreground))]">
+      <Card className="bg-card/98 border-border/55 text-foreground">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-semibold text-[hsl(var(--foreground))]">
-            Depth tracker
-          </CardTitle>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Each layer validates the one above it.
-          </p>
+          <CardTitle className="text-lg font-semibold text-foreground">Depth tracker</CardTitle>
+          <p className="text-sm text-muted-foreground">Each layer validates the one above it.</p>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center gap-3">
@@ -31,10 +27,10 @@ export default function WhyStepper({ responses, sequentialCount }: WhyStepperPro
                     className={cn(
                       'flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors',
                       isFilled
-                        ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.2)] text-[hsl(var(--foreground))]'
+                        ? 'border-primary bg-primary/20 text-foreground'
                         : isCurrent
-                          ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.15)] text-[hsl(var(--primary))]'
-                          : 'border-[hsl(var(--border)/0.5)] text-[hsl(var(--muted-foreground))]'
+                          ? 'border-primary bg-primary/15 text-primary'
+                          : 'border-border/50 text-muted-foreground'
                     )}
                     aria-current={isCurrent ? 'step' : undefined}
                   >
@@ -45,8 +41,8 @@ export default function WhyStepper({ responses, sequentialCount }: WhyStepperPro
                       className={cn(
                         'w-px flex-1',
                         isFilled
-                          ? 'bg-gradient-to-b from-[hsl(var(--primary))] via-[hsl(var(--primary)/0.5)] to-transparent'
-                          : 'bg-[hsl(var(--border)/0.5)]'
+                          ? 'bg-linear-to-b from-primary via-primary/50 to-transparent'
+                          : 'bg-border/50'
                       )}
                       style={{ minHeight: '32px' }}
                     />
@@ -58,10 +54,10 @@ export default function WhyStepper({ responses, sequentialCount }: WhyStepperPro
         </CardContent>
       </Card>
 
-      <Card className="bg-[hsl(var(--card)/0.98)] border-[hsl(var(--border)/0.55)] text-[hsl(var(--foreground))]">
+      <Card className="bg-card/98 border-border/55 text-foreground">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-semibold">Logic tree</CardTitle>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
+          <p className="text-sm text-muted-foreground">
             See how each answer branches from the previous one.
           </p>
         </CardHeader>
@@ -72,25 +68,22 @@ export default function WhyStepper({ responses, sequentialCount }: WhyStepperPro
             return (
               <div key={index} className="relative pl-6">
                 {index !== 0 && (
-                  <span
-                    className="absolute left-2 top-0 h-full w-px bg-[hsl(var(--border)/0.5)]"
-                    aria-hidden
-                  />
+                  <span className="absolute left-2 top-0 h-full w-px bg-border/50" aria-hidden />
                 )}
-                <div className="relative rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] px-4 py-3">
-                  <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
+                <div className="relative rounded-xl border border-border/50 bg-overlay/20 px-4 py-3">
+                  <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                     Why {index + 1}
                   </p>
-                  <p className="mt-2 text-sm text-[hsl(var(--foreground))]">
+                  <p className="mt-2 text-sm text-foreground">
                     {response.trim().length ? response : 'Awaiting insight'}
                   </p>
                   {isFocus && (
-                    <span className="absolute -top-2 right-3 rounded-full border border-[hsl(var(--primary)/0.6)] bg-[hsl(var(--primary)/0.2)] px-3 py-0.5 text-[10px] uppercase tracking-widest text-[hsl(var(--primary))]">
+                    <span className="absolute -top-2 right-3 rounded-full border border-primary/60 bg-primary/20 px-3 py-0.5 text-[10px] uppercase tracking-widest text-primary">
                       current node
                     </span>
                   )}
                   {previous && !response && (
-                    <span className="mt-2 block text-[10px] uppercase tracking-wide text-[hsl(var(--iris))/0.8]">
+                    <span className="mt-2 block text-[10px] uppercase tracking-wide text-iris/80">
                       add continuation
                     </span>
                   )}

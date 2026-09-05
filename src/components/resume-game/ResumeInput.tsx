@@ -1,9 +1,9 @@
-import * as React from 'react';
-import { Textarea } from '../ui/textarea';
+import type * as React from 'react';
 import { Button } from '../ui/button';
-import { Label } from '../ui/label';
-import { Input } from '../ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
 
 type Props = {
   resumeText: string;
@@ -66,14 +66,14 @@ export default function ResumeInput({
               accept=".txt,.md,.markdown,.text,.docx,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,text/plain,text/markdown"
               onChange={handleFileChange}
               aria-label="Upload resume file (PDF, DOCX, TXT, or Markdown)"
-              className="w-full md:w-auto border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+              className="w-full md:w-auto border-border/50 bg-overlay/30 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
             />
           </div>
           <div className="flex flex-col gap-2 w-full md:w-auto md:flex-row">
             <Button
               type="button"
               variant="ghost"
-              className="w-full md:w-auto rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+              className="w-full md:w-auto rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
               onClick={onClear}
             >
               Clear
@@ -81,7 +81,7 @@ export default function ResumeInput({
             <Button
               type="button"
               variant="outline"
-              className="w-full md:w-auto rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+              className="w-full md:w-auto rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
               onClick={onLoadSample}
             >
               Try sample
@@ -93,13 +93,13 @@ export default function ResumeInput({
           value={resumeText}
           onChange={(event) => onTextChange(event.target.value)}
           placeholder={SAMPLE_RESUME_TEXT}
-          className="min-h-[220px] border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+          className="min-h-[220px] border-border/50 bg-overlay/30 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
         />
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
           <Button
             type="button"
             onClick={onScan}
-            className="h-12 rounded-lg bg-[hsl(var(--foam))] px-6 text-sm font-semibold text-[hsl(var(--background))] transition-colors hover:bg-[hsl(var(--foam)/0.9)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+            className="h-12 rounded-lg bg-foam px-6 text-sm font-semibold text-background transition-colors hover:bg-foam/90 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
             disabled={!resumeText.trim() || isScanning || isLoadingFile}
           >
             {isScanning ? 'Analyzing...' : 'Analyze resume'}
@@ -111,7 +111,7 @@ export default function ResumeInput({
                 ? 'Analysis complete'
                 : 'Ready when you are'}
             {needsRescan && scanComplete && (
-              <span className="ml-2 text-xs text-[hsl(var(--gold))]">
+              <span className="ml-2 text-xs text-gold">
                 Resume changed. Tap &quot;Analyze resume&quot; to update scores.
               </span>
             )}
@@ -119,18 +119,16 @@ export default function ResumeInput({
         </div>
         {isLoadingFile && (
           <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-[hsl(var(--foam))] animate-pulse" />
+            <div className="h-2 w-2 rounded-full bg-foam animate-pulse" />
             <p className="text-xs text-muted-foreground">Reading file...</p>
           </div>
         )}
         {status ? (
-          <p className="text-sm text-[hsl(var(--foam))]" role="status">
+          <p className="text-sm text-foam" role="status">
             {status}
           </p>
         ) : null}
-        {storageNotice && !status ? (
-          <p className="text-sm text-[hsl(var(--gold))]">{storageNotice}</p>
-        ) : null}
+        {storageNotice && !status ? <p className="text-sm text-gold">{storageNotice}</p> : null}
       </CardContent>
     </Card>
   );

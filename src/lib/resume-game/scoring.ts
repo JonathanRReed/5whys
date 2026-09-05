@@ -1,4 +1,4 @@
-import { POWER_VERB_PATTERN, POWER_VERB_START_PATTERN, getVerbStrength } from './constants';
+import { getVerbStrength, POWER_VERB_PATTERN, POWER_VERB_START_PATTERN } from './constants';
 import { analyzeReadability } from './readability';
 import { normalizeLine } from './text';
 
@@ -55,7 +55,7 @@ export function scoreBullet(bullet: string) {
 }
 
 export function scoreLabel(score: number) {
-  if (score >= 80) return { label: 'High signal', color: 'text-[hsl(var(--love))]' };
-  if (score >= 50) return { label: 'Moderate', color: 'text-[hsl(var(--gold))]' };
-  return { label: 'Hidden value', color: 'text-[hsl(var(--iris))]' };
+  if (score >= 80) return { label: 'High signal', color: 'text-love' };
+  if (score >= 50) return { label: 'Moderate', color: 'text-gold' };
+  return { label: 'Hidden value', color: 'text-iris' };
 }

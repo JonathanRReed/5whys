@@ -1,9 +1,14 @@
 import * as React from 'react';
 import scenarioData from '../../data/networking-scenarios.json';
+import type {
+  NetworkingPracticeSession,
+  NetworkingPracticeVersion,
+  PracticeReflection,
+} from '../../utils/storage';
 import {
+  clearSessions,
   deleteSession,
   deleteVersion,
-  clearSessions,
   generateId,
   loadSessions,
   loadVersions,
@@ -11,13 +16,8 @@ import {
   saveSession,
   saveVersion,
 } from '../../utils/storage';
-import type {
-  NetworkingPracticeSession,
-  NetworkingPracticeVersion,
-  PracticeReflection,
-} from '../../utils/storage';
-import { useTimer } from './useTimer';
 import { useClipboard } from './useClipboard';
+import { useTimer } from './useTimer';
 
 export type ScenarioIngredient = {
   id: string;
@@ -102,7 +102,7 @@ export function useNetworkingPractice() {
   const scenarios = scenarioData as Scenario[];
   const fallbackVersion = React.useMemo(
     () => scenarioToVersion(scenarios[0] ?? FALLBACK_SCENARIO),
-    [scenarios]
+    []
   );
 
   const loadVersionsFromStorage = React.useCallback(() => {
@@ -130,7 +130,7 @@ export function useNetworkingPractice() {
   );
   const currentScenario = React.useMemo(
     () => scenarios.find((s) => s.id === currentVersion?.scenarioId),
-    [currentVersion?.scenarioId, scenarios]
+    [currentVersion?.scenarioId]
   );
   const scenarioSteps = currentScenario?.what ?? [];
   const ingredients = currentScenario?.ingredients ?? [];
@@ -178,7 +178,7 @@ export function useNetworkingPractice() {
         return next;
       });
     },
-    [currentVersion, scenarios, setVersions]
+    [currentVersion, setVersions]
   );
 
   const handleFieldChange = React.useCallback(
@@ -207,7 +207,7 @@ export function useNetworkingPractice() {
     saveVersion(nextVersion);
     setVersions((prev) => [nextVersion, ...prev]);
     setCurrentVersionId(nextVersion.id);
-  }, [currentScenario, scenarios, setVersions]);
+  }, [currentScenario, setVersions]);
 
   const deleteCurrentVersion = React.useCallback(() => {
     if (!currentVersion) return;
@@ -268,7 +268,7 @@ export function useNetworkingPractice() {
     setSessions((prev) => [session, ...prev].slice(0, SESSION_LIMIT));
     setReflection(emptyReflection);
     setStorageNotice('Session saved to your local history. Your draft stays for the next rep.');
-  }, [currentVersion, scenarios, draft, timer.elapsed, ratings, reflection, setSessions]);
+  }, [currentVersion, draft, timer.elapsed, ratings, reflection, setSessions]);
 
   const removeSession = React.useCallback(
     (id: string) => {

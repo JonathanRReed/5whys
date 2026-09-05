@@ -1,15 +1,13 @@
 {
   "extends": "astro/tsconfigs/strict",
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist", "functions"],
+  "exclude": ["dist", "node_modules", "e2e", "playwright.config.ts"],
   "compilerOptions": {
     "types": ["vitest/globals", "@testing-library/jest-dom"],
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     },
     "jsx": "react-jsx",
-    "jsxImportSource": "react",
-    "ignoreDeprecations": "5.0"
+    "jsxImportSource": "react"
   }
 }

@@ -1,23 +1,23 @@
 import * as React from 'react';
-import { cn } from '../../lib/utils';
 import {
-  type GlowUpData,
-  type DecodedRole,
-  type DecodedBullet,
-  generateId,
-  createRole,
-  updateRole,
-  getSkillFrequencyMap,
-  getTaggedBulletCount,
-  getTopGaps,
-} from '../../lib/glowup-store';
-import {
-  SKILL_BANK,
-  getSkillName,
   detectSkillsFromText,
   extractRequirementLines,
   getRepeatedTerms,
+  getSkillName,
+  SKILL_BANK,
 } from '../../lib/glowup-banks';
+import {
+  createRole,
+  type DecodedBullet,
+  type DecodedRole,
+  type GlowUpData,
+  generateId,
+  getSkillFrequencyMap,
+  getTaggedBulletCount,
+  getTopGaps,
+  updateRole,
+} from '../../lib/glowup-store';
+import { cn } from '../../lib/utils';
 import { PartyIcon, SearchIcon } from './icons';
 
 type Props = {
@@ -92,7 +92,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
   };
 
   const inputClass =
-    'w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2';
+    'w-full rounded-lg border border-border/50 bg-overlay/30 px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2';
 
   return (
     <div className="space-y-6">
@@ -157,7 +157,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
           <button
             type="button"
             onClick={parseJD}
-            className="rounded-lg bg-[hsl(var(--foam))] px-4 py-2 text-sm font-semibold text-[hsl(var(--background))] transition-colors hover:bg-[hsl(var(--foam)/0.9)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+            className="rounded-lg bg-foam px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-foam/90 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
           >
             Parse Bullets
           </button>
@@ -166,7 +166,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
             onClick={saveRole}
             disabled={!jobTitle.trim()}
             aria-disabled={!jobTitle.trim()}
-            className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+            className="rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
           >
             Save Role
           </button>
@@ -174,9 +174,9 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
       </div>
 
       {bullets.length === 0 && rawJdText.trim() === '' && (
-        <div className="rounded-xl border border-dashed border-[hsl(var(--border)/0.4)] p-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[hsl(var(--foam)/0.1)]">
-            <SearchIcon className="h-6 w-6 text-[hsl(var(--foam))]" />
+        <div className="rounded-xl border border-dashed border-border/40 p-8 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-foam/10">
+            <SearchIcon className="h-6 w-6 text-foam" />
           </div>
           <p className="text-sm font-medium text-foreground">No job description decoded yet</p>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -187,7 +187,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
       )}
 
       {repeatedTerms.length > 0 && (
-        <div className="rounded-xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.15)] p-4">
+        <div className="rounded-xl border border-border/30 bg-overlay/15 p-4">
           <h4 className="mb-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Repeated Phrases
           </h4>
@@ -197,10 +197,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
           </p>
           <div className="flex flex-wrap gap-2">
             {repeatedTerms.map(({ term, count }) => (
-              <span
-                key={term}
-                className="rounded-full bg-[hsl(var(--foam)/0.12)] px-2.5 py-1 text-xs text-[hsl(var(--foam))]"
-              >
+              <span key={term} className="rounded-full bg-foam/12 px-2.5 py-1 text-xs text-foam">
                 {term} <span className="font-semibold">&times;{count}</span>
               </span>
             ))}
@@ -232,7 +229,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                   onChange={(e) => {
                     if (e.target.value) handleBulkTag(e.target.value);
                   }}
-                  className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-2 py-1 text-sm text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+                  className="rounded-lg border border-border/50 bg-overlay/30 px-2 py-1 text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                   defaultValue=""
                 >
                   <option value="">Bulk tag...</option>
@@ -245,24 +242,24 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                 <button
                   type="button"
                   onClick={handleBulkIgnore}
-                  className="rounded-lg border border-[hsl(var(--destructive)/0.3)] bg-[hsl(var(--destructive)/0.1)] px-4 py-2 text-sm text-destructive transition-colors hover:bg-[hsl(var(--destructive)/0.15)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--destructive))] focus-visible:ring-offset-2"
+                  className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive transition-colors hover:bg-destructive/15 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
                 >
                   Ignore
                 </button>
               </div>
             )}
           </div>
-          <div className="max-h-96 space-y-2 overflow-y-auto rounded-lg border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.15)] p-3">
+          <div className="max-h-96 space-y-2 overflow-y-auto rounded-lg border border-border/30 bg-overlay/15 p-3">
             {bullets.map((bullet) => (
               <div
                 key={bullet.id}
                 className={cn(
                   'flex items-start gap-3 rounded-lg border p-3 transition-colors',
                   bullet.status === 'ignored'
-                    ? 'border-[hsl(var(--border)/0.2)] bg-[hsl(var(--overlay)/0.1)] opacity-50'
+                    ? 'border-border/20 bg-overlay/10 opacity-50'
                     : isNoise(bullet.text)
-                      ? 'border-[hsl(var(--gold)/0.3)] bg-[hsl(var(--gold)/0.05)]'
-                      : 'border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.2)]'
+                      ? 'border-gold/30 bg-gold/5'
+                      : 'border-border/30 bg-overlay/20'
                 )}
               >
                 <input
@@ -275,7 +272,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                     else newSet.delete(bullet.id);
                     setSelectedBullets(newSet);
                   }}
-                  className="mt-1 h-4 w-4 rounded border-[hsl(var(--border))] accent-[hsl(var(--foam))]"
+                  className="mt-1 h-4 w-4 rounded border-border accent-foam"
                 />
                 <div className="flex-1 space-y-2">
                   <p
@@ -288,7 +285,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                   >
                     {bullet.text}
                     {isNoise(bullet.text) && bullet.status !== 'ignored' && (
-                      <span className="ml-2 rounded bg-[hsl(var(--gold)/0.2)] px-1.5 py-0.5 text-xs text-[hsl(var(--gold))]">
+                      <span className="ml-2 rounded bg-gold/20 px-1.5 py-0.5 text-xs text-gold">
                         noise?
                       </span>
                     )}
@@ -305,7 +302,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                           )
                         );
                       }}
-                      className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-2 py-1 text-xs text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+                      className="rounded-lg border border-border/50 bg-overlay/30 px-2 py-1 text-xs text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                     >
                       <option value="">Select skill...</option>
                       {SKILL_BANK.map((skill) => (
@@ -333,14 +330,11 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                                 ? `Matched: ${s.matchedKeywords.join(', ')}`
                                 : undefined
                             }
-                            className="rounded-full bg-[hsl(var(--foam)/0.15)] px-2 py-0.5 text-xs text-[hsl(var(--foam))] transition-colors hover:bg-[hsl(var(--foam)/0.25)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+                            className="rounded-full bg-foam/15 px-2 py-0.5 text-xs text-foam transition-colors hover:bg-foam/25 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                           >
                             {getSkillName(s.skillId)}
                             {s.matchedKeywords && s.matchedKeywords.length > 0 && (
-                              <span className="text-[hsl(var(--foam)/0.7)]">
-                                {' '}
-                                &middot; {s.matchedKeywords[0]}
-                              </span>
+                              <span className="text-foam/70"> &middot; {s.matchedKeywords[0]}</span>
                             )}
                           </button>
                         ))}
@@ -357,7 +351,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                           )
                         );
                       }}
-                      className="ml-auto rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-1 text-xs text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+                      className="ml-auto rounded-lg border border-border/50 bg-overlay/30 px-3 py-1 text-xs text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                     >
                       {bullet.status === 'ignored' ? 'Restore' : 'Ignore'}
                     </button>
@@ -371,7 +365,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
 
       {skillFreq.size > 0 && (
         <div className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.15)] p-4">
+          <div className="rounded-xl border border-border/30 bg-overlay/15 p-4">
             <h4 className="mb-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Skill Frequency Map
             </h4>
@@ -389,9 +383,9 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                       <span className="w-24 truncate text-sm text-foreground">
                         {getSkillName(skillId)}
                       </span>
-                      <div className="flex-1 h-2 rounded-full bg-[hsl(var(--overlay)/0.4)]">
+                      <div className="flex-1 h-2 rounded-full bg-overlay/40">
                         <div
-                          className="h-full rounded-full bg-[hsl(var(--foam))]"
+                          className="h-full rounded-full bg-foam"
                           style={{ width: `${Math.min(100, pct)}%` }}
                         />
                       </div>
@@ -401,7 +395,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                 })}
             </div>
           </div>
-          <div className="rounded-xl border border-[hsl(var(--destructive)/0.25)] bg-[hsl(var(--destructive)/0.05)] p-4">
+          <div className="rounded-xl border border-destructive/25 bg-destructive/5 p-4">
             <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-destructive">
               Top 3 Gaps (No Stories Yet)
             </h4>

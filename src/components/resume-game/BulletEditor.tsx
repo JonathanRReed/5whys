@@ -1,9 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Label } from '../ui/label';
-import { Input } from '../ui/input';
-import { Textarea } from '../ui/textarea';
-import { generateBulletSuggestions } from '../../lib/resume-game';
 import type { BulletRecord } from '../../lib/resume-game';
+import { generateBulletSuggestions } from '../../lib/resume-game';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
 
 type Props = {
   bullet: BulletRecord | null;
@@ -35,27 +35,25 @@ export default function BulletEditor({ bullet, onFieldChange }: Props) {
           <>
             {/* Suggestions */}
             {suggestions.length > 0 ? (
-              <div className="rounded-2xl border border-[hsl(var(--gold)/0.4)] bg-[hsl(var(--gold)/0.08)] p-4">
-                <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--gold))]">
-                  Suggestions
-                </p>
+              <div className="rounded-2xl border border-gold/40 bg-gold/8 p-4">
+                <p className="text-xs uppercase tracking-[0.3em] text-gold">Suggestions</p>
                 <ul className="mt-2 space-y-3">
                   {suggestions.map((suggestion, idx) => (
                     <li key={idx} className="space-y-1.5 text-sm text-muted-foreground">
                       <div className="flex items-start gap-2">
-                        <span className="mt-0.5 text-[hsl(var(--gold))]">+</span>
+                        <span className="mt-0.5 text-gold">+</span>
                         <span>
                           {suggestion.message}
                           {suggestion.fix && (
-                            <span className="ml-1 text-[hsl(var(--foam))]">{suggestion.fix}</span>
+                            <span className="ml-1 text-foam">{suggestion.fix}</span>
                           )}
                         </span>
                       </div>
                       {(suggestion.studentExample || suggestion.professionalExample) && (
-                        <div className="ml-6 space-y-1 border-l border-[hsl(var(--border)/0.4)] pl-3 text-xs">
+                        <div className="ml-6 space-y-1 border-l border-border/40 pl-3 text-xs">
                           {suggestion.studentExample && (
                             <p>
-                              <span className="mr-1 uppercase tracking-wide text-[hsl(var(--gold))]">
+                              <span className="mr-1 uppercase tracking-wide text-gold">
                                 Student
                               </span>
                               {suggestion.studentExample}
@@ -63,9 +61,7 @@ export default function BulletEditor({ bullet, onFieldChange }: Props) {
                           )}
                           {suggestion.professionalExample && (
                             <p>
-                              <span className="mr-1 uppercase tracking-wide text-[hsl(var(--gold))]">
-                                Pro
-                              </span>
+                              <span className="mr-1 uppercase tracking-wide text-gold">Pro</span>
                               {suggestion.professionalExample}
                             </p>
                           )}
@@ -76,7 +72,7 @@ export default function BulletEditor({ bullet, onFieldChange }: Props) {
                 </ul>
               </div>
             ) : (
-              <div className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.3)] p-4">
+              <div className="rounded-2xl border border-border/35 bg-overlay/30 p-4">
                 <p className="text-sm text-muted-foreground">
                   No flags. This line has an action verb, a number, and an outcome. Read it out loud
                   once; if it still sounds like your work, it is done.
@@ -96,7 +92,7 @@ export default function BulletEditor({ bullet, onFieldChange }: Props) {
                   id={`bullet-${bullet.id}-verb`}
                   value={bullet.fields.verb}
                   onChange={(event) => onFieldChange(bullet.id, 'verb', event.target.value)}
-                  className="mt-2 border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+                  className="mt-2 border-border/50 bg-overlay/30 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                   placeholder="e.g., Led, Built, Increased"
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -114,7 +110,7 @@ export default function BulletEditor({ bullet, onFieldChange }: Props) {
                   id={`bullet-${bullet.id}-quantifier`}
                   value={bullet.fields.quantifier}
                   onChange={(event) => onFieldChange(bullet.id, 'quantifier', event.target.value)}
-                  className="mt-2 border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+                  className="mt-2 border-border/50 bg-overlay/30 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                   placeholder={
                     detectedNumber
                       ? `From your line: ${detectedNumber}`
@@ -140,7 +136,7 @@ export default function BulletEditor({ bullet, onFieldChange }: Props) {
                   id={`bullet-${bullet.id}-task`}
                   value={bullet.fields.task}
                   onChange={(event) => onFieldChange(bullet.id, 'task', event.target.value)}
-                  className="mt-2 min-h-[100px] border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+                  className="mt-2 min-h-[100px] border-border/50 bg-overlay/30 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                   placeholder="e.g., a cross-functional team to launch a new dashboard"
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -158,7 +154,7 @@ export default function BulletEditor({ bullet, onFieldChange }: Props) {
                   id={`bullet-${bullet.id}-impact`}
                   value={bullet.fields.impact}
                   onChange={(event) => onFieldChange(bullet.id, 'impact', event.target.value)}
-                  className="mt-2 min-h-[100px] border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+                  className="mt-2 min-h-[100px] border-border/50 bg-overlay/30 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                   placeholder="e.g., to increase adoption by 40% in Q1"
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -166,7 +162,7 @@ export default function BulletEditor({ bullet, onFieldChange }: Props) {
                 </p>
               </div>
             </div>
-            <div className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.3)] p-4">
+            <div className="rounded-2xl border border-border/35 bg-overlay/30 p-4">
               <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                 Live preview
               </p>

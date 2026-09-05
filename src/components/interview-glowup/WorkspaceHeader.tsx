@@ -1,5 +1,4 @@
-import * as React from 'react';
-import { exportJSON, clearAllData } from '../../lib/glowup-store';
+import { clearAllData, exportJSON } from '../../lib/glowup-store';
 
 type Props = {
   onClearData: () => void;
@@ -27,14 +26,14 @@ export default function WorkspaceHeader({ onClearData }: Props) {
         <button
           type="button"
           onClick={exportJSON}
-          className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] hover:text-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+          className="rounded-lg border border-border/50 bg-overlay/30 px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-overlay/50 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
         >
           Export JSON
         </button>
         <button
           type="button"
           onClick={handleClear}
-          className="rounded-lg border border-[hsl(var(--destructive)/0.3)] bg-[hsl(var(--destructive)/0.08)] px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-[hsl(var(--destructive)/0.15)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--destructive))] focus-visible:ring-offset-2"
+          className="rounded-lg border border-destructive/30 bg-destructive/8 px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/15 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
         >
           Clear Data
         </button>

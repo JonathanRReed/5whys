@@ -1,27 +1,27 @@
 import * as React from 'react';
-import { cn } from '../lib/utils';
+import type { BulletFields, BulletRecord, StoredResumeSession } from '../lib/resume-game';
 import {
-  extractBullets,
-  createBulletRecord,
   buildBullet,
-  combinedBulletScore,
   buildDeepSignalReport,
-  highlightResume,
+  combinedBulletScore,
+  createBulletRecord,
   decodeEntities,
-  POWER_VERB_PATTERN,
-  exportDocx,
   downloadTextFile,
-  useResumeSession,
   EMPTY_SESSION,
   EMPTY_SIGNAL_REPORT,
+  exportDocx,
+  extractBullets,
+  highlightResume,
+  POWER_VERB_PATTERN,
+  useResumeSession,
 } from '../lib/resume-game';
-import type { BulletFields, BulletRecord, StoredResumeSession } from '../lib/resume-game';
+import { cn } from '../lib/utils';
+import BeforeAfter from './resume-game/BeforeAfter';
+import BulletEditor from './resume-game/BulletEditor';
+import BulletList from './resume-game/BulletList';
 import ResumeHeader from './resume-game/ResumeHeader';
 import ResumeInput from './resume-game/ResumeInput';
 import ScanResults from './resume-game/ScanResults';
-import BulletList from './resume-game/BulletList';
-import BulletEditor from './resume-game/BulletEditor';
-import BeforeAfter from './resume-game/BeforeAfter';
 import Scoreboard from './resume-game/Scoreboard';
 import ShareScoreCard from './resume-game/ShareScoreCard';
 
@@ -250,7 +250,7 @@ ${improved.join('\n')}
   return (
     <div
       className={cn(
-        'mx-auto w-full max-w-6xl space-y-12 px-4 pb-20 text-[hsl(var(--foreground))]',
+        'mx-auto w-full max-w-6xl space-y-12 px-4 pb-20 text-foreground',
         showHeader ? 'pt-12' : 'pt-4',
         className
       )}
@@ -282,7 +282,7 @@ ${improved.join('\n')}
       />
 
       {!scanComplete && resumeText.trim() && (
-        <div className="rounded-2xl border border-dashed border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.15)] p-8 text-center">
+        <div className="rounded-2xl border border-dashed border-border/35 bg-overlay/15 p-8 text-center">
           <p className="text-sm text-muted-foreground">
             Click &quot;Analyze resume&quot; above to see your signal report, highlighted text, and
             scoring breakdown.
@@ -299,7 +299,7 @@ ${improved.join('\n')}
       )}
 
       {scanComplete && bullets.length > 0 && (
-        <div className="grid gap-6 lg:grid-cols-[320px,minmax(0,1fr)]">
+        <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
           <BulletList
             bullets={bullets}
             selectedBulletId={selectedBulletId}

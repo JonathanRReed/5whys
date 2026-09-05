@@ -42,7 +42,7 @@ const hasExtra = Astro.slots.has('extra');
   <div class={cn('flex flex-col gap-6', hasMeta && 'max-w-xl')}>
     {/* Eyebrow: hairline rule + monospace kicker — the Swiss label voice */}
     <div class="flex items-center gap-3">
-      <span class="h-px w-8 bg-[hsl(var(--hero-accent))]" aria-hidden="true"></span>
+      <span class="h-px w-8 bg-hero-accent" aria-hidden="true"></span>
       <span class="eyebrow eyebrow-accent" style="color: hsl(var(--hero-accent));">{eyebrow}</span>
       {
         index && (
@@ -68,7 +68,7 @@ const hasExtra = Astro.slots.has('extra');
           {primaryCta && (
             <a
               href={primaryCta.href}
-              class="group inline-flex items-center gap-2 rounded-lg bg-[hsl(var(--primary))] px-5 py-3 text-sm font-semibold text-[hsl(var(--primary-foreground))] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-22px_hsl(var(--primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]"
+              class="group inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-22px_hsl(var(--primary))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               {primaryCta.label}
               <svg
@@ -85,7 +85,7 @@ const hasExtra = Astro.slots.has('extra');
           {secondaryCta && (
             <a
               href={secondaryCta.href}
-              class="inline-flex items-center gap-2 rounded-lg border border-[hsl(var(--border)/0.6)] px-5 py-3 text-sm font-semibold text-foreground transition-colors duration-200 hover:border-[hsl(var(--hero-accent)/0.5)] hover:text-[hsl(var(--hero-accent))]"
+              class="inline-flex items-center gap-2 rounded-lg border border-border/60 px-5 py-3 text-sm font-semibold text-foreground transition-colors duration-200 hover:border-hero-accent/50 hover:text-hero-accent"
             >
               {secondaryCta.label}
             </a>
@@ -114,7 +114,7 @@ const hasExtra = Astro.slots.has('extra');
             {index}
           </span>
         )}
-        <div class="relative space-y-5 rounded-2xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.7)] p-6 shadow-[0_30px_80px_-56px_hsl(var(--background)/0.95)]">
+        <div class="relative space-y-5 rounded-2xl border border-border/50 bg-card/70 p-6 shadow-[0_30px_80px_-56px_hsl(var(--background)/0.95)]">
           <slot name="meta" />
         </div>
       </div>

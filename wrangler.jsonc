@@ -1,0 +1,29 @@
+// Cloudflare Workers Static Assets deploy for 5 Whys Career Studio.
+//
+// The site is fully static: no Worker script, only the Astro build in ./dist
+// served from Cloudflare's edge cache. public/_headers and public/_redirects
+// are honoured by the assets layer, so security headers and the sitemap
+// redirects keep working exactly as they did on Pages.
+//
+// Local deploy:      bun run deploy
+// Validate only:     bun run deploy:dry-run
+// CI deploys main after the Verify job passes (see .github/workflows/ci.yml).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "5whys",
+  "compatibility_date": "2026-09-01",
+  // Keep the *.workers.dev preview URL on until the custom domain moves over
+  // from the Pages project; public/_headers marks it noindex.
+  "workers_dev": true,
+  "preview_urls": true,
+  // Once 5whys.jonathanrreed.com is detached from the Pages project, uncomment
+  // this route and set workers_dev to false.
+  // "routes": [{ "pattern": "5whys.jonathanrreed.com", "custom_domain": true }],
+  "assets": {
+    "directory": "./dist",
+    // Astro emits directory-style URLs; keep the canonical trailing slash.
+    "html_handling": "auto-trailing-slash",
+    // Serve dist/404.html with a real 404 status for unknown paths.
+    "not_found_handling": "404-page"
+  }
+}

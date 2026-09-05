@@ -1,8 +1,8 @@
 import * as React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import type { BulletRecord } from '../../lib/resume-game';
 import { scoreLabel } from '../../lib/resume-game';
 import { cn } from '../../lib/utils';
-import type { BulletRecord } from '../../lib/resume-game';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 type Props = {
   bullets: BulletRecord[];
@@ -24,23 +24,23 @@ const BulletItem = React.memo(function BulletItem({ bullet, isSelected, onSelect
       key={bullet.id}
       type="button"
       className={cn(
-        'w-full rounded-2xl border px-4 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2',
+        'w-full rounded-2xl border px-4 py-3 text-left transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2',
         isSelected
-          ? 'border-[hsl(var(--foam)/0.8)] bg-[hsl(var(--foam)/0.16)] shadow-[0_0_30px_hsl(var(--foam)/0.25)]'
-          : 'border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.35)] hover:border-[hsl(var(--border)/0.5)]'
+          ? 'border-foam/80 bg-foam/16 shadow-[0_0_30px_hsl(var(--foam)/0.25)]'
+          : 'border-border/35 bg-overlay/35 hover:border-border/50'
       )}
       onClick={() => onSelect(bullet.id)}
       aria-pressed={isSelected}
     >
       <p
-        className="overflow-hidden text-sm text-[hsl(var(--foreground))]"
+        className="overflow-hidden text-sm text-foreground"
         style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}
       >
         {bullet.original}
       </p>
       <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
         <span className={label.color}>{label.label}</span>
-        <span className={delta >= 0 ? 'text-[hsl(var(--love))]' : 'text-[hsl(var(--destructive))]'}>
+        <span className={delta >= 0 ? 'text-love' : 'text-destructive'}>
           {delta >= 0 ? '+' : ''}
           {delta}
         </span>
@@ -60,7 +60,7 @@ export default React.memo(function BulletList({ bullets, selectedBulletId, onSel
       </CardHeader>
       <CardContent className="space-y-3">
         {bullets.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.15)] p-6 text-center">
+          <div className="rounded-2xl border border-dashed border-border/35 bg-overlay/15 p-6 text-center">
             <p className="text-sm text-muted-foreground">
               Run the analysis to extract and score your bullets.
             </p>

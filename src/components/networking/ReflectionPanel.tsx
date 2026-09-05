@@ -1,9 +1,8 @@
-import * as React from 'react';
+import type { PracticeReflection } from '../../utils/storage';
+import { SESSION_LIMIT } from '../../utils/storage';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
-import { SESSION_LIMIT } from '../../utils/storage';
-import type { PracticeReflection } from '../../utils/storage';
 
 type Props = {
   reflection: PracticeReflection;
@@ -61,7 +60,7 @@ export default function ReflectionPanel({
               maxLength={maxLength}
               onChange={(event) => onReflectionField(key, event.target.value.slice(0, maxLength))}
               placeholder={placeholder}
-              className="min-h-[72px] bg-[hsl(var(--overlay)/0.3)] border-[hsl(var(--border)/0.6)] text-sm text-[hsl(var(--foreground))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))]"
+              className="min-h-[72px] bg-overlay/30 border-border/60 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-foam"
             />
           </div>
         ))}
@@ -71,25 +70,25 @@ export default function ReflectionPanel({
         <Button
           onClick={onSaveSession}
           disabled={draftEmpty}
-          className="bg-[hsl(var(--gold))] text-[hsl(var(--background))] hover:bg-[hsl(var(--gold)/0.8)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+          className="bg-gold text-background hover:bg-gold/80 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
         >
           Save Session
         </Button>
         <Button
           variant="outline"
-          className="border-[hsl(var(--border)/0.6)] text-[hsl(var(--foreground))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+          className="border-border/60 text-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
           onClick={onResetReview}
         >
           Reset Review
         </Button>
         {draftEmpty ? (
-          <p className="text-xs text-[hsl(var(--muted-foreground))]">
+          <p className="text-xs text-muted-foreground">
             Write your intro draft above to save this rep. The history stores your actual words.
           </p>
         ) : null}
         {sessionsAtCapacity ? (
-          <div className="rounded-lg border border-[hsl(var(--gold)/0.4)] bg-[hsl(var(--gold)/0.1)] px-3 py-2">
-            <p className="text-xs text-[hsl(var(--gold))]">
+          <div className="rounded-lg border border-gold/40 bg-gold/10 px-3 py-2">
+            <p className="text-xs text-gold">
               You have saved {SESSION_LIMIT} sessions. New ones will replace the oldest.
             </p>
           </div>

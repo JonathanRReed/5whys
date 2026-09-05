@@ -1,77 +1,32 @@
-import js from '@eslint/js';
-import tsParser from '@typescript-eslint/parser';
-import tsPlugin from '@typescript-eslint/eslint-plugin';
-import reactHooks from 'eslint-plugin-react-hooks';
-import reactRefresh from 'eslint-plugin-react-refresh';
-import globals from 'globals';
-import prettierConfig from 'eslint-config-prettier';
+// ESLint covers .astro templates only: Astro's own rules plus, when the
+// optional jsx-a11y peer is installed, its strict accessibility set.
+// Biome formats and lints TypeScript, JavaScript, CSS, and JSON (biome.json).
 
-const ignores = [
-  'dist/',
-  'node_modules/',
-  '.astro/',
-  'bun.lock',
-  'package-lock.json',
-  '*.config.*',
-  'vitest.setup.ts',
-];
+import tsParser from '@typescript-eslint/parser';
+import * as astroParser from 'astro-eslint-parser';
+import astroPlugin from 'eslint-plugin-astro';
+import globals from 'globals';
 
 export default [
-  js.configs.recommended,
   {
-    name: 'global-ignores',
-    ignores,
+    ignores: ['dist/**', 'public/**', 'node_modules/**', '.wrangler/**', '.astro/**'],
   },
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ['**/*.astro'],
     languageOptions: {
-      parser: tsParser,
+      parser: astroParser,
       parserOptions: {
-        ecmaFeatures: { jsx: true },
+        parser: tsParser,
+        ecmaVersion: 2023,
+        sourceType: 'module',
+        extraFileExtensions: ['.astro'],
       },
-      globals: {
-        ...globals.browser,
-        ...globals.node,
-      },
+      globals: { ...globals.browser, ...globals.node },
     },
-    plugins: {
-      '@typescript-eslint': tsPlugin,
-      'react-hooks': reactHooks,
-      'react-refresh': reactRefresh,
-    },
+    plugins: { astro: astroPlugin },
     rules: {
-      ...tsPlugin.configs.recommended.rules,
-      ...reactHooks.configs.recommended.rules,
-      '@typescript-eslint/no-unused-vars': [
-        'warn',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
-      ],
-      '@typescript-eslint/no-explicit-any': 'off',
-      'react-refresh/only-export-components': 'warn',
-      'react-hooks/set-state-in-effect': 'off',
-      'no-console': 'off',
-      'no-useless-escape': 'off',
-      'no-empty': 'off',
+      ...astroPlugin.configs.recommended.rules,
+      ...(astroPlugin.configs['jsx-a11y-strict']?.rules ?? {}),
     },
   },
-  {
-    files: ['src/components/ui/*.tsx'],
-    rules: {
-      '@typescript-eslint/no-empty-object-type': 'off',
-    },
-  },
-  {
-    files: ['functions/**/*.ts'],
-    languageOptions: {
-      globals: {
-        ...globals.browser,
-        ...globals.node,
-        KVNamespace: 'readonly',
-      },
-    },
-    rules: {
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-    },
-  },
-  prettierConfig,
 ];

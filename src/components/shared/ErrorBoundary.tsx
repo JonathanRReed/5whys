@@ -40,14 +40,14 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
       return (
         <div
           className={cn(
-            'flex flex-col items-center justify-center gap-4 rounded-2xl border border-[hsl(var(--destructive)/0.3)] bg-[hsl(var(--destructive)/0.05)] p-8 text-center',
+            'flex flex-col items-center justify-center gap-4 rounded-2xl border border-destructive/30 bg-destructive/5 p-8 text-center',
             this.props.className
           )}
           role="alert"
           aria-live="assertive"
         >
           <svg
-            className="h-10 w-10 text-[hsl(var(--destructive))]"
+            className="h-10 w-10 text-destructive"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -68,7 +68,7 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
             </p>
           </div>
           {this.state.error && (
-            <details className="w-full max-w-sm rounded-lg border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.3)] p-3 text-left">
+            <details className="w-full max-w-sm rounded-lg border border-border/30 bg-overlay/30 p-3 text-left">
               <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
                 Error details
               </summary>
@@ -80,7 +80,7 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
           <button
             type="button"
             onClick={this.handleReset}
-            className="inline-flex items-center gap-2 rounded-full bg-[hsl(var(--primary))] px-5 py-2.5 text-sm font-semibold text-[hsl(var(--primary-foreground))] shadow-lg transition-transform hover:-translate-y-0.5"
+            className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg transition-transform hover:-translate-y-0.5"
           >
             <svg
               className="h-4 w-4"

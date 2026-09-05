@@ -1,6 +1,6 @@
-import * as React from 'react';
+import type * as React from 'react';
 import { cn } from '../../lib/utils';
-import { ClockIcon, TargetIcon, ChartIcon, CheckIcon, XIcon } from '../interview-glowup/icons';
+import { ChartIcon, CheckIcon, ClockIcon, TargetIcon, XIcon } from '../interview-glowup/icons';
 
 interface SectionProps {
   title: string;
@@ -24,9 +24,9 @@ interface CalloutProps {
 
 function Callout({ children, variant = 'default' }: CalloutProps) {
   const variants = {
-    default: 'border-[hsl(var(--foam)/0.4)] bg-[hsl(var(--foam)/0.08)]',
-    insight: 'border-[hsl(var(--iris)/0.4)] bg-[hsl(var(--iris)/0.08)]',
-    tip: 'border-[hsl(var(--gold)/0.4)] bg-[hsl(var(--gold)/0.08)]',
+    default: 'border-foam/40 bg-foam/8',
+    insight: 'border-iris/40 bg-iris/8',
+    tip: 'border-gold/40 bg-gold/8',
   };
 
   return (
@@ -36,19 +36,20 @@ function Callout({ children, variant = 'default' }: CalloutProps) {
 
 export default function InterviewGlowUpAdvice() {
   return (
-    <article className="space-y-12 rounded-2xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--card)/0.45)] px-6 py-12 sm:px-10 sm:py-14">
+    <article className="space-y-12 rounded-2xl border border-border/50 bg-card/45 px-6 py-12 sm:px-10 sm:py-14">
       {/* v1.3 Positioning Banner */}
-      <div className="flex items-center gap-3 rounded-2xl border border-[hsl(var(--gold)/0.35)] bg-[hsl(var(--gold)/0.08)] px-5 py-4">
-        <ClockIcon className="h-6 w-6 flex-shrink-0 text-[hsl(var(--gold))]" />
+      <div className="flex items-center gap-3 rounded-2xl border border-gold/35 bg-gold/8 px-5 py-4">
+        <ClockIcon className="h-6 w-6 shrink-0 text-gold" />
         <p className="text-sm font-medium text-foreground sm:text-base">
           <strong>Got an interview tomorrow?</strong> Build your cheat sheet in 20 minutes.
         </p>
       </div>
 
       {/* Privacy Notice */}
-      <div className="flex items-center gap-3 rounded-xl border border-[hsl(var(--foam)/0.3)] bg-[hsl(var(--foam)/0.06)] px-4 py-3 text-sm text-muted-foreground">
+      <div className="flex items-center gap-3 rounded-xl border border-foam/30 bg-foam/6 px-4 py-3 text-sm text-muted-foreground">
         <svg
-          className="h-4 w-4 flex-shrink-0 text-[hsl(var(--foam))]"
+          aria-hidden="true"
+          className="h-4 w-4 shrink-0 text-foam"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -131,14 +132,14 @@ export default function InterviewGlowUpAdvice() {
           you respond with evidence that you have.
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-xl border border-[hsl(var(--destructive)/0.3)] bg-[hsl(var(--destructive)/0.06)] p-4">
+          <div className="rounded-xl border border-destructive/30 bg-destructive/6 p-4">
             <p className="flex items-center gap-1.5 text-sm font-semibold text-destructive">
               <XIcon className="h-3.5 w-3.5" /> Don't
             </p>
             <p className="mt-1 text-sm">Memorize scripts and deliver monologues</p>
           </div>
-          <div className="rounded-xl border border-[hsl(var(--foam)/0.3)] bg-[hsl(var(--foam)/0.06)] p-4">
-            <p className="flex items-center gap-1.5 text-sm font-semibold text-[hsl(var(--foam))]">
+          <div className="rounded-xl border border-foam/30 bg-foam/6 p-4">
+            <p className="flex items-center gap-1.5 text-sm font-semibold text-foam">
               <CheckIcon className="h-3.5 w-3.5" /> Do
             </p>
             <p className="mt-1 text-sm">Prepare building blocks, then respond naturally</p>
@@ -176,17 +177,17 @@ export default function InterviewGlowUpAdvice() {
           Proof:
         </p>
         <div className="mt-4 space-y-4">
-          <div className="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] p-4">
+          <div className="rounded-xl border border-border/50 bg-overlay/30 p-4">
             <p className="flex items-center gap-2 font-semibold text-foreground">
-              <TargetIcon className="h-4 w-4 text-[hsl(var(--foam))]" /> Play (What You Did)
+              <TargetIcon className="h-4 w-4 text-foam" /> Play (What You Did)
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
               The specific action you took. Keep it concise, 2-3 sentences max.
             </p>
           </div>
-          <div className="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] p-4">
+          <div className="rounded-xl border border-border/50 bg-overlay/30 p-4">
             <p className="flex items-center gap-2 font-semibold text-foreground">
-              <ChartIcon className="h-4 w-4 text-[hsl(var(--iris))]" /> Proof (The Receipt)
+              <ChartIcon className="h-4 w-4 text-iris" /> Proof (The Receipt)
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
               The measurable result. Numbers, time saved, revenue impact, or specific praise you
@@ -215,28 +216,28 @@ export default function InterviewGlowUpAdvice() {
           most candidates ignore:
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] p-4">
+          <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
             <p className="text-sm font-semibold text-foreground">Class projects</p>
             <p className="mt-1 text-sm text-muted-foreground">
               The part you owned, the decision you made when the plan broke, the bug you found at
               2am before the demo.
             </p>
           </div>
-          <div className="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] p-4">
+          <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
             <p className="text-sm font-semibold text-foreground">Internships</p>
             <p className="mt-1 text-sm text-muted-foreground">
               Even a small ticket counts if you can explain the context, your change, and what
               happened after it shipped.
             </p>
           </div>
-          <div className="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] p-4">
+          <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
             <p className="text-sm font-semibold text-foreground">Clubs and volunteering</p>
             <p className="mt-1 text-sm text-muted-foreground">
               The event you organized, the budget you managed, the members you recruited. That is
               leadership and ownership, named plainly.
             </p>
           </div>
-          <div className="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] p-4">
+          <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
             <p className="text-sm font-semibold text-foreground">Part-time jobs</p>
             <p className="mt-1 text-sm text-muted-foreground">
               Handling a rush, an unhappy customer, training a new hire. Interviewers trust these
@@ -258,19 +259,19 @@ export default function InterviewGlowUpAdvice() {
       {/* Normalize Nerves */}
       <Section title="Normalize the nerves">
         <div className="space-y-4">
-          <div className="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] p-4">
+          <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
             <p className="eyebrow">Before</p>
             <p className="mt-1 text-foreground">
               "I'm prepared. I know my stories. This is just a conversation."
             </p>
           </div>
-          <div className="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] p-4">
+          <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
             <p className="eyebrow">During</p>
             <p className="mt-1 text-foreground">
               "If I blank, I can pause, breathe, and check my notes. It's normal."
             </p>
           </div>
-          <div className="rounded-xl border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.2)] p-4">
+          <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
             <p className="eyebrow">After</p>
             <p className="mt-1 text-foreground">
               "I showed up and gave honest answers. That's a win regardless of outcome."
@@ -280,7 +281,7 @@ export default function InterviewGlowUpAdvice() {
       </Section>
 
       {/* CTA */}
-      <div className="flex flex-col items-center gap-4 rounded-2xl border border-[hsl(var(--love)/0.4)] bg-[hsl(var(--love)/0.07)] px-6 py-8 text-center sm:px-10 sm:py-10">
+      <div className="flex flex-col items-center gap-4 rounded-2xl border border-love/40 bg-love/7 px-6 py-8 text-center sm:px-10 sm:py-10">
         <h3 className="text-xl font-semibold text-foreground sm:text-2xl">
           Ready to build your interview packet?
         </h3>
@@ -290,10 +291,11 @@ export default function InterviewGlowUpAdvice() {
         </p>
         <a
           href="/5whys/interview-glow-up/workspace/"
-          className="mt-2 inline-flex items-center gap-2 rounded-lg bg-[hsl(var(--primary))] px-6 py-3 text-sm font-semibold text-[hsl(var(--primary-foreground))] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-22px_hsl(var(--primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]"
+          className="mt-2 inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-22px_hsl(var(--primary))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           Open the Workspace
           <svg
+            aria-hidden="true"
             className="h-4 w-4"
             fill="none"
             viewBox="0 0 24 24"

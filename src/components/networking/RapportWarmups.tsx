@@ -1,6 +1,5 @@
-import * as React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 type Props = {
   rapportSamples: string[];
@@ -12,9 +11,9 @@ type Props = {
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-10 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[hsl(var(--overlay)/0.4)]">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-overlay/40">
         <svg
-          className="h-6 w-6 text-[hsl(var(--gold))]"
+          className="h-6 w-6 text-gold"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -28,8 +27,8 @@ function EmptyState() {
           />
         </svg>
       </div>
-      <p className="mt-3 text-sm font-medium text-[hsl(var(--foreground))]">No scenario selected</p>
-      <p className="mt-1 text-sm text-[hsl(var(--muted-foreground))]">
+      <p className="mt-3 text-sm font-medium text-foreground">No scenario selected</p>
+      <p className="mt-1 text-sm text-muted-foreground">
         Select a scenario above to generate rapport warm-ups.
       </p>
     </div>
@@ -39,12 +38,10 @@ function EmptyState() {
 export default function RapportWarmups({ rapportSamples, scenarioId, onCopy, copiedKey }: Props) {
   if (!scenarioId) {
     return (
-      <Card className="border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.28)]">
+      <Card className="border-border/60 bg-overlay/28">
         <CardHeader className="space-y-2">
-          <CardTitle className="text-[hsl(var(--gold))]">Rapport warm-ups</CardTitle>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Steal a line or tweak it for your voice.
-          </p>
+          <CardTitle className="text-gold">Rapport warm-ups</CardTitle>
+          <p className="text-sm text-muted-foreground">Steal a line or tweak it for your voice.</p>
         </CardHeader>
         <CardContent>
           <EmptyState />
@@ -54,12 +51,10 @@ export default function RapportWarmups({ rapportSamples, scenarioId, onCopy, cop
   }
 
   return (
-    <Card className="border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.28)]">
+    <Card className="border-border/60 bg-overlay/28">
       <CardHeader className="space-y-2">
-        <CardTitle className="text-[hsl(var(--gold))]">Rapport warm-ups</CardTitle>
-        <p className="text-sm text-[hsl(var(--muted-foreground))]">
-          Steal a line or tweak it for your voice.
-        </p>
+        <CardTitle className="text-gold">Rapport warm-ups</CardTitle>
+        <p className="text-sm text-muted-foreground">Steal a line or tweak it for your voice.</p>
       </CardHeader>
       <CardContent className="space-y-3">
         {rapportSamples.length ? (
@@ -69,14 +64,14 @@ export default function RapportWarmups({ rapportSamples, scenarioId, onCopy, cop
             return (
               <div
                 key={key}
-                className="flex items-start justify-between gap-3 rounded-2xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--background)/0.6)] p-4"
+                className="flex items-start justify-between gap-3 rounded-2xl border border-border/35 bg-background/60 p-4"
               >
-                <p className="text-sm text-[hsl(var(--foreground))]">{sample}</p>
+                <p className="text-sm text-foreground">{sample}</p>
                 <Button
                   type="button"
                   size="sm"
                   variant="ghost"
-                  className="text-[hsl(var(--gold))] hover:text-[hsl(var(--gold))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+                  className="text-gold hover:text-gold focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                   onClick={() => onCopy(sample, key)}
                 >
                   {isCopied ? 'Copied' : 'Copy'}
@@ -85,12 +80,10 @@ export default function RapportWarmups({ rapportSamples, scenarioId, onCopy, cop
             );
           })
         ) : (
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Drop your favorite opener ideas here.
-          </p>
+          <p className="text-sm text-muted-foreground">Drop your favorite opener ideas here.</p>
         )}
         {rapportSamples.length > 0 && (
-          <p className="text-xs text-[hsl(var(--muted-foreground)/0.7)]">
+          <p className="text-xs text-muted-foreground/70">
             Tip: Customize the scenario fields above to get more relevant suggestions.
           </p>
         )}

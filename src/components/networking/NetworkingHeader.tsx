@@ -1,4 +1,3 @@
-import * as React from 'react';
 import QuickStartTiles from '../QuickStartTiles';
 
 type Props = {
@@ -10,9 +9,10 @@ export default function NetworkingHeader({ showHeader = true }: Props) {
 
   return (
     <header className="text-center space-y-4">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl border border-[hsl(var(--iris)/0.3)] bg-[hsl(var(--iris)/0.1)]">
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl border border-iris/30 bg-iris/10">
         <svg
-          className="h-7 w-7 text-[hsl(var(--iris))]"
+          aria-hidden="true"
+          className="h-7 w-7 text-iris"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -31,7 +31,7 @@ export default function NetworkingHeader({ showHeader = true }: Props) {
       <h1 className="text-4xl font-semibold tracking-tight text-foreground">
         Networking Practice Studio
       </h1>
-      <p className="mx-auto max-w-3xl text-base text-[hsl(var(--muted-foreground))]">
+      <p className="mx-auto max-w-3xl text-base text-muted-foreground">
         Twelve scenarios, from a career fair with a line behind you to a cold email to a professor.
         Draft the intro in your own words, run it against a two-minute timer, score it honestly, and
         keep every rep so you can watch the intro improve.

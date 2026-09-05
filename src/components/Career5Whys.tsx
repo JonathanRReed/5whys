@@ -1,29 +1,29 @@
 import * as React from 'react';
 import { cn } from '../lib/utils';
+import CareerHeader from './career-5whys/CareerHeader';
+import ExportActions from './career-5whys/ExportActions';
+import HistoryPanel from './career-5whys/HistoryPanel';
 import {
-  TRACKS,
+  buildPrompts,
+  type Career5WhysProps,
+  createEmptySession,
+  DEFAULT_HISTORY_LIMIT,
+  downloadJson,
+  ensureResponsesLength,
   HISTORY_KEY,
   HISTORY_LIMIT_KEY,
   HISTORY_LIMIT_OPTIONS,
-  DEFAULT_HISTORY_LIMIT,
-  createEmptySession,
   isBrowser,
-  ensureResponsesLength,
-  toSlug,
-  downloadJson,
   normalizeSnapshot,
-  buildPrompts,
+  TRACKS,
+  toSlug,
   useStoredSession,
   useSynthesis,
   type WhySnapshot,
-  type Career5WhysProps,
 } from './career-5whys/shared';
-import CareerHeader from './career-5whys/CareerHeader';
-import WhyStepper from './career-5whys/WhyStepper';
 import WhyForm from './career-5whys/WhyForm';
+import WhyStepper from './career-5whys/WhyStepper';
 import WhySummary from './career-5whys/WhySummary';
-import ExportActions from './career-5whys/ExportActions';
-import HistoryPanel from './career-5whys/HistoryPanel';
 
 export default function Career5Whys({
   showHeader = true,
@@ -52,20 +52,17 @@ export default function Career5Whys({
     [session.track, session.topic, session.responses]
   );
 
-  const persistHistory = React.useCallback(
-    (entries: WhySnapshot[]) => {
-      if (!isBrowser()) return true;
-      try {
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(entries));
-        return true;
-      } catch (err) {
-        console.warn('Unable to persist why snapshot history', err);
-        setStatus('Storage is full. Manage or export snapshots to continue saving.');
-        return false;
-      }
-    },
-    [setStatus]
-  );
+  const persistHistory = React.useCallback((entries: WhySnapshot[]) => {
+    if (!isBrowser()) return true;
+    try {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(entries));
+      return true;
+    } catch (err) {
+      console.warn('Unable to persist why snapshot history', err);
+      setStatus('Storage is full. Manage or export snapshots to continue saving.');
+      return false;
+    }
+  }, []);
 
   React.useEffect(() => {
     if (!storageNotice) return;
@@ -237,7 +234,7 @@ export default function Career5Whys({
   };
 
   return (
-    <div className={cn('relative text-[hsl(var(--foreground))]', className)}>
+    <div className={cn('relative text-foreground', className)}>
       <div className={cn('mx-auto w-full max-w-6xl space-y-8 px-4 py-8', !showHeader && 'py-6')}>
         <CareerHeader
           showHeader={showHeader}
@@ -251,7 +248,7 @@ export default function Career5Whys({
         <div aria-live="polite" aria-atomic="true" className="sr-only">
           {status ? status : ''}
         </div>
-        <div className="grid gap-8 lg:grid-cols-[320px,minmax(0,1fr)]">
+        <div className="grid gap-8 lg:grid-cols-[320px_minmax(0,1fr)]">
           <div className="space-y-6">
             <WhyStepper responses={session.responses} sequentialCount={sequentialCount} />
           </div>
@@ -296,7 +293,7 @@ export default function Career5Whys({
           </div>
         </div>
         {showFooter && (
-          <footer className="border-t border-[hsl(var(--border)/0.5)] pt-8 text-center text-sm text-[hsl(var(--muted-foreground))]">
+          <footer className="border-t border-border/50 pt-8 text-center text-sm text-muted-foreground">
             <p>Insight is cumulative. Revisit your entries whenever your path evolves.</p>
           </footer>
         )}

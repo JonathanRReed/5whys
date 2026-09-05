@@ -20,3 +20,7 @@ https://5whys.pages.dev/*
 
 https://:version.5whys.pages.dev/*
   X-Robots-Tag: noindex
+
+# Workers preview hosts are never the canonical site.
+https://:sub.workers.dev/*
+  X-Robots-Tag: noindex

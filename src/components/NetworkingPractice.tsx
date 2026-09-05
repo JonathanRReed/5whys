@@ -1,19 +1,18 @@
-import * as React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { cn } from '../lib/utils';
-import { useNetworkingPractice } from './networking/useNetworkingPractice';
-import NetworkingHeader from './networking/NetworkingHeader';
-import ScenarioSelector from './networking/ScenarioSelector';
-import ScenarioEditor from './networking/ScenarioEditor';
-import ScenarioBlueprint from './networking/ScenarioBlueprint';
 import ConversationIngredients from './networking/ConversationIngredients';
-import RapportWarmups from './networking/RapportWarmups';
-import QuestionPrompts from './networking/QuestionPrompts';
 import IntroDraft from './networking/IntroDraft';
+import NetworkingHeader from './networking/NetworkingHeader';
 import PracticeTimer from './networking/PracticeTimer';
+import QuestionPrompts from './networking/QuestionPrompts';
+import RapportWarmups from './networking/RapportWarmups';
 import RatingsPanel from './networking/RatingsPanel';
 import ReflectionPanel from './networking/ReflectionPanel';
+import ScenarioBlueprint from './networking/ScenarioBlueprint';
+import ScenarioEditor from './networking/ScenarioEditor';
+import ScenarioSelector from './networking/ScenarioSelector';
 import SessionHistory from './networking/SessionHistory';
+import { useNetworkingPractice } from './networking/useNetworkingPractice';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
 export type { Scenario } from './networking/useNetworkingPractice';
 
@@ -28,11 +27,7 @@ export default function NetworkingPractice({
 }: NetworkingPracticeProps) {
   const state = useNetworkingPractice();
 
-  const containerClasses = cn(
-    'text-[hsl(var(--foreground))]',
-    showHeader && 'min-h-screen',
-    className
-  );
+  const containerClasses = cn('text-foreground', showHeader && 'min-h-screen', className);
   const innerClasses = cn(
     'mx-auto w-full max-w-6xl px-4 pb-20',
     showHeader ? 'pt-12 space-y-10' : 'pt-6 space-y-8'
@@ -43,13 +38,13 @@ export default function NetworkingPractice({
       <div className={innerClasses}>
         <NetworkingHeader showHeader={showHeader} />
 
-        <section className="w-full grid gap-6 p-4 mb-10 rounded-3xl bg-[hsl(var(--overlay)/0.3)] shadow-xl sm:p-6 overflow-hidden">
+        <section className="w-full grid gap-6 p-4 mb-10 rounded-3xl bg-overlay/30 shadow-xl sm:p-6 overflow-hidden">
           {state.storageNotice ? (
-            <div className="rounded-2xl border border-[hsl(var(--gold)/0.4)] bg-[hsl(var(--gold)/0.1)] px-4 py-3 text-sm text-[hsl(var(--gold))]">
+            <div className="rounded-2xl border border-gold/40 bg-gold/10 px-4 py-3 text-sm text-gold">
               {state.storageNotice}
             </div>
           ) : null}
-          <div className="grid gap-4 md:grid-cols-[minmax(0,_200px)_1fr]">
+          <div className="grid gap-4 md:grid-cols-[minmax(0,200px)_1fr]">
             <ScenarioSelector
               scenarios={state.scenarios}
               versions={state.versions}
@@ -68,7 +63,7 @@ export default function NetworkingPractice({
           </div>
         </section>
 
-        <section className="grid gap-6 mb-10 lg:grid-cols-[1.1fr,0.9fr]">
+        <section className="grid gap-6 mb-10 lg:grid-cols-[1.1fr_0.9fr]">
           <ScenarioBlueprint
             currentScenario={state.currentScenario}
             scenarioSteps={state.scenarioSteps}
@@ -95,7 +90,7 @@ export default function NetworkingPractice({
           />
         </section>
 
-        <section className="w-full grid gap-6 mb-10 md:grid-cols-[minmax(0,_320px)_1fr]">
+        <section className="w-full grid gap-6 mb-10 md:grid-cols-[minmax(0,320px)_1fr]">
           <PracticeTimer
             timer={state.timer}
             onStart={state.startTimer}
@@ -106,10 +101,10 @@ export default function NetworkingPractice({
         </section>
 
         <section className="w-full mb-10">
-          <Card className="border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.3)]">
+          <Card className="border-border/60 bg-overlay/30">
             <CardHeader>
-              <CardTitle className="text-[hsl(var(--iris))]">Self-Review</CardTitle>
-              <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">
+              <CardTitle className="text-iris">Self-Review</CardTitle>
+              <p className="mt-2 text-sm text-muted-foreground">
                 Score the rep honestly. Green means 4 or higher, and that is the target. The next
                 step below tracks your lowest score.
               </p>

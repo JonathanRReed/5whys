@@ -14,9 +14,9 @@ type Props = {
 };
 
 function computeFeedbackColor(value: number) {
-  if (value >= 4) return 'text-[hsl(var(--foam))]';
-  if (value >= 3) return 'text-[hsl(var(--gold))]';
-  return 'text-[hsl(var(--destructive))]';
+  if (value >= 4) return 'text-foam';
+  if (value >= 3) return 'text-gold';
+  return 'text-destructive';
 }
 
 const RATING_FIELDS = [
@@ -79,7 +79,7 @@ export default function RatingsPanel({ ratings, onRatingChange }: Props) {
               <Label htmlFor={`rating-${key}`} className="text-sm font-normal">
                 {label}
               </Label>
-              <p className="text-xs text-[hsl(var(--muted-foreground))]">{helpText}</p>
+              <p className="text-xs text-muted-foreground">{helpText}</p>
             </div>
             <span className={`font-semibold ${computeFeedbackColor(ratings[key])}`}>
               {ratings[key]}/5
@@ -97,25 +97,23 @@ export default function RatingsPanel({ ratings, onRatingChange }: Props) {
             aria-valuenow={ratings[key]}
             aria-valuemin={1}
             aria-valuemax={5}
-            className="w-full focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2 rounded-md"
+            className="w-full focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2 rounded-md"
           />
         </div>
       ))}
 
-      <div className="rounded-xl bg-[hsl(var(--overlay)/0.3)] p-4 text-sm text-[hsl(var(--muted-foreground))]">
+      <div className="rounded-xl bg-overlay/30 p-4 text-sm text-muted-foreground">
         <div className="flex items-baseline justify-between gap-4">
           <div>
-            <div className="mb-1 text-xs uppercase tracking-[0.3em] text-[hsl(var(--iris))]">
-              Average
-            </div>
+            <div className="mb-1 text-xs uppercase tracking-[0.3em] text-iris">Average</div>
             <div className={`text-2xl font-semibold ${computeFeedbackColor(averageRating)}`}>
               {averageRating.toFixed(1)}/5
             </div>
           </div>
         </div>
-        <div className="mt-3 rounded-lg border border-[hsl(var(--border)/0.4)] bg-[hsl(var(--background)/0.5)] p-3">
-          <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--foam))]">Next step</p>
-          <p className="mt-1.5 text-sm text-[hsl(var(--foreground))]">{nextStep}</p>
+        <div className="mt-3 rounded-lg border border-border/40 bg-background/50 p-3">
+          <p className="text-xs uppercase tracking-[0.3em] text-foam">Next step</p>
+          <p className="mt-1.5 text-sm text-foreground">{nextStep}</p>
         </div>
       </div>
     </div>

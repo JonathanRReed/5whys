@@ -1,8 +1,8 @@
-import * as React from 'react';
 import { toPng } from 'html-to-image';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
+import * as React from 'react';
 import type { BulletRecord, SignalReport } from '../../lib/resume-game';
+import { Button } from '../ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 type Props = {
   bullets: BulletRecord[];
@@ -49,21 +49,21 @@ export default function ShareScoreCard({
       <CardContent className="space-y-4">
         <div
           ref={cardRef}
-          className="rounded-2xl border border-[hsl(var(--border)/0.35)] bg-gradient-to-br from-[hsl(var(--card)/0.9)] to-[hsl(var(--overlay)/0.6)] p-6 text-center"
+          className="rounded-2xl border border-border/35 bg-linear-to-br from-card/90 to-overlay/60 p-6 text-center"
         >
           <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
             Resume Game Score
           </p>
-          <p className="mt-2 text-5xl font-bold text-[hsl(var(--foam))]">{averageScore}</p>
+          <p className="mt-2 text-5xl font-bold text-foam">{averageScore}</p>
           <p className="text-sm text-muted-foreground">out of 100</p>
           <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-            <div className="rounded-xl bg-[hsl(var(--overlay)/0.4)] p-3">
+            <div className="rounded-xl bg-overlay/40 p-3">
               <p className="text-xs text-muted-foreground">Visible Value</p>
-              <p className="font-semibold text-[hsl(var(--iris))]">{signalReport.visible}%</p>
+              <p className="font-semibold text-iris">{signalReport.visible}%</p>
             </div>
-            <div className="rounded-xl bg-[hsl(var(--overlay)/0.4)] p-3">
+            <div className="rounded-xl bg-overlay/40 p-3">
               <p className="text-xs text-muted-foreground">Verb Coverage</p>
-              <p className="font-semibold text-[hsl(var(--love))]">{verbCoverage}%</p>
+              <p className="font-semibold text-love">{verbCoverage}%</p>
             </div>
           </div>
           <p className="mt-4 text-xs text-muted-foreground">5whys.jonathanrreed.com</p>

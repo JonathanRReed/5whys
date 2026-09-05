@@ -1,7 +1,6 @@
-import * as React from 'react';
-import { Card, CardContent } from '../ui/card';
-import { Button } from '../ui/button';
 import type { NetworkingPracticeSession } from '../../utils/storage';
+import { Button } from '../ui/button';
+import { Card, CardContent } from '../ui/card';
 
 type Props = {
   sessions: NetworkingPracticeSession[];
@@ -34,9 +33,9 @@ const REFLECTION_LABELS = [
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-10 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[hsl(var(--overlay)/0.4)]">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-overlay/40">
         <svg
-          className="h-6 w-6 text-[hsl(var(--gold))]"
+          className="h-6 w-6 text-gold"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -50,13 +49,11 @@ function EmptyState() {
           />
         </svg>
       </div>
-      <p className="mt-3 text-sm font-medium text-[hsl(var(--foreground))]">
-        No saved sessions yet
-      </p>
-      <p className="mt-1 max-w-md text-sm text-[hsl(var(--muted-foreground))]">
+      <p className="mt-3 text-sm font-medium text-foreground">No saved sessions yet</p>
+      <p className="mt-1 max-w-md text-sm text-muted-foreground">
         Draft your intro, run a rep, and tap{' '}
-        <strong className="font-semibold text-[hsl(var(--foreground))]">Save Session</strong>. Each
-        entry stores the exact words you practiced, so you can watch the intro evolve.
+        <strong className="font-semibold text-foreground">Save Session</strong>. Each entry stores
+        the exact words you practiced, so you can watch the intro evolve.
       </p>
     </div>
   );
@@ -71,13 +68,13 @@ export default function SessionHistory({
   return (
     <section className="w-full space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-2xl font-semibold text-[hsl(var(--gold))]">Recent Sessions</h2>
-        <div className="flex flex-wrap items-center gap-3 text-sm text-[hsl(var(--muted-foreground))]">
+        <h2 className="text-2xl font-semibold text-gold">Recent Sessions</h2>
+        <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
           <span>Stored locally in your browser</span>
           <Button
             type="button"
             variant="outline"
-            className="border-[hsl(var(--border)/0.6)] text-[hsl(var(--foreground))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+            className="border-border/60 text-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
             onClick={onExport}
           >
             Export sessions JSON
@@ -85,7 +82,7 @@ export default function SessionHistory({
           <Button
             type="button"
             variant="ghost"
-            className="text-[hsl(var(--destructive))] hover:text-[hsl(var(--destructive))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+            className="text-destructive hover:text-destructive focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
             onClick={onClearHistory}
           >
             Clear history
@@ -94,7 +91,7 @@ export default function SessionHistory({
       </div>
 
       {sessions.length === 0 ? (
-        <Card className="border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.3)]">
+        <Card className="border-border/60 bg-overlay/30">
           <CardContent>
             <EmptyState />
           </CardContent>
@@ -110,13 +107,10 @@ export default function SessionHistory({
             })).filter((entry) => entry.value.length > 0);
 
             return (
-              <Card
-                key={session.id}
-                className="border-[hsl(var(--border)/0.6)] bg-[hsl(var(--overlay)/0.3)]"
-              >
+              <Card key={session.id} className="border-border/60 bg-overlay/30">
                 <CardContent className="flex flex-col gap-4 py-4 md:flex-row md:items-start md:justify-between">
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm uppercase tracking-[0.3em] text-[hsl(var(--muted-foreground))]">
+                    <div className="text-sm uppercase tracking-[0.3em] text-muted-foreground">
                       {new Date(session.createdAt).toLocaleString(undefined, {
                         month: 'short',
                         day: 'numeric',
@@ -124,20 +118,16 @@ export default function SessionHistory({
                         minute: '2-digit',
                       })}
                     </div>
-                    <div className="mt-1 text-lg font-semibold text-[hsl(var(--foreground))]">
+                    <div className="mt-1 text-lg font-semibold text-foreground">
                       {session.scenarioTitle}
                     </div>
                     {draft ? (
-                      <div className="mt-3 rounded-xl border border-[hsl(var(--border)/0.35)] bg-[hsl(var(--background)/0.5)] p-3">
-                        <p className="text-xs uppercase tracking-[0.3em] text-[hsl(var(--gold))]">
-                          Intro draft
-                        </p>
-                        <p className="mt-2 whitespace-pre-line text-sm text-[hsl(var(--foreground))]">
-                          {draft}
-                        </p>
+                      <div className="mt-3 rounded-xl border border-border/35 bg-background/50 p-3">
+                        <p className="text-xs uppercase tracking-[0.3em] text-gold">Intro draft</p>
+                        <p className="mt-2 whitespace-pre-line text-sm text-foreground">{draft}</p>
                       </div>
                     ) : (
-                      <p className="mt-3 text-sm text-[hsl(var(--muted-foreground))]">
+                      <p className="mt-3 text-sm text-muted-foreground">
                         No draft captured for this rep.
                       </p>
                     )}
@@ -145,12 +135,10 @@ export default function SessionHistory({
                       <dl className="mt-3 grid gap-2 sm:grid-cols-2">
                         {reflectionEntries.map((entry) => (
                           <div key={entry.key} className="min-w-0">
-                            <dt className="text-xs uppercase tracking-[0.2em] text-[hsl(var(--iris))]">
+                            <dt className="text-xs uppercase tracking-[0.2em] text-iris">
                               {entry.label}
                             </dt>
-                            <dd className="mt-0.5 text-sm text-[hsl(var(--muted-foreground))]">
-                              {entry.value}
-                            </dd>
+                            <dd className="mt-0.5 text-sm text-muted-foreground">{entry.value}</dd>
                           </div>
                         ))}
                       </dl>
@@ -159,25 +147,23 @@ export default function SessionHistory({
 
                   <div className="flex flex-wrap items-center gap-4 sm:gap-6 md:shrink-0">
                     <div className="flex-1 text-center sm:min-w-[100px]">
-                      <div className="text-3xl font-bold text-[hsl(var(--foam))]">
+                      <div className="text-3xl font-bold text-foam">
                         {formatDuration(session.attempts?.[0]?.durationSeconds)}
                       </div>
-                      <div className="text-xs uppercase tracking-[0.2em] text-[hsl(var(--muted-foreground))]">
+                      <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                         Practiced
                       </div>
                     </div>
                     <div className="flex-1 text-center sm:min-w-[100px]">
-                      <div className="text-3xl font-bold text-[hsl(var(--gold))]">
-                        {averageRating(session)}
-                      </div>
-                      <div className="text-xs uppercase tracking-[0.2em] text-[hsl(var(--muted-foreground))]">
+                      <div className="text-3xl font-bold text-gold">{averageRating(session)}</div>
+                      <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                         Avg
                       </div>
                     </div>
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full border-[hsl(var(--border))] text-[hsl(var(--foreground))] sm:w-auto focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+                      className="w-full border-border text-foreground sm:w-auto focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                       onClick={() => onRemoveSession(session.id)}
                     >
                       Delete

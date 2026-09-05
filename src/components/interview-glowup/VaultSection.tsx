@@ -1,13 +1,13 @@
 import * as React from 'react';
-import { cn } from '../../lib/utils';
+import { getSkillName, SKILL_BANK } from '../../lib/glowup-banks';
 import {
+  deleteStory,
   type GlowUpData,
   type InterviewPacket,
   updatePacket,
-  deleteStory,
 } from '../../lib/glowup-store';
-import { SKILL_BANK, getSkillName } from '../../lib/glowup-banks';
-import { CheckIcon, ArchiveIcon } from './icons';
+import { cn } from '../../lib/utils';
+import { ArchiveIcon, CheckIcon } from './icons';
 
 type Props = {
   data: GlowUpData;
@@ -68,12 +68,12 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           placeholder="Search stories..."
-          className="flex-1 min-w-[200px] rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+          className="flex-1 min-w-[200px] rounded-lg border border-border/50 bg-overlay/30 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
         />
         <select
           value={skillFilter}
           onChange={(e) => setSkillFilter(e.target.value)}
-          className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-sm text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+          className="rounded-lg border border-border/50 bg-overlay/30 px-3 py-2 text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
         >
           <option value="">All skills</option>
           {SKILL_BANK.map((skill) => (
@@ -87,10 +87,10 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
             type="button"
             onClick={() => setShowUnused(!showUnused)}
             className={cn(
-              'rounded-lg border px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2',
+              'rounded-lg border px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2',
               showUnused
-                ? 'border-[hsl(var(--foam)/0.5)] bg-[hsl(var(--foam)/0.15)] text-[hsl(var(--foam))]'
-                : 'border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] text-muted-foreground hover:text-foreground'
+                ? 'border-foam/50 bg-foam/15 text-foam'
+                : 'border-border/50 bg-overlay/30 text-muted-foreground hover:text-foreground'
             )}
           >
             Unused only
@@ -99,19 +99,19 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
       </div>
 
       {selectedIds.size > 0 && currentPacket && (
-        <div className="flex items-center gap-3 rounded-lg bg-[hsl(var(--foam)/0.1)] p-3">
+        <div className="flex items-center gap-3 rounded-lg bg-foam/10 p-3">
           <span className="text-sm text-foreground">{selectedIds.size} selected</span>
           <button
             type="button"
             onClick={handleBatchAddToPacket}
-            className="rounded-lg bg-[hsl(var(--foam))] px-4 py-2 text-sm font-semibold text-[hsl(var(--background))] transition-colors hover:bg-[hsl(var(--foam)/0.9)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+            className="rounded-lg bg-foam px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-foam/90 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
           >
             Add to Packet
           </button>
           <button
             type="button"
             onClick={() => setSelectedIds(new Set())}
-            className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+            className="rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
           >
             Clear
           </button>
@@ -126,9 +126,7 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
               key={story.id}
               className={cn(
                 'rounded-xl border p-4 transition-colors',
-                inPacket
-                  ? 'border-[hsl(var(--foam)/0.5)] bg-[hsl(var(--foam)/0.08)]'
-                  : 'border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.15)]'
+                inPacket ? 'border-foam/50 bg-foam/8' : 'border-border/30 bg-overlay/15'
               )}
             >
               <div className="flex items-start gap-2">
@@ -142,15 +140,15 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
                     else newSet.delete(story.id);
                     setSelectedIds(newSet);
                   }}
-                  className="mt-1 h-4 w-4 rounded accent-[hsl(var(--foam))]"
+                  className="mt-1 h-4 w-4 rounded accent-foam"
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-[hsl(var(--foam)/0.15)] px-2 py-0.5 text-xs font-medium text-[hsl(var(--foam))]">
+                    <span className="rounded-full bg-foam/15 px-2 py-0.5 text-xs font-medium text-foam">
                       {getSkillName(story.primarySkillId)}
                     </span>
                     {inPacket && (
-                      <span className="flex items-center gap-1 text-xs text-[hsl(var(--foam))]">
+                      <span className="flex items-center gap-1 text-xs text-foam">
                         <CheckIcon className="h-3 w-3" />
                         in packet
                       </span>
@@ -174,7 +172,7 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
                         }
                       }}
                       aria-label={`Delete story: ${story.trigger || 'Untitled'}`}
-                      className="rounded-lg border border-[hsl(var(--destructive)/0.3)] bg-[hsl(var(--destructive)/0.1)] px-3 py-1 text-xs text-destructive transition-colors hover:bg-[hsl(var(--destructive)/0.15)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--destructive))] focus-visible:ring-offset-2"
+                      className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-1 text-xs text-destructive transition-colors hover:bg-destructive/15 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
                     >
                       Delete
                     </button>
@@ -187,11 +185,11 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
       </div>
 
       {stories.length === 0 && (
-        <div className="rounded-xl border border-dashed border-[hsl(var(--border)/0.4)] p-8 text-center">
+        <div className="rounded-xl border border-dashed border-border/40 p-8 text-center">
           {data.stories.length === 0 ? (
             <>
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[hsl(var(--foam)/0.1)]">
-                <ArchiveIcon className="h-6 w-6 text-[hsl(var(--foam))]" />
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-foam/10">
+                <ArchiveIcon className="h-6 w-6 text-foam" />
               </div>
               <p className="text-sm font-medium text-foreground">Your vault is empty</p>
               <p className="mt-1 text-sm text-muted-foreground">

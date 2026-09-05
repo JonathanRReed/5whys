@@ -1,7 +1,7 @@
-import type { BulletRecord } from './types';
 import { BUZZWORDS, getVerbStrength, matchesTerm, suggestStrongerVerb } from './constants';
 import { analyzeReadability } from './readability';
 import { normalizeLine } from './text';
+import type { BulletRecord } from './types';
 
 export type BulletSuggestion = {
   type:
@@ -223,10 +223,8 @@ export function generateBulletSuggestions(bullet: BulletRecord): BulletSuggestio
 }
 
 export function signalGrade(visible: number): { grade: string; label: string; color: string } {
-  if (visible >= 80)
-    return { grade: 'A', label: 'Excellent signal', color: 'text-[hsl(var(--love))]' };
-  if (visible >= 65) return { grade: 'B', label: 'Good signal', color: 'text-[hsl(var(--foam))]' };
-  if (visible >= 50)
-    return { grade: 'C', label: 'Moderate signal', color: 'text-[hsl(var(--gold))]' };
-  return { grade: 'D', label: 'Weak signal', color: 'text-[hsl(var(--destructive))]' };
+  if (visible >= 80) return { grade: 'A', label: 'Excellent signal', color: 'text-love' };
+  if (visible >= 65) return { grade: 'B', label: 'Good signal', color: 'text-foam' };
+  if (visible >= 50) return { grade: 'C', label: 'Moderate signal', color: 'text-gold' };
+  return { grade: 'D', label: 'Weak signal', color: 'text-destructive' };
 }

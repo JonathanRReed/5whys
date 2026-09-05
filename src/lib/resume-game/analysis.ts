@@ -1,17 +1,17 @@
 import {
+  ATS_KEYWORDS,
+  extractSkills,
+  getVerbStrength,
+  matchesTerm,
   POWER_VERB_PATTERN,
   POWER_VERB_START_PATTERN,
-  WEAK_WORDS,
-  ATS_KEYWORDS,
-  STOPWORDS,
   POWER_VERBS_STRONG,
-  getVerbStrength,
-  extractSkills,
-  matchesTerm,
+  STOPWORDS,
+  WEAK_WORDS,
 } from './constants';
-import { scoreBullet } from './scoring';
-import { analyzeReadability } from './readability';
 import { analyzeResumeLength } from './length';
+import { analyzeReadability } from './readability';
+import { scoreBullet } from './scoring';
 import {
   capitalizeWord,
   countPowerVerbs,

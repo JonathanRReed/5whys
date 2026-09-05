@@ -1,9 +1,365 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/*
+  Design tokens. The palette lives once, below in @layer base, as HSL triplets
+  on :root (Night) and [data-theme='dawn'] (Dawn). This inline theme block
+  turns each triplet into a named Tailwind color, so `bg-foam/15` resolves to
+  `hsl(var(--foam))` at the element and follows whichever theme is active.
+*/
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-card-accent: hsl(var(--card-accent));
+  --color-overlay: hsl(var(--overlay));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-love: hsl(var(--love));
+  --color-gold: hsl(var(--gold));
+  --color-rose: hsl(var(--rose));
+  --color-pine: hsl(var(--pine));
+  --color-foam: hsl(var(--foam));
+  --color-iris: hsl(var(--iris));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+}
+
+@theme {
+  --font-display: "Fraunces Variable", Georgia, Cambria, ui-serif, serif;
+  --font-sans:
+    "Inter Variable", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --font-mono:
+    "JetBrains Mono Variable", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --backdrop-blur-xs: 2px;
+
+  --animate-fade-in: fade-in 0.5s ease-out;
+  --animate-slide-up: slide-up 0.6s ease-out;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes slide-up {
+    from {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}
+
+@utility nav-pill-group {
+  container-type: inline-size;
+}
+
+@utility nav-logo {
+  border-radius: 0.75rem;
+  transition: transform 180ms ease;
+
+  &:hover {
+    transform: translateY(-1px) scale(1.02);
+  }
+}
+
+@utility nav-logo__mark {
+  display: block;
+  background-image: image-set(
+    url("/career-studio-mark-nav-1x.png") 1x,
+    url("/career-studio-mark-nav.png") 2x
+  );
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+@utility nav-pill {
+  @container (max-width: 36rem) {
+    gap: 0.5rem;
+    padding-inline: 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  @container (max-width: 28rem) {
+    font-size: 0.8125rem;
+    padding-inline: 0.65rem;
+  }
+}
+
+@utility theme-popover {
+  border: 1px solid color-mix(in oklch, hsl(var(--border)) 70%, transparent);
+  background: linear-gradient(
+    145deg,
+    color-mix(in oklch, hsl(var(--overlay)) 85%, hsl(var(--background)) 15%) 0%,
+    color-mix(in oklch, hsl(var(--overlay)) 65%, hsl(var(--background)) 35%) 100%
+  );
+  border-radius: 1.5rem;
+  padding: 0.9rem;
+  display: grid;
+  gap: 0.4rem;
+  box-shadow:
+    0 32px 68px -44px color-mix(in srgb, hsl(var(--background)) 75%, transparent),
+    inset 0 1px 0 0 color-mix(in oklch, hsl(var(--foam)) 15%, transparent);
+  min-width: clamp(220px, 17vw, 260px);
+  animation: popover-fade 160ms ease-out;
+}
+
+@utility theme-option {
+  --option-shadow: color-mix(in oklch, hsl(var(--background)) 60%, transparent);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 1.25rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid color-mix(in srgb, hsl(var(--border)) 65%, transparent);
+  color: hsl(var(--foreground));
+  background: color-mix(in srgb, hsl(var(--overlay)) 78%, hsl(var(--background)) 22%);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+  box-shadow: 0 14px 34px -28px var(--option-shadow);
+
+  &[data-active="true"] {
+    border-color: color-mix(in oklch, hsl(var(--foam)) 70%, hsl(var(--border)) 30%);
+    background: linear-gradient(
+      120deg,
+      color-mix(in oklch, hsl(var(--foam)) 45%, hsl(var(--overlay)) 55%) 0%,
+      color-mix(in oklch, hsl(var(--foam)) 25%, hsl(var(--overlay)) 75%) 100%
+    );
+    transform: translateY(-2px);
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, hsl(var(--accent)) 50%, hsl(var(--border)) 50%);
+    background: color-mix(in srgb, hsl(var(--overlay)) 70%, hsl(var(--background)) 30%);
+  }
+}
+
+@utility theme-option__dot {
+  inline-size: 2.2rem;
+  block-size: 2.2rem;
+  border-radius: 999px;
+  background-size: 180% 180%;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, hsl(var(--background)) 40%, transparent),
+    0 0 0 1px color-mix(in srgb, hsl(var(--foam)) 25%, transparent);
+}
+
+@utility theme-option__content {
+  display: grid;
+  gap: 0.2rem;
+}
+
+@utility theme-option__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+@utility theme-option__description {
+  font-size: 0.78rem;
+  color: hsl(var(--muted-foreground));
+}
+
+@utility theme-popover-trigger {
+  background: color-mix(in srgb, hsl(var(--overlay)) 62%, hsl(var(--background)) 38%);
+  box-shadow:
+    inset 0 1px 0 0 color-mix(in srgb, hsl(var(--foam)) 18%, transparent),
+    0 18px 36px -26px color-mix(in srgb, hsl(var(--background)) 75%, transparent);
+
+  &:hover {
+    background: color-mix(in srgb, hsl(var(--overlay)) 55%, hsl(var(--background)) 45%);
+  }
+}
+
+@utility eyebrow {
+  /* ==========================================================================
+     Swiss-grotesque identity utilities
+     ========================================================================== */
+
+  /* Monospace eyebrow / kicker label — the signature label voice */
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  line-height: 1;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+}
+
+@utility eyebrow-accent {
+  color: hsl(var(--foam));
+}
+
+@utility num-index {
+  /* Tabular monospace index marker, e.g. 01 — echoes the 5 Whys numbering */
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  font-weight: 500;
+}
+
+@utility tnum {
+  /* Tabular numerals helper for any data figure */
+  font-variant-numeric: tabular-nums;
+}
+
+@utility hairline {
+  /* 1px hairline divider — Swiss elevation comes from rules, not shadows */
+  height: 1px;
+  width: 100%;
+  background: hsl(var(--border) / 0.5);
+  border: 0;
+}
+
+@utility bg-blueprint {
+  /* Signature blueprint grid — a faint precise grid that fades toward the edges */
+  background-image:
+    linear-gradient(to right, hsl(var(--border) / 0.55) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--border) / 0.55) 1px, transparent 1px);
+  background-size: 76px 76px;
+  background-position: center -1px;
+  -webkit-mask-image: radial-gradient(ellipse 78% 52% at 50% 0%, #000 0%, transparent 72%);
+  mask-image: radial-gradient(ellipse 78% 52% at 50% 0%, #000 0%, transparent 72%);
+}
+
+@utility surface {
+  /* Crisp card surface in the Swiss language: hairline border, no pillow shadow */
+  border: 1px solid hsl(var(--border) / 0.45);
+  background: hsl(var(--card) / 0.55);
+  border-radius: var(--radius);
+}
+
+@utility surface-hover {
+  transition:
+    border-color 200ms ease,
+    background-color 200ms ease,
+    transform 200ms ease;
+
+  &:hover {
+    border-color: hsl(var(--foam) / 0.4);
+    background: hsl(var(--card) / 0.78);
+  }
+}
+
+@utility bg-ledger {
+  /* ==========================================================================
+     Field guide identity — almanac textures, plates, drop caps, marginalia
+     ========================================================================== */
+
+  /* Ruled-paper background: faint ledger lines, like a field journal page */
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 33px,
+    hsl(var(--border) / 0.28) 33px,
+    hsl(var(--border) / 0.28) 34px
+  );
+}
+
+@utility bg-strata {
+  /* Soil-strata wash behind the descent plate: surface green fading to brass ore */
+  background-image: linear-gradient(
+    to bottom,
+    hsl(var(--foam) / 0.06) 0%,
+    hsl(var(--background) / 0) 26%,
+    hsl(var(--background) / 0) 64%,
+    hsl(var(--gold) / 0.07) 100%
+  );
+}
+
+@utility rule-brass {
+  /* Brass rule: the field-guide divider, fading to the right */
+  height: 2px;
+  border: 0;
+  background: linear-gradient(to right, hsl(var(--gold) / 0.75), hsl(var(--gold) / 0.1));
+}
+
+@utility rule-double {
+  /* Double rule, book-style: thick line over thin line */
+  height: 4px;
+  border: 0;
+  background:
+    linear-gradient(hsl(var(--border) / 0.7) 0 0) top / 100% 2px no-repeat,
+    linear-gradient(hsl(var(--border) / 0.4) 0 0) bottom / 100% 1px no-repeat;
+}
+
+@utility dropcap {
+  /* Editorial drop cap for the opening field note */
+  &::first-letter {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 3.4em;
+    line-height: 0.74;
+    float: left;
+    margin: 0.04em 0.1em 0 0;
+    color: hsl(var(--foam));
+  }
+}
+
+@utility plate-numeral {
+  /* Large serif plate numeral */
+  font-family: var(--font-display);
+  font-weight: 300;
+  line-height: 0.78;
+  letter-spacing: -0.02em;
+  font-feature-settings: "ss01" 1;
+}
+
+@utility margin-label {
+  /* Vertical marginalia label that runs up an edge */
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+}
+
+@utility display-italic {
+  /* Italic display accent (Fraunces italic) for emphasized words in headings */
+  font-style: italic;
+  font-variation-settings:
+    "opsz" 90,
+    "SOFT" 40,
+    "WONK" 1;
+}
+
+@utility specimen {
+  /* Specimen: a pinned sample of a tool's real output */
+  border: 1px solid hsl(var(--border) / 0.5);
+  background: hsl(var(--card) / 0.55);
+  border-radius: calc(var(--radius) - 2px);
+}
+
 /* eslint-disable-next-line at-rule-no-unknown */
-@tailwind base;
 /* eslint-disable-next-line at-rule-no-unknown */
-@tailwind components;
-/* eslint-disable-next-line at-rule-no-unknown */
-@tailwind utilities;
 
 @layer base {
   :root {
@@ -36,12 +392,6 @@
     --input: 150 7% 22%;
     --ring: 150 48% 45%;
     --radius: 0.5rem;
-    --font-display: 'Fraunces Variable', Georgia, Cambria, ui-serif, serif;
-    --font-sans:
-      'Inter Variable', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-      sans-serif;
-    --font-mono:
-      'JetBrains Mono Variable', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
     --logo-stop-1: color-mix(in srgb, #3f9f78 54%, transparent);
     --logo-stop-2: color-mix(in srgb, #cda24c 48%, transparent);
     --logo-stop-3: color-mix(in srgb, #1a201b 60%, transparent);
@@ -52,19 +402,19 @@
     color-scheme: dark;
   }
 
-  :root[data-theme='night'],
+  :root[data-theme="night"],
   :root.theme-night,
   html.theme-night,
   body.theme-night,
-  body[data-theme='night'] {
+  body[data-theme="night"] {
     color-scheme: dark;
   }
 
-  :root[data-theme='dawn'],
+  :root[data-theme="dawn"],
   :root.theme-dawn,
   html.theme-dawn,
   body.theme-dawn,
-  body[data-theme='dawn'] {
+  body[data-theme="dawn"] {
     /* Dawn — Evergreen & Brass, light. Warm ivory paper, deep pine ink,
        bronze accent. Calm and editorial, never cold. */
     --background: 48 30% 95%;
@@ -125,9 +475,9 @@
     @apply bg-background text-foreground antialiased transition-colors duration-300;
     font-family: var(--font-sans);
     font-feature-settings:
-      'cv05' 1,
-      'ss03' 1,
-      'cv11' 1;
+      "cv05" 1,
+      "ss03" 1,
+      "cv11" 1;
     accent-color: hsl(var(--foam));
     overflow-x: hidden;
   }
@@ -189,295 +539,11 @@
 }
 
 @layer components {
-  .nav-pill-group {
-    container-type: inline-size;
-  }
-
-  .nav-logo {
-    border-radius: 0.75rem;
-    transition: transform 180ms ease;
-  }
-
-  .nav-logo:hover {
-    transform: translateY(-1px) scale(1.02);
-  }
-
-  .nav-logo__mark {
-    display: block;
-    background-image: image-set(
-      url('/career-studio-mark-nav-1x.png') 1x,
-      url('/career-studio-mark-nav.png') 2x
-    );
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: contain;
-  }
-
-  @container (max-width: 36rem) {
-    .nav-pill {
-      gap: 0.5rem;
-      padding-inline: 0.75rem;
-      font-size: 0.875rem;
-    }
-  }
-
-  @container (max-width: 28rem) {
-    .nav-pill {
-      font-size: 0.8125rem;
-      padding-inline: 0.65rem;
-    }
-  }
-
-  .theme-popover {
-    border: 1px solid color-mix(in oklch, hsl(var(--border)) 70%, transparent);
-    background: linear-gradient(
-      145deg,
-      color-mix(in oklch, hsl(var(--overlay)) 85%, hsl(var(--background)) 15%) 0%,
-      color-mix(in oklch, hsl(var(--overlay)) 65%, hsl(var(--background)) 35%) 100%
-    );
-    border-radius: 1.5rem;
-    padding: 0.9rem;
-    display: grid;
-    gap: 0.4rem;
-    box-shadow:
-      0 32px 68px -44px color-mix(in srgb, hsl(var(--background)) 75%, transparent),
-      inset 0 1px 0 0 color-mix(in oklch, hsl(var(--foam)) 15%, transparent);
-    min-width: clamp(220px, 17vw, 260px);
-    animation: popover-fade 160ms ease-out;
-  }
-
-  .theme-option {
-    --option-shadow: color-mix(in oklch, hsl(var(--background)) 60%, transparent);
-    display: grid;
-    grid-template-columns: auto 1fr;
-    align-items: center;
-    gap: 0.75rem;
-    border-radius: 1.25rem;
-    padding: 0.65rem 0.8rem;
-    border: 1px solid color-mix(in srgb, hsl(var(--border)) 65%, transparent);
-    color: hsl(var(--foreground));
-    background: color-mix(in srgb, hsl(var(--overlay)) 78%, hsl(var(--background)) 22%);
-    transition:
-      transform 180ms ease,
-      border-color 180ms ease,
-      background 180ms ease;
-    box-shadow: 0 14px 34px -28px var(--option-shadow);
-  }
-
-  .theme-option[data-active='true'] {
-    border-color: color-mix(in oklch, hsl(var(--foam)) 70%, hsl(var(--border)) 30%);
-    background: linear-gradient(
-      120deg,
-      color-mix(in oklch, hsl(var(--foam)) 45%, hsl(var(--overlay)) 55%) 0%,
-      color-mix(in oklch, hsl(var(--foam)) 25%, hsl(var(--overlay)) 75%) 100%
-    );
-    transform: translateY(-2px);
-  }
-
-  .theme-option:hover {
-    transform: translateY(-1px);
-    border-color: color-mix(in srgb, hsl(var(--accent)) 50%, hsl(var(--border)) 50%);
-    background: color-mix(in srgb, hsl(var(--overlay)) 70%, hsl(var(--background)) 30%);
-  }
-
-  .theme-option__dot {
-    inline-size: 2.2rem;
-    block-size: 2.2rem;
-    border-radius: 999px;
-    background-size: 180% 180%;
-    box-shadow:
-      inset 0 0 0 1px color-mix(in srgb, hsl(var(--background)) 40%, transparent),
-      0 0 0 1px color-mix(in srgb, hsl(var(--foam)) 25%, transparent);
-  }
-
-  .theme-option__content {
-    display: grid;
-    gap: 0.2rem;
-  }
-
-  .theme-option__label {
-    font-size: 0.78rem;
-    font-weight: 600;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-
-  .theme-option__description {
-    font-size: 0.78rem;
-    color: hsl(var(--muted-foreground));
-  }
-
-  .theme-popover-trigger {
-    background: color-mix(in srgb, hsl(var(--overlay)) 62%, hsl(var(--background)) 38%);
-    box-shadow:
-      inset 0 1px 0 0 color-mix(in srgb, hsl(var(--foam)) 18%, transparent),
-      0 18px 36px -26px color-mix(in srgb, hsl(var(--background)) 75%, transparent);
-  }
-
-  .theme-popover-trigger:hover {
-    background: color-mix(in srgb, hsl(var(--overlay)) 55%, hsl(var(--background)) 45%);
-  }
-
   h1,
   h2,
   h3,
   h4 {
     text-wrap: balance;
-  }
-
-  /* ==========================================================================
-     Swiss-grotesque identity utilities
-     ========================================================================== */
-
-  /* Monospace eyebrow / kicker label — the signature label voice */
-  .eyebrow {
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    line-height: 1;
-    letter-spacing: 0.24em;
-    text-transform: uppercase;
-    font-weight: 500;
-    color: hsl(var(--muted-foreground));
-  }
-
-  .eyebrow-accent {
-    color: hsl(var(--foam));
-  }
-
-  /* Tabular monospace index marker, e.g. 01 — echoes the 5 Whys numbering */
-  .num-index {
-    font-family: var(--font-mono);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 0.02em;
-    font-weight: 500;
-  }
-
-  /* Tabular numerals helper for any data figure */
-  .tnum {
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* 1px hairline divider — Swiss elevation comes from rules, not shadows */
-  .hairline {
-    height: 1px;
-    width: 100%;
-    background: hsl(var(--border) / 0.5);
-    border: 0;
-  }
-
-  /* Signature blueprint grid — a faint precise grid that fades toward the edges */
-  .bg-blueprint {
-    background-image:
-      linear-gradient(to right, hsl(var(--border) / 0.55) 1px, transparent 1px),
-      linear-gradient(to bottom, hsl(var(--border) / 0.55) 1px, transparent 1px);
-    background-size: 76px 76px;
-    background-position: center -1px;
-    -webkit-mask-image: radial-gradient(ellipse 78% 52% at 50% 0%, #000 0%, transparent 72%);
-    mask-image: radial-gradient(ellipse 78% 52% at 50% 0%, #000 0%, transparent 72%);
-  }
-
-  /* Crisp card surface in the Swiss language: hairline border, no pillow shadow */
-  .surface {
-    border: 1px solid hsl(var(--border) / 0.45);
-    background: hsl(var(--card) / 0.55);
-    border-radius: var(--radius);
-  }
-
-  .surface-hover {
-    transition:
-      border-color 200ms ease,
-      background-color 200ms ease,
-      transform 200ms ease;
-  }
-
-  .surface-hover:hover {
-    border-color: hsl(var(--foam) / 0.4);
-    background: hsl(var(--card) / 0.78);
-  }
-
-  /* ==========================================================================
-     Field guide identity — almanac textures, plates, drop caps, marginalia
-     ========================================================================== */
-
-  /* Ruled-paper background: faint ledger lines, like a field journal page */
-  .bg-ledger {
-    background-image: repeating-linear-gradient(
-      to bottom,
-      transparent 0,
-      transparent 33px,
-      hsl(var(--border) / 0.28) 33px,
-      hsl(var(--border) / 0.28) 34px
-    );
-  }
-
-  /* Soil-strata wash behind the descent plate: surface green fading to brass ore */
-  .bg-strata {
-    background-image: linear-gradient(
-      to bottom,
-      hsl(var(--foam) / 0.06) 0%,
-      hsl(var(--background) / 0) 26%,
-      hsl(var(--background) / 0) 64%,
-      hsl(var(--gold) / 0.07) 100%
-    );
-  }
-
-  /* Brass rule: the field-guide divider, fading to the right */
-  .rule-brass {
-    height: 2px;
-    border: 0;
-    background: linear-gradient(to right, hsl(var(--gold) / 0.75), hsl(var(--gold) / 0.1));
-  }
-
-  /* Double rule, book-style: thick line over thin line */
-  .rule-double {
-    height: 4px;
-    border: 0;
-    background:
-      linear-gradient(hsl(var(--border) / 0.7) 0 0) top / 100% 2px no-repeat,
-      linear-gradient(hsl(var(--border) / 0.4) 0 0) bottom / 100% 1px no-repeat;
-  }
-
-  /* Editorial drop cap for the opening field note */
-  .dropcap::first-letter {
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 3.4em;
-    line-height: 0.74;
-    float: left;
-    margin: 0.04em 0.1em 0 0;
-    color: hsl(var(--foam));
-  }
-
-  /* Large serif plate numeral */
-  .plate-numeral {
-    font-family: var(--font-display);
-    font-weight: 300;
-    line-height: 0.78;
-    letter-spacing: -0.02em;
-    font-feature-settings: 'ss01' 1;
-  }
-
-  /* Vertical marginalia label that runs up an edge */
-  .margin-label {
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    transform: rotate(180deg);
-  }
-
-  /* Italic display accent (Fraunces italic) for emphasized words in headings */
-  .display-italic {
-    font-style: italic;
-    font-variation-settings:
-      'opsz' 90,
-      'SOFT' 40,
-      'WONK' 1;
-  }
-
-  /* Specimen: a pinned sample of a tool's real output */
-  .specimen {
-    border: 1px solid hsl(var(--border) / 0.5);
-    background: hsl(var(--card) / 0.55);
-    border-radius: calc(var(--radius) - 2px);
   }
 }
 
@@ -642,9 +708,9 @@
    ============================================================================ */
 /* Button press state */
 button:active:not(:disabled),
-a[role='button']:active,
+a[role="button"]:active,
 .btn:active:not(:disabled),
-[class*='rounded-full'][class*='px-']:active {
+[class*="rounded-full"][class*="px-"]:active {
   transform: scale(0.97);
   transition: transform 0.1s ease;
 }
@@ -652,7 +718,7 @@ a[role='button']:active,
 /* Button press feedback for all interactive elements */
 button:active,
 a:active,
-[role='button']:active {
+[role="button"]:active {
   transform: scale(0.98);
   transition: transform 0.1s ease;
 }
@@ -661,7 +727,7 @@ a:active,
 input:active,
 textarea:active,
 select:active,
-[role='slider']:active {
+[role="slider"]:active {
   transform: none;
 }
 
@@ -680,7 +746,7 @@ select:active,
 }
 
 .link-underline::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -2px;
   left: 0;
@@ -703,7 +769,7 @@ select:active,
 }
 
 .cursor-spotlight::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
@@ -723,7 +789,7 @@ select:active,
 }
 
 /* Custom range slider styling */
-input[type='range'] {
+input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
   height: 6px;
@@ -732,7 +798,7 @@ input[type='range'] {
   outline: none;
 }
 
-input[type='range']::-webkit-slider-thumb {
+input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 18px;
@@ -745,11 +811,11 @@ input[type='range']::-webkit-slider-thumb {
   transition: transform 0.15s ease;
 }
 
-input[type='range']::-webkit-slider-thumb:hover {
+input[type="range"]::-webkit-slider-thumb:hover {
   transform: scale(1.15);
 }
 
-input[type='range']::-moz-range-thumb {
+input[type="range"]::-moz-range-thumb {
   width: 18px;
   height: 18px;
   border-radius: 50%;
@@ -781,13 +847,13 @@ input[type='range']::-moz-range-thumb {
   }
 
   button:active:not(:disabled),
-  a[role='button']:active {
+  a[role="button"]:active {
     transform: none;
   }
 
   button:active,
   a:active,
-  [role='button']:active {
+  [role="button"]:active {
     transform: none;
   }
 }
@@ -809,9 +875,8 @@ input[type='range']::-moz-range-thumb {
   header,
   footer,
   nav,
-  .print\\:hidden,
   button,
-  [role='button'] {
+  [role="button"] {
     display: none !important;
   }
 
@@ -826,18 +891,6 @@ input[type='range']::-moz-range-thumb {
   }
 
   /* Ensure content is visible */
-  .print\\:relative {
-    position: relative !important;
-  }
-
-  .print\\:bg-white {
-    background: white !important;
-  }
-
-  .print\\:text-black {
-    color: black !important;
-  }
-
   /* Page setup */
   @page {
     margin: 0.75in;
@@ -845,8 +898,8 @@ input[type='range']::-moz-range-thumb {
   }
 
   /* Story cards for print */
-  [class*='rounded-xl'],
-  [class*='rounded-2xl'] {
+  [class*="rounded-xl"],
+  [class*="rounded-2xl"] {
     border: 1px solid #ddd !important;
     border-radius: 8px !important;
     page-break-inside: avoid;
@@ -863,22 +916,22 @@ input[type='range']::-moz-range-thumb {
   }
 
   /* Skill badges */
-  [class*='bg-cyan'],
-  [class*='bg-\\[hsl\\(var\\(--foam'] {
+  [class*="bg-cyan"],
+  [class*="bg-\\[hsl\\(var\\(--foam"] {
     background: #e0f7fa !important;
     color: #006064 !important;
     border: 1px solid #00acc1 !important;
   }
 
   /* Proof text */
-  [class*='text-cyan'] {
+  [class*="text-cyan"] {
     color: #00838f !important;
     font-weight: 600;
   }
 
   /* Hide decorative elements */
-  [class*='shadow'],
-  [class*='backdrop'] {
+  [class*="shadow"],
+  [class*="backdrop"] {
     box-shadow: none !important;
     backdrop-filter: none !important;
   }
@@ -890,7 +943,7 @@ input[type='range']::-moz-range-thumb {
   }
 
   /* Panic answer styling */
-  [class*='border-amber'] {
+  [class*="border-amber"] {
     border-color: #f9a825 !important;
     background: #fffde7 !important;
   }

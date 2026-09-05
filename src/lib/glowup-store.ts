@@ -394,7 +394,7 @@ export function getTopGaps(
 
   for (const story of data.stories) {
     storySkills.add(story.primarySkillId);
-    story.otherSkillIds.forEach((id) => storySkills.add(id));
+    for (const id of story.otherSkillIds) storySkills.add(id);
   }
 
   // Skills required by JD but with no stories

@@ -1,22 +1,22 @@
 import * as React from 'react';
-import { cn } from '../../lib/utils';
 import {
-  type GlowUpData,
-  type DecodedRole,
-  type Story,
-  createStory,
-  updateStory,
-  getTopGaps,
-} from '../../lib/glowup-store';
-import {
-  SKILL_BANK,
-  getSkillName,
-  getQuestionsForSkill,
   getGeneralQuestions,
-  resolveQuestionText,
+  getQuestionsForSkill,
+  getSkillName,
   type QuestionPrompt,
+  resolveQuestionText,
+  SKILL_BANK,
 } from '../../lib/glowup-banks';
-import { WarningIcon, LightbulbIcon, XIcon, PencilIcon } from './icons';
+import {
+  createStory,
+  type DecodedRole,
+  type GlowUpData,
+  getTopGaps,
+  type Story,
+  updateStory,
+} from '../../lib/glowup-store';
+import { cn } from '../../lib/utils';
+import { LightbulbIcon, PencilIcon, WarningIcon, XIcon } from './icons';
 
 type Props = {
   data: GlowUpData;
@@ -111,7 +111,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
   };
 
   const inputClass =
-    'w-full rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2';
+    'w-full rounded-lg border border-border/50 bg-overlay/30 px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2';
 
   return (
     <div className="space-y-6">
@@ -120,7 +120,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
           <button
             type="button"
             onClick={() => startNew()}
-            className="rounded-lg bg-[hsl(var(--foam))] px-4 py-2 text-sm font-semibold text-[hsl(var(--background))] transition-colors hover:bg-[hsl(var(--foam)/0.9)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+            className="rounded-lg bg-foam px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-foam/90 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
           >
             + New Story
           </button>
@@ -132,7 +132,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                   key={skillId}
                   type="button"
                   onClick={() => startNew(skillId)}
-                  className="rounded-full border border-[hsl(var(--destructive)/0.3)] bg-[hsl(var(--destructive)/0.08)] px-3 py-1 text-sm text-destructive hover:bg-[hsl(var(--destructive)/0.15)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--destructive))] focus-visible:ring-offset-2"
+                  className="rounded-full border border-destructive/30 bg-destructive/8 px-3 py-1 text-sm text-destructive hover:bg-destructive/15 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
                 >
                   {getSkillName(skillId)}
                 </button>
@@ -143,7 +143,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
       )}
 
       {editingId && (
-        <div className="space-y-4 rounded-xl border border-[hsl(var(--foam)/0.3)] bg-[hsl(var(--foam)/0.05)] p-5">
+        <div className="space-y-4 rounded-xl border border-foam/30 bg-foam/5 p-5">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-foreground">
               {editingId === 'new' ? 'New Story' : 'Edit Story'}
@@ -152,7 +152,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
               type="button"
               onClick={cancelEdit}
               aria-label="Close editor"
-              className="rounded p-1 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+              className="rounded p-1 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
             >
               <XIcon className="h-4 w-4" />
             </button>
@@ -163,7 +163,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
             your Play, Result is your Proof.
           </p>
 
-          <details className="rounded-lg border border-[hsl(var(--gold)/0.3)] bg-[hsl(var(--gold)/0.05)] px-4 py-3">
+          <details className="rounded-lg border border-gold/30 bg-gold/5 px-4 py-3">
             <summary className="cursor-pointer text-sm font-medium text-foreground">
               No work experience yet? Build from what you have.
             </summary>
@@ -237,9 +237,9 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-foreground">
+            <p className="mb-1 block text-sm font-medium text-foreground">
               Other skills this story shows
-            </label>
+            </p>
             <p className="mb-1 text-xs text-muted-foreground">
               One story usually proves 2-3 skills. Tag them so the story surfaces for more
               questions.
@@ -248,7 +248,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
               {(formData.otherSkillIds ?? []).map((skillId) => (
                 <span
                   key={skillId}
-                  className="flex items-center gap-1 rounded-full bg-[hsl(var(--foam)/0.15)] px-2 py-0.5 text-xs text-[hsl(var(--foam))]"
+                  className="flex items-center gap-1 rounded-full bg-foam/15 px-2 py-0.5 text-xs text-foam"
                 >
                   {getSkillName(skillId)}
                   <button
@@ -262,7 +262,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                         ),
                       })
                     }
-                    className="text-[hsl(var(--foam)/0.7)] hover:text-[hsl(var(--foam))]"
+                    className="text-foam/70 hover:text-foam"
                   >
                     &times;
                   </button>
@@ -272,7 +272,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                 aria-label="Add secondary skill"
                 value=""
                 onChange={(e) => addOtherSkill(e.target.value)}
-                className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-2 py-1 text-xs text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+                className="rounded-lg border border-border/50 bg-overlay/30 px-2 py-1 text-xs text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
               >
                 <option value="">+ Add skill...</option>
                 {SKILL_BANK.filter(
@@ -355,7 +355,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
             >
               <span>Play (What You Did) *</span>
               {playSentences > 4 && (
-                <span className="flex items-center gap-1 text-xs text-[hsl(var(--gold))]">
+                <span className="flex items-center gap-1 text-xs text-gold">
                   <WarningIcon className="h-3 w-3" />
                   Keep it under 4 sentences
                 </span>
@@ -371,10 +371,8 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
               placeholder="What was the challenge? What exactly did you do?"
               rows={4}
               className={cn(
-                'w-full rounded-lg border bg-[hsl(var(--overlay)/0.3)] px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2',
-                playSentences > 4
-                  ? 'border-[hsl(var(--gold)/0.5)]'
-                  : 'border-[hsl(var(--border)/0.5)]'
+                'w-full rounded-lg border bg-overlay/30 px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2',
+                playSentences > 4 ? 'border-gold/50' : 'border-border/50'
               )}
             />
           </div>
@@ -386,7 +384,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
             >
               <span>Proof (The Receipt)</span>
               {!hasNumbers && formData.proof && formData.proof.length > 10 && (
-                <span className="flex items-center gap-1 text-xs text-[hsl(var(--gold))]">
+                <span className="flex items-center gap-1 text-xs text-gold">
                   <LightbulbIcon className="h-3 w-3" />
                   Can you quantify this?
                 </span>
@@ -406,7 +404,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
             />
           </div>
 
-          <div className="space-y-2 rounded-lg border border-[hsl(var(--border)/0.4)] bg-[hsl(var(--overlay)/0.15)] p-4">
+          <div className="space-y-2 rounded-lg border border-border/40 bg-overlay/15 p-4">
             <h4 className="text-sm font-medium text-foreground">Questions this story answers</h4>
             <p className="text-xs text-muted-foreground">
               Attach the interview questions you would answer with this story. They show up in the
@@ -418,7 +416,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                 {attachedPrompts.map((idOrText) => (
                   <li
                     key={idOrText}
-                    className="flex items-start justify-between gap-2 rounded-lg bg-[hsl(var(--foam)/0.1)] px-3 py-1.5 text-sm text-foreground"
+                    className="flex items-start justify-between gap-2 rounded-lg bg-foam/10 px-3 py-1.5 text-sm text-foreground"
                   >
                     <span>{resolveQuestionText(idOrText)}</span>
                     <button
@@ -451,7 +449,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                       key={q.id}
                       type="button"
                       onClick={() => attachQuestion(q.id)}
-                      className="rounded-lg px-2 py-1 text-left text-xs text-[hsl(var(--foam))] hover:bg-[hsl(var(--foam)/0.1)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+                      className="rounded-lg px-2 py-1 text-left text-xs text-foam hover:bg-foam/10 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                     >
                       + {q.text}
                     </button>
@@ -476,7 +474,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                     key={q.id}
                     type="button"
                     onClick={() => attachQuestion(q.id)}
-                    className="rounded-lg px-2 py-1 text-left text-xs text-[hsl(var(--foam))] hover:bg-[hsl(var(--foam)/0.1)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+                    className="rounded-lg px-2 py-1 text-left text-xs text-foam hover:bg-foam/10 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                   >
                     + {q.text}
                   </button>
@@ -498,7 +496,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                   }
                 }}
                 placeholder="Add your own question..."
-                className="flex-1 rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+                className="flex-1 rounded-lg border border-border/50 bg-overlay/30 px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
               />
               <button
                 type="button"
@@ -507,7 +505,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                   setCustomQuestion('');
                 }}
                 disabled={!customQuestion.trim()}
-                className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+                className="rounded-lg border border-border/50 bg-overlay/30 px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-overlay/50 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
               >
                 Add
               </button>
@@ -518,7 +516,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
             <button
               type="button"
               onClick={cancelEdit}
-              className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+              className="rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
             >
               Cancel
             </button>
@@ -526,7 +524,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
               type="button"
               onClick={saveStory}
               disabled={!formData.primarySkillId || !formData.play}
-              className="rounded-lg bg-[hsl(var(--foam))] px-4 py-2 text-sm font-semibold text-[hsl(var(--background))] transition-colors hover:bg-[hsl(var(--foam)/0.9)] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+              className="rounded-lg bg-foam px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-foam/90 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
             >
               Save Story
             </button>
@@ -541,13 +539,10 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
           </h3>
           <div className="grid gap-3 sm:grid-cols-2">
             {recentStories.map((story) => (
-              <div
-                key={story.id}
-                className="rounded-xl border border-[hsl(var(--border)/0.3)] bg-[hsl(var(--overlay)/0.15)] p-4"
-              >
+              <div key={story.id} className="rounded-xl border border-border/30 bg-overlay/15 p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <span className="rounded-full bg-[hsl(var(--foam)/0.15)] px-2 py-0.5 text-xs font-medium text-[hsl(var(--foam))]">
+                    <span className="rounded-full bg-foam/15 px-2 py-0.5 text-xs font-medium text-foam">
                       {getSkillName(story.primarySkillId)}
                     </span>
                     <p className="mt-2 text-sm font-medium text-foreground">
@@ -573,7 +568,7 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
                         setCustomQuestion('');
                         setShowGeneralQuestions(false);
                       }}
-                      className="rounded-lg border border-[hsl(var(--border)/0.5)] bg-[hsl(var(--overlay)/0.3)] px-2 py-1 text-xs text-foreground transition-colors hover:bg-[hsl(var(--overlay)/0.5)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--foam))] focus-visible:ring-offset-2"
+                      className="rounded-lg border border-border/50 bg-overlay/30 px-2 py-1 text-xs text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                     >
                       Edit
                     </button>
@@ -586,9 +581,9 @@ export default function StoriesSection({ data, setData, currentRole }: Props) {
       )}
 
       {!editingId && data.stories.length === 0 && (
-        <div className="rounded-xl border border-dashed border-[hsl(var(--border)/0.4)] p-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[hsl(var(--foam)/0.1)]">
-            <PencilIcon className="h-6 w-6 text-[hsl(var(--foam))]" />
+        <div className="rounded-xl border border-dashed border-border/40 p-8 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-foam/10">
+            <PencilIcon className="h-6 w-6 text-foam" />
           </div>
           <p className="text-sm font-medium text-foreground">No stories yet</p>
           <p className="mt-1 text-sm text-muted-foreground">

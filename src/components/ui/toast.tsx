@@ -30,11 +30,10 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
   }, [toast.id, onDismiss]);
 
   const typeStyles: Record<ToastType, string> = {
-    success: 'border-[hsl(var(--foam)/0.4)] bg-[hsl(var(--foam)/0.12)] text-[hsl(var(--foam))]',
-    error:
-      'border-[hsl(var(--destructive)/0.4)] bg-[hsl(var(--destructive)/0.12)] text-[hsl(var(--destructive))]',
-    warning: 'border-[hsl(var(--gold)/0.4)] bg-[hsl(var(--gold)/0.12)] text-[hsl(var(--gold))]',
-    info: 'border-[hsl(var(--iris)/0.4)] bg-[hsl(var(--iris)/0.12)] text-[hsl(var(--iris))]',
+    success: 'border-foam/40 bg-foam/12 text-foam',
+    error: 'border-destructive/40 bg-destructive/12 text-destructive',
+    warning: 'border-gold/40 bg-gold/12 text-gold',
+    info: 'border-iris/40 bg-iris/12 text-iris',
   };
 
   return (
@@ -51,9 +50,10 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
         type="button"
         onClick={() => onDismiss(toast.id)}
         aria-label="Dismiss notification"
-        className="flex-shrink-0 rounded p-1 opacity-70 hover:opacity-100 focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+        className="shrink-0 rounded p-1 opacity-70 hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring"
       >
         <svg
+          aria-hidden="true"
           className="h-4 w-4"
           fill="none"
           viewBox="0 0 24 24"
@@ -85,7 +85,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       <div
         aria-live="polite"
         aria-atomic="true"
-        className="fixed right-4 top-4 z-[100] flex max-w-sm flex-col gap-2"
+        className="fixed right-4 top-4 z-100 flex max-w-sm flex-col gap-2"
       >
         {toasts.map((t) => (
           <ToastItem key={t.id} toast={t} onDismiss={dismiss} />

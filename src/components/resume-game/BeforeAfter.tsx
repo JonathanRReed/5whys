@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import type { BulletRecord } from '../../lib/resume-game';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 type Props = {
   bullets: BulletRecord[];
@@ -32,7 +32,7 @@ export default function BeforeAfter({ bullets }: Props) {
       </CardHeader>
       <CardContent className="space-y-6">
         {rewritten.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[hsl(var(--border)/0.35)] bg-[hsl(var(--overlay)/0.15)] p-6 text-center">
+          <div className="rounded-2xl border border-dashed border-border/35 bg-overlay/15 p-6 text-center">
             <p className="text-sm text-muted-foreground">
               No rewrites yet. Select a bullet above and change the verb, task, outcome, or number
               fields. Rewrites that change the wording show up here.
@@ -49,16 +49,14 @@ export default function BeforeAfter({ bullets }: Props) {
                   {delta} pts
                 </p>
                 <div className="grid gap-4 md:grid-cols-2">
-                  <div className="rounded-2xl border border-[hsl(var(--destructive)/0.25)] bg-[hsl(var(--destructive)/0.04)] p-4 text-sm text-muted-foreground">
+                  <div className="rounded-2xl border border-destructive/25 bg-destructive/4 p-4 text-sm text-muted-foreground">
                     <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-2">
                       Before
                     </p>
                     <p className="opacity-70">• {bullet.original}</p>
                   </div>
-                  <div className="rounded-2xl border border-[hsl(var(--love)/0.4)] bg-[hsl(var(--love)/0.06)] p-4 text-sm text-foreground font-medium">
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-[hsl(var(--love))] mb-2">
-                      After
-                    </p>
+                  <div className="rounded-2xl border border-love/40 bg-love/6 p-4 text-sm text-foreground font-medium">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-love mb-2">After</p>
                     <p>{bullet.improved}</p>
                   </div>
                 </div>

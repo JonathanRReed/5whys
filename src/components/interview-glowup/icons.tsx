@@ -1,11 +1,8 @@
-import * as React from 'react';
-
 type IconProps = {
   className?: string;
-  'aria-hidden'?: boolean | 'true' | 'false';
 };
 
-export function SearchIcon({ className = 'h-4 w-4', 'aria-hidden': ariaHidden = true }: IconProps) {
+export function SearchIcon({ className = 'h-4 w-4' }: IconProps) {
   return (
     <svg
       className={className}
@@ -13,7 +10,7 @@ export function SearchIcon({ className = 'h-4 w-4', 'aria-hidden': ariaHidden = 
       viewBox="0 0 24 24"
       stroke="currentColor"
       strokeWidth={1.5}
-      aria-hidden={ariaHidden}
+      aria-hidden="true"
     >
       <path
         strokeLinecap="round"
@@ -24,7 +21,7 @@ export function SearchIcon({ className = 'h-4 w-4', 'aria-hidden': ariaHidden = 
   );
 }
 
-export function PencilIcon({ className = 'h-4 w-4', 'aria-hidden': ariaHidden = true }: IconProps) {
+export function PencilIcon({ className = 'h-4 w-4' }: IconProps) {
   return (
     <svg
       className={className}
@@ -32,7 +29,7 @@ export function PencilIcon({ className = 'h-4 w-4', 'aria-hidden': ariaHidden = 
       viewBox="0 0 24 24"
       stroke="currentColor"
       strokeWidth={1.5}
-      aria-hidden={ariaHidden}
+      aria-hidden="true"
     >
       <path
         strokeLinecap="round"
@@ -43,10 +40,7 @@ export function PencilIcon({ className = 'h-4 w-4', 'aria-hidden': ariaHidden = 
   );
 }
 
-export function ArchiveIcon({
-  className = 'h-4 w-4',
-  'aria-hidden': ariaHidden = true,
-}: IconProps) {
+export function ArchiveIcon({ className = 'h-4 w-4' }: IconProps) {
   return (
     <svg
       className={className}
@@ -54,7 +48,7 @@ export function ArchiveIcon({
       viewBox="0 0 24 24"
       stroke="currentColor"
       strokeWidth={1.5}
-      aria-hidden={ariaHidden}
+      aria-hidden="true"
     >
       <path
         strokeLinecap="round"
@@ -65,10 +59,7 @@ export function ArchiveIcon({
   );
 }
 
-export function ClipboardIcon({
-  className = 'h-4 w-4',
-  'aria-hidden': ariaHidden = true,
-}: IconProps) {
+export function ClipboardIcon({ className = 'h-4 w-4' }: IconProps) {
   return (
     <svg
       className={className}
@@ -76,7 +67,7 @@ export function ClipboardIcon({
       viewBox="0 0 24 24"
       stroke="currentColor"
       strokeWidth={1.5}
-      aria-hidden={ariaHidden}
+      aria-hidden="true"
     >
       <path
         strokeLinecap="round"
@@ -87,7 +78,7 @@ export function ClipboardIcon({
   );
 }
 
-export function TargetIcon({ className = 'h-4 w-4', 'aria-hidden': ariaHidden = true }: IconProps) {
+export function TargetIcon({ className = 'h-4 w-4' }: IconProps) {
   return (
     <svg
       className={className}
@@ -95,7 +86,7 @@ export function TargetIcon({ className = 'h-4 w-4', 'aria-hidden': ariaHidden = 
       viewBox="0 0 24 24"
       stroke="currentColor"
       strokeWidth={1.5}
-      aria-hidden={ariaHidden}
+      aria-hidden="true"
     >
       <path
         strokeLinecap="round"
@@ -106,7 +97,7 @@ export function TargetIcon({ className = 'h-4 w-4', 'aria-hidden': ariaHidden = 
   );
 }
 
-export function PartyIcon({ className = 'h-4 w-4', 'aria-hidden': ariaHidden = true }: IconProps) {
+export function PartyIcon({ className = 'h-4 w-4' }: IconProps) {
   return (
     <svg
       className={className}
@@ -114,7 +105,7 @@ export function PartyIcon({ className = 'h-4 w-4', 'aria-hidden': ariaHidden = t
       viewBox="0 0 24 24"
       stroke="currentColor"
       strokeWidth={1.5}
-      aria-hidden={ariaHidden}
+      aria-hidden="true"
     >
       <path
         strokeLinecap="round"
@@ -130,10 +121,7 @@ export function PartyIcon({ className = 'h-4 w-4', 'aria-hidden': ariaHidden = t
   );
 }
 
-export function WarningIcon({
-  className = 'h-4 w-4',
-  'aria-hidden': ariaHidden = true,
-}: IconProps) {
+export function WarningIcon({ className = 'h-4 w-4' }: IconProps) {
   return (
     <svg
       className={className}
@@ -141,7 +129,7 @@ export function WarningIcon({
       viewBox="0 0 24 24"
       stroke="currentColor"
       strokeWidth={1.5}
-      aria-hidden={ariaHidden}
+      aria-hidden="true"
     >
       <path
         strokeLinecap="round"
@@ -152,10 +140,7 @@ export function WarningIcon({
   );
 }
 
-export function LightbulbIcon({
-  className = 'h-4 w-4',
-  'aria-hidden': ariaHidden = true,
-}: IconProps) {
+export function LightbulbIcon({ className = 'h-4 w-4' }: IconProps) {
   return (
     <svg
       className={className}
@@ -163,7 +148,7 @@ export function LightbulbIcon({
       viewBox="0 0 24 24"
       stroke="currentColor"
       strokeWidth={1.5}
-      aria-hidden={ariaHidden}
+      aria-hidden="true"
     >
       <path
         strokeLinecap="round"
@@ -179,7 +164,7 @@ export function LightbulbIcon({
   );
 }
 
-export function XIcon({ className = 'h-4 w-4', 'aria-hidden': ariaHidden = true }: IconProps) {
+export function XIcon({ className = 'h-4 w-4' }: IconProps) {
   return (
     <svg
       className={className}
@@ -187,17 +172,14 @@ export function XIcon({ className = 'h-4 w-4', 'aria-hidden': ariaHidden = true 
       viewBox="0 0 24 24"
       stroke="currentColor"
       strokeWidth={1.5}
-      aria-hidden={ariaHidden}
+      aria-hidden="true"
     >
       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
     </svg>
   );
 }
 
-export function PrinterIcon({
-  className = 'h-4 w-4',
-  'aria-hidden': ariaHidden = true,
-}: IconProps) {
+export function PrinterIcon({ className = 'h-4 w-4' }: IconProps) {
   return (
     <svg
       className={className}
@@ -205,7 +187,7 @@ export function PrinterIcon({
       viewBox="0 0 24 24"
       stroke="currentColor"
       strokeWidth={1.5}
-      aria-hidden={ariaHidden}
+      aria-hidden="true"
     >
       <path
         strokeLinecap="round"
@@ -216,7 +198,7 @@ export function PrinterIcon({
   );
 }
 
-export function CheckIcon({ className = 'h-4 w-4', 'aria-hidden': ariaHidden = true }: IconProps) {
+export function CheckIcon({ className = 'h-4 w-4' }: IconProps) {
   return (
     <svg
       className={className}
@@ -224,14 +206,14 @@ export function CheckIcon({ className = 'h-4 w-4', 'aria-hidden': ariaHidden = t
       viewBox="0 0 24 24"
       stroke="currentColor"
       strokeWidth={1.5}
-      aria-hidden={ariaHidden}
+      aria-hidden="true"
     >
       <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
     </svg>
   );
 }
 
-export function ClockIcon({ className = 'h-4 w-4', 'aria-hidden': ariaHidden = true }: IconProps) {
+export function ClockIcon({ className = 'h-4 w-4' }: IconProps) {
   return (
     <svg
       className={className}
@@ -239,7 +221,7 @@ export function ClockIcon({ className = 'h-4 w-4', 'aria-hidden': ariaHidden = t
       viewBox="0 0 24 24"
       stroke="currentColor"
       strokeWidth={1.5}
-      aria-hidden={ariaHidden}
+      aria-hidden="true"
     >
       <path
         strokeLinecap="round"
@@ -250,7 +232,7 @@ export function ClockIcon({ className = 'h-4 w-4', 'aria-hidden': ariaHidden = t
   );
 }
 
-export function ChartIcon({ className = 'h-4 w-4', 'aria-hidden': ariaHidden = true }: IconProps) {
+export function ChartIcon({ className = 'h-4 w-4' }: IconProps) {
   return (
     <svg
       className={className}
@@ -258,7 +240,7 @@ export function ChartIcon({ className = 'h-4 w-4', 'aria-hidden': ariaHidden = t
       viewBox="0 0 24 24"
       stroke="currentColor"
       strokeWidth={1.5}
-      aria-hidden={ariaHidden}
+      aria-hidden="true"
     >
       <path
         strokeLinecap="round"
