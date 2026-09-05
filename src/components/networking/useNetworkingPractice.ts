@@ -62,6 +62,61 @@ const emptyReflection: PracticeReflection = {
 const NOTICE_RESET_MS = 3500;
 const DRAFT_MAX_LENGTH = 1500;
 
+// The in-progress rep: the draft, the ratings, and the reflection notes. It
+// used to live only in React state, so a reload lost the intro. Now it is
+// written on every change and restored on load. career-bridge reads this
+// key too, to tell a drafted-but-never-practiced intro from a blank one.
+export const DRAFT_STORAGE_KEY = 'networking-practice-draft';
+
+type StoredDraft = {
+  text: string;
+  ratings: Ratings;
+  ratingsTouched: boolean;
+  reflection: PracticeReflection;
+  versionId: string | null;
+  updatedAt: string;
+};
+
+function readStoredDraft(): StoredDraft | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as Partial<StoredDraft>;
+    const ratings = (data.ratings ?? {}) as Partial<Ratings>;
+    const reflection = (data.reflection ?? {}) as Partial<PracticeReflection>;
+    return {
+      text: typeof data.text === 'string' ? data.text.slice(0, DRAFT_MAX_LENGTH) : '',
+      ratings: {
+        confidence: typeof ratings.confidence === 'number' ? ratings.confidence : 3,
+        clarity: typeof ratings.clarity === 'number' ? ratings.clarity : 3,
+        rapport: typeof ratings.rapport === 'number' ? ratings.rapport : 3,
+        authenticity: typeof ratings.authenticity === 'number' ? ratings.authenticity : 3,
+      },
+      ratingsTouched: data.ratingsTouched === true,
+      reflection: {
+        humanNote: typeof reflection.humanNote === 'string' ? reflection.humanNote : '',
+        nervesNote: typeof reflection.nervesNote === 'string' ? reflection.nervesNote : '',
+        nextFocus: typeof reflection.nextFocus === 'string' ? reflection.nextFocus : '',
+        wins: typeof reflection.wins === 'string' ? reflection.wins : '',
+      },
+      versionId: typeof data.versionId === 'string' ? data.versionId : null,
+      updatedAt: typeof data.updatedAt === 'string' ? data.updatedAt : new Date().toISOString(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredDraft(draft: StoredDraft) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+  } catch {
+    /* storage unavailable: the rep still works for this visit */
+  }
+}
+
 function scenarioToVersion(scenario: Scenario, title?: string): NetworkingPracticeVersion {
   const now = new Date().toISOString();
   return {
@@ -118,11 +173,48 @@ export function useNetworkingPractice() {
   const [storageNotice, setStorageNotice] = React.useState<string | null>(null);
   const [currentVersionId, setCurrentVersionId] = React.useState<string>(fallbackVersion.id);
   const [ratings, setRatings] = React.useState<Ratings>(defaultRatings);
+  const [ratingsTouched, setRatingsTouched] = React.useState(false);
   const [reflection, setReflection] = React.useState<PracticeReflection>(emptyReflection);
   const [draft, setDraftState] = React.useState('');
+  const [draftHydrated, setDraftHydrated] = React.useState(false);
 
   const { timer, resetTimer, startTimer, pauseTimer } = useTimer();
   const { copiedKey, handleCopy } = useClipboard();
+
+  // Restore the in-progress rep once. The intro it belonged to is re-selected
+  // in a second step, after the saved intros have loaded from storage.
+  const [pendingVersionId, setPendingVersionId] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    const stored = readStoredDraft();
+    if (stored) {
+      setDraftState(stored.text);
+      setRatings(stored.ratings);
+      setRatingsTouched(stored.ratingsTouched);
+      setReflection(stored.reflection);
+      setPendingVersionId(stored.versionId);
+    }
+    setDraftHydrated(true);
+  }, []);
+
+  React.useEffect(() => {
+    if (!pendingVersionId) return;
+    if (versions.some((v) => v.id === pendingVersionId)) {
+      setCurrentVersionId(pendingVersionId);
+      setPendingVersionId(null);
+    }
+  }, [pendingVersionId, versions]);
+
+  React.useEffect(() => {
+    if (!draftHydrated) return;
+    writeStoredDraft({
+      text: draft,
+      ratings,
+      ratingsTouched,
+      reflection,
+      versionId: currentVersionId,
+      updatedAt: new Date().toISOString(),
+    });
+  }, [draft, ratings, ratingsTouched, reflection, currentVersionId, draftHydrated]);
 
   const currentVersion = React.useMemo(
     () => versions.find((v) => v.id === currentVersionId) ?? versions[0],
@@ -201,13 +293,16 @@ export function useNetworkingPractice() {
   const createNewVersion = React.useCallback(() => {
     const scenario = currentScenario ?? scenarios[0];
     if (!scenario) return;
-    const title = window.prompt('Name this practice version', `${scenario.title} Intro`);
-    if (!title) return;
+    // Name it automatically; the "Name this intro" field renames it inline.
+    const existing = versions.filter((v) => v.scenarioId === scenario.id).length;
+    const title =
+      existing > 0 ? `${scenario.title} intro ${existing + 1}` : `${scenario.title} intro`;
     const nextVersion = scenarioToVersion(scenario, title);
     saveVersion(nextVersion);
     setVersions((prev) => [nextVersion, ...prev]);
     setCurrentVersionId(nextVersion.id);
-  }, [currentScenario, setVersions]);
+    setStorageNotice(`Started "${title}". Rename it below if you like.`);
+  }, [currentScenario, versions, setVersions]);
 
   const deleteCurrentVersion = React.useCallback(() => {
     if (!currentVersion) return;
@@ -230,6 +325,12 @@ export function useNetworkingPractice() {
     if (!trimmedDraft) {
       setStorageNotice(
         'Write your intro draft before saving. The history tracks your actual words, not the sample lines.'
+      );
+      return;
+    }
+    if (!ratingsTouched) {
+      setStorageNotice(
+        'Rate the rep first. Move at least one slider so the history reflects how it actually went.'
       );
       return;
     }
@@ -267,8 +368,20 @@ export function useNetworkingPractice() {
     }
     setSessions((prev) => [session, ...prev].slice(0, SESSION_LIMIT));
     setReflection(emptyReflection);
-    setStorageNotice('Session saved to your local history. Your draft stays for the next rep.');
-  }, [currentVersion, draft, timer.elapsed, ratings, reflection, setSessions]);
+    setRatings(defaultRatings);
+    setRatingsTouched(false);
+    resetTimer();
+    setStorageNotice('Rep saved to your local history. Your draft stays for the next one.');
+  }, [
+    currentVersion,
+    draft,
+    timer.elapsed,
+    ratings,
+    ratingsTouched,
+    reflection,
+    resetTimer,
+    setSessions,
+  ]);
 
   const removeSession = React.useCallback(
     (id: string) => {
@@ -316,6 +429,7 @@ export function useNetworkingPractice() {
 
   const handleRatingChange = React.useCallback((key: keyof Ratings, value: number) => {
     setRatings((prev) => ({ ...prev, [key]: value }));
+    setRatingsTouched(true);
   }, []);
 
   const handleReflectionField = React.useCallback(
@@ -328,6 +442,7 @@ export function useNetworkingPractice() {
   const handleResetReview = React.useCallback(() => {
     resetTimer();
     setRatings(defaultRatings);
+    setRatingsTouched(false);
     setReflection(emptyReflection);
   }, [resetTimer]);
 
@@ -342,6 +457,7 @@ export function useNetworkingPractice() {
     setCurrentVersionId,
     timer,
     ratings,
+    ratingsTouched,
     reflection,
     draft,
     setDraft,

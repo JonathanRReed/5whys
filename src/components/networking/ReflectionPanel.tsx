@@ -11,6 +11,7 @@ type Props = {
   onResetReview: () => void;
   sessionsAtCapacity: boolean;
   draftEmpty: boolean;
+  ratingsTouched: boolean;
 };
 
 const REFLECTION_FIELDS = [
@@ -47,6 +48,7 @@ export default function ReflectionPanel({
   onResetReview,
   sessionsAtCapacity,
   draftEmpty,
+  ratingsTouched,
 }: Props) {
   return (
     <div className="space-y-6">
@@ -72,18 +74,22 @@ export default function ReflectionPanel({
           disabled={draftEmpty}
           className="bg-gold text-background hover:bg-gold/80 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
         >
-          Save Session
+          Save this rep
         </Button>
         <Button
           variant="outline"
           className="border-border/60 text-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
           onClick={onResetReview}
         >
-          Reset Review
+          Reset
         </Button>
         {draftEmpty ? (
           <p className="text-xs text-muted-foreground">
-            Write your intro draft above to save this rep. The history stores your actual words.
+            Write your intro above to save this rep. The history stores your actual words.
+          </p>
+        ) : !ratingsTouched ? (
+          <p className="text-xs text-muted-foreground">
+            Move at least one slider so the rep is rated before it is saved.
           </p>
         ) : null}
         {sessionsAtCapacity ? (

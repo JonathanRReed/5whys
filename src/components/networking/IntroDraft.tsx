@@ -54,8 +54,9 @@ export default function IntroDraft({ draft, onDraftChange }: Props) {
           />
         </div>
         <p className="text-xs text-muted-foreground/80">
-          This draft is saved with every session, so the history shows how your intro changes
-          between reps. If a line only works with someone else's achievements in it, cut it.
+          Your draft saves as you type, and every rep you save keeps a copy, so the history shows
+          how the intro changes. If a line only works with someone else's achievements in it, cut
+          it.
         </p>
       </CardContent>
     </Card>

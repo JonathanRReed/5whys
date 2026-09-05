@@ -17,7 +17,7 @@ const FIELDS = [
     ariaLabel: 'Who you are speaking with',
     accent: 'gold',
     helpText:
-      "Name or describe the person. Examples: 'VP of Engineering at Stripe', 'Former coworker now at Notion', 'Hiring manager for the PM role'",
+      "Name or describe the person. Examples: 'Recruiter at the campus career fair', 'Alum on a panel', 'Professor after office hours'",
   },
   {
     field: 'where' as const,
@@ -27,7 +27,7 @@ const FIELDS = [
     ariaLabel: 'Where the networking conversation happens',
     accent: 'love',
     helpText:
-      "Describe the context. Examples: 'Coffee chat over Zoom', 'Industry conference hallway', 'LinkedIn voice message'",
+      "Describe the context. Examples: 'Career fair table with a line behind you', 'Coffee chat over Zoom', 'Club meeting after a guest talk'",
   },
   {
     field: 'what' as const,
@@ -37,7 +37,7 @@ const FIELDS = [
     ariaLabel: 'What you want to ask or share',
     accent: 'foam',
     helpText:
-      "Your specific goal. Examples: 'Ask about team culture', 'Request referral to hiring manager', 'Learn about their transition from IC to manager'",
+      "Your specific goal. Examples: 'Ask what interns actually do day to day', 'Ask for one piece of advice on a first resume', 'Ask if they would be open to a 15-minute call'",
   },
 ] as const;
 
