@@ -100,6 +100,8 @@ function normalizeSignalReport(value: unknown): SignalReport {
     isOptimalLength: typeof data.isOptimalLength === 'boolean' ? data.isOptimalLength : false,
     lengthRecommendation:
       typeof data.lengthRecommendation === 'string' ? data.lengthRecommendation : '',
+    structureNote: typeof data.structureNote === 'string' ? data.structureNote : undefined,
+    skippedLines: clampOptional(data.skippedLines, 0, 999),
     weakWordCount: clampOptional(data.weakWordCount, 0, 999),
     repetitiveVerbs: toRepetitiveVerbArray(data.repetitiveVerbs),
     impactCoverage: clampOptional(data.impactCoverage, 0, 100),
@@ -145,6 +147,7 @@ function normalizeStoredBullet(entry: unknown, index: number): BulletRecord | nu
     improvedScore,
     weakWords: toStrArray(data.weakWords),
     hasImpact: typeof data.hasImpact === 'boolean' ? data.hasImpact : false,
+    edited: typeof data.edited === 'boolean' ? data.edited : improved !== original,
     isRepetitiveVerb: typeof data.isRepetitiveVerb === 'boolean' ? data.isRepetitiveVerb : false,
   };
 }

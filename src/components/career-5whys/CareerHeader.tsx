@@ -3,7 +3,7 @@ import QuickStartTiles from '../QuickStartTiles';
 import { Card, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { TRACKS, type Track, WHY_COUNT } from './shared';
+import { normalizeTopic, TRACKS, type Track, WHY_COUNT } from './shared';
 
 type CareerHeaderProps = {
   showHeader: boolean;
@@ -25,6 +25,9 @@ export default function CareerHeader({
   onTopicChange,
 }: CareerHeaderProps) {
   const activeTrack = TRACKS[track];
+  // Show what a sentence-shaped topic will be called in the prompts.
+  const normalized = normalizeTopic(topic);
+  const readsAs = normalized && normalized !== topic.trim() ? normalized : '';
 
   return (
     <>
@@ -100,8 +103,14 @@ export default function CareerHeader({
                 value={topic}
                 onChange={(event) => onTopicChange(event.target.value)}
                 placeholder={activeTrack.topicPlaceholder}
+                aria-describedby={readsAs ? 'career-topic-reads-as' : undefined}
                 className="mt-2 bg-overlay/30 border-border/50 text-foreground placeholder:text-muted-foreground"
               />
+              {readsAs && (
+                <p id="career-topic-reads-as" className="mt-2 text-xs text-muted-foreground">
+                  The prompts will call this <span className="text-foreground">{readsAs}</span>.
+                </p>
+              )}
             </div>
             <div>
               <Label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">

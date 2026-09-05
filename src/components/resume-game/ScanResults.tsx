@@ -47,7 +47,7 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
               <mark className="rounded bg-primary/30 px-1 text-primary-foreground">Numbers</mark>
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <mark className="rounded bg-love/30 px-1 text-foreground">Power Verbs</mark>
+              <mark className="rounded bg-love/30 px-1 text-foreground">Action verbs</mark>
             </span>
           </div>
           <div
@@ -68,8 +68,14 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
-            {grade.label}. Based on {signalReport.bulletCount} bullets scanned.
+            {grade.label}. Based on {signalReport.bulletCount}{' '}
+            {signalReport.bulletCount === 1 ? 'bullet' : 'bullets'} scanned.
           </p>
+          {signalReport.structureNote && (
+            <p className="rounded-xl border border-border/35 bg-overlay/30 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+              {signalReport.structureNote}
+            </p>
+          )}
         </CardHeader>
         <CardContent className="space-y-5">
           {/* Signal strength */}
@@ -100,14 +106,14 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
             <div className="rounded-2xl border border-border/35 bg-overlay/45 p-4">
               <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Numbers</p>
               <p className="text-3xl font-semibold text-foam">{signalReport.numbers}</p>
-              <p className="mt-1 text-[10px] text-muted-foreground">Quantified</p>
+              <p className="mt-1 text-[10px] text-muted-foreground">In bullets</p>
             </div>
             <div className="rounded-2xl border border-border/35 bg-overlay/45 p-4">
               <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                Power verbs
+                Action verbs
               </p>
               <p className="text-3xl font-semibold text-iris">{signalReport.verbs}</p>
-              <p className="mt-1 text-[10px] text-muted-foreground">Detected</p>
+              <p className="mt-1 text-[10px] text-muted-foreground">Leading a bullet</p>
             </div>
           </div>
 

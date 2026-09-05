@@ -1,7 +1,7 @@
 export {
+  applyFieldChange,
   buildBullet,
   buildDeepSignalReport,
-  combinedBulletScore,
   computeBenchmarkScore,
   computeKeywordDensity,
   createBulletRecord,
@@ -9,23 +9,21 @@ export {
   detectImpact,
   detectRepetitiveVerbs,
   detectWeakWords,
-  editBonus,
   enrichBulletRecords,
   extractBullets,
-  fieldBonus,
   seedFields,
 } from './analysis';
 export {
   ACTION_VERBS,
   ATS_KEYWORDS,
+  BULLET_START_PATTERN,
   BUZZWORDS,
-  extractSkills,
   getVerbStrength,
+  INVOLVEMENT_VERBS,
   matchesTerm,
   POWER_VERB_PATTERN,
   POWER_VERBS_STRONG,
   POWER_VERBS_WEAK,
-  POWER_WORDS,
   STOPWORDS,
   suggestStrongerVerb,
   WEAK_WORDS,
@@ -33,13 +31,22 @@ export {
 export { downloadTextFile, exportDocx } from './exporters';
 export { analyzeResumeLength, detectSections } from './length';
 export { analyzeReadability } from './readability';
-export { scoreBullet, scoreLabel } from './scoring';
+export {
+  PROFESSIONAL_PLACEHOLDER,
+  PROFESSIONAL_SAMPLE_RESUME,
+  STUDENT_PLACEHOLDER,
+  STUDENT_SAMPLE_RESUME,
+} from './samples';
+export { findQuantifiers, hasOutcomeLink, hasQuantifier, scoreBullet, scoreLabel } from './scoring';
 export {
   EMPTY_SESSION,
   EMPTY_SIGNAL_REPORT,
   SESSION_STORAGE_KEY,
   useResumeSession,
 } from './session';
+export { extractSkills } from './skills';
+export type { ResumeStructure, SkippedKind } from './structure';
+export { detectResumeStructure } from './structure';
 export type { BulletSuggestion } from './suggestions';
 export { generateBulletSuggestions, signalGrade } from './suggestions';
 export {

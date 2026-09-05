@@ -13,7 +13,9 @@ export type KeywordDensityItem = {
 export type SignalReport = {
   visible: number;
   hidden: number;
+  /** Measure-like numbers inside the scored bullets (years and phones excluded). */
   numbers: number;
+  /** Bullets that open with an action verb. */
   verbs: number;
   wordCount: number;
   bulletCount: number;
@@ -23,6 +25,9 @@ export type SignalReport = {
   softSkills: string[];
   isOptimalLength: boolean;
   lengthRecommendation: string;
+  /** What was scored and what was left out, in one sentence. */
+  structureNote?: string;
+  skippedLines?: number;
   weakWordCount?: number;
   repetitiveVerbs?: RepetitiveVerb[];
   impactCoverage?: number;
@@ -38,9 +43,13 @@ export type BulletRecord = {
   id: string;
   original: string;
   fields: BulletFields;
+  /** Score of the line as written. */
   baselineScore: number;
+  /** The rewritten line once a field changes; the original until then. */
   improved: string;
   improvedScore: number;
+  /** True once the student has changed any field. */
+  edited?: boolean;
   weakWords?: string[];
   hasImpact?: boolean;
   isRepetitiveVerb?: boolean;

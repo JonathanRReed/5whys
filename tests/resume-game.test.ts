@@ -2,19 +2,25 @@ import { describe, expect, it } from 'vitest';
 import {
   ACTION_VERBS,
   analyzeResumeLength,
+  applyFieldChange,
   buildBullet,
   buildDeepSignalReport,
   computeBenchmarkScore,
   countPowerVerbs,
   createBulletRecord,
   decodeEntities,
+  detectResumeStructure,
   detectWeakWords,
   escapeHtml,
   extractBullets,
-  fieldBonus,
+  extractSkills,
+  findQuantifiers,
   generateBulletSuggestions,
   getVerbStrength,
+  hasOutcomeLink,
+  hasQuantifier,
   POWER_VERBS_STRONG,
+  STUDENT_SAMPLE_RESUME,
   scoreBullet,
   scoreLabel,
   seedFields,
@@ -63,14 +69,117 @@ describe('buildBullet', () => {
   });
 });
 
-describe('fieldBonus', () => {
-  it('returns bonus for complete fields', () => {
-    const fields = { verb: 'Led', quantifier: '5', task: 'team', impact: 'success' };
-    expect(fieldBonus(fields)).toBeGreaterThan(0);
+describe('honest scoring', () => {
+  it('scores a fresh record exactly as written, with no free points', () => {
+    const record = createBulletRecord('Helped with events', 0);
+    expect(record.edited).toBe(false);
+    expect(record.improved).toBe('Helped with events');
+    expect(record.improvedScore).toBe(record.baselineScore);
   });
 
-  it('returns zero for empty fields', () => {
-    expect(fieldBonus({ verb: '', quantifier: '', task: '', impact: '' })).toBe(0);
+  it('only moves the score once a field changes', () => {
+    const record = createBulletRecord('Responsible for social media', 0);
+    const edited = applyFieldChange(
+      applyFieldChange(record, 'verb', 'Wrote'),
+      'quantifier',
+      '3 posts a week'
+    );
+    expect(edited.edited).toBe(true);
+    expect(edited.improvedScore).toBeGreaterThan(record.baselineScore);
+    expect(edited.improved).toMatch(/^• Wrote/);
+  });
+
+  it('extracts involvement verbs so the weak-verb rewrite can fire', () => {
+    expect(seedFields('Worked on the newsletter with two other students').verb).toBe('Worked');
+    expect(seedFields('Responsible for social media').verb).toBe('Responsible');
+    const types = generateBulletSuggestions(
+      createBulletRecord('Worked on the newsletter with two other students', 0)
+    ).map((s) => s.type);
+    expect(types).toContain('weak-verb');
+  });
+});
+
+describe('quantifiers', () => {
+  it('ignores years, date ranges, and phone numbers', () => {
+    expect(hasQuantifier('Member of Chess Club 2022-2024')).toBe(false);
+    expect(hasQuantifier("Dean's List Spring 2024")).toBe(false);
+    expect(hasQuantifier('Call (555) 201-4477 for details')).toBe(false);
+    expect(findQuantifiers('Raised $1,200 for 3 charities in 2024')).toEqual(['$1,200', '3']);
+  });
+
+  it('keeps counts, money, percentages, and multipliers', () => {
+    expect(hasQuantifier('Cut wait time by 40%')).toBe(true);
+    expect(hasQuantifier('Tutored 12 students')).toBe(true);
+    expect(hasQuantifier('Grew followers 3x')).toBe(true);
+  });
+
+  it('does not reward a date range with quantifier points', () => {
+    expect(scoreBullet('Member of Chess Club 2022-2024')).toBeLessThan(
+      scoreBullet('Organized 6 chess tournaments for 40 members')
+    );
+  });
+});
+
+describe('outcome link', () => {
+  it('needs a connector that leads into a result, not a bare "to"', () => {
+    expect(hasOutcomeLink('Led to the store to buy 5 things and to return')).toBe(false);
+    expect(hasOutcomeLink('Batched approvals to cut invoice time by 3 days')).toBe(true);
+    expect(hasOutcomeLink('Rebuilt the form, resulting in 2x sign-ups')).toBe(true);
+    expect(hasOutcomeLink('Automated reporting by scripting the export')).toBe(true);
+  });
+
+  it('no longer awards outcome points for a bare "to"', () => {
+    // Verb and count still earn their points; the outcome link does not.
+    expect(scoreBullet('Led to the store to buy 5 things and to return')).toBeLessThan(80);
+    expect(scoreBullet('Led to the store to buy 5 things and to return')).toBeLessThan(
+      scoreBullet('Led a team of 5 to cut setup time by half')
+    );
+  });
+});
+
+describe('detectResumeStructure', () => {
+  it('skips contact, headings, education, and skills lines when there are no glyphs', () => {
+    const structure = detectResumeStructure(STUDENT_SAMPLE_RESUME);
+    expect(structure.usedGlyphs).toBe(false);
+    expect(structure.bullets).toEqual([
+      'Responsible for social media',
+      'Worked on the weekly newsletter with two other students',
+      'Helped with events during welcome week',
+      'Participated in club meetings and the spring fundraiser',
+    ]);
+    expect(structure.skipped.contact).toBeGreaterThanOrEqual(2);
+    expect(structure.skipped.heading).toBeGreaterThanOrEqual(3);
+    expect(structure.skipped.education).toBeGreaterThanOrEqual(1);
+    expect(structure.skipped.skills).toBeGreaterThanOrEqual(1);
+    expect(structure.note).toMatch(/No bullet markers found/);
+  });
+
+  it('uses only the marked lines when glyphs are present', () => {
+    const text = 'Jordan Lee\nEXPERIENCE\n• Led a team of 5\n• Built a dashboard\nRegular text';
+    const structure = detectResumeStructure(text);
+    expect(structure.usedGlyphs).toBe(true);
+    expect(structure.bullets).toEqual(['Led a team of 5', 'Built a dashboard']);
+  });
+});
+
+describe('extractSkills', () => {
+  it('does not read a semester, an initial, or a verb as a skill', () => {
+    const { hard } = extractSkills(
+      "Dean's List Spring 2024. R. Smith. Let's go team. Great chef at the cafe."
+    );
+    expect(hard).not.toContain('spring');
+    expect(hard).not.toContain('r');
+    expect(hard).not.toContain('go');
+    expect(hard).not.toContain('chef');
+  });
+
+  it('still finds the same names in a real skills context', () => {
+    const { hard } = extractSkills(
+      'Skills: Python, R, Go, Spring Boot, Express.js, Bash scripting'
+    );
+    expect(hard).toEqual(
+      expect.arrayContaining(['python', 'r', 'go', 'spring', 'express', 'shell'])
+    );
   });
 });
 
@@ -98,9 +207,7 @@ describe('scoreBullet', () => {
 });
 
 describe('score clamping', () => {
-  it('caps improvedScore at 100 even with field and edit bonuses', () => {
-    // Base rubric score is 97 here; the +15 field bonus would push past 100
-    // without clamping.
+  it('keeps every bullet score within 0-100', () => {
     const record = createBulletRecord('• Led a team of 12 to cut costs by 30%.', 0);
     expect(record.improvedScore).toBeLessThanOrEqual(100);
     expect(record.baselineScore).toBeLessThanOrEqual(100);
@@ -182,18 +289,33 @@ describe('bulletCount fallback', () => {
 });
 
 describe('generateBulletSuggestions', () => {
-  it('flags a bullet with no verb and no number, with worked examples', () => {
+  it('flags a bullet with a weak verb and no number, with one worked example each', () => {
     const record = createBulletRecord('Responsible for club stuff and things', 0);
     const suggestions = generateBulletSuggestions(record);
     const types = suggestions.map((s) => s.type);
+    expect(types).toContain('weak-verb');
     expect(types).toContain('missing-number');
-    expect(types).toContain('scope-alternatives');
+    expect(types.filter((t) => t === 'missing-number')).toHaveLength(1);
     for (const suggestion of suggestions) {
-      if (suggestion.type === 'missing-number' || suggestion.type === 'scope-alternatives') {
+      if (suggestion.type === 'missing-number') {
         expect(suggestion.studentExample).toBeTruthy();
         expect(suggestion.professionalExample).toBeTruthy();
       }
     }
+  });
+
+  it('rotates worked examples across bullets', () => {
+    const a = generateBulletSuggestions(createBulletRecord('Helped with events', 0)).find(
+      (s) => s.type === 'missing-number'
+    );
+    const b = generateBulletSuggestions(createBulletRecord('Helped with the newsletter', 1)).find(
+      (s) => s.type === 'missing-number'
+    );
+    const c = generateBulletSuggestions(createBulletRecord('Helped with the fundraiser', 2)).find(
+      (s) => s.type === 'missing-number'
+    );
+    const examples = new Set([a?.studentExample, b?.studentExample, c?.studentExample]);
+    expect(examples.size).toBeGreaterThan(1);
   });
 
   it('returns no flags for a complete bullet', () => {

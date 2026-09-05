@@ -1,6 +1,6 @@
 import {
   ATS_KEYWORDS,
-  extractSkills,
+  BULLET_START_PATTERN,
   getVerbStrength,
   matchesTerm,
   POWER_VERB_PATTERN,
@@ -11,15 +11,10 @@ import {
 } from './constants';
 import { analyzeResumeLength } from './length';
 import { analyzeReadability } from './readability';
-import { scoreBullet } from './scoring';
-import {
-  capitalizeWord,
-  countPowerVerbs,
-  escapeRegExp,
-  normalizeLine,
-  normalizeTextLine,
-  uniqueId,
-} from './text';
+import { findQuantifiers, hasOutcomeLink, hasQuantifier, scoreBullet } from './scoring';
+import { extractSkills } from './skills';
+import { detectResumeStructure } from './structure';
+import { capitalizeWord, escapeRegExp, normalizeLine, uniqueId } from './text';
 import type { BulletFields, BulletRecord, RepetitiveVerb, SignalReport } from './types';
 
 // ============================================================================
@@ -42,10 +37,9 @@ export function detectWeakWords(bullet: string): string[] {
 
 const BUSINESS_OUTCOME_PATTERNS = [
   /\b(revenue|sales|profit|margin|cost|expense|budget|roi)\b/i,
-  /\b(time|hours|days|weeks|months)\b/i,
+  /\b(hours|days|weeks|months) (saved|faster|earlier|sooner|per)\b/i,
   /\b(users|customers|clients|patients|members|students|volunteers|attendees|participants|readers|followers)\b/i,
   /\b(nps|churn|retention|adoption|conversion|engagement|satisfaction)\b/i,
-  /\b\d+\.?\d*%?\b/i, // any number is treated as potential quantified impact
 ];
 
 const SCOPE_SIGNAL_PATTERNS = [
@@ -59,12 +53,17 @@ const QUALITATIVE_IMPACT_PATTERNS = [
   /\b(transformed|streamlined|eliminated|reduced|increased|improved|optimized|accelerated|simplified|automated|consolidated|standardized|doubled|cut|saved|grew|raised)\b/i,
 ];
 
+/**
+ * True when the line shows an outcome, a scope, or a change. A bare number is
+ * no longer enough: "Member of Chess Club 2022-2024" has digits but no impact.
+ */
 export function detectImpact(bullet: string): boolean {
   const lower = bullet.toLowerCase();
   const hasBusinessOutcome = BUSINESS_OUTCOME_PATTERNS.some((p) => p.test(lower));
   const hasScopeSignal = SCOPE_SIGNAL_PATTERNS.some((p) => p.test(lower));
   const hasQualitativeImpact = QUALITATIVE_IMPACT_PATTERNS.some((p) => p.test(lower));
-  return hasBusinessOutcome || hasScopeSignal || hasQualitativeImpact;
+  const hasMeasuredOutcome = hasQuantifier(lower) && hasOutcomeLink(lower);
+  return hasBusinessOutcome || hasScopeSignal || hasQualitativeImpact || hasMeasuredOutcome;
 }
 
 // ============================================================================
@@ -132,7 +131,7 @@ function clamp(n: number, min: number, max: number): number {
 
 /**
  * Resume health rubric, 100 points total:
- * - Quantified bullets (30): share of bullets with a number, scaled to a
+ * - Quantified bullets (30): share of bullets with a measure, scaled to a
  *   70% coverage target.
  * - Verb variety (10): unique action verbs, target one per bullet up to 8.
  * - Strong verbs (5): 5 points with two or more strong-tier verbs, 3 with one.
@@ -154,7 +153,7 @@ export function computeBenchmarkScore(bullets: BulletRecord[]): {
   const totalBullets = bullets.length;
 
   // 1. Number coverage (target 70%): 30 pts
-  const quantified = bullets.filter((b) => /\d/.test(b.improved)).length;
+  const quantified = bullets.filter((b) => hasQuantifier(b.improved)).length;
   const numberCoverage = quantified / totalBullets;
   const numberScore = clamp((numberCoverage / 0.7) * 30, 0, 30);
 
@@ -233,8 +232,8 @@ export function computeBenchmarkScore(bullets: BulletRecord[]): {
 /**
  * Per-bullet visibility signal, 100 points total:
  * - Leading verb (25 strong tier, 20 any tier, 10 buried mid-sentence)
- * - Any number (25)
- * - Outcome connector: by, to, resulting in, leading to (20)
+ * - A measure (25)
+ * - Outcome connector (20)
  * - Recognized hard skill (15)
  * - Bullet score tier (15 at 70+, 10 at 50+, 5 below)
  */
@@ -247,8 +246,8 @@ function computeBulletSignal(record: BulletRecord, hardSkills: string[]): number
   else if (startMatch) signal += 20;
   else if (POWER_VERB_PATTERN.test(line)) signal += 10;
 
-  if (/\d/.test(line)) signal += 25;
-  if (/\b(by|to|resulting in|leading to)\b/i.test(line)) signal += 20;
+  if (hasQuantifier(line)) signal += 25;
+  if (hasOutcomeLink(line)) signal += 20;
   if (hardSkills.some((skill) => matchesTerm(line, skill))) signal += 15;
   signal += record.improvedScore >= 70 ? 15 : record.improvedScore >= 50 ? 10 : 5;
 
@@ -266,15 +265,25 @@ function computeBulletSignal(record: BulletRecord, hardSkills: string[]): number
  * impact coverage, keyword density). This is the single source of truth for
  * SignalReport values; nothing here is fabricated when data is missing.
  */
-export function buildDeepSignalReport(bullets: BulletRecord[], resumeText: string): SignalReport {
+export function buildDeepSignalReport(
+  bullets: BulletRecord[],
+  resumeText: string,
+  structureNote?: string,
+  skippedLines?: number
+): SignalReport {
   const enriched = enrichBulletRecords(bullets);
   const benchmark = computeBenchmarkScore(enriched);
   const keywordDensity = computeKeywordDensity(resumeText);
   const atsKeywords = detectAtsKeywords(resumeText);
   const lengthAnalysis = analyzeResumeLength(resumeText, enriched.length);
   const skills = extractSkills(resumeText);
-  const verbCount = countPowerVerbs(resumeText);
-  const numberMatches = resumeText.match(/\d+\.?\d*%?/g) ?? [];
+
+  // Count only inside the scored bullets, and only measure-like numbers.
+  const numbers = enriched.reduce((sum, b) => sum + findQuantifiers(b.improved).length, 0);
+  // Bullets that open with an action verb (involvement verbs do not count).
+  const verbCount = enriched.filter((b) =>
+    POWER_VERB_START_PATTERN.test(normalizeLine(b.improved))
+  ).length;
 
   // Merge ATS keywords into keywordDensity for visibility
   const atsDensity = atsKeywords.map((word) => {
@@ -305,7 +314,7 @@ export function buildDeepSignalReport(bullets: BulletRecord[], resumeText: strin
   const impactCoverage =
     enriched.length > 0 ? Math.round((impactBullets / enriched.length) * 100) : 0;
 
-  const quantifiedBullets = enriched.filter((b) => /\d/.test(b.improved)).length;
+  const quantifiedBullets = enriched.filter((b) => hasQuantifier(b.improved)).length;
   const quantifiedBulletPercent =
     enriched.length > 0 ? Math.round((quantifiedBullets / enriched.length) * 100) : 0;
 
@@ -326,16 +335,18 @@ export function buildDeepSignalReport(bullets: BulletRecord[], resumeText: strin
   return {
     visible,
     hidden: 100 - visible,
-    numbers: numberMatches.length,
+    numbers,
     verbs: verbCount,
     wordCount: lengthAnalysis.wordCount,
-    bulletCount: lengthAnalysis.bulletCount,
+    bulletCount: enriched.length,
     estimatedPages: lengthAnalysis.estimatedPages,
     sections: lengthAnalysis.sections,
     hardSkills: skills.hard,
     softSkills: skills.soft,
     isOptimalLength: lengthAnalysis.isOptimalLength,
     lengthRecommendation: lengthAnalysis.recommendation,
+    structureNote,
+    skippedLines,
     weakWordCount,
     repetitiveVerbs: detectRepetitiveVerbs(enriched),
     impactCoverage,
@@ -348,15 +359,18 @@ export function buildDeepSignalReport(bullets: BulletRecord[], resumeText: strin
   };
 }
 
+/**
+ * The achievement lines of a resume, glyphs stripped. Structure lines
+ * (name, contact, headings, education, dates, skills lists) are left out;
+ * detectResumeStructure explains what was skipped.
+ */
 export function extractBullets(text: string): string[] {
-  const preferred = text.match(/^[-•*]\s+.+$/gm);
-  const source = preferred && preferred.length > 0 ? preferred : text.split('\n');
-  return source.map((line) => normalizeTextLine(line)).filter(Boolean);
+  return detectResumeStructure(text).bullets;
 }
 
 export function seedFields(text: string): BulletFields {
   const cleaned = normalizeLine(text);
-  const verbMatch = cleaned.match(POWER_VERB_START_PATTERN) || cleaned.match(POWER_VERB_PATTERN);
+  const verbMatch = cleaned.match(BULLET_START_PATTERN) || cleaned.match(POWER_VERB_PATTERN);
   const verb = verbMatch ? verbMatch[1] : '';
   const remainder = verb
     ? cleaned.replace(new RegExp(`\\b${escapeRegExp(verb)}\\b`, 'i'), '').trim()
@@ -372,7 +386,7 @@ export function seedFields(text: string): BulletFields {
     impact = remainder.slice(splitIndex).trim();
   }
 
-  const quantifier = cleaned.match(/\d+\.?\d*%?/g)?.[0] ?? '';
+  const quantifier = findQuantifiers(cleaned)[0] ?? '';
 
   return {
     verb: capitalizeWord(verb),
@@ -401,51 +415,44 @@ export function buildBullet(fields: BulletFields) {
   return out;
 }
 
-export function fieldBonus(fields: BulletFields) {
-  let bonus = 0;
-  if (fields.verb.trim()) bonus += 5;
-  if (fields.quantifier.trim()) bonus += 5;
-  if (fields.impact.trim()) bonus += 5;
-  return bonus;
-}
-
-export function editBonus(original: string, fields: BulletFields) {
-  const normalized = normalizeLine(original);
-  const startsWithVerb = POWER_VERB_START_PATTERN.test(normalized);
-  const hasAnyVerb = POWER_VERB_PATTERN.test(normalized);
-  let bonus = 0;
-  if (!startsWithVerb && fields.verb.trim()) bonus += 4;
-  if (fields.quantifier.trim() && !/(\$?\d+[\d,]*\.?\d*%?)/.test(normalized)) bonus += 4;
-  if (fields.impact.trim() && !/(\bby\b|\bto\b)/.test(normalized)) bonus += 3;
-  const rebuilt = normalizeLine(buildBullet(fields));
-  if (rebuilt !== normalized) bonus += 2;
-  if (!hasAnyVerb && fields.verb.trim()) bonus += 2;
-  return bonus;
-}
-
 /**
- * Combined bullet score: base rubric score plus field and edit bonuses,
- * clamped so no user-visible score ever exceeds 100.
+ * A fresh record scores the line exactly as written. The rewritten form and
+ * its score only appear once the student changes a field, so the number a
+ * student sees first is honest and every point after it was earned.
  */
-export function combinedBulletScore(improved: string, original: string, fields: BulletFields) {
-  const bonus = fieldBonus(fields) + editBonus(original, fields);
-  return Math.max(0, Math.min(100, scoreBullet(improved) + bonus));
-}
-
 export function createBulletRecord(line: string, index: number): BulletRecord {
   const sanitized = line.replace(/\s+/g, ' ').trim();
+  const original = sanitized.replace(/^[-•*]\s*/, '');
   const fields = seedFields(sanitized);
-  const improved = buildBullet(fields);
-  const weakWords = detectWeakWords(sanitized);
-  const hasImpact = detectImpact(sanitized);
+  const baselineScore = scoreBullet(sanitized);
   return {
     id: uniqueId('bullet', index),
-    original: sanitized.replace(/^[-•*]\s*/, ''),
+    original,
     fields,
-    baselineScore: scoreBullet(sanitized),
+    baselineScore,
+    improved: original,
+    improvedScore: baselineScore,
+    edited: false,
+    weakWords: detectWeakWords(sanitized),
+    hasImpact: detectImpact(sanitized),
+  };
+}
+
+/** Apply one field change and rescore the rewritten line. */
+export function applyFieldChange(
+  bullet: BulletRecord,
+  field: keyof BulletFields,
+  value: string
+): BulletRecord {
+  const fields = { ...bullet.fields, [field]: value };
+  const improved = buildBullet(fields);
+  return {
+    ...bullet,
+    fields,
     improved,
-    improvedScore: combinedBulletScore(improved, sanitized, fields),
-    weakWords,
-    hasImpact,
+    improvedScore: scoreBullet(improved),
+    edited: true,
+    weakWords: detectWeakWords(improved),
+    hasImpact: detectImpact(improved),
   };
 }

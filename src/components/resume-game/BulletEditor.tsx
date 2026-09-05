@@ -1,3 +1,4 @@
+import { isStudentLike, readProfile } from '../../lib/profile';
 import type { BulletRecord } from '../../lib/resume-game';
 import { generateBulletSuggestions } from '../../lib/resume-game';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -15,6 +16,7 @@ type Props = {
 };
 
 export default function BulletEditor({ bullet, onFieldChange }: Props) {
+  const register = isStudentLike(readProfile()) ? 'student' : 'professional';
   const suggestions = bullet ? generateBulletSuggestions(bullet) : [];
   // Hints pulled from the user's own text: if their line already contains a
   // number, surface it as the quantifier candidate.
@@ -26,7 +28,9 @@ export default function BulletEditor({ bullet, onFieldChange }: Props) {
         <CardTitle className="text-xl">Structured rewrite</CardTitle>
         {bullet && (
           <p className="text-xs text-muted-foreground">
-            Baseline {bullet.baselineScore}/100 &rarr; {bullet.improvedScore}/100
+            {bullet.edited
+              ? `Started at ${bullet.baselineScore}/100, now ${bullet.improvedScore}/100`
+              : `Scores ${bullet.baselineScore}/100 as written. Fill a field to see it move.`}
           </p>
         )}
       </CardHeader>
@@ -51,7 +55,7 @@ export default function BulletEditor({ bullet, onFieldChange }: Props) {
                       </div>
                       {(suggestion.studentExample || suggestion.professionalExample) && (
                         <div className="ml-6 space-y-1 border-l border-border/40 pl-3 text-xs">
-                          {suggestion.studentExample && (
+                          {suggestion.studentExample && register === 'student' && (
                             <p>
                               <span className="mr-1 uppercase tracking-wide text-gold">
                                 Student
@@ -59,7 +63,7 @@ export default function BulletEditor({ bullet, onFieldChange }: Props) {
                               {suggestion.studentExample}
                             </p>
                           )}
-                          {suggestion.professionalExample && (
+                          {suggestion.professionalExample && register === 'professional' && (
                             <p>
                               <span className="mr-1 uppercase tracking-wide text-gold">Pro</span>
                               {suggestion.professionalExample}
@@ -86,7 +90,7 @@ export default function BulletEditor({ bullet, onFieldChange }: Props) {
                   htmlFor={`bullet-${bullet.id}-verb`}
                   className="text-xs uppercase tracking-[0.3em] text-muted-foreground"
                 >
-                  Power verb (first word)
+                  Action verb (first word)
                 </Label>
                 <Input
                   id={`bullet-${bullet.id}-verb`}
@@ -148,7 +152,7 @@ export default function BulletEditor({ bullet, onFieldChange }: Props) {
                   htmlFor={`bullet-${bullet.id}-impact`}
                   className="text-xs uppercase tracking-[0.3em] text-muted-foreground"
                 >
-                  Business outcome
+                  Result
                 </Label>
                 <Textarea
                   id={`bullet-${bullet.id}-impact`}

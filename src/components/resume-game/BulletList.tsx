@@ -40,10 +40,14 @@ const BulletItem = React.memo(function BulletItem({ bullet, isSelected, onSelect
       </p>
       <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
         <span className={label.color}>{label.label}</span>
-        <span className={delta >= 0 ? 'text-love' : 'text-destructive'}>
-          {delta >= 0 ? '+' : ''}
-          {delta}
-        </span>
+        {bullet.edited ? (
+          <span className={delta >= 0 ? 'text-love' : 'text-destructive'}>
+            {delta >= 0 ? '+' : ''}
+            {delta}
+          </span>
+        ) : (
+          <span>{bullet.improvedScore}/100</span>
+        )}
       </div>
     </button>
   );

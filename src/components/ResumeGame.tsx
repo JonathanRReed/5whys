@@ -1,18 +1,22 @@
 import * as React from 'react';
+import { isStudentLike, readProfile } from '../lib/profile';
 import type { BulletFields, BulletRecord, StoredResumeSession } from '../lib/resume-game';
 import {
-  buildBullet,
+  applyFieldChange,
   buildDeepSignalReport,
-  combinedBulletScore,
   createBulletRecord,
   decodeEntities,
+  detectResumeStructure,
   downloadTextFile,
   EMPTY_SESSION,
   EMPTY_SIGNAL_REPORT,
   exportDocx,
-  extractBullets,
   highlightResume,
   POWER_VERB_PATTERN,
+  PROFESSIONAL_PLACEHOLDER,
+  PROFESSIONAL_SAMPLE_RESUME,
+  STUDENT_PLACEHOLDER,
+  STUDENT_SAMPLE_RESUME,
   useResumeSession,
 } from '../lib/resume-game';
 import { cn } from '../lib/utils';
@@ -29,9 +33,6 @@ import ShareScoreCard from './resume-game/ShareScoreCard';
 // the button press has visible feedback; it is not a fake progress display.
 const SCAN_TRANSITION_MS = 300;
 const STATUS_RESET_MS = 3500;
-const SAMPLE_RESUME_TEXT = `• Led a 6-person product pod launching a pricing diagnostics dashboard adopted by 4 global regions within the first quarter.
-• Automated weekly revenue reporting with Python + Airflow, trimming manual analysis time by 9 hours per analyst.
-• Mentored three new hires, coaching them on stakeholder narrative reviews that helped lift NPS by 14 points.`;
 
 function slugify(value: string) {
   if (!value) return '';
@@ -53,7 +54,13 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
   const [scanComplete, setScanComplete] = React.useState(false);
   const [needsRescan, setNeedsRescan] = React.useState(false);
   const [status, setStatus] = React.useState<string | null>(null);
+  const [studentRegister, setStudentRegister] = React.useState(false);
   const scanTimeoutRef = React.useRef<number | null>(null);
+  const deepLinkHandled = React.useRef(false);
+
+  React.useEffect(() => {
+    setStudentRegister(isStudentLike(readProfile()));
+  }, []);
 
   const setSessionState = React.useCallback(
     (mutator: (previous: StoredResumeSession) => StoredResumeSession) => {
@@ -121,6 +128,22 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     }
   }, [session.lastAnalyzedAt, session.bullets.length]);
 
+  // The dashboard links straight to a bullet (?bullet=<id>): select it once the
+  // session is restored and bring the editor into view.
+  React.useEffect(() => {
+    if (deepLinkHandled.current || bullets.length === 0) return;
+    const wanted = new URLSearchParams(window.location.search).get('bullet');
+    if (!wanted) return;
+    deepLinkHandled.current = true;
+    if (!bullets.some((bullet) => bullet.id === wanted)) return;
+    setSelectedBulletId(wanted);
+    window.requestAnimationFrame(() => {
+      document
+        .getElementById('bullet-editor')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, [bullets, setSelectedBulletId]);
+
   React.useEffect(
     () => () => {
       if (scanTimeoutRef.current) window.clearTimeout(scanTimeoutRef.current);
@@ -129,9 +152,10 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
   );
 
   const analyzeResume = React.useCallback(() => {
-    const lines = extractBullets(resumeText);
-    const records = lines.map((line, index) => createBulletRecord(line, index));
-    const report = buildDeepSignalReport(records, resumeText);
+    const structure = detectResumeStructure(resumeText);
+    const records = structure.bullets.map((line, index) => createBulletRecord(line, index));
+    const skipped = Object.values(structure.skipped).reduce((sum, n) => sum + n, 0);
+    const report = buildDeepSignalReport(records, resumeText, structure.note, skipped);
     setSessionState((previous) => ({
       ...previous,
       bullets: records,
@@ -140,7 +164,11 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
       lastAnalyzedAt: new Date().toISOString(),
     }));
     setNeedsRescan(false);
-    setStatus('Analysis complete. Review the insights below.');
+    setStatus(
+      records.length === 0
+        ? 'No achievement lines found. Add bullets that start with what you did.'
+        : `Scored ${records.length === 1 ? '1 bullet' : `${records.length} bullets`}. Pick one below to rewrite it.`
+    );
   }, [resumeText, setSessionState]);
 
   const handleScan = () => {
@@ -183,23 +211,20 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
 
   const updateBulletField = (id: string, field: keyof BulletFields, value: string) => {
     setSessionState((previous) => {
-      const nextBullets = previous.bullets.map((bullet: BulletRecord) => {
-        if (bullet.id !== id) return bullet;
-        const nextFields = { ...bullet.fields, [field]: value };
-        const improved = buildBullet(nextFields);
-        return {
-          ...bullet,
-          fields: nextFields,
-          improved,
-          improvedScore: combinedBulletScore(improved, bullet.original, nextFields),
-        };
-      });
+      const nextBullets = previous.bullets.map((bullet: BulletRecord) =>
+        bullet.id === id ? applyFieldChange(bullet, field, value) : bullet
+      );
       // Keep the report in sync with edits so the health score and signal
       // strength reflect the current state of the bullets.
       return {
         ...previous,
         bullets: nextBullets,
-        signalReport: buildDeepSignalReport(nextBullets, previous.resumeText),
+        signalReport: buildDeepSignalReport(
+          nextBullets,
+          previous.resumeText,
+          previous.signalReport?.structureNote,
+          previous.signalReport?.skippedLines
+        ),
       };
     });
   };
@@ -215,7 +240,7 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
 
 ## Scores
 - Visible value: ${signalReport.visible}%
-- Average improved bullet score: ${averageScore}/100
+- Average bullet score: ${averageScore}/100
 - Quantified bullets: ${quantifiedBullets}/${bullets.length || 0}${healthLine}
 
 ## Original Bullets
@@ -246,6 +271,8 @@ ${improved.join('\n')}
   }, [exportBase, markdownReport]);
 
   const resumeOutOfDate = needsRescan && scanComplete && resumeText.trim().length > 0;
+  const sampleResume = studentRegister ? STUDENT_SAMPLE_RESUME : PROFESSIONAL_SAMPLE_RESUME;
+  const placeholder = studentRegister ? STUDENT_PLACEHOLDER : PROFESSIONAL_PLACEHOLDER;
 
   return (
     <div
@@ -265,11 +292,12 @@ ${improved.join('\n')}
         status={status}
         storageNotice={storageNotice}
         needsRescan={needsRescan}
+        placeholder={placeholder}
         onTextChange={handleTextChange}
         onFileUpload={handleFileUpload}
         onScan={handleScan}
         onLoadSample={() => {
-          setResumeTextValue(SAMPLE_RESUME_TEXT);
+          setResumeTextValue(sampleResume);
           setNeedsRescan(true);
           setStatus('Sample resume loaded. Run the analysis to see suggestions.');
         }}
@@ -299,7 +327,10 @@ ${improved.join('\n')}
       )}
 
       {scanComplete && bullets.length > 0 && (
-        <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <div
+          id="bullet-editor"
+          className="grid gap-6 scroll-mt-24 lg:grid-cols-[320px_minmax(0,1fr)]"
+        >
           <BulletList
             bullets={bullets}
             selectedBulletId={selectedBulletId}

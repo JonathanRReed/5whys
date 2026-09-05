@@ -144,6 +144,31 @@ export const POWER_VERB_PATTERN = new RegExp(`\\b(${powerWordsPattern})\\b`, 'i'
 export const POWER_VERB_GLOBAL_PATTERN = new RegExp(`\\b(${powerWordsPattern})\\b`, 'gi');
 export const POWER_VERB_START_PATTERN = new RegExp(`^(${powerWordsPattern})\\b`, 'i');
 
+// Verbs of involvement that open many student bullets. They are not power
+// verbs, but a line that starts with one is still an achievement line and
+// the weak-verb rewrite needs to see it.
+export const INVOLVEMENT_VERBS = [
+  'helped',
+  'supported',
+  'assisted',
+  'participated',
+  'worked',
+  'involved',
+  'handled',
+  'performed',
+  'responsible',
+  'aided',
+  'volunteered',
+  'served',
+  'attended',
+  'member',
+  'tasked',
+  'contributed',
+];
+const bulletStartPattern = [...POWER_WORDS, ...INVOLVEMENT_VERBS].map(escapeRegExp).join('|');
+/** Matches a line that opens with any action or involvement verb. */
+export const BULLET_START_PATTERN = new RegExp(`^(${bulletStartPattern})\\b`, 'i');
+
 /**
  * Boundary-aware term matching. Uses non-alphanumeric boundaries so short
  * terms like "r" or "go" only match as standalone tokens, and terms with
@@ -194,7 +219,7 @@ export const POWER_VERBS_STRONG = [
 export function getVerbStrength(verb: string): 'weak' | 'medium' | 'strong' {
   const lower = verb.trim().toLowerCase();
   if (POWER_VERBS_STRONG.includes(lower)) return 'strong';
-  if (POWER_VERBS_WEAK.includes(lower)) return 'weak';
+  if (POWER_VERBS_WEAK.includes(lower) || INVOLVEMENT_VERBS.includes(lower)) return 'weak';
   return 'medium';
 }
 
@@ -482,7 +507,6 @@ export const HARD_SKILLS = [
   'power bi',
   'looker',
   'excel',
-  'sheets',
   'pivot tables',
   'mongodb',
   'postgresql',
@@ -672,9 +696,3 @@ export const SOFT_SKILLS = [
   'recruitment',
   'onboarding',
 ];
-
-export function extractSkills(text: string): { hard: string[]; soft: string[] } {
-  const hard = HARD_SKILLS.filter((skill) => matchesTerm(text, skill));
-  const soft = SOFT_SKILLS.filter((skill) => matchesTerm(text, skill));
-  return { hard: [...new Set(hard)], soft: [...new Set(soft)] };
-}

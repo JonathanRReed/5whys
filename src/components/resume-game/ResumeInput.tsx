@@ -18,11 +18,8 @@ type Props = {
   onScan: () => void;
   onLoadSample: () => void;
   onClear: () => void;
+  placeholder: string;
 };
-
-const SAMPLE_RESUME_TEXT = `• Led a 6-person product pod launching a pricing diagnostics dashboard adopted by 4 global regions within the first quarter.
-• Automated weekly revenue reporting with Python + Airflow, trimming manual analysis time by 9 hours per analyst.
-• Mentored three new hires, coaching them on stakeholder narrative reviews that helped lift NPS by 14 points.`;
 
 export default function ResumeInput({
   resumeText,
@@ -37,6 +34,7 @@ export default function ResumeInput({
   onScan,
   onLoadSample,
   onClear,
+  placeholder,
 }: Props) {
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -48,7 +46,8 @@ export default function ResumeInput({
       <CardHeader className="space-y-4">
         <CardTitle className="text-2xl">Upload or paste resume</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Supports .txt, .md, .docx, and .pdf. Bullets starting with •, -, or * are auto-detected.
+          Paste the whole thing or just the bullets. Supports .txt, .md, .docx, and .pdf. Headings,
+          contact lines, and education are recognized and left out of scoring.
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -92,7 +91,7 @@ export default function ResumeInput({
           aria-label="Paste resume text"
           value={resumeText}
           onChange={(event) => onTextChange(event.target.value)}
-          placeholder={SAMPLE_RESUME_TEXT}
+          placeholder={placeholder}
           className="min-h-[220px] border-border/50 bg-overlay/30 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
         />
         <div className="flex flex-col gap-3 md:flex-row md:items-center">

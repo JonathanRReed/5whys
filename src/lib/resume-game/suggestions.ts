@@ -1,5 +1,6 @@
 import { BUZZWORDS, getVerbStrength, matchesTerm, suggestStrongerVerb } from './constants';
 import { analyzeReadability } from './readability';
+import { hasOutcomeLink, hasQuantifier } from './scoring';
 import { normalizeLine } from './text';
 import type { BulletRecord } from './types';
 
@@ -9,7 +10,6 @@ export type BulletSuggestion = {
     | 'weak-verb'
     | 'buzzword'
     | 'missing-number'
-    | 'scope-alternatives'
     | 'missing-impact'
     | 'too-long'
     | 'passive-voice'
@@ -42,15 +42,22 @@ function suggestVerbsFor(text: string): string {
   if (/(customer|cash|store|shift|inventory|front desk)/.test(lower)) {
     return 'Operated, Resolved, Trained';
   }
+  if (/(social|instagram|tiktok|newsletter|post|content|campaign)/.test(lower)) {
+    return 'Wrote, Scheduled, Grew';
+  }
   return 'Led, Built, Organized, Analyzed';
 }
 
 /**
  * A metric prompt that reads the bullet and asks for the number most likely
- * to exist for that kind of work.
+ * to exist for that kind of work, plus the scope fallback when no metric
+ * exists. One suggestion, not two.
  */
 function metricPromptFor(text: string): string {
   const lower = text.toLowerCase();
+  if (/(social|instagram|tiktok|newsletter|post|followers|content)/.test(lower)) {
+    return 'How many posts a week, how many followers or subscribers, or how much did reach change?';
+  }
   if (/(team|group|club|committee|volunteers)/.test(lower)) {
     return 'How many people? How often did you meet or ship?';
   }
@@ -63,8 +70,40 @@ function metricPromptFor(text: string): string {
   if (/(code|app|report|dashboard|script|process)/.test(lower)) {
     return 'How many users, hours saved, or steps removed?';
   }
-  return 'Count something real: people, hours, items, dollars, or frequency.';
+  return 'Count something real: people, hours, items, dollars, or frequency. No metric? Team size, audience, or before and after is still evidence.';
 }
+
+// Example pairs rotate by bullet so a six-bullet resume does not show the
+// same sentence six times.
+const NUMBER_EXAMPLES = {
+  student: [
+    'Graded weekly problem sets for a 90-student linear algebra course and held 2 office hours per week.',
+    'Ran sound for every home basketball game across two seasons, handling setup and teardown solo.',
+    'Posted 3 times a week for the campus radio Instagram, growing followers from 240 to 610 in a semester.',
+  ],
+  professional: [
+    'Cut invoice processing from 4 days to 1 by batching approvals across 3 departments.',
+    'Became the go-to reviewer for release notes, turning a two-owner bottleneck into a same-day review.',
+    'Onboarded 14 enterprise accounts in one quarter with zero missed kickoff dates.',
+  ],
+};
+
+const IMPACT_EXAMPLES = {
+  student: [
+    'Rebuilt the club sign-up form, doubling completed registrations at the fall activities fair.',
+    'Reorganized the supply closet so volunteers could set up in 10 minutes instead of 30.',
+  ],
+  professional: [
+    'Standardized the deploy checklist, ending the weekly rollback pattern the team had lived with for a quarter.',
+    'Renegotiated the courier contract, saving the office $4,800 a year.',
+  ],
+};
+
+const pick = <T>(list: T[], seed: string): T => {
+  let hash = 0;
+  for (const char of seed) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return list[hash % list.length];
+};
 
 export function generateBulletSuggestions(bullet: BulletRecord): BulletSuggestion[] {
   const suggestions: BulletSuggestion[] = [];
@@ -98,9 +137,9 @@ export function generateBulletSuggestions(bullet: BulletRecord): BulletSuggestio
       message: `"${fields.verb}" describes involvement, not contribution. Name what you actually did.`,
       fix: stronger
         ? `Try "${stronger}", or the verb you would use telling a friend about it.`
-        : 'Use the verb you would use telling a friend what you did.',
+        : `Try: ${suggestVerbsFor(current)}, or the verb you would use telling a friend about it.`,
       studentExample:
-        '"Helped with lab experiments" becomes "Prepared 30+ agar plates weekly and logged results for a microbiology study."',
+        '"Responsible for social media" becomes "Wrote and scheduled 3 posts a week for the campus radio Instagram."',
       professionalExample:
         '"Assisted with onboarding" becomes "Built the onboarding checklist now used for every new hire."',
     });
@@ -119,35 +158,20 @@ export function generateBulletSuggestions(bullet: BulletRecord): BulletSuggestio
     });
   }
 
-  // Missing quantifier
-  const hasNumber = /\$?\d/.test(current) || /\d/.test(fields.quantifier);
+  // Missing quantifier (years and dates do not count as measures)
+  const hasNumber = hasQuantifier(current) || hasQuantifier(fields.quantifier);
   if (!hasNumber) {
     suggestions.push({
       type: 'missing-number',
-      message: 'No number yet. One concrete figure makes this line easier to trust.',
+      message: 'No measure yet. One concrete figure makes this line easier to trust.',
       fix: metricPromptFor(current),
-      studentExample:
-        'Graded weekly problem sets for a 90-student linear algebra course and held 2 office hours per week.',
-      professionalExample:
-        'Cut invoice processing from 4 days to 1 by batching approvals across 3 departments.',
-    });
-    suggestions.push({
-      type: 'scope-alternatives',
-      message:
-        'No metric to cite? Use concrete scope instead. Team size, frequency, audience, and before/after states are all evidence.',
-      fix: 'Name who was affected, how often it happened, or what it looked like before versus after.',
-      studentExample:
-        'Ran sound for every home basketball game across two seasons, handling setup and teardown solo.',
-      professionalExample:
-        'Became the go-to reviewer for release notes, turning a two-owner bottleneck into a same-day review.',
+      studentExample: pick(NUMBER_EXAMPLES.student, bullet.id),
+      professionalExample: pick(NUMBER_EXAMPLES.professional, bullet.id),
     });
   }
 
   // Missing impact
-  if (
-    !fields.impact.trim() &&
-    !/(\bby\b|\bto\b|\bresult(ing)? in\b|\bleading to\b)/i.test(current)
-  ) {
+  if (!fields.impact.trim() && !hasOutcomeLink(current)) {
     const changeWord = current.match(
       /\b(improved|reduced|increased|streamlined|automated|saved|cut|grew|doubled|eliminated)\w*\b/i
     )?.[0];
@@ -156,14 +180,12 @@ export function generateBulletSuggestions(bullet: BulletRecord): BulletSuggestio
       message:
         'The action is here; the result is not. What changed because of this work, and for whom?',
       fix: changeWord
-        ? `You mention "${changeWord}". Say what changed and for whom in the outcome field.`
+        ? `You mention "${changeWord}". Say what changed and for whom in the result field.`
         : fields.quantifier.trim()
           ? `Tie your number (${fields.quantifier.trim()}) to the outcome it produced.`
           : 'Finish the thought: "...which meant ___ for the team, customer, or class."',
-      studentExample:
-        'Rebuilt the club sign-up form, doubling completed registrations at the fall activities fair.',
-      professionalExample:
-        'Standardized the deploy checklist, ending the weekly rollback pattern the team had lived with for a quarter.',
+      studentExample: pick(IMPACT_EXAMPLES.student, bullet.id),
+      professionalExample: pick(IMPACT_EXAMPLES.professional, bullet.id),
     });
   }
 

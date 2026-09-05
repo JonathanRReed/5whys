@@ -1,4 +1,12 @@
 import * as React from 'react';
+import {
+  FOCUS_LABELS,
+  isFocus,
+  isStage,
+  readProfile,
+  STAGE_LABELS,
+  writeProfile,
+} from '../lib/profile';
 import { cn } from '../lib/utils';
 import { Card, CardContent } from './ui/card';
 
@@ -99,9 +107,9 @@ function getRecommendation(level: string, challenge: string): Recommendation {
           'Save a snapshot so you can compare it against options later.',
         ],
         stats: [
-          { label: 'Prompts', value: '5 guided' },
-          { label: 'Time', value: '2 min' },
-          { label: 'Output', value: 'Theme + snapshot' },
+          { label: 'Questions', value: '5, in order' },
+          { label: 'Takes', value: '10 to 15 min' },
+          { label: 'You leave with', value: 'A statement + next step' },
         ],
         icon: 'M7 8h10M7 12h4',
       };
@@ -118,13 +126,13 @@ function getRecommendation(level: string, challenge: string): Recommendation {
       accent: 'foam',
       steps: [
         'Answer the five "why" prompts to surface your root motivation.',
-        'Review your synthesized theme and alignment.',
-        'Save a snapshot for future reference.',
+        'Read the statement it builds from your own words.',
+        'Save a snapshot so the dashboard can hold you to it.',
       ],
       stats: [
-        { label: 'Prompts', value: '5 guided' },
-        { label: 'Time', value: '2 min' },
-        { label: 'Output', value: 'Theme + snapshot' },
+        { label: 'Questions', value: '5, in order' },
+        { label: 'Takes', value: '10 to 15 min' },
+        { label: 'You leave with', value: 'A statement + next step' },
       ],
       icon: 'M7 8h10M7 12h4',
     };
@@ -210,6 +218,17 @@ export default function OnboardingWizard() {
   const [step, setStep] = React.useState(0);
   const [answers, setAnswers] = React.useState<Record<number, string>>({});
   const [done, setDone] = React.useState(false);
+  const [restored, setRestored] = React.useState(false);
+
+  // A returning visitor sees their recommendation straight away and can
+  // change the answers instead of re-taking the review.
+  React.useEffect(() => {
+    const profile = readProfile();
+    if (!profile) return;
+    setAnswers({ 0: profile.stage, 1: profile.focus });
+    setDone(true);
+    setRestored(true);
+  }, []);
 
   const currentStep = STEPS[step];
   const recommendation = done
@@ -217,19 +236,33 @@ export default function OnboardingWizard() {
     : null;
 
   const handleSelect = (value: string) => {
-    setAnswers((prev) => ({ ...prev, [step]: value }));
+    const next = { ...answers, [step]: value };
+    setAnswers(next);
     if (step < STEPS.length - 1) {
       setStep((s) => s + 1);
-    } else {
-      setDone(true);
+      return;
     }
+    // The two answers become the studio's profile so every tool can default
+    // to the right register (student samples, interest track first, and so on).
+    if (isStage(next[0]) && isFocus(next[1])) writeProfile(next[0], next[1]);
+    setDone(true);
   };
 
   const handleBack = () => {
-    if (step > 0) {
-      setStep((s) => s - 1);
+    if (done) {
       setDone(false);
+      setRestored(false);
+      setStep(STEPS.length - 1);
+      return;
     }
+    if (step > 0) setStep((s) => s - 1);
+  };
+
+  const handleStartOver = () => {
+    setAnswers({});
+    setDone(false);
+    setRestored(false);
+    setStep(0);
   };
 
   if (done && recommendation) {
@@ -264,7 +297,30 @@ export default function OnboardingWizard() {
           <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
             Your career review
           </p>
-          <h2 className="text-3xl font-semibold tracking-tight">Here is your starting point</h2>
+          <h2 className="text-3xl font-semibold tracking-tight">
+            {restored ? 'Welcome back. Your starting point' : 'Here is your starting point'}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {isStage(answers[0]) ? STAGE_LABELS[answers[0]] : ''}
+            {isStage(answers[0]) && isFocus(answers[1]) ? ' · ' : ''}
+            {isFocus(answers[1]) ? FOCUS_LABELS[answers[1]] : ''}
+          </p>
+          <div className="flex justify-center gap-4 text-sm">
+            <button
+              type="button"
+              onClick={handleBack}
+              className="rounded-md text-muted-foreground underline-offset-4 transition hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+            >
+              Change the last answer
+            </button>
+            <button
+              type="button"
+              onClick={handleStartOver}
+              className="rounded-md text-muted-foreground underline-offset-4 transition hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+            >
+              Start over
+            </button>
+          </div>
         </div>
 
         <Card className={cn('rounded-2xl border p-6', accentColors[recommendation.accent])}>

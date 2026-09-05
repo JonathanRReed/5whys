@@ -141,16 +141,15 @@ export default function Career5Whys({
     if (!isBrowser()) return;
     const payload: WhySnapshot = {
       id: session.id,
-      userId: 'local-user',
       timestamp: new Date().toISOString(),
       whyStatement,
+      rootReason: root,
+      nextStep,
       track: session.track,
       topic: session.topic,
       responses: [...session.responses],
-      theme: session.theme,
-      alignment: session.alignment,
       updatedAt: session.updatedAt,
-      version: 2,
+      version: 3,
     };
     const nextHistory = [payload, ...history].slice(0, historyLimit);
     if (persistHistory(nextHistory)) {
@@ -218,15 +217,25 @@ export default function Career5Whys({
       id: snapshot.id,
       topic: snapshot.topic,
       responses: ensureResponsesLength(snapshot.responses),
-      theme: snapshot.theme,
-      alignment: snapshot.alignment,
       updatedAt: new Date().toISOString(),
     });
     setExampleOpen({});
     setStatus('Snapshot loaded into the editor.');
   };
 
-  const handleReset = () => updateSession(createEmptySession(session.track));
+  const handleReset = () => {
+    const hasWork = session.topic.trim() || session.responses.some((r) => r.trim());
+    if (
+      hasWork &&
+      !window.confirm(
+        'Clear this session? Your five answers go away unless you saved a snapshot first.'
+      )
+    ) {
+      return;
+    }
+    updateSession(createEmptySession(session.track));
+    setExampleOpen({});
+  };
 
   const handleTrackChange = (track: 'career' | 'interest') => {
     setExampleOpen({});
@@ -249,7 +258,9 @@ export default function Career5Whys({
           {status ? status : ''}
         </div>
         <div className="grid gap-8 lg:grid-cols-[320px_minmax(0,1fr)]">
-          <div className="space-y-6">
+          {/* On phones the questions come first; the tracker and logic tree repeat
+              what the form already shows, so they only appear beside it on wide screens. */}
+          <div className="hidden space-y-6 lg:block">
             <WhyStepper responses={session.responses} sequentialCount={sequentialCount} />
           </div>
           <div className="space-y-6">

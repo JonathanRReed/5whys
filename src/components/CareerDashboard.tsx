@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { type CareerDashboardData, readCareerDashboard } from '../lib/career-bridge';
+import { FOCUS_LABELS, STAGE_LABELS } from '../lib/profile';
 import { cn } from '../lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
@@ -119,28 +120,83 @@ export default function CareerDashboard() {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8">
       {/* Header */}
-      <div className="space-y-2">
-        <h2 className="text-3xl font-semibold tracking-tight">Career Dashboard</h2>
-        <p className="text-muted-foreground">
-          Your progress across all tools. Everything stays on your device.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-2">
+          <h2 className="text-3xl font-semibold tracking-tight">Career Dashboard</h2>
+          <p className="text-muted-foreground">
+            Your progress across all tools. Everything stays on your device.
+          </p>
+        </div>
+        {data.profile && (
+          <a
+            href="/start/"
+            className="inline-flex items-center gap-2 self-start rounded-full border border-border/40 bg-overlay/25 px-3 py-1.5 text-xs text-muted-foreground transition hover:border-border/60 hover:text-foreground"
+          >
+            <span className="font-medium text-foreground">{STAGE_LABELS[data.profile.stage]}</span>
+            <span aria-hidden="true">·</span>
+            <span>{FOCUS_LABELS[data.profile.focus]}</span>
+            <span className="text-foam">Change</span>
+          </a>
+        )}
       </div>
 
-      {/* Recommendations */}
+      {/* Next actions: the steps the tools themselves produced */}
+      {data.nextActions.length > 0 && (
+        <Card className="border-gold/40 bg-gold/8">
+          <CardHeader>
+            <p className="text-xs uppercase tracking-[0.3em] text-gold">Your next actions</p>
+            <CardTitle className="text-lg">What the tools told you to do next</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-3">
+              {data.nextActions.map((action) => (
+                <li key={`${action.tool}-${action.text}`}>
+                  <a
+                    href={action.href}
+                    className="group flex flex-col gap-1 rounded-xl border border-border/30 bg-background/40 px-4 py-3 transition hover:border-gold/50 hover:bg-background/60"
+                  >
+                    <span className="text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground">
+                      {action.tool}
+                    </span>
+                    <span className="text-sm leading-relaxed text-foreground">{action.text}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Recommendations, each a link to the thing it names */}
       {data.recommendations.length > 0 && (
-        <div className="rounded-2xl border border-gold/40 bg-gold/8 p-5">
-          <p className="text-xs uppercase tracking-[0.3em] text-gold">Suggested next step</p>
-          <p className="mt-2 text-sm text-muted-foreground">{data.recommendations[0]}</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {data.recommendations.slice(1).map((rec, i) => (
-              <span
-                key={i}
-                className="rounded-full border border-border/40 bg-overlay/30 px-3 py-1 text-xs text-muted-foreground"
-              >
-                {rec}
+        <div className="grid gap-3 sm:grid-cols-2">
+          {data.recommendations.map((rec) => (
+            <a
+              key={`${rec.tool}-${rec.href}`}
+              href={rec.href}
+              className="group flex flex-col justify-between gap-3 rounded-2xl border border-border/35 bg-overlay/20 p-4 transition hover:-translate-y-0.5 hover:border-border/60 hover:bg-overlay/35"
+            >
+              <div className="space-y-1">
+                <p className="text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground">
+                  {rec.tool}
+                </p>
+                <p className="text-sm leading-relaxed text-foreground">{rec.text}</p>
+              </div>
+              <span className="inline-flex items-center gap-1 text-sm font-medium text-foam">
+                {rec.cta}
+                <svg
+                  aria-hidden="true"
+                  className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
               </span>
-            ))}
-          </div>
+            </a>
+          ))}
         </div>
       )}
 
@@ -151,7 +207,8 @@ export default function CareerDashboard() {
             <CardContent className="p-5">
               <ScoreRing value={data.resume.averageScore} label="Resume" color="text-love" />
               <div className="mt-3 text-center text-xs text-muted-foreground">
-                {data.resume.bulletCount} bullets analyzed
+                Average of {data.resume.bulletCount}{' '}
+                {data.resume.bulletCount === 1 ? 'bullet score' : 'bullet scores'}
                 {data.resume.lastAnalyzedAt ? ` · ${formatDate(data.resume.lastAnalyzedAt)}` : ''}
               </div>
             </CardContent>
@@ -246,13 +303,21 @@ export default function CareerDashboard() {
                 {data.reflection.latestTopic}
               </p>
             )}
-            <blockquote className="border-l-2 border-foam/50 pl-4 text-sm italic leading-relaxed text-foreground">
-              &ldquo;{data.reflection.whyStatement}&rdquo;
+            <blockquote className="border-l-2 border-foam/50 pl-4 text-sm leading-relaxed text-foreground">
+              {data.reflection.whyStatement}
             </blockquote>
+            {data.reflection.rootReason && (
+              <p className="text-sm text-muted-foreground">
+                Root reason, in your words:{' '}
+                <span className="italic text-foreground">{data.reflection.rootReason}</span>
+              </p>
+            )}
             <p className="text-xs text-muted-foreground">
-              The deepest answer from your last 5 Whys session.{' '}
+              {data.reflection.unsavedComplete
+                ? 'This chain is finished but not saved as a snapshot yet. '
+                : 'From your last saved 5 Whys snapshot. '}
               <a href="/career/" className="font-medium text-foam hover:underline">
-                Revisit it
+                {data.reflection.unsavedComplete ? 'Save it' : 'Revisit it'}
               </a>
             </p>
           </CardContent>
