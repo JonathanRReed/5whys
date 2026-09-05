@@ -87,17 +87,6 @@
   }
 }
 
-@utility nav-logo__mark {
-  display: block;
-  background-image: image-set(
-    url("/career-studio-mark-nav-1x.png") 1x,
-    url("/career-studio-mark-nav.png") 2x
-  );
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: contain;
-}
-
 @utility nav-pill {
   @container (max-width: 36rem) {
     gap: 0.5rem;
@@ -402,19 +391,11 @@
     color-scheme: dark;
   }
 
-  :root[data-theme="night"],
-  :root.theme-night,
-  html.theme-night,
-  body.theme-night,
-  body[data-theme="night"] {
+  :root[data-theme="night"] {
     color-scheme: dark;
   }
 
-  :root[data-theme="dawn"],
-  :root.theme-dawn,
-  html.theme-dawn,
-  body.theme-dawn,
-  body[data-theme="dawn"] {
+  :root[data-theme="dawn"] {
     /* Dawn — Evergreen & Brass, light. Warm ivory paper, deep pine ink,
        bronze accent. Calm and editorial, never cold. */
     --background: 48 30% 95%;
@@ -459,15 +440,10 @@
     @apply border-border;
   }
 
-  html,
-  body,
-  #root {
-    height: 100%;
-  }
-
   html {
     background-color: hsl(var(--background));
-    overflow-x: hidden;
+    /* clip, not hidden: hidden would turn <html> into a scroll container */
+    overflow-x: clip;
     scroll-behavior: smooth;
   }
 
@@ -479,7 +455,6 @@
       "ss03" 1,
       "cv11" 1;
     accent-color: hsl(var(--foam));
-    overflow-x: hidden;
   }
 
   /* Display typeface (Fraunces) carries every heading — a warm editorial serif,
@@ -648,7 +623,8 @@
 /* ============================================================================
    Premium Polish: Scroll Reveal Animations
    ============================================================================ */
-.reveal {
+/* Gated on the js class the boot script sets: without JavaScript, nothing is hidden. */
+.js .reveal {
   opacity: 0;
   transform: translateY(20px);
   transition:
@@ -656,13 +632,13 @@
     transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.reveal.visible {
+.js .reveal.visible {
   opacity: 1;
   transform: translateY(0);
 }
 
 /* Staggered reveal for children */
-.reveal-stagger > * {
+.js .reveal-stagger > * {
   opacity: 0;
   transform: translateY(16px);
   transition:
@@ -670,31 +646,31 @@
     transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.reveal-stagger.visible > *:nth-child(1) {
+.js .reveal-stagger.visible > *:nth-child(1) {
   transition-delay: 0ms;
 }
 
-.reveal-stagger.visible > *:nth-child(2) {
+.js .reveal-stagger.visible > *:nth-child(2) {
   transition-delay: 75ms;
 }
 
-.reveal-stagger.visible > *:nth-child(3) {
+.js .reveal-stagger.visible > *:nth-child(3) {
   transition-delay: 150ms;
 }
 
-.reveal-stagger.visible > *:nth-child(4) {
+.js .reveal-stagger.visible > *:nth-child(4) {
   transition-delay: 225ms;
 }
 
-.reveal-stagger.visible > *:nth-child(5) {
+.js .reveal-stagger.visible > *:nth-child(5) {
   transition-delay: 300ms;
 }
 
-.reveal-stagger.visible > *:nth-child(6) {
+.js .reveal-stagger.visible > *:nth-child(6) {
   transition-delay: 375ms;
 }
 
-.reveal-stagger.visible > * {
+.js .reveal-stagger.visible > * {
   opacity: 1;
   transform: translateY(0);
 }
@@ -762,32 +738,6 @@ select:active,
   transform: scaleX(1);
 }
 
-/* Cursor spotlight for cards */
-.cursor-spotlight {
-  --mouse-x: 50%;
-  --mouse-y: 50%;
-}
-
-.cursor-spotlight::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(
-    circle at var(--mouse-x) var(--mouse-y),
-    hsl(var(--foam) / 0.12) 0%,
-    transparent 50%
-  );
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.cursor-spotlight:hover::before {
-  opacity: 1;
-}
-
 /* Custom range slider styling */
 input[type="range"] {
   -webkit-appearance: none;
@@ -833,8 +783,8 @@ input[type="range"]::-moz-range-thumb {
     scroll-behavior: auto;
   }
 
-  .reveal,
-  .reveal-stagger > * {
+  .js .reveal,
+  .js .reveal-stagger > * {
     opacity: 1;
     transform: none;
     transition: none;

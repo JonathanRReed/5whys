@@ -11,7 +11,6 @@ const noScriptContext = [
 <Base
   title="Career Review · 5 Whys Career Studio"
   description="Take a quick career review to choose the right 5 Whys tool for your current goal, from reflection to resume polish, networking practice, or interview prep."
-  theme="night"
   noScriptContext={noScriptContext}
 >
   <div class="reveal relative mx-auto w-full max-w-6xl px-4 py-8 sm:py-12">
@@ -20,6 +19,6 @@ const noScriptContext = [
       A two-question review that recommends one of the four career tools based on your career stage
       and current challenge. Your answers stay in this browser.
     </p>
-    <OnboardingWizard client:only="react" />
+    <OnboardingWizard client:load />
   </div>
 </Base>

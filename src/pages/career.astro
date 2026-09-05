@@ -4,6 +4,7 @@ import Career5Whys from '../components/Career5Whys';
 import ErrorBoundary from '../components/shared/ErrorBoundary';
 import WithToasts from '../components/WithToasts';
 import { siteConfig } from '../config/site';
+import { ogImageFor } from '../config/og';
 
 const pageUrl = new URL('/career/', siteConfig.siteUrl).toString();
 const careerSchemas = [
@@ -21,7 +22,7 @@ const careerSchemas = [
       name: siteConfig.author.name,
       url: siteConfig.author.url,
     },
-    image: new URL(siteConfig.ogImage, siteConfig.siteUrl).toString(),
+    image: new URL(ogImageFor('/career/'), siteConfig.siteUrl).toString(),
   },
   {
     '@context': 'https://schema.org',

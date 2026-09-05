@@ -1,23 +1,17 @@
 import * as React from 'react';
+import {
+  applyTheme,
+  isTheme,
+  readAppliedTheme,
+  setTheme,
+  THEME_STORAGE_KEY,
+  type Theme,
+} from '../lib/theme';
 import { cn } from '../lib/utils';
-
-type Theme = 'night' | 'dawn';
-
-declare global {
-  interface Window {
-    __careerToolsSetTheme?: (theme: Theme) => void;
-  }
-}
 
 type NavigationProps = {
   currentPath?: string;
-  initialTheme?: Theme;
 };
-
-const THEME_STORAGE_KEY = 'career-tools-theme';
-const THEME_COOKIE = 'career-tools-theme';
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
-const THEME_CHANNEL_NAME = 'career-tools-theme';
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -26,98 +20,17 @@ const navLinks = [
   { href: '/career/', label: 'Career 5 Whys' },
   { href: '/resume-game/', label: 'Resume Game' },
   { href: '/networking-practice/', label: 'Networking' },
-  { href: '/5whys/interview-glow-up/', label: 'Interview' },
+  { href: '/interview-glow-up/', label: 'Interview' },
 ];
 
-const isValidTheme = (value: unknown): value is Theme => value === 'night' || value === 'dawn';
-
-const readDatasetTheme = (): Theme | null => {
-  if (typeof document === 'undefined') return null;
-  const datasetTheme = document.documentElement?.dataset?.theme;
-  return isValidTheme(datasetTheme) ? datasetTheme : null;
-};
-
-const readCookieTheme = (): Theme | null => {
-  if (typeof document === 'undefined') return null;
-  try {
-    const cookie = document.cookie
-      .split('; ')
-      .find((entry) => entry.startsWith(`${THEME_COOKIE}=`));
-    if (!cookie) return null;
-    const [, value] = cookie.split('=');
-    return isValidTheme(value) ? value : null;
-  } catch {
-    return null;
-  }
-};
-
-const readStorageTheme = (): Theme | null => {
-  if (typeof window === 'undefined') return null;
-  try {
-    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-    return isValidTheme(stored) ? stored : null;
-  } catch {
-    return null;
-  }
-};
-
-const applyThemeToDom = (theme: Theme) => {
-  if (typeof window !== 'undefined' && typeof window.__careerToolsSetTheme === 'function') {
-    window.__careerToolsSetTheme(theme);
-    return;
-  }
-  if (typeof document === 'undefined') return;
-  const root = document.documentElement;
-  const body = document.body;
-  root.dataset.theme = theme;
-  root.classList.toggle('theme-dawn', theme === 'dawn');
-  root.classList.toggle('theme-night', theme === 'night');
-  if (body) {
-    body.dataset.theme = theme;
-    body.classList.toggle('theme-dawn', theme === 'dawn');
-    body.classList.toggle('theme-night', theme === 'night');
-  }
-  try {
-    const colorScheme = theme === 'dawn' ? 'only light' : 'dark';
-    root.style.colorScheme = colorScheme;
-    if (body) body.style.colorScheme = colorScheme;
-    document.querySelector('meta[name="color-scheme"]')?.setAttribute('content', colorScheme);
-  } catch {
-    /* ignore */
-  }
-};
-
-const writeStorageTheme = (theme: Theme) => {
-  if (typeof window === 'undefined') return;
-  try {
-    const existing = window.localStorage.getItem(THEME_STORAGE_KEY);
-    if (existing !== theme) window.localStorage.setItem(THEME_STORAGE_KEY, theme);
-  } catch {
-    /* ignore */
-  }
-};
-
-const writeCookieTheme = (theme: Theme) => {
-  if (typeof document === 'undefined') return;
-  try {
-    const secureToken =
-      typeof window !== 'undefined' && window.location.protocol === 'https:' ? ';Secure' : '';
-    document.cookie = `${THEME_COOKIE}=${theme};path=/;max-age=${COOKIE_MAX_AGE};SameSite=Lax${secureToken}`;
-  } catch {
-    /* ignore */
-  }
-};
-
-export default function Navigation({ currentPath = '/', initialTheme }: NavigationProps) {
+export default function Navigation({ currentPath = '/' }: NavigationProps) {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [compactToolsOpen, setCompactToolsOpen] = React.useState(false);
-  const [activeTheme, setActiveTheme] = React.useState<Theme>(initialTheme ?? 'night');
+  const [activeTheme, setActiveTheme] = React.useState<Theme>('night');
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [showScrollTop, setShowScrollTop] = React.useState(false);
-  const broadcastRef = React.useRef<BroadcastChannel | null>(null);
 
   React.useEffect(() => {
-    if (typeof window === 'undefined') return;
     const onScroll = () => {
       setIsScrolled(window.scrollY > 24);
       setShowScrollTop(window.scrollY > 400);
@@ -128,59 +41,21 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
   }, []);
 
   const scrollToTop = React.useCallback(() => {
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
+  // The boot script has already applied the saved theme before hydration;
+  // pick it up for the toggle icon, and follow changes made in other tabs.
   React.useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const stored = readDatasetTheme() ?? readCookieTheme() ?? readStorageTheme();
-    if (stored) setActiveTheme(stored);
-  }, []);
-
-  React.useEffect(() => {
-    if (typeof window === 'undefined') return;
-    applyThemeToDom(activeTheme);
-    writeStorageTheme(activeTheme);
-    writeCookieTheme(activeTheme);
-    broadcastRef.current?.postMessage({ theme: activeTheme });
-  }, [activeTheme]);
-
-  React.useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key !== THEME_STORAGE_KEY || !event.newValue) return;
-      if (event.newValue === 'night' || event.newValue === 'dawn') {
-        applyThemeToDom(event.newValue as Theme);
-        setActiveTheme((prev) => (prev === event.newValue ? prev : (event.newValue as Theme)));
-      }
+    const applied = readAppliedTheme();
+    if (applied) setActiveTheme(applied);
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== THEME_STORAGE_KEY || !isTheme(event.newValue)) return;
+      applyTheme(event.newValue);
+      setActiveTheme(event.newValue);
     };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, []);
-
-  React.useEffect(() => {
-    if (typeof window === 'undefined' || !('BroadcastChannel' in window)) return;
-    try {
-      const channel = new BroadcastChannel(THEME_CHANNEL_NAME);
-      broadcastRef.current = channel;
-      const handleMessage = (event: MessageEvent<{ theme?: Theme }>) => {
-        const incoming = event.data?.theme;
-        if (incoming === 'night' || incoming === 'dawn') {
-          applyThemeToDom(incoming);
-          setActiveTheme((prev) => (prev === incoming ? prev : incoming));
-        }
-      };
-      channel.addEventListener('message', handleMessage);
-      return () => {
-        channel.removeEventListener('message', handleMessage);
-        channel.close();
-        broadcastRef.current = null;
-      };
-    } catch {
-      broadcastRef.current = null;
-    }
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
   }, []);
 
   React.useEffect(() => {
@@ -193,7 +68,8 @@ export default function Navigation({ currentPath = '/', initialTheme }: Navigati
   }, []);
 
   const toggleTheme = React.useCallback(() => {
-    const next = activeTheme === 'night' ? 'dawn' : 'night';
+    const next: Theme = activeTheme === 'night' ? 'dawn' : 'night';
+    setTheme(next);
     setActiveTheme(next);
   }, [activeTheme]);
 

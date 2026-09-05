@@ -2,7 +2,7 @@ import * as React from 'react';
 import { getSkillName, resolveQuestionText } from '../../lib/glowup-banks';
 import type { DecodedRole, InterviewPacket, Story } from '../../lib/glowup-store';
 import { cn } from '../../lib/utils';
-import { ChartIcon, WarningIcon } from '../interview-glowup/icons';
+import { ChartIcon, WarningIcon } from '../interview-glow-up/icons';
 
 // ============================================================================
 // Types

@@ -22,7 +22,7 @@ const TOOL_LINKS = [
   },
   {
     name: 'Interview Glow Up',
-    url: '/5whys/interview-glow-up/',
+    url: '/interview-glow-up/',
     desc: 'Build proof-based stories',
     color: 'text-iris',
     bg: 'bg-iris/12',

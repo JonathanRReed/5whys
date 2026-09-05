@@ -1,9 +1,10 @@
 ---
-import Base from '../../../layouts/Base.astro';
-import InterviewGlowUpAdvice from '../../../components/InterviewGlowUp/InterviewGlowUpAdvice';
-import { siteConfig } from '../../../config/site';
+import Base from '../../layouts/Base.astro';
+import InterviewGlowUpAdvice from '../../components/interview-glow-up/InterviewGlowUpAdvice';
+import { siteConfig } from '../../config/site';
+import { ogImageFor } from '../../config/og';
 
-const pageUrl = new URL('/5whys/interview-glow-up/', siteConfig.siteUrl).toString();
+const pageUrl = new URL('/interview-glow-up/', siteConfig.siteUrl).toString();
 const glowUpSchemas = [
   {
     '@context': 'https://schema.org',
@@ -19,7 +20,7 @@ const glowUpSchemas = [
       name: siteConfig.author.name,
       url: siteConfig.author.url,
     },
-    image: new URL(siteConfig.ogImage, siteConfig.siteUrl).toString(),
+    image: new URL(ogImageFor('/interview-glow-up/'), siteConfig.siteUrl).toString(),
     step: [
       {
         '@type': 'HowToStep',
@@ -81,7 +82,7 @@ const glowUpSchemas = [
   description="Decode a job description into the skills it tests, build proof-based interview stories, and assemble a panic-proof packet you can read before the call."
   breadcrumbs={[
     { label: 'Home', href: '/' },
-    { label: 'Interview Glow Up', href: '/5whys/interview-glow-up/' },
+    { label: 'Interview Glow Up', href: '/interview-glow-up/' },
   ]}
   structuredData={glowUpSchemas}
 >

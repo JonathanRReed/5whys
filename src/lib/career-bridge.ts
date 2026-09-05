@@ -264,7 +264,7 @@ export function readCareerDashboard(): CareerDashboardData {
       tool: 'Interview Glow Up',
       action: glowup.storyCount ? `Working on ${glowup.storyCount} stories` : 'Started prep',
       date: new Date(glowup.lastUpdated).toISOString(),
-      url: '/5whys/interview-glow-up/',
+      url: '/interview-glow-up/',
     });
   }
 

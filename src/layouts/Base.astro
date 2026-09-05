@@ -8,12 +8,13 @@ import '@fontsource-variable/fraunces/full-italic.css';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
 import '../styles/globals.css';
+import themeInit from '../scripts/theme-init.js?raw';
+import { ogImageFor } from '../config/og';
 
 const {
   title = siteConfig.siteName,
   description = siteConfig.description,
-  theme = 'night',
-  image = siteConfig.ogImage,
+  image = ogImageFor(Astro.url.pathname),
   noindex = false,
   canonical,
   type = 'website',
@@ -73,16 +74,12 @@ const pageNoScriptContext = Array.isArray(noScriptContext)
 const noScriptParagraphs = [...defaultNoScriptContext, ...pageNoScriptContext].filter(Boolean);
 ---
 
-<html
-  lang="en"
-  class={`h-full ${theme === 'dawn' ? 'theme-dawn' : 'theme-night'}`}
-  data-theme={theme === 'dawn' ? 'dawn' : 'night'}
->
+<html lang="en" data-theme="night">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content={theme === 'dawn' ? 'only light' : 'dark'} />
-    <script is:inline src="/career-tools-theme.js"></script>
+    <meta name="color-scheme" content="dark light" />
+    <script is:inline set:html={themeInit} />
     <Seo
       title={title}
       description={description}
@@ -96,12 +93,6 @@ const noScriptParagraphs = [...defaultNoScriptContext, ...pageNoScriptContext].f
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link
-      rel="preload"
-      as="image"
-      href="/career-studio-mark-nav-1x.png"
-      imagesrcset="/career-studio-mark-nav-1x.png 1x, /career-studio-mark-nav.png 2x"
-    />
     <link rel="manifest" href="/site.webmanifest" />
     <ClientRouter />
   </head>
@@ -143,7 +134,7 @@ const noScriptParagraphs = [...defaultNoScriptContext, ...pageNoScriptContext].f
               <a class="hover:text-accent" href="/career/">Career reflection</a>
               <a class="hover:text-accent" href="/resume-game/">Resume game</a>
               <a class="hover:text-accent" href="/networking-practice/">Networking practice</a>
-              <a class="hover:text-accent" href="/5whys/interview-glow-up/workspace/"
+              <a class="hover:text-accent" href="/interview-glow-up/workspace/"
                 >Interview workspace</a
               >
               <a class="hover:text-accent" href="/privacy/">Privacy</a>
@@ -248,7 +239,7 @@ const noScriptParagraphs = [...defaultNoScriptContext, ...pageNoScriptContext].f
                 </li>
                 <li>
                   <a
-                    href="/5whys/interview-glow-up/workspace/"
+                    href="/interview-glow-up/workspace/"
                     class="text-muted-foreground transition-colors hover:text-foreground"
                     >Interview workspace</a
                   >
@@ -298,7 +289,7 @@ const noScriptParagraphs = [...defaultNoScriptContext, ...pageNoScriptContext].f
           </div>
         </div>
       </footer>
-      <script is:inline src="/career-tools-effects.js"></script>
+      <script src="../scripts/reveal.ts"></script>
     </div>
   </body>
 </html>

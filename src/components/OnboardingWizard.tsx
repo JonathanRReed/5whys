@@ -165,7 +165,7 @@ function getRecommendation(level: string, challenge: string): Recommendation {
             : exploring
               ? 'First interviews reward preparation over experience. Decode the job description and build stories from projects you already have.'
               : 'Decode job descriptions and create proof-based stories.',
-      url: '/5whys/interview-glow-up/',
+      url: '/interview-glow-up/',
       accent: 'iris',
       steps: [
         'Paste a job description to decode required skills.',
@@ -367,7 +367,7 @@ export default function OnboardingWizard() {
             {[
               { name: 'Career 5 Whys', url: '/career/', desc: 'Clarify direction' },
               { name: 'Resume Game', url: '/resume-game/', desc: 'Polish bullets' },
-              { name: 'Interview Glow Up', url: '/5whys/interview-glow-up/', desc: 'Prep stories' },
+              { name: 'Interview Glow Up', url: '/interview-glow-up/', desc: 'Prep stories' },
               { name: 'Networking', url: '/networking-practice/', desc: 'Rehearse pitch' },
             ]
               .filter((t) => t.url !== recommendation.url)

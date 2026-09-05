@@ -1,11 +1,11 @@
 import * as React from 'react';
 import { type GlowUpData, loadData, saveData } from '../../lib/glowup-store';
-import DecodeSection from '../interview-glowup/DecodeSection';
-import PacketSection from '../interview-glowup/PacketSection';
-import StoriesSection from '../interview-glowup/StoriesSection';
-import VaultSection from '../interview-glowup/VaultSection';
-import WorkspaceHeader from '../interview-glowup/WorkspaceHeader';
-import WorkspaceTabs, { type Tab } from '../interview-glowup/WorkspaceTabs';
+import DecodeSection from '../interview-glow-up/DecodeSection';
+import PacketSection from '../interview-glow-up/PacketSection';
+import StoriesSection from '../interview-glow-up/StoriesSection';
+import VaultSection from '../interview-glow-up/VaultSection';
+import WorkspaceHeader from '../interview-glow-up/WorkspaceHeader';
+import WorkspaceTabs, { type Tab } from '../interview-glow-up/WorkspaceTabs';
 import InterviewHUD from './InterviewHUD';
 
 export default function InterviewGlowUpWorkspace() {

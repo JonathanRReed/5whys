@@ -10,7 +10,7 @@ Built and maintained by Jonathan R. Reed, whose canonical site is <https://jonat
 - [Start](https://5whys.jonathanrreed.com/start/): The 5 Whys exercise itself, for getting past the surface answer.
 - [Resume game](https://5whys.jonathanrreed.com/resume-game/): Rewrite resume bullets until they say something specific.
 - [Networking practice](https://5whys.jonathanrreed.com/networking-practice/): Practice the conversation before it matters.
-- [Interview Glow Up](https://5whys.jonathanrreed.com/5whys/interview-glow-up/): Build interview stories from real experience.
+- [Interview Glow Up](https://5whys.jonathanrreed.com/interview-glow-up/): Build interview stories from real experience.
 - [Career](https://5whys.jonathanrreed.com/career/): The longer path through the tools.
 - [Dashboard](https://5whys.jonathanrreed.com/dashboard/): Your saved work, kept in the browser.
 - [About](https://5whys.jonathanrreed.com/about/): Why it exists and how it handles what you type.

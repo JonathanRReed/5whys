@@ -1,6 +1,6 @@
 import type * as React from 'react';
 import { cn } from '../../lib/utils';
-import { ChartIcon, CheckIcon, ClockIcon, TargetIcon, XIcon } from '../interview-glowup/icons';
+import { ChartIcon, CheckIcon, ClockIcon, TargetIcon, XIcon } from '../interview-glow-up/icons';
 
 interface SectionProps {
   title: string;
@@ -290,7 +290,7 @@ export default function InterviewGlowUpAdvice() {
           panic-proof cheat sheet you can use during the interview.
         </p>
         <a
-          href="/5whys/interview-glow-up/workspace/"
+          href="/interview-glow-up/workspace/"
           className="mt-2 inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-22px_hsl(var(--primary))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           Open the Workspace
