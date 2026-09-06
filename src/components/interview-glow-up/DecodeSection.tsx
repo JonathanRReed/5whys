@@ -21,7 +21,9 @@ import {
 } from '../../lib/glowup-store';
 import { isStudentLike, readProfile } from '../../lib/profile';
 import { cn } from '../../lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { PartyIcon, SearchIcon } from './icons';
+import SkillSelect from './SkillSelect';
 
 type Props = {
   data: GlowUpData;
@@ -155,22 +157,22 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           {data.roles.length > 1 && (
-            <select
-              aria-label="Switch role"
-              value={currentRole?.id ?? ''}
-              onChange={(e) => {
-                if (e.target.value) setData(switchRole(data, e.target.value));
-              }}
-              className="rounded-lg border border-border/50 bg-overlay/30 px-3 py-2 text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+            <Select
+              value={currentRole?.id ?? undefined}
+              onValueChange={(value) => value && setData(switchRole(data, value))}
             >
-              {!currentRole && <option value="">New role</option>}
-              {data.roles.map((role) => (
-                <option key={role.id} value={role.id}>
-                  {role.jobTitle || 'Untitled role'}
-                  {role.company ? ` at ${role.company}` : ''}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger aria-label="Switch role" className="border-border/50 bg-overlay/30">
+                <SelectValue placeholder="New role" />
+              </SelectTrigger>
+              <SelectContent className="border border-border/60 bg-popover">
+                {data.roles.map((role) => (
+                  <SelectItem key={role.id} value={role.id}>
+                    {role.jobTitle || 'Untitled role'}
+                    {role.company ? ` at ${role.company}` : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
           {currentRole && (
             <button
@@ -319,21 +321,14 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                 <span className="text-sm text-muted-foreground">
                   {selectedBullets.size} selected
                 </span>
-                <select
+                <SkillSelect
+                  value={null}
+                  onChange={(skillId) => skillId && handleBulkTag(skillId)}
+                  placeholder="Tag all as..."
                   aria-label="Tag selected requirements"
-                  onChange={(e) => {
-                    if (e.target.value) handleBulkTag(e.target.value);
-                  }}
-                  className="rounded-lg border border-border/50 bg-overlay/30 px-2 py-1 text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
-                  defaultValue=""
-                >
-                  <option value="">Tag all as...</option>
-                  {SKILL_BANK.map((skill) => (
-                    <option key={skill.id} value={skill.id}>
-                      {skill.name}
-                    </option>
-                  ))}
-                </select>
+                  className="h-8 text-sm"
+                  resetAfterSelect
+                />
                 <button
                   type="button"
                   onClick={handleBulkIgnore}
@@ -386,27 +381,19 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                     )}
                   </p>
                   <div className="flex flex-wrap items-center gap-2">
-                    <select
-                      aria-label="Skill this requirement tests"
-                      value={bullet.primarySkillId ?? ''}
-                      onChange={(e) => {
+                    <SkillSelect
+                      value={bullet.primarySkillId}
+                      onChange={(skillId) =>
                         setBullets(
                           bullets.map((b) =>
-                            b.id === bullet.id
-                              ? { ...b, primarySkillId: e.target.value || null }
-                              : b
+                            b.id === bullet.id ? { ...b, primarySkillId: skillId } : b
                           )
-                        );
-                      }}
-                      className="rounded-lg border border-border/50 bg-overlay/30 px-2 py-1 text-xs text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
-                    >
-                      <option value="">Pick a skill...</option>
-                      {SKILL_BANK.map((skill) => (
-                        <option key={skill.id} value={skill.id}>
-                          {skill.name}
-                        </option>
-                      ))}
-                    </select>
+                        )
+                      }
+                      placeholder="Pick a skill..."
+                      aria-label="Skill this requirement tests"
+                      className="h-8 text-xs"
+                    />
                     {bullet.suggestion && bullet.suggestion.length > 0 && (
                       <div className="flex items-center gap-1">
                         <span className="text-xs text-muted-foreground">Suggested:</span>
@@ -421,16 +408,21 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                                 )
                               );
                             }}
-                            title={
+                            aria-label={
                               s.matchedKeywords && s.matchedKeywords.length > 0
-                                ? `Matched: ${s.matchedKeywords.join(', ')}`
-                                : undefined
+                                ? `Tag as ${getSkillName(s.skillId)}, matched on ${s.matchedKeywords.join(', ')}`
+                                : `Tag as ${getSkillName(s.skillId)}`
                             }
                             className="rounded-full bg-foam/15 px-2 py-0.5 text-xs text-foam transition-colors hover:bg-foam/25 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                           >
                             {getSkillName(s.skillId)}
                             {s.matchedKeywords && s.matchedKeywords.length > 0 && (
-                              <span className="text-foam/70"> &middot; {s.matchedKeywords[0]}</span>
+                              <span className="text-foam/70" aria-hidden="true">
+                                {' '}
+                                &middot; {s.matchedKeywords[0]}
+                                {s.matchedKeywords.length > 1 &&
+                                  ` +${s.matchedKeywords.length - 1}`}
+                              </span>
                             )}
                           </button>
                         ))}

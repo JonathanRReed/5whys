@@ -67,6 +67,20 @@ CI runs typecheck, lint, unit tests, build, the Playwright flows, and a
   arms in place and names what will be lost. DESIGN.md bans reaching for a
   modal first, and a native dialog cannot be themed or worded in the product's
   voice.
+- **UI primitives come from shadcn.** `src/components/ui/*` is real shadcn
+  source, managed by the CLI (`bunx --bun shadcn@latest add <name>`). Never run
+  `shadcn init`: it would overwrite the Evergreen and Brass values for
+  `--background`, `--primary`, `--border` and nine other tokens we already
+  define. `components.json` is hand-written and points at the existing paths.
+  Restyle a component in place with our tokens; keep its structure and
+  `data-slot` attributes so `add --diff` stays usable.
+- **`dark:` is wired to `[data-theme="night"]`** by a custom variant in
+  globals.css. Without it every `dark:` rule a third-party component ships
+  would be silently inert, since this site never sets a `.dark` class.
+- **Elevation is declared once.** Inline surfaces get a hairline border;
+  floating surfaces (dialog and select content) get a shadow and no border.
+- **A component with no interactivity gets no client directive.** Astro renders
+  it at build time and the page ships no JavaScript for it.
 - **A tool island that only read storage must not write to it.** Another tab,
   or an import on the dashboard, may have saved newer work; an unload flush
   that writes an untouched snapshot silently destroys it. Track whether the

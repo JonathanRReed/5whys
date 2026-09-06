@@ -3,5 +3,6 @@
   "entry": ["src/scripts/reveal.ts", "src/scripts/theme-init.js", "e2e/**/*.spec.ts"],
   "project": ["src/**", "tests/**", "e2e/**"],
   "ignoreDependencies": ["@fontsource/fraunces", "@fontsource/inter"],
-  "ignoreExportsUsedInFile": true
+  "ignoreExportsUsedInFile": true,
+  "ignore": ["src/components/ui/**"]
 }

@@ -45,7 +45,8 @@ All tools are privacy-first: data stored locally, no accounts, no cookies, and n
 - Generic SaaS landing pages with big-number hero metrics
 - Purple-gradient-on-white AI slop
 - Heavy glassmorphism cards
-- Cookie-cutter shadcn/ui defaults without customization
+- Component-library defaults left unstyled. shadcn is the primitive layer here;
+  every component is restyled to Evergreen and Brass before it ships
 - Over-animated page loads that delay content
 
 ## Strategic Design Principles

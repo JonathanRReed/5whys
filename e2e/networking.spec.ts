@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { readStorage, useStudentProfile, waitForHydration } from './helpers';
+import { chooseOption, readStorage, useStudentProfile, waitForHydration } from './helpers';
 
 test('a rep is drafted, timed, rated, and saved, and the draft survives a reload', async ({
   page,
@@ -8,7 +8,7 @@ test('a rep is drafted, timed, rated, and saved, and the draft survives a reload
   await page.goto('/networking-practice/');
   await waitForHydration(page);
 
-  await page.locator('#scenario').selectOption('career-fair');
+  await chooseOption(page, '#scenario', 'Career Fair: Long Line Behind You');
   await page
     .locator('#intro-draft')
     .fill(

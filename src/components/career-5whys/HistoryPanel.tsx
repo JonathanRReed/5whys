@@ -1,6 +1,7 @@
 import ConfirmButton from '../shared/ConfirmButton';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { HISTORY_LIMIT_OPTIONS, TRACKS, type WhySnapshot } from './shared';
 
 function formatSnapshotTime(value: string) {
@@ -63,27 +64,24 @@ export default function HistoryPanel({
             >
               History limit
             </label>
-            <select
-              id="history-limit"
-              value={historyLimit}
-              onChange={(event) => {
-                const nextLimit = Number(event.target.value);
-                if (
-                  HISTORY_LIMIT_OPTIONS.includes(
-                    nextLimit as (typeof HISTORY_LIMIT_OPTIONS)[number]
-                  )
-                ) {
-                  onLimitChange(nextLimit);
-                }
-              }}
-              className="rounded-xl border border-border/50 bg-overlay/20 px-3 py-2 text-xs uppercase tracking-[0.3em] text-foreground"
+            <Select
+              value={String(historyLimit)}
+              onValueChange={(value) => onLimitChange(Number(value))}
             >
-              {HISTORY_LIMIT_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger
+                id="history-limit"
+                className="h-10 w-24 border-border/60 bg-overlay/30"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="border border-border/60 bg-popover">
+                {HISTORY_LIMIT_OPTIONS.map((option) => (
+                  <SelectItem key={option} value={String(option)}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button

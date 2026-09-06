@@ -8,6 +8,7 @@ import {
 } from '../../lib/glowup-store';
 import { cn } from '../../lib/utils';
 import { ChartIcon, WarningIcon } from '../interview-glow-up/icons';
+import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
 
 // ============================================================================
 // Types
@@ -72,11 +73,6 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
     });
   }, [packetStories, searchQuery, searchIndex]);
 
-  // Focus management
-  React.useEffect(() => {
-    containerRef.current?.focus();
-  }, []);
-
   React.useEffect(() => {
     if (searchOpen) {
       searchInputRef.current?.focus();
@@ -102,13 +98,15 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
           setSearchOpen(true);
           break;
         case 'Escape':
+          // Escape unwinds search, then an expanded story. Radix closes the
+          // dialog itself once there is nothing left to unwind.
           if (searchOpen) {
+            e.stopPropagation();
             setSearchOpen(false);
             setSearchQuery('');
           } else if (expandedId) {
+            e.stopPropagation();
             setExpandedId(null);
-          } else {
-            onClose();
           }
           break;
         case 'ArrowUp':
@@ -139,7 +137,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [searchOpen, expandedId, displayStories, selectedIndex, panicMode, onClose]);
+  }, [searchOpen, expandedId, displayStories, selectedIndex, panicMode]);
 
   // Keep selected index in bounds
   React.useEffect(() => {
@@ -151,258 +149,263 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
   const keywords = packet.companyIntel?.keywords ?? [];
 
   return (
-    <div
-      ref={containerRef}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Interview HUD"
-      tabIndex={-1}
-      className="fixed inset-0 z-50 flex flex-col bg-background text-foreground outline-hidden print:relative print:bg-white print:text-black"
-    >
-      {/* Top Bar */}
-      <header className="flex items-center justify-between border-b border-border/40 bg-card px-6 py-4 print:bg-gray-100 print:border-gray-300">
-        <div className="flex items-center gap-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-2 text-muted-foreground/90 hover:bg-overlay/25 hover:text-foreground print:hidden"
-            aria-label="Close HUD"
-          >
-            <svg
-              aria-hidden="true"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
+    <Dialog open onOpenChange={(next) => !next && onClose()}>
+      <DialogContent
+        ref={containerRef}
+        showCloseButton={false}
+        className="flex h-dvh max-h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-0 bg-background p-0 text-foreground shadow-none top-0 left-0 sm:max-w-none print:relative print:h-auto print:bg-white print:text-black"
+      >
+        <DialogTitle className="sr-only">
+          Interview HUD for {role?.jobTitle ?? 'this packet'}
+        </DialogTitle>
+        {/* Top Bar */}
+        <header className="flex items-center justify-between border-b border-border/40 bg-card px-6 py-4 print:bg-gray-100 print:border-gray-300">
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg p-2 text-muted-foreground/90 hover:bg-overlay/25 hover:text-foreground print:hidden"
+              aria-label="Close HUD"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          <div>
-            <h1 className="text-lg font-bold text-foreground print:text-black">
-              {role?.company ?? 'Interview'}: {role?.jobTitle ?? 'Packet'}
-            </h1>
-            <div className="mt-1 flex gap-2">
-              {keywords.map((kw, i) => (
-                <span
-                  key={i}
-                  className="rounded-full bg-iris/20 px-2 py-0.5 text-xs font-medium text-iris print:bg-gray-100 print:text-gray-800"
-                >
-                  {kw}
-                </span>
-              ))}
+              <svg
+                aria-hidden="true"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <div>
+              <h1 className="text-lg font-bold text-foreground print:text-black">
+                {role?.company ?? 'Interview'}: {role?.jobTitle ?? 'Packet'}
+              </h1>
+              <div className="mt-1 flex gap-2">
+                {keywords.map((kw, i) => (
+                  <span
+                    key={i}
+                    className="rounded-full bg-iris/20 px-2 py-0.5 text-xs font-medium text-iris print:bg-gray-100 print:text-gray-800"
+                  >
+                    {kw}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-        <div className="hidden md:flex items-center gap-3 text-sm text-muted-foreground print:hidden">
-          <kbd className="rounded bg-overlay/25 px-2 py-0.5">Space</kbd> Search
-          <kbd className="rounded bg-overlay/25 px-2 py-0.5">↑↓</kbd> Navigate
-          <kbd className="rounded bg-overlay/25 px-2 py-0.5">Enter</kbd> Expand
-          <kbd className="rounded bg-overlay/25 px-2 py-0.5">P</kbd> Panic
-          <kbd className="rounded bg-overlay/25 px-2 py-0.5">Esc</kbd> Close
-        </div>
-      </header>
+          <div className="hidden md:flex items-center gap-3 text-sm text-muted-foreground print:hidden">
+            <kbd className="rounded bg-overlay/25 px-2 py-0.5">Space</kbd> Search
+            <kbd className="rounded bg-overlay/25 px-2 py-0.5">↑↓</kbd> Navigate
+            <kbd className="rounded bg-overlay/25 px-2 py-0.5">Enter</kbd> Expand
+            <kbd className="rounded bg-overlay/25 px-2 py-0.5">P</kbd> Panic
+            <kbd className="rounded bg-overlay/25 px-2 py-0.5">Esc</kbd> Close
+          </div>
+        </header>
 
-      {/* Main Content */}
-      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
-        {/* Left Column - Stories */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {/* Search Bar */}
-          {searchOpen && (
-            <div className="mb-4 print:hidden">
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search stories by skill, keyword..."
-                className="w-full rounded-xl border border-border/80 bg-overlay/15 px-4 py-3 text-lg text-foreground placeholder:text-muted-foreground/60 focus:border-iris focus:outline-hidden"
-              />
-            </div>
-          )}
-
-          {/* Panic Mode */}
-          {panicMode && packet.panicAnswer && (
-            <div className="mb-6 rounded-xl border-2 border-destructive/50 bg-destructive/10 p-4 md:p-6">
-              <div className="mb-2 flex flex-wrap items-center gap-2">
-                <WarningIcon className="h-6 w-6 text-destructive" />
-                <span className="text-lg font-bold text-destructive">PANIC ANSWER</span>
+        {/* Main Content */}
+        <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+          {/* Left Column - Stories */}
+          <div className="flex-1 overflow-y-auto p-6">
+            {/* Search Bar */}
+            {searchOpen && (
+              <div className="mb-4 print:hidden">
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search stories by skill, keyword..."
+                  className="w-full rounded-xl border border-border/80 bg-overlay/15 px-4 py-3 text-lg text-foreground placeholder:text-muted-foreground/60 focus:border-iris focus:outline-hidden"
+                />
               </div>
-              <p className="text-lg leading-relaxed text-foreground">{packet.panicAnswer}</p>
-            </div>
-          )}
+            )}
 
-          {/* Stories List */}
-          <div className="space-y-3">
-            {displayStories.length === 0 ? (
-              <div className="rounded-xl border border-border/40 p-8 text-center text-muted-foreground">
-                {searchQuery ? 'No stories match your search' : 'No stories in packet'}
+            {/* Panic Mode */}
+            {panicMode && packet.panicAnswer && (
+              <div className="mb-6 rounded-xl border-2 border-destructive/50 bg-destructive/10 p-4 md:p-6">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <WarningIcon className="h-6 w-6 text-destructive" />
+                  <span className="text-lg font-bold text-destructive">PANIC ANSWER</span>
+                </div>
+                <p className="text-lg leading-relaxed text-foreground">{packet.panicAnswer}</p>
               </div>
-            ) : (
-              displayStories.map((story, index) => {
-                const isSelected = index === selectedIndex;
-                const isExpanded = expandedId === story.id;
+            )}
 
-                return (
-                  <button
-                    type="button"
-                    key={story.id}
-                    aria-expanded={isExpanded}
-                    onClick={() => {
-                      setSelectedIndex(index);
-                      setExpandedId(isExpanded ? null : story.id);
-                    }}
-                    className={cn(
-                      'w-full cursor-pointer rounded-xl border p-4 text-left transition-all',
-                      isSelected
-                        ? 'border-iris/50 bg-iris/10 shadow-lg shadow-iris/10'
-                        : 'border-border/40 bg-overlay/15 hover:bg-overlay/25',
-                      isExpanded && 'border-iris'
-                    )}
-                  >
-                    {/* Glance View */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="rounded-full bg-iris/20 px-2 py-0.5 text-xs font-semibold text-iris">
-                            {getSkillName(story.primarySkillId)}
-                          </span>
-                          <span className="text-xs text-muted-foreground/60">
-                            {readinessLabel(story)}
-                          </span>
+            {/* Stories List */}
+            <div className="space-y-3">
+              {displayStories.length === 0 ? (
+                <div className="rounded-xl border border-border/40 p-8 text-center text-muted-foreground">
+                  {searchQuery ? 'No stories match your search' : 'No stories in packet'}
+                </div>
+              ) : (
+                displayStories.map((story, index) => {
+                  const isSelected = index === selectedIndex;
+                  const isExpanded = expandedId === story.id;
+
+                  return (
+                    <button
+                      type="button"
+                      key={story.id}
+                      aria-expanded={isExpanded}
+                      onClick={() => {
+                        setSelectedIndex(index);
+                        setExpandedId(isExpanded ? null : story.id);
+                      }}
+                      className={cn(
+                        'w-full cursor-pointer rounded-xl border p-4 text-left transition-all',
+                        isSelected
+                          ? 'border-iris/50 bg-iris/10 shadow-lg shadow-iris/10'
+                          : 'border-border/40 bg-overlay/15 hover:bg-overlay/25',
+                        isExpanded && 'border-iris'
+                      )}
+                    >
+                      {/* Glance View */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="rounded-full bg-iris/20 px-2 py-0.5 text-xs font-semibold text-iris">
+                              {getSkillName(story.primarySkillId)}
+                            </span>
+                            <span className="text-xs text-muted-foreground/60">
+                              {readinessLabel(story)}
+                            </span>
+                          </div>
+                          <p className="mt-2 text-lg font-semibold text-foreground">
+                            {story.trigger || 'Untitled'}
+                          </p>
+                          <p className="mt-1 text-muted-foreground/90">{story.hook}</p>
+                          <p className="mt-2 text-sm font-medium text-iris">
+                            <ChartIcon className="h-4 w-4 inline" /> {story.proofSnippet}
+                          </p>
                         </div>
-                        <p className="mt-2 text-lg font-semibold text-foreground">
-                          {story.trigger || 'Untitled'}
-                        </p>
-                        <p className="mt-1 text-muted-foreground/90">{story.hook}</p>
-                        <p className="mt-2 text-sm font-medium text-iris">
-                          <ChartIcon className="h-4 w-4 inline" /> {story.proofSnippet}
-                        </p>
-                      </div>
-                      <div className="text-muted-foreground/50">
-                        {isExpanded ? (
-                          <svg
-                            aria-hidden="true"
-                            className="h-5 w-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 15l7-7 7 7"
-                            />
-                          </svg>
-                        ) : (
-                          <svg
-                            aria-hidden="true"
-                            className="h-5 w-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 9l-7 7-7-7"
-                            />
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Expanded View */}
-                    {isExpanded && (
-                      <div className="mt-4 border-t border-border/40 pt-4">
-                        <div className="space-y-4">
-                          <div>
-                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
-                              Play
-                            </p>
-                            <p className="mt-1 text-foreground leading-relaxed">{story.play}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
-                              Proof
-                            </p>
-                            <p className="mt-1 text-foam leading-relaxed">{story.proof}</p>
-                          </div>
-                          {story.questionPrompts.length > 0 && (
-                            <div>
-                              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
-                                Questions this story answers
-                              </p>
-                              <ul className="mt-1 space-y-1">
-                                {story.questionPrompts.map((q, i) => (
-                                  <li key={i} className="text-sm text-muted-foreground/90">
-                                    • {resolveQuestionText(q)}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
+                        <div className="text-muted-foreground/50">
+                          {isExpanded ? (
+                            <svg
+                              aria-hidden="true"
+                              className="h-5 w-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 15l7-7 7 7"
+                              />
+                            </svg>
+                          ) : (
+                            <svg
+                              aria-hidden="true"
+                              className="h-5 w-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
+                              />
+                            </svg>
                           )}
                         </div>
                       </div>
-                    )}
-                  </button>
-                );
-              })
+
+                      {/* Expanded View */}
+                      {isExpanded && (
+                        <div className="mt-4 border-t border-border/40 pt-4">
+                          <div className="space-y-4">
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                                Play
+                              </p>
+                              <p className="mt-1 text-foreground leading-relaxed">{story.play}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                                Proof
+                              </p>
+                              <p className="mt-1 text-foam leading-relaxed">{story.proof}</p>
+                            </div>
+                            {story.questionPrompts.length > 0 && (
+                              <div>
+                                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                                  Questions this story answers
+                                </p>
+                                <ul className="mt-1 space-y-1">
+                                  {story.questionPrompts.map((q, i) => (
+                                    <li key={i} className="text-sm text-muted-foreground/90">
+                                      • {resolveQuestionText(q)}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Right Column - Questions to Ask */}
+          <div className="w-full md:w-80 shrink-0 border-l border-border/40 bg-overlay/20 p-6 print:bg-gray-50 print:border-gray-300">
+            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground print:text-gray-600">
+              Questions to Ask
+            </h2>
+            <ul className="space-y-3">
+              {packet.customQuestions.filter(Boolean).map((q, i) => (
+                <li
+                  key={i}
+                  className="flex items-start gap-2 text-foreground/80 print:text-gray-800"
+                >
+                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-iris" />
+                  <span className="text-sm leading-relaxed">{q}</span>
+                </li>
+              ))}
+            </ul>
+
+            {packet.customQuestions.filter(Boolean).length === 0 && (
+              <p className="text-sm text-muted-foreground/60">No questions added yet.</p>
+            )}
+
+            {/* Notes */}
+            {packet.notes && (
+              <div className="mt-8">
+                <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground print:text-gray-600">
+                  Notes
+                </h2>
+                <p className="text-sm leading-relaxed text-muted-foreground/90 print:text-gray-700">
+                  {packet.notes}
+                </p>
+              </div>
             )}
           </div>
         </div>
 
-        {/* Right Column - Questions to Ask */}
-        <div className="w-full md:w-80 shrink-0 border-l border-border/40 bg-overlay/20 p-6 print:bg-gray-50 print:border-gray-300">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground print:text-gray-600">
-            Questions to Ask
-          </h2>
-          <ul className="space-y-3">
-            {packet.customQuestions.filter(Boolean).map((q, i) => (
-              <li key={i} className="flex items-start gap-2 text-foreground/80 print:text-gray-800">
-                <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-iris" />
-                <span className="text-sm leading-relaxed">{q}</span>
-              </li>
-            ))}
-          </ul>
-
-          {packet.customQuestions.filter(Boolean).length === 0 && (
-            <p className="text-sm text-muted-foreground/60">No questions added yet.</p>
-          )}
-
-          {/* Notes */}
-          {packet.notes && (
-            <div className="mt-8">
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground print:text-gray-600">
-                Notes
-              </h2>
-              <p className="text-sm leading-relaxed text-muted-foreground/90 print:text-gray-700">
-                {packet.notes}
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Bottom Panic Slot (always visible reminder) */}
-      {!panicMode && packet.panicAnswer && (
-        <footer className="border-t border-border/40 bg-card px-6 py-3 print:hidden">
-          <button
-            type="button"
-            onClick={() => setPanicMode(true)}
-            className="flex items-center gap-2 text-sm text-destructive/70 hover:text-destructive"
-          >
-            <WarningIcon className="h-4 w-4" />
-            <span>
-              Press <kbd className="rounded bg-overlay/25 px-1.5 py-0.5 text-xs">P</kbd> for panic
-              answer
-            </span>
-          </button>
-        </footer>
-      )}
-    </div>
+        {/* Bottom Panic Slot (always visible reminder) */}
+        {!panicMode && packet.panicAnswer && (
+          <footer className="border-t border-border/40 bg-card px-6 py-3 print:hidden">
+            <button
+              type="button"
+              onClick={() => setPanicMode(true)}
+              className="flex items-center gap-2 text-sm text-destructive/70 hover:text-destructive"
+            >
+              <WarningIcon className="h-4 w-4" />
+              <span>
+                Press <kbd className="rounded bg-overlay/25 px-1.5 py-0.5 text-xs">P</kbd> for panic
+                answer
+              </span>
+            </button>
+          </footer>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

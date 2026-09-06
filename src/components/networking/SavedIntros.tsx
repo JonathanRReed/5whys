@@ -2,6 +2,7 @@ import type { NetworkingPracticeVersion } from '../../utils/storage';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Textarea } from '../ui/textarea';
 
 type Props = {
@@ -37,18 +38,18 @@ export default function SavedIntros({
         >
           Saved intros
         </Label>
-        <select
-          id="version"
-          value={currentVersionId}
-          onChange={(event) => onVersionSelect(event.target.value)}
-          className="w-full rounded-lg border border-border/60 bg-overlay/30 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam"
-        >
-          {versions.map((version) => (
-            <option key={version.id} value={version.id}>
-              {version.title}
-            </option>
-          ))}
-        </select>
+        <Select value={currentVersionId} onValueChange={onVersionSelect}>
+          <SelectTrigger id="version" className="w-full border-border/60 bg-overlay/30">
+            <SelectValue placeholder="Pick an intro" />
+          </SelectTrigger>
+          <SelectContent className="border border-border/60 bg-popover">
+            {versions.map((version) => (
+              <SelectItem key={version.id} value={version.id}>
+                {version.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <div className="flex flex-wrap gap-2">
           <Button
             type="button"

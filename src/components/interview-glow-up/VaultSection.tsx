@@ -11,6 +11,7 @@ import {
 import { cn } from '../../lib/utils';
 import ConfirmButton from '../shared/ConfirmButton';
 import { ArchiveIcon, CheckIcon } from './icons';
+import SkillSelect from './SkillSelect';
 
 type Props = {
   data: GlowUpData;
@@ -73,18 +74,12 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
           placeholder="Search stories..."
           className="flex-1 min-w-[200px] rounded-lg border border-border/50 bg-overlay/30 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
         />
-        <select
-          value={skillFilter}
-          onChange={(e) => setSkillFilter(e.target.value)}
-          className="rounded-lg border border-border/50 bg-overlay/30 px-3 py-2 text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
-        >
-          <option value="">All skills</option>
-          {SKILL_BANK.map((skill) => (
-            <option key={skill.id} value={skill.id}>
-              {skill.name}
-            </option>
-          ))}
-        </select>
+        <SkillSelect
+          value={skillFilter || null}
+          onChange={(skillId) => setSkillFilter(skillId ?? '')}
+          placeholder="All skills"
+          aria-label="Filter stories by skill"
+        />
         {currentPacket && (
           <button
             type="button"

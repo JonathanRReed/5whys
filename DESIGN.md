@@ -66,6 +66,12 @@ Self-hosted via `@fontsource-variable/*` (no CDN, on-brand for privacy-first).
 
 ## Components
 
+Interactive primitives come from shadcn (Radix underneath) and live in
+`src/components/ui`. They are restyled to the tokens below rather than kept at
+their defaults; see AGENTS.md for the rules that keep CLI updates usable.
+Elevation is declared once per surface: a hairline border on inline surfaces,
+a shadow on floating ones.
+
 ### Cards
 
 - Border: 1px, hsl(var(--border)/0.35)

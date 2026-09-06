@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { createPortal } from 'react-dom';
 import {
   createDefaultData,
   ensurePacketForRole,
@@ -7,6 +6,7 @@ import {
   loadData,
   saveData,
 } from '../../lib/glowup-store';
+import { Tabs, TabsContent } from '../ui/tabs';
 import DecodeSection from './DecodeSection';
 import InterviewHUD from './InterviewHUD';
 import PacketSection from './PacketSection';
@@ -31,6 +31,18 @@ export default function InterviewGlowUpWorkspace() {
   const [hydrated, setHydrated] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<Tab>('decode');
   const [showHUD, setShowHUD] = React.useState(false);
+  // The HUD opens from two different buttons, so Radix cannot restore focus on
+  // its own. Remember what was focused and hand it back when the HUD closes.
+  const hudOpenerRef = React.useRef<HTMLElement | null>(null);
+  const openHUD = React.useCallback(() => {
+    hudOpenerRef.current = document.activeElement as HTMLElement | null;
+    setShowHUD(true);
+  }, []);
+  const closeHUD = React.useCallback(() => {
+    setShowHUD(false);
+    // Wait for the dialog to unmount before moving focus back.
+    requestAnimationFrame(() => hudOpenerRef.current?.focus());
+  }, []);
   const saveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestRef = React.useRef<GlowUpData | null>(null);
   // What we loaded, and whether the visitor has changed anything since. A
@@ -131,59 +143,58 @@ export default function InterviewGlowUpWorkspace() {
         </span>
       </div>
 
-      <WorkspaceTabs
-        activeTab={activeTab}
-        onChange={setActiveTab}
-        showHUD={packetStoryCount > 0}
-        onLaunchHUD={() => setShowHUD(true)}
-        counts={{
-          decode: currentRole ? currentRole.bullets.filter((b) => b.status === 'active').length : 0,
-          stories: data.stories.length,
-          packet: packetStoryCount,
-          vault: data.stories.length,
-        }}
-      />
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as Tab)}>
+        <WorkspaceTabs
+          showHUD={packetStoryCount > 0}
+          onLaunchHUD={openHUD}
+          counts={{
+            decode: currentRole
+              ? currentRole.bullets.filter((b) => b.status === 'active').length
+              : 0,
+            stories: data.stories.length,
+            packet: packetStoryCount,
+            vault: data.stories.length,
+          }}
+        />
 
-      <div className="rounded-2xl border border-border/35 bg-overlay/20 p-4 sm:p-6">
-        {activeTab === 'decode' && (
-          <DecodeSection data={data} setData={setData} currentRole={currentRole} />
-        )}
-        {activeTab === 'stories' && (
-          <StoriesSection
-            data={data}
-            setData={setData}
-            currentRole={currentRole}
-            currentPacket={currentPacket}
-            onGoToDecode={() => setActiveTab('decode')}
-          />
-        )}
-        {activeTab === 'vault' && (
-          <VaultSection data={data} setData={setData} currentPacket={currentPacket} />
-        )}
-        {activeTab === 'packet' && (
-          <PacketSection
-            data={data}
-            setData={setData}
-            currentRole={currentRole}
-            currentPacket={currentPacket}
-            onLaunchHUD={() => setShowHUD(true)}
-            onGoToStories={() => setActiveTab('stories')}
-            onGoToDecode={() => setActiveTab('decode')}
-          />
-        )}
-      </div>
+        <div className="rounded-2xl border border-border/35 bg-overlay/20 p-4 sm:p-6">
+          <TabsContent value="decode">
+            <DecodeSection data={data} setData={setData} currentRole={currentRole} />
+          </TabsContent>
+          <TabsContent value="stories">
+            <StoriesSection
+              data={data}
+              setData={setData}
+              currentRole={currentRole}
+              currentPacket={currentPacket}
+              onGoToDecode={() => setActiveTab('decode')}
+            />
+          </TabsContent>
+          <TabsContent value="vault">
+            <VaultSection data={data} setData={setData} currentPacket={currentPacket} />
+          </TabsContent>
+          <TabsContent value="packet">
+            <PacketSection
+              data={data}
+              setData={setData}
+              currentRole={currentRole}
+              currentPacket={currentPacket}
+              onLaunchHUD={openHUD}
+              onGoToStories={() => setActiveTab('stories')}
+              onGoToDecode={() => setActiveTab('decode')}
+            />
+          </TabsContent>
+        </div>
+      </Tabs>
 
-      {showHUD &&
-        currentPacket &&
-        createPortal(
-          <InterviewHUD
-            packet={currentPacket}
-            stories={data.stories}
-            role={currentRole}
-            onClose={() => setShowHUD(false)}
-          />,
-          document.body
-        )}
+      {showHUD && currentPacket && (
+        <InterviewHUD
+          packet={currentPacket}
+          stories={data.stories}
+          role={currentRole}
+          onClose={closeHUD}
+        />
+      )}
     </div>
   );
 }

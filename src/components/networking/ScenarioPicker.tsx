@@ -1,4 +1,13 @@
 import { Label } from '../ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
 import type { Scenario } from './useNetworkingPractice';
 
 type Props = {
@@ -35,27 +44,35 @@ export default function ScenarioPicker({ scenarios, currentScenario, onScenarioC
         >
           Scenario
         </Label>
-        <select
-          id="scenario"
-          value={currentScenario?.id ?? ''}
-          onChange={(event) => onScenarioChange(event.target.value)}
-          className="w-full rounded-xl border border-border/60 bg-overlay/30 px-3 py-3 text-base text-foreground focus:border-primary focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam"
-        >
-          {groups.map((group) => (
-            <optgroup key={group.audience} label={group.label}>
-              {group.scenarios.map((scenario) => (
-                <option key={scenario.id} value={scenario.id}>
-                  {scenario.title}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-          {ungrouped.map((scenario) => (
-            <option key={scenario.id} value={scenario.id}>
-              {scenario.title}
-            </option>
-          ))}
-        </select>
+        <Select value={currentScenario?.id ?? ''} onValueChange={onScenarioChange}>
+          <SelectTrigger
+            id="scenario"
+            className="w-full rounded-xl border-border/60 bg-overlay/30 py-6 text-base"
+          >
+            <SelectValue placeholder="Pick a scenario" />
+          </SelectTrigger>
+          <SelectContent className="border border-border/60 bg-popover">
+            {groups.map((group) => (
+              <SelectGroup key={group.audience}>
+                <SelectLabel>{group.label}</SelectLabel>
+                {group.scenarios.map((scenario) => (
+                  <SelectItem key={scenario.id} value={scenario.id}>
+                    {scenario.title}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            ))}
+            {ungrouped.length > 0 && (
+              <SelectGroup>
+                {ungrouped.map((scenario) => (
+                  <SelectItem key={scenario.id} value={scenario.id}>
+                    {scenario.title}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            )}
+          </SelectContent>
+        </Select>
         <p className="text-xs text-muted-foreground">
           Twelve situations, nine of them for students. Pick the one closest to your next
           conversation.

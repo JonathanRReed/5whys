@@ -3,6 +3,50 @@
 Short, dated records of choices that are not obvious from the code. Newest
 first. The May 2025 "megaplan" this file replaces is summarized at the bottom.
 
+## 2026-09-05 Component libraries reviewed, shadcn adopted
+
+**Reviewed:** Rare UI (declined, see below), ElevenLabs UI (agent and audio
+components: orbs, waveforms, voice chat, none of which this product has), and
+Starwind UI. Starwind is the strongest fit on paper, being Astro-native with
+zero-JS components, but every interactive surface here lives inside a React
+island that owns tool state, so its main advantage cannot apply. Adopting it
+would also mean running two component systems.
+
+**shadcn adopted.** `src/components/ui/*` were hand-written lookalikes, not
+real shadcn. They are now CLI-managed source, restyled to Evergreen and Brass.
+The DESIGN.md line about "cookie-cutter shadcn defaults" is retired.
+
+Two hand-rolled components were genuinely broken, which is what justified the
+swap:
+
+- **Tabs** claimed `role="tablist"` while implementing almost none of the
+  pattern: arrow keys did nothing, all four tabs sat in the tab order, and
+  there was no `aria-controls` and no `role="tabpanel"` anywhere. Radix now
+  supplies all of it.
+- **The interview HUD** set `aria-modal="true"`, telling assistive tech the
+  rest of the page was inert, while Tab walked straight out of it: 12 of 14
+  presses landed outside the dialog. It is now a real dialog with a focus
+  trap, scroll lock, and focus returned to whichever button opened it.
+
+Also swapped: nine native selects that could not be themed and rendered their
+lists in OS chrome; the hand-rolled timer picker, which is exactly ToggleGroup's
+job; and `title` attributes, which never appear on touch.
+
+**Setup notes.** `components.json` is hand-written because `shadcn init` would
+overwrite twelve palette tokens we already define. A custom variant maps
+`dark:` to `[data-theme="night"]`, without which every `dark:` rule shadcn
+ships would be dead here. `cn` stays as clsx plus tailwind-merge rather than
+the days-old `cn` package, so the components import from `@/lib/utils`.
+
+**Caught during the swap:** shadcn's `line` tab variant forces a transparent
+active background, which made the active tab ivory-on-ivory in Dawn. Fixed by
+giving the primitive one semantic active treatment. Its `w-fit` list with
+`flex-1` triggers also overflowed at phone width and covered the HUD button.
+
+**Unrelated find:** the Glow Up landing page shipped a 311-line React island
+for prose with no interactivity at all. It now renders at build time with no
+client directive.
+
 ## 2026-09-05 UI pass
 
 **Rare UI reviewed and declined.** The library is 18 novelty components

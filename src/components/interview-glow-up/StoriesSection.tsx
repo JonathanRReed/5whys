@@ -22,6 +22,7 @@ import {
 } from '../../lib/glowup-store';
 import { cn } from '../../lib/utils';
 import { LightbulbIcon, PencilIcon, WarningIcon, XIcon } from './icons';
+import SkillSelect from './SkillSelect';
 
 type Props = {
   data: GlowUpData;
@@ -228,19 +229,13 @@ export default function StoriesSection({
               >
                 Primary Skill *
               </label>
-              <select
+              <SkillSelect
                 id="story-primary-skill"
-                value={formData.primarySkillId ?? ''}
-                onChange={(e) => setFormData({ ...formData, primarySkillId: e.target.value })}
-                className={inputClass}
-              >
-                <option value="">Select skill...</option>
-                {SKILL_BANK.map((skill) => (
-                  <option key={skill.id} value={skill.id}>
-                    {skill.name}
-                  </option>
-                ))}
-              </select>
+                value={formData.primarySkillId ?? null}
+                onChange={(skillId) => setFormData({ ...formData, primarySkillId: skillId ?? '' })}
+                placeholder="Select skill..."
+                className="w-full"
+              />
             </div>
             <fieldset>
               <legend className="mb-1 block text-sm font-medium text-foreground">
@@ -316,23 +311,15 @@ export default function StoriesSection({
                   </button>
                 </span>
               ))}
-              <select
+              <SkillSelect
+                value={null}
+                onChange={(skillId) => skillId && addOtherSkill(skillId)}
+                placeholder="+ Add skill..."
                 aria-label="Add secondary skill"
-                value=""
-                onChange={(e) => addOtherSkill(e.target.value)}
-                className="rounded-lg border border-border/50 bg-overlay/30 px-2 py-1 text-xs text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
-              >
-                <option value="">+ Add skill...</option>
-                {SKILL_BANK.filter(
-                  (s) =>
-                    s.id !== formData.primarySkillId &&
-                    !(formData.otherSkillIds ?? []).includes(s.id)
-                ).map((skill) => (
-                  <option key={skill.id} value={skill.id}>
-                    {skill.name}
-                  </option>
-                ))}
-              </select>
+                className="h-8 text-xs"
+                exclude={[formData.primarySkillId ?? '', ...(formData.otherSkillIds ?? [])]}
+                resetAfterSelect
+              />
             </div>
           </div>
 

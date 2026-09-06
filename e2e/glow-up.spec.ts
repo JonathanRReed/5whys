@@ -1,5 +1,11 @@
 import { expect, test } from '@playwright/test';
-import { readStorage, useStudentProfile, waitForHydration, watchConsoleErrors } from './helpers';
+import {
+  chooseOption,
+  readStorage,
+  useStudentProfile,
+  waitForHydration,
+  watchConsoleErrors,
+} from './helpers';
 
 const JOB_POSTING = `Junior Software Developer
 Brightline Health - Remote (US)
@@ -40,7 +46,7 @@ test('a job is decoded, a story is built into the packet, and the HUD opens abov
 
   await page.getByRole('tab', { name: /Build stories/ }).click();
   await page.getByRole('button', { name: '+ New story' }).click();
-  await page.locator('#story-primary-skill').selectOption('python');
+  await chooseOption(page, '#story-primary-skill', 'Python');
   await page.locator('#story-trigger').fill('Capstone scraper');
   await page
     .locator('#story-play')

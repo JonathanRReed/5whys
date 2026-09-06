@@ -34,3 +34,13 @@ export async function waitForHydration(page: Page) {
     return islands.length > 0 && islands.every((island) => !island.hasAttribute('ssr'));
   });
 }
+
+/**
+ * Pick a value from a shadcn/Radix Select. It renders a button and a portalled
+ * listbox, so `selectOption` (which needs a native <select>) does not apply.
+ */
+export async function chooseOption(page: Page, trigger: string, optionName: string | RegExp) {
+  await page.locator(trigger).click();
+  await page.getByRole('option', { name: optionName }).click();
+  await page.waitForTimeout(150);
+}

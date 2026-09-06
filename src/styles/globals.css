@@ -2,6 +2,14 @@
 @import "tw-animate-css";
 
 /*
+  Tailwind's stock `dark:` variant keys off a `.dark` class. This site themes
+  with `data-theme` on <html>, and Night is the default, so without this every
+  `dark:` rule inside a third-party component (shadcn ships many) would be
+  silently inert and render its light treatment in Night.
+*/
+@custom-variant dark (&:is([data-theme="night"] *));
+
+/*
   Design tokens. The palette lives once, below in @layer base, as HSL triplets
   on :root (Night) and [data-theme='dawn'] (Dawn). This inline theme block
   turns each triplet into a named Tailwind color, so `bg-foam/15` resolves to

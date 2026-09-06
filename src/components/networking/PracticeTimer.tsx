@@ -1,6 +1,8 @@
 import type * as React from 'react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { TIMER_LENGTHS, type TimerState } from './useTimer';
 
 type Props = {
@@ -60,30 +62,29 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset, onLeng
             </span>
           </div>
         </div>
-        <fieldset className="w-full" disabled={timer.isRunning}>
-          <legend className="sr-only">Rep length</legend>
-          <div className="flex flex-wrap justify-center gap-1.5">
-            {TIMER_LENGTHS.map((option) => {
-              const active = timer.total === option.seconds;
-              return (
-                <button
-                  key={option.seconds}
-                  type="button"
-                  onClick={() => onLengthChange(option.seconds)}
-                  aria-pressed={active}
-                  title={option.hint}
-                  className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2 disabled:opacity-50 ${
-                    active
-                      ? 'border-primary/70 bg-primary/15 text-foreground'
-                      : 'border-border/50 text-muted-foreground hover:border-border/70 hover:text-foreground'
-                  }`}
+        <ToggleGroup
+          type="single"
+          value={String(timer.total)}
+          onValueChange={(value) => value && onLengthChange(Number(value))}
+          disabled={timer.isRunning}
+          aria-label="Rep length"
+          className="flex-wrap justify-center gap-1.5"
+        >
+          {TIMER_LENGTHS.map((option) => (
+            <Tooltip key={option.seconds}>
+              <TooltipTrigger asChild>
+                <ToggleGroupItem
+                  value={String(option.seconds)}
+                  aria-label={`${option.label}: ${option.hint}`}
+                  className="rounded-full border border-border/50 px-3 text-xs text-muted-foreground data-[state=on]:border-primary/70 data-[state=on]:bg-primary/15 data-[state=on]:text-foreground"
                 >
                   {option.label}
-                </button>
-              );
-            })}
-          </div>
-        </fieldset>
+                </ToggleGroupItem>
+              </TooltipTrigger>
+              <TooltipContent>{option.hint}</TooltipContent>
+            </Tooltip>
+          ))}
+        </ToggleGroup>
         <div className="flex flex-wrap justify-center gap-2">
           <Button
             onClick={onStart}
