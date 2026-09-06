@@ -1,0 +1,55 @@
+---
+/**
+ * The header on a tool page. The homepage introduces the four tools as
+ * numbered plates in a field guide; this carries that designation onto the
+ * plate itself, so arriving from a direct link still says which instrument
+ * this is and what it is for.
+ *
+ * Deliberately compact: these are working surfaces, so the title states the
+ * plate and gets out of the way rather than taking the homepage's full
+ * cover-plate scale.
+ */
+interface Props {
+  /** Plate designation, e.g. "Plate II · Prove". Matches the homepage. */
+  tag: string;
+  /** Roman numeral for the plate. */
+  roman: string;
+  title: string;
+  /** One line: what the visitor leaves with. */
+  description: string;
+  accent?: 'foam' | 'gold' | 'iris' | 'love';
+}
+
+const { tag, roman, title, description, accent = 'foam' } = Astro.props as Props;
+---
+
+<header
+  class="mx-auto mb-10 w-full max-w-6xl"
+  style={`--plate-accent: var(--${accent});`}
+  data-plate-header
+>
+  <div class="rule-brass" aria-hidden="true"></div>
+  <div class="flex items-start justify-between gap-6 pt-4">
+    <div class="max-w-2xl space-y-3">
+      <div class="flex items-center gap-3">
+        <span class="h-px w-8" style="background:hsl(var(--plate-accent))" aria-hidden="true"></span>
+        <span class="eyebrow" style="color:hsl(var(--plate-accent))">{tag}</span>
+      </div>
+      <h1
+        class="text-balance text-3xl font-semibold leading-[1.06] tracking-[-0.02em] text-foreground sm:text-4xl"
+      >
+        {title}
+      </h1>
+      <p class="text-pretty text-base leading-relaxed text-muted-foreground">
+        {description}
+      </p>
+    </div>
+    {/* Decorative: the numeral repeats the plate designation already in the
+        eyebrow, so it is hidden rather than read out twice. */}
+    <span
+      class="plate-numeral hidden select-none pt-1 text-[3.4rem] leading-none sm:block"
+      style="color:hsl(var(--plate-accent)/0.7)"
+      aria-hidden="true">{roman}</span
+    >
+  </div>
+</header>

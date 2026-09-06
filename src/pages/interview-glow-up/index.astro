@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
+import PlateHeader from '../../components/PlateHeader.astro';
 import InterviewGlowUpAdvice from '../../components/interview-glow-up/InterviewGlowUpAdvice';
 import { siteConfig } from '../../config/site';
 import { ogImageFor } from '../../config/og';
@@ -87,7 +88,13 @@ const glowUpSchemas = [
   structuredData={glowUpSchemas}
 >
   <div class="relative overflow-hidden px-4 pb-16 pt-4 sm:pt-6">
-    <h1 class="sr-only">Interview Glow Up</h1>
+    <PlateHeader
+      tag="Plate IV · Prepare"
+      roman="IV"
+      title="Interview Glow Up"
+      description="Decode a job posting into the skills it actually tests, then build proof-based stories for each one."
+      accent="love"
+    />
     <section class="mx-auto w-full max-w-6xl">
       <InterviewGlowUpAdvice client:load />
     </section>

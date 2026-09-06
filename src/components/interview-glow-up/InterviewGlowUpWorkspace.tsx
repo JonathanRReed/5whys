@@ -33,10 +33,17 @@ export default function InterviewGlowUpWorkspace() {
   const [showHUD, setShowHUD] = React.useState(false);
   const saveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestRef = React.useRef<GlowUpData | null>(null);
+  // What we loaded, and whether the visitor has changed anything since. A
+  // workspace that only read storage must never write to it: another tab, or
+  // an import on the dashboard, may have saved newer work in the meantime,
+  // and an unload flush would silently overwrite it.
+  const loadedJsonRef = React.useRef<string | null>(null);
+  const dirtyRef = React.useRef(false);
 
   React.useEffect(() => {
     let loaded = loadData();
     if (loaded.currentRoleId) loaded = ensurePacketForRole(loaded, loaded.currentRoleId);
+    loadedJsonRef.current = JSON.stringify(loaded);
     setData(loaded);
     setHydrated(true);
     const fromUrl = readTabFromUrl();
@@ -48,6 +55,10 @@ export default function InterviewGlowUpWorkspace() {
   // a quick tab switch or a closed laptop never drops the last edit.
   React.useEffect(() => {
     if (!hydrated) return;
+    if (!dirtyRef.current) {
+      if (JSON.stringify(data) === loadedJsonRef.current) return;
+      dirtyRef.current = true;
+    }
     latestRef.current = data;
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
@@ -61,7 +72,7 @@ export default function InterviewGlowUpWorkspace() {
 
   React.useEffect(() => {
     const flush = () => {
-      if (latestRef.current) saveData(latestRef.current);
+      if (dirtyRef.current && latestRef.current) saveData(latestRef.current);
     };
     const onVisibility = () => {
       if (document.visibilityState === 'hidden') flush();

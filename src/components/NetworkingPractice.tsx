@@ -122,6 +122,7 @@ export default function NetworkingPractice({
             onStart={state.startTimer}
             onPause={state.pauseTimer}
             onReset={state.resetTimer}
+            onLengthChange={state.setTimerLength}
           />
         </section>
 

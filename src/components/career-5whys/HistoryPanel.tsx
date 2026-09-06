@@ -1,3 +1,4 @@
+import ConfirmButton from '../shared/ConfirmButton';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { HISTORY_LIMIT_OPTIONS, TRACKS, type WhySnapshot } from './shared';
@@ -94,15 +95,15 @@ export default function HistoryPanel({
             >
               Export all snapshots
             </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={onClearHistory}
-              disabled={history.length === 0}
-              className="h-10 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive transition-colors hover:bg-destructive/15 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
-            >
-              Clear history
-            </Button>
+            {history.length > 0 && (
+              <ConfirmButton
+                confirmLabel={`Delete ${history.length === 1 ? 'the snapshot' : `all ${history.length} snapshots`}?`}
+                onConfirm={onClearHistory}
+                className="h-10"
+              >
+                Clear history
+              </ConfirmButton>
+            )}
           </div>
         </div>
       </CardHeader>

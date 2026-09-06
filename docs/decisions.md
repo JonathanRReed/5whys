@@ -3,6 +3,41 @@
 Short, dated records of choices that are not obvious from the code. Newest
 first. The May 2025 "megaplan" this file replaces is summarized at the bottom.
 
+## 2026-09-05 UI pass
+
+**Rare UI reviewed and declined.** The library is 18 novelty components
+(fluid orbs, gooey nav, gravity letters) built on decorative motion, which
+DESIGN.md forbids and PRODUCT.md lists as an anti-reference. Two of them
+pointed at genuine gaps, which were fixed in the site's own idiom instead:
+the practice timer is now selectable (30s / 1m / 2m / 5m, defaulting per
+scenario, because a career fair with a line behind you is not a two-minute
+conversation), and browser `confirm()` dialogs became an in-place
+`ConfirmButton` that names what will be lost.
+
+**The identity now reaches the tools.** The field-guide vocabulary lived only
+on the homepage; the four tool pages opened with an unlabelled control and no
+visible h1, with their explainer copy below the fold. Each now opens with a
+`PlateHeader` carrying the same plate designation, numeral, and accent the
+homepage uses.
+
+**Dashboard rings removed.** The four-card metric row was the hero-metric
+template and an identical card grid, both absolute bans, and three of the four
+rings drew a progress arc around a plain count. Replaced with one sentence
+naming what is saved, plus the resume score as the only real 0-100 measure.
+
+**Dawn brass darkened** from 38% to 33% lightness. Every eyebrow, label, and
+gold button in the light theme sat at 4.03:1, just under the 4.5:1 floor. This
+one token cleared 17 contrast failures; Night was already at 8.2:1.
+
+**Cross-tab data loss fixed.** The workspace flushed its in-memory state on
+unload, so a stale tab silently overwrote a backup imported in another tab. It
+now persists only after the visitor actually changes something. Covered by
+`e2e/glow-up-concurrent.spec.ts`, which fails without the guard.
+
+**Intentional exception:** the detector flags `bg-blueprint` as a decorative
+grid background. It stays: this is a field guide whose homepage is built on
+plates and drafting rules, which is exactly the case the rule exempts.
+
 ## 2026-09-05 Renovation
 
 **Stack.** Astro 7, Tailwind 4 via `@tailwindcss/vite`, TypeScript 6 (astro

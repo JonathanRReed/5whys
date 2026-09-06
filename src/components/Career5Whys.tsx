@@ -203,7 +203,6 @@ export default function Career5Whys({
 
   const handleClearHistory = () => {
     if (history.length === 0) return;
-    if (!window.confirm('Clear all saved snapshots from this device?')) return;
     if (persistHistory([])) {
       setHistory([]);
       setStatus('Snapshot history cleared.');
@@ -224,17 +223,9 @@ export default function Career5Whys({
   };
 
   const handleReset = () => {
-    const hasWork = session.topic.trim() || session.responses.some((r) => r.trim());
-    if (
-      hasWork &&
-      !window.confirm(
-        'Clear this session? Your five answers go away unless you saved a snapshot first.'
-      )
-    ) {
-      return;
-    }
     updateSession(createEmptySession(session.track));
     setExampleOpen({});
+    setStatus('Session cleared.');
   };
 
   const handleTrackChange = (track: 'career' | 'interest') => {
@@ -286,6 +277,7 @@ export default function Career5Whys({
                 onSaveSnapshot={handleSaveSnapshot}
                 onExport={handleExport}
                 onReset={handleReset}
+                hasWork={!!session.topic.trim() || session.responses.some((r) => r.trim())}
                 canExport={sequentialCount >= 4}
                 status={status}
               />

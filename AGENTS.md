@@ -60,6 +60,17 @@ CI runs typecheck, lint, unit tests, build, the Playwright flows, and a
   stats ("2 min"). If a number appears in copy, the code must compute it.
 - **Paths.** Interview Glow Up lives at `/interview-glow-up/`; the old
   `/5whys/...` paths are redirected in `public/_redirects`.
+- **Every tool page opens with a `PlateHeader`.** The homepage introduces the
+  tools as numbered plates; the plate designation, numeral, and accent on a
+  tool page must match the `plates` array in `src/pages/index.astro`.
+- **No `confirm()`.** Destructive actions use `shared/ConfirmButton`, which
+  arms in place and names what will be lost. DESIGN.md bans reaching for a
+  modal first, and a native dialog cannot be themed or worded in the product's
+  voice.
+- **A tool island that only read storage must not write to it.** Another tab,
+  or an import on the dashboard, may have saved newer work; an unload flush
+  that writes an untouched snapshot silently destroys it. Track whether the
+  visitor actually changed something before persisting (see the workspace).
 
 ## Before you say it is done
 

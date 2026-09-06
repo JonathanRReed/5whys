@@ -49,7 +49,7 @@ export default function ShareScoreCard({
       <CardContent className="space-y-4">
         <div
           ref={cardRef}
-          className="rounded-2xl border border-border/35 bg-linear-to-br from-card/90 to-overlay/60 p-6 text-center"
+          className="rounded-2xl border border-border/35 bg-card/80 p-6 text-center"
         >
           <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
             Resume Game Score

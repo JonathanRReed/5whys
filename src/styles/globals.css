@@ -324,13 +324,6 @@
   font-feature-settings: "ss01" 1;
 }
 
-@utility margin-label {
-  /* Vertical marginalia label that runs up an edge */
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  transform: rotate(180deg);
-}
-
 @utility display-italic {
   /* Italic display accent (Fraunces italic) for emphasized words in headings */
   font-style: italic;
@@ -411,12 +404,12 @@
     --secondary-foreground: 150 14% 15%;
     --muted: 45 10% 56%;
     --muted-foreground: 150 10% 33%;
-    --accent: 36 64% 36%;
+    --accent: 36 64% 33%;
     --accent-foreground: 50 40% 97%;
     --destructive: 4 60% 43%;
     --destructive-foreground: 50 40% 97%;
     --love: 14 56% 41%;
-    --gold: 36 66% 38%;
+    --gold: 36 66% 33%;
     --rose: 14 44% 52%;
     --pine: 150 46% 22%;
     --foam: 150 50% 26%;

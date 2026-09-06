@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import PlateHeader from '../components/PlateHeader.astro';
 import NetworkingPracticeApp from '../components/NetworkingPractice';
 import ErrorBoundary from '../components/shared/ErrorBoundary';
 
@@ -63,7 +64,13 @@ const networkingNoScriptContext = [
   noScriptContext={networkingNoScriptContext}
 >
   <div class="relative overflow-hidden px-4 pb-16 pt-4 sm:pt-6">
-    <h1 class="sr-only">Networking Practice Studio</h1>
+    <PlateHeader
+      tag="Plate III · Rehearse"
+      roman="III"
+      title="Networking Practice"
+      description="Pick the conversation you are walking into, draft the intro in your own words, and run it against the clock until it sounds like you."
+      accent="iris"
+    />
     <section class="mx-auto w-full max-w-6xl">
       <ErrorBoundary client:load>
         <NetworkingPracticeApp client:load showHeader={false} className="pb-8" />

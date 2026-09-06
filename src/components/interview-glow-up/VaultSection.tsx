@@ -9,6 +9,7 @@ import {
   updatePacket,
 } from '../../lib/glowup-store';
 import { cn } from '../../lib/utils';
+import ConfirmButton from '../shared/ConfirmButton';
 import { ArchiveIcon, CheckIcon } from './icons';
 
 type Props = {
@@ -180,18 +181,14 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
                         {inPacket ? 'Remove from packet' : 'Add to packet'}
                       </button>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (confirm('Delete this story?')) {
-                          setData(deleteStory(data, story.id));
-                        }
-                      }}
+                    <ConfirmButton
+                      confirmLabel="Delete for good?"
+                      onConfirm={() => setData(deleteStory(data, story.id))}
                       aria-label={`Delete story: ${story.trigger || 'Untitled'}`}
-                      className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-1 text-xs text-destructive transition-colors hover:bg-destructive/15 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
+                      className="px-3 py-1 text-xs"
                     >
                       Delete
-                    </button>
+                    </ConfirmButton>
                   </div>
                 </div>
               </div>

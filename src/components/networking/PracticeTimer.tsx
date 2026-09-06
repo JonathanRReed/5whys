@@ -1,15 +1,14 @@
 import type * as React from 'react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import type { TimerState } from './useTimer';
-
-const TOTAL_SECONDS = 120;
+import { TIMER_LENGTHS, type TimerState } from './useTimer';
 
 type Props = {
   timer: TimerState;
   onStart: () => void;
   onPause: () => void;
   onReset: () => void;
+  onLengthChange: (seconds: number) => void;
 };
 
 function formatTime(seconds: number) {
@@ -22,8 +21,8 @@ function formatTime(seconds: number) {
   return `${mins}:${secs}`;
 }
 
-export default function PracticeTimer({ timer, onStart, onPause, onReset }: Props) {
-  const progress = (TOTAL_SECONDS - timer.remaining) / TOTAL_SECONDS;
+export default function PracticeTimer({ timer, onStart, onPause, onReset, onLengthChange }: Props) {
+  const progress = timer.total > 0 ? (timer.total - timer.remaining) / timer.total : 0;
   const isComplete = timer.remaining === 0 && !timer.isRunning && timer.startedAt !== null;
   const ringStyle: React.CSSProperties = {
     background: `conic-gradient(hsl(var(--primary)) ${progress * 360}deg, hsl(var(--border)/0.3) 0deg)`,
@@ -32,7 +31,7 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset }: Prop
   return (
     <Card className="border-primary/60 bg-overlay/30">
       <CardHeader className="text-center">
-        <CardTitle className="text-primary">Two-Minute Timer</CardTitle>
+        <CardTitle className="text-primary">Rep timer</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-4">
         <div
@@ -42,7 +41,7 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset }: Prop
           aria-valuenow={Math.round(progress * 100)}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-valuetext={`${formatTime(timer.remaining)} remaining out of 2 minutes`}
+          aria-valuetext={`${formatTime(timer.remaining)} remaining of ${formatTime(timer.total)}`}
         >
           <div
             className={`absolute inset-1 rounded-full transition-all ${isComplete ? 'animate-pulse' : ''}`}
@@ -61,6 +60,30 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset }: Prop
             </span>
           </div>
         </div>
+        <fieldset className="w-full" disabled={timer.isRunning}>
+          <legend className="sr-only">Rep length</legend>
+          <div className="flex flex-wrap justify-center gap-1.5">
+            {TIMER_LENGTHS.map((option) => {
+              const active = timer.total === option.seconds;
+              return (
+                <button
+                  key={option.seconds}
+                  type="button"
+                  onClick={() => onLengthChange(option.seconds)}
+                  aria-pressed={active}
+                  title={option.hint}
+                  className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2 disabled:opacity-50 ${
+                    active
+                      ? 'border-primary/70 bg-primary/15 text-foreground'
+                      : 'border-border/50 text-muted-foreground hover:border-border/70 hover:text-foreground'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
         <div className="flex flex-wrap justify-center gap-2">
           <Button
             onClick={onStart}
@@ -92,8 +115,8 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset }: Prop
           </p>
         ) : null}
         <p className="text-sm text-center text-muted-foreground">
-          Practice aloud or time your written outreach draft. Your practice time is saved with the
-          session. Reset clears it.
+          Practice aloud, or time your written message as you read it back. The length follows the
+          scenario, and your practice time is saved with the rep.
         </p>
       </CardContent>
     </Card>

@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import PlateHeader from '../components/PlateHeader.astro';
 import ResumeGameApp from '../components/ResumeGame';
 import ErrorBoundary from '../components/shared/ErrorBoundary';
 
@@ -55,7 +56,13 @@ const resumeNoScriptContext = [
   noScriptContext={resumeNoScriptContext}
 >
   <div class="relative space-y-10 overflow-hidden px-4 pb-16 pt-4 sm:pt-6">
-    <h1 class="sr-only">Resume Bullet Game</h1>
+    <PlateHeader
+      tag="Plate II · Prove"
+      roman="II"
+      title="The Resume Game"
+      description="Paste a resume and every achievement line is scored for action, result, and measure. Rewrite the weak ones and watch the score move."
+      accent="gold"
+    />
     <section class="mx-auto w-full max-w-6xl">
       <ErrorBoundary client:load>
         <ResumeGameApp

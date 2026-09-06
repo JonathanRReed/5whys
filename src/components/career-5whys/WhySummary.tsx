@@ -20,7 +20,7 @@ export default function WhySummary({
   children,
 }: WhySummaryProps) {
   return (
-    <Card className="bg-linear-to-br from-iris/20 via-transparent to-primary/20 border-border/50 text-foreground ">
+    <Card className="border-foam/40 bg-overlay/25 text-foreground">
       <CardHeader>
         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Session summary</p>
         <CardTitle className="text-2xl font-semibold text-foreground">Why Statement</CardTitle>

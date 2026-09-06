@@ -52,43 +52,37 @@ function formatDate(iso: string | null): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function ScoreRing({ value, label, color }: { value: number; label: string; color: string }) {
-  // Scores are clamped at the source, but clamp here too so the arc never overflows.
-  const clamped = Math.max(0, Math.min(100, Math.round(value)));
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <div className="relative flex h-20 w-20 items-center justify-center rounded-full border-4 border-border/30">
-        <svg
-          aria-hidden="true"
-          className="absolute inset-0 h-full w-full -rotate-90"
-          viewBox="0 0 100 100"
-        >
-          <circle
-            cx="50"
-            cy="50"
-            r="42"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="8"
-            className="text-border/30"
-          />
-          <circle
-            cx="50"
-            cy="50"
-            r="42"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="8"
-            strokeLinecap="round"
-            strokeDasharray={`${clamped * 2.64} 264`}
-            className={color}
-          />
-        </svg>
-        <span className="relative text-xl font-bold">{clamped}</span>
-      </div>
-      <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{label}</span>
-    </div>
-  );
+/**
+ * One line naming what the visitor has actually saved, in the order they
+ * would have made it. Counts belong in a sentence; only a real 0-100 score
+ * earns its own numeral.
+ */
+function ledgerSentence(data: CareerDashboardData): string {
+  const parts: string[] = [];
+  if (data.reflection?.snapshotCount) {
+    const n = data.reflection.snapshotCount;
+    const topic = data.reflection.latestTopic ? ` on ${data.reflection.latestTopic}` : '';
+    parts.push(`${n === 1 ? 'one reflection' : `${n} reflections`}${topic}`);
+  }
+  if (data.resume?.bulletCount) {
+    const n = data.resume.bulletCount;
+    parts.push(`${n === 1 ? 'one scored resume line' : `${n} scored resume lines`}`);
+  }
+  if (data.networking?.sessionCount) {
+    const n = data.networking.sessionCount;
+    const avg = data.networking.averageRating;
+    parts.push(
+      `${n === 1 ? 'one practice round' : `${n} practice rounds`}${avg ? ` averaging ${avg} of 5` : ''}`
+    );
+  }
+  if (data.glowup?.storyCount) {
+    const n = data.glowup.storyCount;
+    const role = data.glowup.currentRoleTitle ? ` for ${data.glowup.currentRoleTitle}` : '';
+    parts.push(`${n === 1 ? 'one interview story' : `${n} interview stories`}${role}`);
+  }
+  if (parts.length === 0) return 'Nothing saved in this browser yet.';
+  if (parts.length === 1) return `You have ${parts[0]}.`;
+  return `You have ${parts.slice(0, -1).join(', ')}, and ${parts[parts.length - 1]}.`;
 }
 
 export default function CareerDashboard() {
@@ -201,78 +195,30 @@ export default function CareerDashboard() {
         </div>
       )}
 
-      {/* Score cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* What is on file. A sentence, not a wall of rings: three of the four
+          values here are counts, and a progress ring around a count reads as a
+          proportion it does not have. The resume score is the one real 0-100
+          measure, so it is the only figure given its own weight. */}
+      <section className="border-y border-border/40 py-6">
+        <p className="eyebrow text-muted-foreground">On file</p>
+        <p className="mt-3 max-w-3xl text-pretty text-lg leading-relaxed text-foreground">
+          {ledgerSentence(data)}
+        </p>
         {data.resume && (
-          <Card className="border-love/30 bg-overlay/25">
-            <CardContent className="p-5">
-              <ScoreRing value={data.resume.averageScore} label="Resume" color="text-love" />
-              <div className="mt-3 text-center text-xs text-muted-foreground">
-                Average of {data.resume.bulletCount}{' '}
-                {data.resume.bulletCount === 1 ? 'bullet score' : 'bullet scores'}
-                {data.resume.lastAnalyzedAt ? ` · ${formatDate(data.resume.lastAnalyzedAt)}` : ''}
-              </div>
-            </CardContent>
-          </Card>
+          <p className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-muted-foreground">
+            <span className="font-display text-4xl leading-none text-love">
+              {Math.max(0, Math.min(100, Math.round(data.resume.averageScore)))}
+            </span>
+            <span className="text-sm">
+              average bullet score across {data.resume.bulletCount}{' '}
+              {data.resume.bulletCount === 1 ? 'line' : 'lines'}
+              {data.resume.lastAnalyzedAt
+                ? `, ${formatDate(data.resume.lastAnalyzedAt).toLowerCase()}`
+                : ''}
+            </span>
+          </p>
         )}
-        {data.reflection && data.reflection.snapshotCount > 0 && (
-          <Card className="border-foam/30 bg-overlay/25">
-            <CardContent className="p-5">
-              <div className="flex flex-col items-center gap-1">
-                <div className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-foam/30">
-                  <span className="text-xl font-bold text-foam">
-                    {data.reflection.snapshotCount}
-                  </span>
-                </div>
-                <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                  Reflections
-                </span>
-              </div>
-              <div className="mt-3 text-center text-xs text-muted-foreground">
-                {data.reflection.latestTopic || 'Career direction'}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        {data.glowup && data.glowup.storyCount > 0 && (
-          <Card className="border-iris/30 bg-overlay/25">
-            <CardContent className="p-5">
-              <div className="flex flex-col items-center gap-1">
-                <div className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-iris/30">
-                  <span className="text-xl font-bold text-iris">{data.glowup.storyCount}</span>
-                </div>
-                <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                  Stories
-                </span>
-              </div>
-              <div className="mt-3 text-center text-xs text-muted-foreground">
-                {data.glowup.currentRoleTitle || 'Interview prep'}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        {data.networking && data.networking.sessionCount > 0 && (
-          <Card className="border-gold/30 bg-overlay/25">
-            <CardContent className="p-5">
-              <div className="flex flex-col items-center gap-1">
-                <div className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-gold/30">
-                  <span className="text-xl font-bold text-gold">
-                    {data.networking.sessionCount}
-                  </span>
-                </div>
-                <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                  Practice rounds
-                </span>
-              </div>
-              {data.networking.averageRating && (
-                <div className="mt-3 text-center text-xs text-muted-foreground">
-                  Avg rating: {data.networking.averageRating}/5
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-      </div>
+      </section>
 
       {/* Skills */}
       {data.resume && data.resume.hardSkills.length > 0 && (

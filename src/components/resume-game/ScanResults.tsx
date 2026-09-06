@@ -95,7 +95,7 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
               aria-label="Resume signal strength"
             >
               <div
-                className="h-full rounded-full bg-linear-to-r from-foam via-iris to-love"
+                className="h-full rounded-full bg-foam"
                 style={{ width: `${signalReport.visible}%` }}
               />
             </div>
@@ -284,7 +284,7 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
                       </div>
                       <div className="mt-2 h-2 w-full overflow-hidden rounded-full border border-border/35 bg-overlay/25">
                         <div
-                          className="h-full rounded-full bg-linear-to-r from-love via-gold to-foam"
+                          className="h-full rounded-full bg-foam"
                           style={{ width: `${signalReport.benchmarkScore}%` }}
                         />
                       </div>
@@ -431,7 +431,7 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
                       </div>
                       <div className="h-2 w-full overflow-hidden rounded-full border border-border/35 bg-overlay/25">
                         <div
-                          className="h-full rounded-full bg-linear-to-r from-love via-gold to-foam"
+                          className="h-full rounded-full bg-foam"
                           style={{ width: `${signalReport.impactCoverage}%` }}
                         />
                       </div>

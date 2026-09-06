@@ -17,7 +17,7 @@ import {
   saveVersion,
 } from '../../utils/storage';
 import { useClipboard } from './useClipboard';
-import { useTimer } from './useTimer';
+import { DEFAULT_TIMER_SECONDS, SCENARIO_TIMER_SECONDS, useTimer } from './useTimer';
 
 export type ScenarioIngredient = {
   id: string;
@@ -178,7 +178,7 @@ export function useNetworkingPractice() {
   const [draft, setDraftState] = React.useState('');
   const [draftHydrated, setDraftHydrated] = React.useState(false);
 
-  const { timer, resetTimer, startTimer, pauseTimer } = useTimer();
+  const { timer, resetTimer, startTimer, pauseTimer, setTimerLength } = useTimer();
   const { copiedKey, handleCopy } = useClipboard();
 
   // Restore the in-progress rep once. The intro it belonged to is re-selected
@@ -224,6 +224,21 @@ export function useNetworkingPractice() {
     () => scenarios.find((s) => s.id === currentVersion?.scenarioId),
     [currentVersion?.scenarioId]
   );
+  // Each scenario rehearses at its own length until the visitor picks one.
+  const lengthPinnedRef = React.useRef(false);
+  const pinTimerLength = React.useCallback(
+    (seconds: number) => {
+      lengthPinnedRef.current = true;
+      setTimerLength(seconds);
+    },
+    [setTimerLength]
+  );
+  const scenarioId = currentScenario?.id;
+  React.useEffect(() => {
+    if (lengthPinnedRef.current || !scenarioId) return;
+    setTimerLength(SCENARIO_TIMER_SECONDS[scenarioId] ?? DEFAULT_TIMER_SECONDS);
+  }, [scenarioId, setTimerLength]);
+
   const scenarioSteps = currentScenario?.what ?? [];
   const ingredients = currentScenario?.ingredients ?? [];
   const rapportSamples = currentScenario?.rapportSamples ?? [];
@@ -477,6 +492,7 @@ export function useNetworkingPractice() {
     resetTimer,
     startTimer,
     pauseTimer,
+    setTimerLength: pinTimerLength,
     saveCurrentSession,
     removeSession,
     exportSessions,

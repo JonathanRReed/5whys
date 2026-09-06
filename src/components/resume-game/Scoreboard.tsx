@@ -31,7 +31,7 @@ export default function Scoreboard({
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Primary metric, largest and most prominent */}
-        <div className="rounded-2xl border border-foam/60 bg-linear-to-br from-foam/15 to-overlay/30 p-6 text-center ring-1 ring-foam/30">
+        <div className="rounded-2xl border border-foam/60 bg-foam/10 p-6 text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
             Average bullet score
           </p>

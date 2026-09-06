@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import PlateHeader from '../components/PlateHeader.astro';
 import Career5Whys from '../components/Career5Whys';
 import ErrorBoundary from '../components/shared/ErrorBoundary';
 import { siteConfig } from '../config/site';
@@ -75,7 +76,13 @@ const careerNoScriptContext = [
   noScriptContext={careerNoScriptContext}
 >
   <div class="relative overflow-hidden px-4 pb-16 pt-4 sm:pt-6">
-    <h1 class="sr-only">Career Reflection Five Whys</h1>
+    <PlateHeader
+      tag="Plate I · Reflect"
+      roman="I"
+      title="The Five Whys"
+      description="Ask why five times until the answer stops moving. You leave with the reason underneath the obvious one, in your own words, and one step that tests it."
+      accent="foam"
+    />
     <section id="why-flow" class="mx-auto w-full max-w-6xl">
       <ErrorBoundary client:load>
         <Career5Whys client:load showHeader={false} showFooter={false} className="pb-8" />

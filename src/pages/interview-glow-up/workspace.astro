@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
+import PlateHeader from '../../components/PlateHeader.astro';
 import InterviewGlowUpWorkspace from '../../components/interview-glow-up/InterviewGlowUpWorkspace';
 import ErrorBoundary from '../../components/shared/ErrorBoundary';
 ---
@@ -15,6 +16,13 @@ import ErrorBoundary from '../../components/shared/ErrorBoundary';
   structuredData={[]}
 >
   <div class="relative space-y-10 overflow-hidden px-4 pb-16 pt-4 sm:pt-6">
+    <PlateHeader
+      tag="Plate IV · Prepare"
+      roman="IV"
+      title="Interview Workspace"
+      description="Decode the job, build stories that prove the skills it tests, then pack the best five for the call."
+      accent="love"
+    />
     <section class="mx-auto w-full max-w-7xl">
       <ErrorBoundary client:load>
         <InterviewGlowUpWorkspace client:load />
