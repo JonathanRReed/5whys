@@ -3,6 +3,28 @@
 Short, dated records of choices that are not obvious from the code. Newest
 first. The May 2025 "megaplan" this file replaces is summarized at the bottom.
 
+## 2026-09-05 Print and motion after the component swap
+
+Adopting Radix brought two regressions that only appear off the happy path,
+both fixed:
+
+- **Reduced motion stopped working.** Our media query covered our own named
+  animations but not the `animate-in` / `fade-in` / `zoom-in` utilities that
+  tw-animate-css adds to dialogs, selects, and tooltips. Verified: those
+  elements now compute `animation-name: none` under `prefers-reduced-motion`.
+- **The dialog printed its scrim.** A modal's overlay and scroll lock belong to
+  the screen; on paper they laid a wash over the packet. Printing with a modal
+  open now prints the modal rather than the page behind it.
+
+Also trimmed for paper: the two full-viewport decorative layers (the blueprint
+grid and the grain), the browser-storage reassurance banner, and the two-column
+story grid, which left half of every row empty.
+
+**Known cosmetic issue:** headless PDF rendering puts a blank leading page
+before the packet. Content starts 114px into a 1676px document, so this looks
+like a pagination artifact of the PDF renderer rather than a layout defect. The
+packet itself prints complete and paginates correctly.
+
 ## 2026-09-05 Component libraries reviewed, shadcn adopted
 
 **Reviewed:** Rare UI (declined, see below), ElevenLabs UI (agent and audio

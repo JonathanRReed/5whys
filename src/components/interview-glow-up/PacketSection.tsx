@@ -150,7 +150,7 @@ export default function PacketSection({
                 )}
               </div>
             ) : (
-              <ul className="grid gap-2 sm:grid-cols-2">
+              <ul className="grid gap-2 sm:grid-cols-2 print:grid-cols-1">
                 {packetStories.map((story) => (
                   <li
                     key={story.id}

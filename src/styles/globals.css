@@ -784,6 +784,18 @@ input[type="range"]::-moz-range-thumb {
     scroll-behavior: auto;
   }
 
+  /* Entrance and exit animations from the component library. */
+  [class*="animate-in"],
+  [class*="animate-out"],
+  [class*="fade-in"],
+  [class*="fade-out"],
+  [class*="zoom-in"],
+  [class*="zoom-out"],
+  [class*="slide-in"],
+  [class*="slide-out"] {
+    animation: none !important;
+  }
+
   .js .reveal,
   .js .reveal-stagger > * {
     opacity: 1;
@@ -813,6 +825,26 @@ input[type="range"]::-moz-range-thumb {
    Print Stylesheet for Interview Glow Up
    ============================================================================ */
 @media print {
+  /* The dialog scrim and its scroll lock belong to the screen only. */
+  [data-slot="dialog-overlay"] {
+    display: none !important;
+  }
+
+  /* With a dialog open, print the dialog rather than the page behind it. */
+  body:has([data-slot="dialog-content"]) > *:not(:has([data-slot="dialog-content"])) {
+    display: none !important;
+  }
+
+  body {
+    overflow: visible !important;
+  }
+
+  /* A viewport-height shell reserves a whole blank sheet before the content. */
+  .min-h-screen,
+  .min-h-dvh {
+    min-height: 0 !important;
+  }
+
   /* Reset colors for print */
   :root {
     --background: 220 34% 99%;

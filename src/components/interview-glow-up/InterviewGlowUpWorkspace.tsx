@@ -123,7 +123,7 @@ export default function InterviewGlowUpWorkspace() {
     <div className="space-y-6">
       <WorkspaceHeader onClearData={handleClearData} />
 
-      <div className="flex items-center gap-2 rounded-lg border border-foam/25 bg-foam/5 px-4 py-2 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 rounded-lg border border-foam/25 bg-foam/5 px-4 py-2 text-sm text-muted-foreground print:hidden">
         <svg
           aria-hidden="true"
           className="h-4 w-4 shrink-0 text-foam"

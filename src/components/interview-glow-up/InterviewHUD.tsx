@@ -153,7 +153,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
       <DialogContent
         ref={containerRef}
         showCloseButton={false}
-        className="flex h-dvh max-h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-0 bg-background p-0 text-foreground shadow-none top-0 left-0 sm:max-w-none print:relative print:h-auto print:bg-white print:text-black"
+        className="flex h-dvh max-h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-0 bg-background p-0 text-foreground shadow-none top-0 left-0 sm:max-w-none print:relative print:h-auto print:max-h-none print:overflow-visible print:bg-white print:text-black"
       >
         <DialogTitle className="sr-only">
           Interview HUD for {role?.jobTitle ?? 'this packet'}
