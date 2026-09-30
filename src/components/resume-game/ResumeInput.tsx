@@ -126,7 +126,11 @@ export default function ResumeInput({
             <p className="text-xs text-muted-foreground">Reading file...</p>
           </div>
         )}
-        {fileError && <p className="text-sm text-love" role="alert">{fileError}</p>}
+        {fileError && (
+          <p className="text-sm text-love" role="alert">
+            {fileError}
+          </p>
+        )}
         {status ? (
           <p className="text-sm text-foam" role="status">
             {status}

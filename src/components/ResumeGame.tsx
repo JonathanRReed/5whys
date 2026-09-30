@@ -186,7 +186,12 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
   const [fileError, setFileError] = React.useState<string | null>(null);
   const uploadSequence = React.useRef(0);
 
-  React.useEffect(() => () => { uploadSequence.current += 1; }, []);
+  React.useEffect(
+    () => () => {
+      uploadSequence.current += 1;
+    },
+    []
+  );
 
   const cancelUpload = () => {
     uploadSequence.current += 1;
