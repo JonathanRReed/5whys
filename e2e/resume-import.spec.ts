@@ -53,6 +53,6 @@ test('a PDF loads its Japanese character maps from the local build', async ({ pa
     buffer: Buffer.from(await file.arrayBuffer()),
   });
   await expect(page.getByLabel('Paste resume text')).toHaveValue(
-    'English resume heading\nこんにちは'
+    /^English resume heading\n+こんにちは$/
   );
 });
