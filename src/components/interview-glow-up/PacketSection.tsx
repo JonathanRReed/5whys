@@ -43,6 +43,13 @@ export default function PacketSection({
     if (currentRole && !currentPacket) setData(ensurePacketForRole(data, currentRole.id));
   }, [currentRole, currentPacket, data, setData]);
 
+  // Performance optimization: Convert topStoryIds array to a Set for O(1) lookups instead of O(M) Array.includes.
+  // Reduces overall story filtering from O(N*M) to O(N) complexity where N is data.stories length and M is topStoryIds length.
+  const topStoryIdSet = React.useMemo(
+    () => new Set(currentPacket?.topStoryIds ?? []),
+    [currentPacket?.topStoryIds]
+  );
+
   if (!currentRole || !currentPacket) {
     return (
       <div className="rounded-xl border border-dashed border-border/40 p-8 text-center">
@@ -64,8 +71,8 @@ export default function PacketSection({
     );
   }
 
-  const packetStories = data.stories.filter((s) => currentPacket.topStoryIds.includes(s.id));
-  const otherStories = data.stories.filter((s) => !currentPacket.topStoryIds.includes(s.id));
+  const packetStories = data.stories.filter((s) => topStoryIdSet.has(s.id));
+  const otherStories = data.stories.filter((s) => !topStoryIdSet.has(s.id));
 
   // Group packet stories by primary skill for a scannable rehearsal order.
   const storiesBySkill: [string, Story[]][] = [];
