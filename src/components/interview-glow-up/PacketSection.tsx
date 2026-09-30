@@ -64,8 +64,10 @@ export default function PacketSection({
     );
   }
 
-  const packetStories = data.stories.filter((s) => currentPacket.topStoryIds.includes(s.id));
-  const otherStories = data.stories.filter((s) => !currentPacket.topStoryIds.includes(s.id));
+  // Performance optimization: convert array to Set for O(1) lookups during filtering
+  const topStoryIdsSet = new Set(currentPacket.topStoryIds);
+  const packetStories = data.stories.filter((s) => topStoryIdsSet.has(s.id));
+  const otherStories = data.stories.filter((s) => !topStoryIdsSet.has(s.id));
 
   // Group packet stories by primary skill for a scannable rehearsal order.
   const storiesBySkill: [string, Story[]][] = [];
