@@ -38,7 +38,7 @@ describe('resume file import', () => {
   });
 
   it('rejects corrupt PDF bytes instead of scoring file syntax', async () => {
-    await expect(extractTextFromFile(new File(['%PDF-1.7\n' + 'not a valid document '.repeat(40)], 'broken.pdf')))).rejects.toThrow(/PDF/i);
+    await expect(extractTextFromFile(new File(['%PDF-1.7\n' + 'not a valid document '.repeat(40)], 'broken.pdf'))).rejects.toThrow(/PDF/i);
   });
 
   it('rejects unsupported formats without reading binary bytes as text', async () => {
