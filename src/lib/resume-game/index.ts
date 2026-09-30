@@ -33,5 +33,11 @@ export {
 export { extractSkills } from './skills';
 export { detectResumeStructure } from './structure';
 export { generateBulletSuggestions, signalGrade } from './suggestions';
-export { countPowerVerbs, decodeEntities, escapeHtml, highlightResume } from './text';
+export {
+  countPowerVerbs,
+  decodeEntities,
+  escapeHtml,
+  highlightResume,
+  highlightResumeToNodes,
+} from './text';
 export type { BulletFields, BulletRecord, SignalReport, StoredResumeSession } from './types';

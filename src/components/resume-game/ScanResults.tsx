@@ -4,7 +4,7 @@ import { signalGrade, suggestStrongerVerb } from '../../lib/resume-game';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 type Props = {
-  highlightedResume: string;
+  highlightedResume: React.ReactNode;
   signalReport: SignalReport;
   resumeOutOfDate: boolean;
 };
@@ -50,11 +50,9 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
               <mark className="rounded bg-love/30 px-1 text-foreground">Action verbs</mark>
             </span>
           </div>
-          <div
-            className="min-h-[200px] rounded-2xl border border-border/40 bg-card/65 p-6 text-sm leading-relaxed"
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: highlightResume escapes the text before wrapping matches in mark tags
-            dangerouslySetInnerHTML={{ __html: highlightedResume.replace(/\n/g, '<br/>') }}
-          />
+          <div className="min-h-[200px] rounded-2xl border border-border/40 bg-card/65 p-6 text-sm leading-relaxed">
+            {highlightedResume}
+          </div>
         </CardContent>
       </Card>
 

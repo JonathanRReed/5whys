@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { POWER_VERB_GLOBAL_PATTERN } from './constants';
 
 const REGEX_SPECIAL_CHARS = /[.*+?^${}()|[\]\\]/g;
@@ -81,4 +82,88 @@ export function countPowerVerbs(text: string) {
 
 export function uniqueId(prefix: string, index: number) {
   return `${prefix}-${index}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+export function highlightResumeToNodes(text: string): React.ReactNode[] {
+  if (!text) return [];
+  const decoded = decodeEntities(text);
+  const lines = decoded.split('\n');
+  const result: React.ReactNode[] = [];
+
+  lines.forEach((line, lineIdx) => {
+    if (lineIdx > 0) {
+      result.push(React.createElement('br', { key: `br-${lineIdx}` }));
+    }
+
+    const matches: Array<{ start: number; end: number; type: 'number' | 'verb'; text: string }> =
+      [];
+
+    const numberRegex = /\d+\.?\d*%?/g;
+    let match = numberRegex.exec(line);
+    while (match !== null) {
+      matches.push({
+        start: match.index,
+        end: match.index + match[0].length,
+        type: 'number',
+        text: match[0],
+      });
+      match = numberRegex.exec(line);
+    }
+
+    const verbRegex = new RegExp(POWER_VERB_GLOBAL_PATTERN.source, 'gi');
+    let vMatch = verbRegex.exec(line);
+    while (vMatch !== null) {
+      matches.push({
+        start: vMatch.index,
+        end: vMatch.index + vMatch[0].length,
+        type: 'verb',
+        text: vMatch[0],
+      });
+      vMatch = verbRegex.exec(line);
+    }
+
+    matches.sort((a, b) => a.start - b.start);
+    const filteredMatches: typeof matches = [];
+    let lastEnd = 0;
+    for (const match of matches) {
+      if (match.start >= lastEnd) {
+        filteredMatches.push(match);
+        lastEnd = match.end;
+      }
+    }
+
+    let cursor = 0;
+    filteredMatches.forEach((match, idx) => {
+      if (match.start > cursor) {
+        result.push(line.slice(cursor, match.start));
+      }
+      if (match.type === 'number') {
+        result.push(
+          React.createElement(
+            'mark',
+            {
+              key: `l${lineIdx}-m${idx}`,
+              className: 'bg-primary/30 text-primary-foreground px-1 rounded',
+            },
+            match.text
+          )
+        );
+      } else {
+        result.push(
+          React.createElement(
+            'mark',
+            { key: `l${lineIdx}-m${idx}`, className: 'bg-love/30 text-foreground px-1 rounded' },
+            match.text
+          )
+        );
+      }
+      cursor = match.end;
+    });
+
+    if (cursor < line.length) {
+      result.push(line.slice(cursor));
+    }
+  });
+
+  return result;
 }

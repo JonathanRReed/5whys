@@ -19,6 +19,7 @@ import {
   getVerbStrength,
   hasOutcomeLink,
   hasQuantifier,
+  highlightResumeToNodes,
   POWER_VERBS_STRONG,
   STUDENT_SAMPLE_RESUME,
   scoreBullet,
@@ -372,5 +373,28 @@ describe('escapeHtml', () => {
   it('escapes HTML characters', () => {
     expect(escapeHtml('<script>')).not.toContain('<');
     expect(escapeHtml('"quoted"')).not.toContain('"');
+  });
+});
+
+describe('highlightResumeToNodes', () => {
+  it('returns an empty array for empty input', () => {
+    expect(highlightResumeToNodes('')).toEqual([]);
+  });
+
+  it('safely tokenizes plain text with numbers and power verbs into React nodes', () => {
+    const input = 'Led a team of 5 engineers';
+    const nodes = highlightResumeToNodes(input);
+    expect(nodes).toBeDefined();
+    expect(nodes.length).toBeGreaterThan(0);
+  });
+
+  it('prevents XSS by keeping HTML tags as raw text strings in React nodes', () => {
+    const xssInput = '<script>alert("xss")</script><img src=x onerror=alert(1)> Led 10 projects';
+    const nodes = highlightResumeToNodes(xssInput);
+
+    const containsRawScriptString = nodes.some(
+      (node) => typeof node === 'string' && node.includes('<script>alert("xss")</script>')
+    );
+    expect(containsRawScriptString).toBe(true);
   });
 });
