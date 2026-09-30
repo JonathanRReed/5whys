@@ -69,4 +69,3 @@ export function japanesePdfFile(): File {
   );
   return new File(parts, 'japanese-resume.pdf', { type: 'application/pdf' });
 }
-
