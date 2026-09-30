@@ -50,14 +50,23 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
   const handleBatchAddToPacket = () => {
     if (!currentPacket || selectedIds.size === 0) return;
 
-    const newIds = Array.from(selectedIds).filter((id) => !currentPacket.topStoryIds.includes(id));
+    // Performance Optimization:
+    // Convert currentPacket.topStoryIds to a Set for O(1) lookups during filter,
+    // reducing filtering time complexity from O(M * N) to O(M).
+    const topStoryIdsSet = new Set(currentPacket.topStoryIds);
+    const newIds = Array.from(selectedIds).filter((id) => !topStoryIdsSet.has(id));
+
+    // Convert newIds to a Set for O(1) lookups when updating stories,
+    // reducing mapping complexity from O(S * K) to O(S).
+    const newIdsSet = new Set(newIds);
+
     const updatedData = updatePacket(data, currentPacket.id, {
       topStoryIds: [...currentPacket.topStoryIds, ...newIds],
     });
     const finalData = {
       ...updatedData,
       stories: updatedData.stories.map((s) =>
-        newIds.includes(s.id) ? { ...s, lastUsedAt: Date.now() } : s
+        newIdsSet.has(s.id) ? { ...s, lastUsedAt: Date.now() } : s
       ),
     };
     setData(finalData);
