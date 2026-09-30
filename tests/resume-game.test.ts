@@ -374,3 +374,39 @@ describe('escapeHtml', () => {
     expect(escapeHtml('"quoted"')).not.toContain('"');
   });
 });
+
+describe('parseHighlightedResume', () => {
+  it('returns empty array for empty text', async () => {
+    const { parseHighlightedResume } = await import('../src/lib/resume-game');
+    expect(parseHighlightedResume('')).toEqual([]);
+  });
+
+  it('parses numbers, verbs, text, and newlines into structured tokens', async () => {
+    const { parseHighlightedResume } = await import('../src/lib/resume-game');
+    const input = 'Led 5 projects.\nBuilt 2 tools.';
+    const tokens = parseHighlightedResume(input);
+    expect(tokens).toEqual([
+      { type: 'verb', text: 'Led' },
+      { type: 'text', text: ' ' },
+      { type: 'number', text: '5' },
+      { type: 'text', text: ' projects.' },
+      { type: 'newline' },
+      { type: 'verb', text: 'Built' },
+      { type: 'text', text: ' ' },
+      { type: 'number', text: '2' },
+      { type: 'text', text: ' tools.' },
+    ]);
+  });
+
+  it('safely handles untrusted HTML input as text tokens', async () => {
+    const { parseHighlightedResume } = await import('../src/lib/resume-game');
+    const malicious = '<script>alert("xss")</script> Led 100%';
+    const tokens = parseHighlightedResume(malicious);
+    expect(tokens).toEqual([
+      { type: 'text', text: '<script>alert("xss")</script> ' },
+      { type: 'verb', text: 'Led' },
+      { type: 'text', text: ' ' },
+      { type: 'number', text: '100%' },
+    ]);
+  });
+});
