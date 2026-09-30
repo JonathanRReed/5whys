@@ -36,7 +36,6 @@ export async function readPdfText(file: File): Promise<string> {
   }
   const loading = pdfjs.getDocument({
     data: new Uint8Array(await file.arrayBuffer()),
-    isEvalSupported: false,
     useSystemFonts: false,
   });
   let timer: ReturnType<typeof setTimeout> | undefined;
