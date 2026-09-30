@@ -34,6 +34,102 @@ function Callout({ children, variant = 'default' }: CalloutProps) {
   );
 }
 
+export interface AdviceItem {
+  title: string;
+  desc: React.ReactNode;
+  eyebrow?: string;
+  icon?: React.ReactNode;
+}
+
+interface AdviceListProps {
+  items: AdviceItem[];
+  layout?: 'grid' | 'stack' | 'list';
+  className?: string;
+}
+
+export function AdviceList({ items, layout = 'grid', className }: AdviceListProps) {
+  if (layout === 'list') {
+    return (
+      <ul className={cn('space-y-3', className)}>
+        {items.map((item, i) => (
+          <li key={i} className="flex items-start gap-3">
+            {item.icon && (
+              <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-foam/15 text-foam">
+                {item.icon}
+              </div>
+            )}
+            <div>
+              <p className="font-medium text-foreground">{item.title}</p>
+              <div className="text-muted-foreground">{item.desc}</div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  const layoutClasses = layout === 'grid' ? 'grid gap-3 sm:grid-cols-2' : 'space-y-4';
+
+  return (
+    <div className={cn(layoutClasses, className)}>
+      {items.map((item, i) => (
+        <div key={i} className="rounded-xl border border-border/50 bg-overlay/20 p-4">
+          {item.eyebrow ? (
+            <p className="eyebrow">{item.eyebrow}</p>
+          ) : (
+            <p className="text-sm font-semibold text-foreground">{item.title}</p>
+          )}
+          <div
+            className={cn(
+              'mt-1 text-sm',
+              item.eyebrow ? 'text-foreground' : 'text-muted-foreground'
+            )}
+          >
+            {item.desc}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const STUDENT_EXPERIENCE_ADVICE: AdviceItem[] = [
+  {
+    title: 'Class projects',
+    desc: 'The part you owned, the decision you made when the plan broke, the bug you found at 2am before the demo.',
+  },
+  {
+    title: 'Internships',
+    desc: 'Even a small ticket counts if you can explain the context, your change, and what happened after it shipped.',
+  },
+  {
+    title: 'Clubs and volunteering',
+    desc: 'The event you organized, the budget you managed, the members you recruited. That is leadership and ownership, named plainly.',
+  },
+  {
+    title: 'Part-time jobs',
+    desc: 'Handling a rush, an unhappy customer, training a new hire. Interviewers trust these stories because they are hard to fake.',
+  },
+];
+
+const NERVES_ADVICE: AdviceItem[] = [
+  {
+    eyebrow: 'Before',
+    title: 'Before',
+    desc: '"I\'m prepared. I know my stories. This is just a conversation."',
+  },
+  {
+    eyebrow: 'During',
+    title: 'During',
+    desc: '"If I blank, I can pause, breathe, and check my notes. It\'s normal."',
+  },
+  {
+    eyebrow: 'After',
+    title: 'After',
+    desc: '"I showed up and gave honest answers. That\'s a win regardless of outcome."',
+  },
+];
+
 export default function InterviewGlowUpAdvice() {
   return (
     <article className="space-y-12 rounded-2xl border border-border/50 bg-card/45 px-6 py-12 sm:px-10 sm:py-14">
@@ -215,36 +311,7 @@ export default function InterviewGlowUpAdvice() {
           specific and can show the receipt. If you are still in school, you have four story sources
           most candidates ignore:
         </p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
-            <p className="text-sm font-semibold text-foreground">Class projects</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              The part you owned, the decision you made when the plan broke, the bug you found at
-              2am before the demo.
-            </p>
-          </div>
-          <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
-            <p className="text-sm font-semibold text-foreground">Internships</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Even a small ticket counts if you can explain the context, your change, and what
-              happened after it shipped.
-            </p>
-          </div>
-          <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
-            <p className="text-sm font-semibold text-foreground">Clubs and volunteering</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              The event you organized, the budget you managed, the members you recruited. That is
-              leadership and ownership, named plainly.
-            </p>
-          </div>
-          <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
-            <p className="text-sm font-semibold text-foreground">Part-time jobs</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Handling a rush, an unhappy customer, training a new hire. Interviewers trust these
-              stories because they are hard to fake.
-            </p>
-          </div>
-        </div>
+        <AdviceList items={STUDENT_EXPERIENCE_ADVICE} layout="grid" className="mt-4" />
         <Callout variant="tip">
           <p className="font-medium">What counts as Proof without business metrics:</p>
           <ul className="mt-2 list-inside list-disc space-y-1 pl-2 text-sm">
@@ -258,26 +325,7 @@ export default function InterviewGlowUpAdvice() {
 
       {/* Normalize Nerves */}
       <Section title="Normalize the nerves">
-        <div className="space-y-4">
-          <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
-            <p className="eyebrow">Before</p>
-            <p className="mt-1 text-foreground">
-              "I'm prepared. I know my stories. This is just a conversation."
-            </p>
-          </div>
-          <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
-            <p className="eyebrow">During</p>
-            <p className="mt-1 text-foreground">
-              "If I blank, I can pause, breathe, and check my notes. It's normal."
-            </p>
-          </div>
-          <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
-            <p className="eyebrow">After</p>
-            <p className="mt-1 text-foreground">
-              "I showed up and gave honest answers. That's a win regardless of outcome."
-            </p>
-          </div>
-        </div>
+        <AdviceList items={NERVES_ADVICE} layout="stack" />
       </Section>
 
       {/* CTA */}
