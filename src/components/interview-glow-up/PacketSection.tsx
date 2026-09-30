@@ -64,8 +64,18 @@ export default function PacketSection({
     );
   }
 
-  const packetStories = data.stories.filter((s) => currentPacket.topStoryIds.includes(s.id));
-  const otherStories = data.stories.filter((s) => !currentPacket.topStoryIds.includes(s.id));
+  // Convert topStoryIds to Set for O(1) lookups and partition stories in a single O(N) pass
+  const topStorySet = new Set(currentPacket.topStoryIds);
+  const packetStories: Story[] = [];
+  const otherStories: Story[] = [];
+
+  for (const story of data.stories) {
+    if (topStorySet.has(story.id)) {
+      packetStories.push(story);
+    } else {
+      otherStories.push(story);
+    }
+  }
 
   // Group packet stories by primary skill for a scannable rehearsal order.
   const storiesBySkill: [string, Story[]][] = [];
