@@ -5,7 +5,7 @@ import {
   matchesTerm,
   POWER_VERB_PATTERN,
   POWER_VERB_START_PATTERN,
-  POWER_VERBS_STRONG,
+  POWER_VERBS_STRONG_SET,
   STOPWORDS,
   WEAK_WORDS,
 } from './constants';
@@ -163,10 +163,11 @@ export function computeBenchmarkScore(bullets: BulletRecord[]): {
   const varietyScore = clamp((uniqueVerbs.size / Math.max(1, varietyTarget)) * 10, 0, 10);
 
   // 3. Strong-tier verbs: 5 pts with two or more, 3 with one
+  // Optimized: use POWER_VERBS_STRONG_SET for O(1) membership lookups instead of O(M) Array.includes
   const uniqueStrongVerbs = new Set(
     bullets
       .map((b) => b.fields.verb?.toLowerCase())
-      .filter((v): v is string => !!v && POWER_VERBS_STRONG.includes(v))
+      .filter((v): v is string => !!v && POWER_VERBS_STRONG_SET.has(v))
   );
   const strongScore = uniqueStrongVerbs.size >= 2 ? 5 : uniqueStrongVerbs.size === 1 ? 3 : 0;
 

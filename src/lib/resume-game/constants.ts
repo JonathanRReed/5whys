@@ -214,9 +214,12 @@ export const POWER_VERBS_STRONG = [
   'doubled',
 ];
 
+// Pre-compiled Set for O(1) membership lookups on strong power verbs
+export const POWER_VERBS_STRONG_SET = new Set<string>(POWER_VERBS_STRONG);
+
 export function getVerbStrength(verb: string): 'weak' | 'medium' | 'strong' {
   const lower = verb.trim().toLowerCase();
-  if (POWER_VERBS_STRONG.includes(lower)) return 'strong';
+  if (POWER_VERBS_STRONG_SET.has(lower)) return 'strong';
   if (POWER_VERBS_WEAK.includes(lower) || INVOLVEMENT_VERBS.includes(lower)) return 'weak';
   return 'medium';
 }
