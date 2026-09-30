@@ -1,4 +1,5 @@
 import type { TextItem } from 'pdfjs-dist/types/src/display/api';
+import { createPdfDataFactory } from './pdf-data';
 
 const MAX_PAGES = 50;
 const MAX_TEXT_LENGTH = 200_000;
@@ -39,9 +40,13 @@ export async function readPdfText(file: File): Promise<string> {
     const worker = await import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url');
     pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
   }
+  const { PdfDataFactory, getAssetError } = createPdfDataFactory();
   const loading = pdfjs.getDocument({
     data: new Uint8Array(await file.arrayBuffer()),
     useSystemFonts: false,
+    BinaryDataFactory: PdfDataFactory,
+    useWorkerFetch: false,
+    stopAtErrors: true,
   });
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
@@ -57,6 +62,13 @@ export async function readPdfText(file: File): Promise<string> {
       for (let number = 1; number <= document.numPages; number += 1) {
         const page = await document.getPage(number);
         const content = await page.getTextContent();
+        const assetError = getAssetError();
+        if (assetError) {
+          throw new Error(
+            'This PDF could not load the font data needed to read all its text. Try exporting it again, using DOCX, or pasting the text.',
+            { cause: assetError }
+          );
+        }
         const text = pageText(content.items);
         length += text.length;
         if (length > MAX_TEXT_LENGTH) {
