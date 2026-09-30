@@ -101,20 +101,22 @@ export default function StoriesSection({
 
   // Questions likely to surface the skills this story covers
   const attachedPrompts = formData.questionPrompts ?? [];
+  // Optimization: Pre-compute a Set for O(1) lookup during filtering operations
+  const attachedPromptsSet = new Set(attachedPrompts);
   const coveredSkillIds = [formData.primarySkillId, ...(formData.otherSkillIds ?? [])].filter(
     (id): id is string => Boolean(id)
   );
   const skillQuestionSuggestions: QuestionPrompt[] = [];
   for (const skillId of coveredSkillIds) {
     for (const q of getQuestionsForSkill(skillId)) {
-      if (!attachedPrompts.includes(q.id) && !skillQuestionSuggestions.some((x) => x.id === q.id)) {
+      if (!attachedPromptsSet.has(q.id) && !skillQuestionSuggestions.some((x) => x.id === q.id)) {
         skillQuestionSuggestions.push(q);
       }
     }
   }
   const visibleSkillSuggestions = skillQuestionSuggestions.slice(0, MAX_SKILL_SUGGESTIONS);
   const generalSuggestions = showGeneralQuestions
-    ? getGeneralQuestions().filter((q) => !attachedPrompts.includes(q.id))
+    ? getGeneralQuestions().filter((q) => !attachedPromptsSet.has(q.id))
     : [];
 
   const attachQuestion = (idOrText: string) => {
