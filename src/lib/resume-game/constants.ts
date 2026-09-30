@@ -214,10 +214,14 @@ export const POWER_VERBS_STRONG = [
   'doubled',
 ];
 
+export const POWER_VERBS_STRONG_SET = new Set<string>(POWER_VERBS_STRONG);
+export const POWER_VERBS_WEAK_SET = new Set<string>(POWER_VERBS_WEAK);
+export const INVOLVEMENT_VERBS_SET = new Set<string>(INVOLVEMENT_VERBS);
+
 export function getVerbStrength(verb: string): 'weak' | 'medium' | 'strong' {
   const lower = verb.trim().toLowerCase();
-  if (POWER_VERBS_STRONG.includes(lower)) return 'strong';
-  if (POWER_VERBS_WEAK.includes(lower) || INVOLVEMENT_VERBS.includes(lower)) return 'weak';
+  if (POWER_VERBS_STRONG_SET.has(lower)) return 'strong';
+  if (POWER_VERBS_WEAK_SET.has(lower) || INVOLVEMENT_VERBS_SET.has(lower)) return 'weak';
   return 'medium';
 }
 
