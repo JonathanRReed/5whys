@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { type CareerDashboardData, readCareerDashboard } from '../lib/career-bridge';
 import { FOCUS_LABELS, STAGE_LABELS } from '../lib/profile';
-import { cn } from '../lib/utils';
+import { cn, formatDate } from '../lib/utils';
 import BackupControls from './BackupControls';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
@@ -39,18 +39,6 @@ const TOOL_LINKS = [
     icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
   },
 ];
-
-function formatDate(iso: string | null): string {
-  if (!iso) return 'Not started';
-  const d = new Date(iso);
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return 'Today';
-  if (diffDays === 1) return 'Yesterday';
-  if (diffDays < 7) return `${diffDays} days ago`;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
 
 /**
  * One line naming what the visitor has actually saved, in the order they
