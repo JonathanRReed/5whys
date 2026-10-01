@@ -6,6 +6,7 @@ import {
   loadData,
   saveData,
 } from '../../lib/glowup-store';
+import { Button } from '../ui/button';
 import { Tabs, TabsContent } from '../ui/tabs';
 import DecodeSection from './DecodeSection';
 import InterviewHUD from './InterviewHUD';
@@ -99,6 +100,10 @@ export default function InterviewGlowUpWorkspace() {
   }, []);
 
   const currentRole = data.roles.find((r) => r.id === data.currentRoleId);
+  const staleRequirements =
+    currentRole &&
+    currentRole.bullets.length > 0 &&
+    currentRole.parsedJdText !== currentRole.rawJdText;
   const currentPacket = data.packets.find((p) => p.id === data.currentPacketId);
   const packetStoryCount = currentPacket
     ? currentPacket.topStoryIds.filter((id) => data.stories.some((s) => s.id === id)).length
@@ -142,6 +147,18 @@ export default function InterviewGlowUpWorkspace() {
           <strong>No data leaves your browser.</strong> Everything saves here as you type.
         </span>
       </div>
+
+      {staleRequirements && (
+        <div role="status" className="space-y-3 rounded-xl border border-gold/40 bg-gold/8 p-4">
+          <p className="text-sm text-foreground">
+            Saved requirements may not match this job posting. Parse the posting again to
+            refresh skill tags and story gaps. Your saved stories and packet are kept.
+          </p>
+          <Button type="button" variant="outline" onClick={() => setActiveTab('decode')}>
+            Review job posting
+          </Button>
+        </div>
+      )}
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as Tab)}>
         <WorkspaceTabs
