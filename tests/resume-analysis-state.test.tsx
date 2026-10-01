@@ -57,6 +57,10 @@ it('does not label older results current when text changes during a scan', () =>
   expect(screen.getByLabelText('Paste resume text')).toHaveValue(newText);
   expect(screen.queryByRole('heading', { name: 'Analysis visualization' })).toBeNull();
   expect(screen.getByRole('button', { name: 'Analyze resume' })).toBeEnabled();
+  fireEvent.click(screen.getByRole('button', { name: 'Analyze resume' }));
+  finishPendingScan();
+  expect(JSON.parse(localStorage.getItem('resume-game-session-v2') ?? 'null').bullets[0].original)
+    .toBe(newText);
 });
 
 it('cancels pending analysis when a sample replaces the input', () => {
@@ -67,4 +71,31 @@ it('cancels pending analysis when a sample replaces the input', () => {
 
   expect(screen.getByLabelText('Paste resume text')).not.toHaveValue(oldText);
   expect(screen.queryByRole('heading', { name: 'Analysis visualization' })).toBeNull();
+});
+
+it('does not mark a completed current analysis stale after reload', () => {
+  const view = render(<ResumeGame />);
+  beginScan();
+  finishPendingScan();
+  view.unmount();
+  render(<ResumeGame />);
+
+  expect(screen.getByRole('heading', { name: 'Analysis visualization' })).toBeVisible();
+  expect(screen.queryByText('Resume updated. Rerun the analysis to refresh metrics.')).toBeNull();
+});
+
+it('keeps legacy results but asks for a rescan when their freshness is unknown', () => {
+  const view = render(<ResumeGame />);
+  beginScan();
+  finishPendingScan();
+  const legacy = JSON.parse(localStorage.getItem('resume-game-session-v2') ?? 'null');
+  delete legacy.needsRescan;
+  view.unmount();
+  localStorage.setItem('resume-game-session-v2', JSON.stringify(legacy));
+  render(<ResumeGame />);
+
+  expect(screen.getByText('Resume updated. Rerun the analysis to refresh metrics.')).toBeVisible();
+  expect(JSON.parse(localStorage.getItem('resume-game-session-v2') ?? 'null').bullets).toEqual(
+    legacy.bullets
+  );
 });

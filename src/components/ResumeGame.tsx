@@ -328,14 +328,14 @@ ${improved.join('\n')}
           cancelScan();
           cancelUpload();
           setResumeTextValue(sampleResume);
-              setStatus('Sample resume loaded. Run the analysis to see suggestions.');
+          setStatus('Sample resume loaded. Run the analysis to see suggestions.');
         }}
         onClear={() => {
           cancelScan();
           cancelUpload();
           setSessionState(() => ({ ...EMPTY_SESSION }));
           setScanComplete(false);
-                setStatus('Workspace cleared. Paste a fresh resume to begin.');
+          setStatus('Workspace cleared. Paste a fresh resume to begin.');
         }}
       />
 
