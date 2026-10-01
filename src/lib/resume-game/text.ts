@@ -65,17 +65,18 @@ export type HighlightToken =
   | { type: 'verb'; text: string }
   | { type: 'newline' };
 
+// Pre-compile the tokenizing regex at module scope to avoid re-compiling a regex
+// with over 130 power verb alternatives on every line during resume highlighting/parsing.
+const COMBINED_HIGHLIGHT_PATTERN = new RegExp(
+  `(\\d+\\.?\\d*%?)|(${POWER_VERB_GLOBAL_PATTERN.source})`,
+  'gi'
+);
+
 export function parseHighlightedResume(text: string): HighlightToken[] {
   if (!text) return [];
   const decoded = decodeEntities(text);
   const lines = decoded.split('\n');
   const tokens: HighlightToken[] = [];
-
-  // Combine numbers pattern and verb pattern into a tokenizing regex
-  const combinedPattern = new RegExp(
-    `(\\d+\\.?\\d*%?)|(${POWER_VERB_GLOBAL_PATTERN.source})`,
-    'gi'
-  );
 
   for (let i = 0; i < lines.length; i++) {
     if (i > 0) {
@@ -85,8 +86,8 @@ export function parseHighlightedResume(text: string): HighlightToken[] {
     let lastIndex = 0;
     let match: RegExpExecArray | null;
 
-    combinedPattern.lastIndex = 0;
-    match = combinedPattern.exec(line);
+    COMBINED_HIGHLIGHT_PATTERN.lastIndex = 0;
+    match = COMBINED_HIGHLIGHT_PATTERN.exec(line);
     while (match !== null) {
       if (match.index > lastIndex) {
         tokens.push({ type: 'text', text: line.slice(lastIndex, match.index) });
@@ -97,8 +98,8 @@ export function parseHighlightedResume(text: string): HighlightToken[] {
       } else {
         tokens.push({ type: 'verb', text: matchedStr });
       }
-      lastIndex = combinedPattern.lastIndex;
-      match = combinedPattern.exec(line);
+      lastIndex = COMBINED_HIGHLIGHT_PATTERN.lastIndex;
+      match = COMBINED_HIGHLIGHT_PATTERN.exec(line);
     }
 
     if (lastIndex < line.length) {
