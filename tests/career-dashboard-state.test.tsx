@@ -206,3 +206,17 @@ it('suppresses stale skills even when the old analysis found no achievement bull
     false
   );
 });
+
+it('distinguishes a saved reflection from a newer complete unsaved one', () => {
+  localStorage.setItem('career-why-history', JSON.stringify([{
+    id: 'saved', timestamp: '2026-09-01T00:00:00Z', updatedAt: '2026-09-01T00:00:00Z',
+    version: 2, track: 'interest', topic: 'Research', responses: Array(5).fill('Saved research answer.'),
+    whyStatement: 'Saved research statement.', rootReason: 'Saved reason.', nextStep: 'Test research.',
+  }]));
+  localStorage.setItem('career-why-session-v2', JSON.stringify({
+    track: 'interest', topic: 'Teaching', responses: Array(5).fill('I want to help people learn.'),
+  }));
+  render(<CareerDashboard />);
+  expect(screen.getByText('Saved research statement.')).toBeVisible();
+  expect(screen.getByText(/Current reflection on Teaching is complete but not yet saved/)).toBeVisible();
+});
