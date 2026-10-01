@@ -121,9 +121,7 @@ export default function CareerHeader({
                   {sequentialCount}
                 </div>
                 <div>
-                  <p className="text-sm text-foreground">
-                    Questions answered
-                  </p>
+                  <p className="text-sm text-foreground">Questions answered</p>
                   <p className="text-xs text-muted-foreground">{progressPercent}% complete</p>
                 </div>
               </div>

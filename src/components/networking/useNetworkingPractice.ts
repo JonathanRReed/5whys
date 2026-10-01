@@ -228,7 +228,10 @@ export function useNetworkingPractice() {
     if (!presetScenario || !currentVersion) return presetScenario;
     const who = currentVersion.who.trim() || presetScenario.who;
     const where = currentVersion.where.trim() || presetScenario.where;
-    const customSteps = currentVersion.what.split('\n').map((step) => step.trim()).filter(Boolean);
+    const customSteps = currentVersion.what
+      .split('\n')
+      .map((step) => step.trim())
+      .filter(Boolean);
     const what = customSteps.length ? customSteps : presetScenario.what;
     const changedAudience = who !== presetScenario.who;
     const changedGoal = what.join('\n') !== presetScenario.what.join('\n');
@@ -238,10 +241,16 @@ export function useNetworkingPractice() {
       where,
       what,
       rapportSamples: changedAudience
-        ? [`Prepare for: ${who}. Choose one real detail about their work that connects to your reason for speaking with them.`, ...presetScenario.rapportSamples]
+        ? [
+            `Prepare for: ${who}. Choose one real detail about their work that connects to your reason for speaking with them.`,
+            ...presetScenario.rapportSamples,
+          ]
         : presetScenario.rapportSamples,
       questionTemplates: changedGoal
-        ? [{ id: 'custom-goal', label: 'Your planned ask', prompt: what.join('\n') }, ...presetScenario.questionTemplates]
+        ? [
+            { id: 'custom-goal', label: 'Your planned ask', prompt: what.join('\n') },
+            ...presetScenario.questionTemplates,
+          ]
         : presetScenario.questionTemplates,
     };
   }, [presetScenario, currentVersion]);
