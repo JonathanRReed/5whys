@@ -31,7 +31,10 @@ type Props = {
   currentRole: DecodedRole | undefined;
 };
 
-type RoleFields = Pick<DecodedRole, 'jobTitle' | 'company' | 'jdUrl' | 'rawJdText' | 'parsedJdText'>;
+type RoleFields = Pick<
+  DecodedRole,
+  'jobTitle' | 'company' | 'jdUrl' | 'rawJdText' | 'parsedJdText'
+>;
 
 /** A title for the role when none was typed: the first short line of the JD. */
 function deriveTitle(rawJdText: string): string {

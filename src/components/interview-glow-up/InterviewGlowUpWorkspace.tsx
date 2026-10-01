@@ -151,8 +151,8 @@ export default function InterviewGlowUpWorkspace() {
       {staleRequirements && (
         <div role="status" className="space-y-3 rounded-xl border border-gold/40 bg-gold/8 p-4">
           <p className="text-sm text-foreground">
-            Saved requirements may not match this job posting. Parse the posting again to
-            refresh skill tags and story gaps. Your saved stories and packet are kept.
+            Saved requirements may not match this job posting. Parse the posting again to refresh
+            skill tags and story gaps. Your saved stories and packet are kept.
           </p>
           <Button type="button" variant="outline" onClick={() => setActiveTab('decode')}>
             Review job posting
