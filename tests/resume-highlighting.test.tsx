@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it } from 'vitest';
 import ResumeGame from '../src/components/ResumeGame';
+import { highlightResume } from '../src/lib/resume-game';
 
 beforeEach(() => localStorage.clear());
 afterEach(cleanup);
@@ -36,4 +37,15 @@ it('renders HTML-shaped input as literal text while retaining highlights and lin
       .slice(2)
       .map((mark) => mark.textContent)
   ).toEqual(['1', 'Built', '3']);
+});
+
+it('keeps the legacy HTML formatter consistent with literal text highlighting', () => {
+  const text = "Led O'Reilly training for 5 people";
+  const preview = document.createElement('div');
+  preview.innerHTML = highlightResume(text);
+  expect(preview.textContent).toBe(text);
+  expect(Array.from(preview.querySelectorAll('mark')).map((mark) => mark.textContent)).toEqual([
+    'Led',
+    '5',
+  ]);
 });
