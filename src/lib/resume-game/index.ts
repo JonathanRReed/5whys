@@ -33,6 +33,7 @@ export {
 export { extractSkills } from './skills';
 export { detectResumeStructure } from './structure';
 export { generateBulletSuggestions, signalGrade } from './suggestions';
+export type { HighlightToken } from './text';
 export {
   countPowerVerbs,
   decodeEntities,
@@ -40,5 +41,4 @@ export {
   highlightResume,
   parseHighlightedResume,
 } from './text';
-export type { HighlightToken } from './text';
 export type { BulletFields, BulletRecord, SignalReport, StoredResumeSession } from './types';
