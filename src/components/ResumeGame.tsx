@@ -371,7 +371,7 @@ ${improved.join('\n')}
               signalReport: buildDeepSignalReport(
                 records,
                 previous.resumeText,
-                `Reviewed ${records.length} achievement lines selected by you.`,
+                `Reviewed ${records.length} ${records.length === 1 ? 'achievement line' : 'achievement lines'} selected by you.`,
                 0
               ),
               lastAnalyzedAt: new Date().toISOString(),

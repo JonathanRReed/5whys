@@ -47,7 +47,13 @@ const isAllCaps = (line: string) => /[A-Z]/.test(line) && line === line.toUpperC
 function classify(line: string, index: number, wordsInLine: number): SkippedKind | 'bullet' {
   if (EMAIL.test(line) || PHONE.test(line) || URL.test(line)) return 'contact';
   // A short first line without digits or a verb is almost always the name.
-  if (index === 0 && wordsInLine <= 4 && !/\d/.test(line) && !BULLET_START_PATTERN.test(line)) {
+  if (
+    index === 0 &&
+    wordsInLine <= 4 &&
+    !SECTION_WORDS.test(line.replace(/[:\s]+$/, '')) &&
+    !/\d/.test(line) &&
+    !BULLET_START_PATTERN.test(line)
+  ) {
     return 'contact';
   }
   const clean = line.replace(/[:\s]+$/, '');
