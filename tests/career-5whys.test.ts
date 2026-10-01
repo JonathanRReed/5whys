@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   computeSynthesis,
   firstSentence,
+  getAnswerNudge,
   normalizeSnapshot,
   normalizeTopic,
   suggestNextStep,
@@ -144,8 +145,7 @@ describe('suggestNextStep', () => {
       expect(suggestNextStep('career', 'nursing', 'PATIENTS and HEALTH')).toContain(
         'Book 30 minutes'
       );
-      // Substrings without word boundaries shouldn't match (e.g. "personality" containing "person")
-      // wait: "personality" contains "person" at boundary, but "impersonate"? \b(person)\b requires exact word boundary around person.
+      // A word embedded inside another word must not trigger a people suggestion.
       expect(suggestNextStep('career', 'acting', 'impersonate someone')).not.toContain(
         'Book 30 minutes'
       );
@@ -161,6 +161,62 @@ describe('suggestNextStep', () => {
         'Ship one small piece of the actual work of this path this month, no title required. If doing it feeds your root reason, the path holds.'
       );
     });
+  });
+});
+
+describe('getAnswerNudge', () => {
+  it('returns null for empty or whitespace-only answers', () => {
+    expect(getAnswerNudge('', '')).toBeNull();
+    expect(getAnswerNudge('   \n\t  ', 'Some previous answer')).toBeNull();
+  });
+
+  it('returns short answer prompt when word count is less than 8 words', () => {
+    const nudge = getAnswerNudge('I want to build software.', '');
+    expect(nudge).toBe(
+      'Short answer. Push one level deeper: name a value, a constraint, a moment, a person, or a fear.'
+    );
+  });
+
+  it('returns null for answers with 8 or more words that are not near repeats', () => {
+    const answer =
+      'I want to build software because I enjoy solving complex problems for real people.';
+    expect(getAnswerNudge(answer, '')).toBeNull();
+  });
+
+  it('returns near repeat prompt when current answer mostly restates previous answer', () => {
+    const previous =
+      'I want to build software architecture for enterprise platforms and infrastructure';
+    const current = 'I want to build software systems for enterprise platforms and infrastructure';
+    const nudge = getAnswerNudge(current, previous);
+    expect(nudge).toBe(
+      'This mostly restates your last answer. Go one level down: what does it protect, cost, or prove?'
+    );
+  });
+
+  it('prioritizes near repeat prompt over short answer prompt', () => {
+    // Both previous and current have enough significant tokens to trigger isNearRepeat
+    const previous = 'building complex backend scalable systems design';
+    const current = 'building complex backend scalable systems architecture';
+    const nudge = getAnswerNudge(current, previous);
+    expect(nudge).toBe(
+      'This mostly restates your last answer. Go one level down: what does it protect, cost, or prove?'
+    );
+  });
+
+  it('handles multi-space word separation correctly when calculating word count', () => {
+    // 8 words separated by multiple spaces
+    const answer = 'One   two   three   four   five   six   seven   eight';
+    expect(getAnswerNudge(answer, '')).toBeNull();
+
+    // 7 words separated by multiple spaces
+    const shortAnswer = 'One   two   three   four   five   six   seven';
+    expect(getAnswerNudge(shortAnswer, '')).not.toBeNull();
+  });
+
+  it('ignores empty or whitespace-only previous answers when checking near repeat', () => {
+    const answer =
+      'I want to build software architecture for enterprise platforms and infrastructure';
+    expect(getAnswerNudge(answer, '   ')).toBeNull();
   });
 });
 

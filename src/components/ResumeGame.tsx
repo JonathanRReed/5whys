@@ -183,28 +183,49 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
   };
 
   const [isLoadingFile, setIsLoadingFile] = React.useState(false);
+  const [fileError, setFileError] = React.useState<string | null>(null);
+  const uploadSequence = React.useRef(0);
+
+  React.useEffect(
+    () => () => {
+      uploadSequence.current += 1;
+    },
+    []
+  );
+
+  const cancelUpload = () => {
+    uploadSequence.current += 1;
+    setIsLoadingFile(false);
+    setFileError(null);
+  };
 
   const handleFileUpload = async (file: File) => {
-    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-    if (file.size > MAX_FILE_SIZE) {
-      setStatus('File too large. Maximum size is 5MB.');
+    const sequence = ++uploadSequence.current;
+    setFileError(null);
+    setStatus(null);
+    if (file.size > 5 * 1024 * 1024) {
+      setIsLoadingFile(false);
+      setFileError('File too large. Maximum size is 5MB.');
       return;
     }
     setIsLoadingFile(true);
     try {
       const { extractTextFromFile } = await import('../lib/resume-game/extractors');
       const text = await extractTextFromFile(file);
-      setResumeTextValue(decodeEntities(text));
+      if (sequence !== uploadSequence.current) return;
+      setResumeTextValue(text);
       setNeedsRescan(true);
-      setStatus(`${file.name} loaded. Run the analysis to see suggestions.`);
-    } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Failed to read file.');
+      setStatus('File loaded. Review the text below before analyzing.');
+    } catch (error) {
+      if (sequence !== uploadSequence.current) return;
+      setFileError(error instanceof Error ? error.message : 'Failed to read file.');
     } finally {
-      setIsLoadingFile(false);
+      if (sequence === uploadSequence.current) setIsLoadingFile(false);
     }
   };
 
   const handleTextChange = (value: string) => {
+    cancelUpload();
     setResumeTextValue(decodeEntities(value));
     setNeedsRescan(true);
   };
@@ -290,6 +311,7 @@ ${improved.join('\n')}
         scanComplete={scanComplete}
         isLoadingFile={isLoadingFile}
         status={status}
+        fileError={fileError}
         storageNotice={storageNotice}
         needsRescan={needsRescan}
         placeholder={placeholder}
@@ -297,11 +319,13 @@ ${improved.join('\n')}
         onFileUpload={handleFileUpload}
         onScan={handleScan}
         onLoadSample={() => {
+          cancelUpload();
           setResumeTextValue(sampleResume);
           setNeedsRescan(true);
           setStatus('Sample resume loaded. Run the analysis to see suggestions.');
         }}
         onClear={() => {
+          cancelUpload();
           setSessionState(() => ({ ...EMPTY_SESSION }));
           setScanComplete(false);
           setNeedsRescan(false);
