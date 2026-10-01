@@ -30,3 +30,14 @@ it('recognizes a single marked bullet and its wrapped continuation', () => {
     'Built a reporting workflow that removed duplicate entries before monthly review.',
   ]);
 });
+
+it('preserves achievements in a resume with mixed bullet markers', () => {
+  const parsed = detectResumeStructure(
+    'Built a reporting tool for a research team.\nLed weekly training for new volunteers.\n• Automated grant reports to save 6 hours weekly.'
+  );
+  expect(parsed.bullets).toEqual([
+    'Built a reporting tool for a research team.',
+    'Led weekly training for new volunteers.',
+    'Automated grant reports to save 6 hours weekly.',
+  ]);
+});

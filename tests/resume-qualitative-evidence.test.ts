@@ -23,3 +23,11 @@ it('still asks vague duties for evidence', () => {
   expect(suggestions.map((suggestion) => suggestion.type)).toContain('missing-number');
   expect(suggestions.map((suggestion) => suggestion.type)).toContain('missing-impact');
 });
+
+it.each([
+  'Built a spreadsheet template not used by the research team.',
+  'Designed a workshop syllabus never adopted by the teaching team.',
+])('does not reward a negated qualitative outcome: %s', (text) => {
+  expect(scoreBullet(text)).toBeLessThan(70);
+  expect(generateBulletSuggestions(createBulletRecord(text, 0)).length).toBeGreaterThan(0);
+});
