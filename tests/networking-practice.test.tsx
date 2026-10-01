@@ -68,3 +68,20 @@ it('deletes an intro version in-place with ConfirmButton without window.confirm'
   expect(versionsAfter.some((version: { id: string }) => version.id === deletedId)).toBe(false);
   expect(screen.queryByRole('button', { name: 'Delete this intro?' })).toBeNull();
 });
+
+
+it('uses customized audience, setting and goal in the visible practice plan after reload', () => {
+  const view = render(<NetworkingPractice />);
+  fireEvent.click(screen.getByRole('button', { name: /Customize this scenario/i }));
+  fireEvent.change(screen.getByRole('textbox', { name: 'Who you are speaking with' }), { target: { value: 'An engineer at a campus meetup' } });
+  fireEvent.change(screen.getByRole('textbox', { name: 'Where the networking conversation happens' }), { target: { value: 'At the library after a workshop' } });
+  fireEvent.change(screen.getByRole('textbox', { name: 'What you want to ask or share' }), { target: { value: 'Ask which skill helps a new teammate most' } });
+  expect(screen.getByText('An engineer at a campus meetup')).toBeInTheDocument();
+  expect(screen.getAllByText('At the library after a workshop').length).toBeGreaterThan(0);
+  expect(screen.getAllByText('Ask which skill helps a new teammate most').length).toBeGreaterThan(0);
+  expect(screen.getByText('Your conversation goal')).toBeInTheDocument();
+  view.unmount();
+  render(<NetworkingPractice />);
+  expect(screen.getByText('An engineer at a campus meetup')).toBeInTheDocument();
+  expect(screen.getByText('Your conversation goal')).toBeInTheDocument();
+});

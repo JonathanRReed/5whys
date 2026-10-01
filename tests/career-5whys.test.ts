@@ -278,3 +278,14 @@ describe('normalizeSnapshot', () => {
     expect(snapshot).not.toHaveProperty('theme');
   });
 });
+
+
+describe('reflection coaching limits', () => {
+  it.each(['career', 'interest'] as const)('treats completed %s answers as a working hypothesis', (track) => {
+    const result = computeSynthesis(Array(5).fill('I want to help people understand useful ideas.'), 'Teaching', track);
+    expect(result.isComplete).toBe(true);
+    expect(result.whyStatement).toContain('working hypothesis');
+    expect(result.whyStatement).not.toMatch(/the real reason|really about|Act on that/);
+    expect(result.whyStatement).toContain('I want to help people understand useful ideas.');
+  });
+});
