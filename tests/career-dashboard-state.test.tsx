@@ -186,13 +186,22 @@ it('does not show an obsolete prominent resume score beside changed text', () =>
 it('suppresses stale skills even when the old analysis found no achievement bullets', () => {
   const report = buildDeepSignalReport([], 'Skills: Python');
   expect(report.hardSkills).toContain('python');
-  localStorage.setItem('resume-game-session-v2', JSON.stringify({
-    ...EMPTY_SESSION, resumeText: 'A new community-focused resume.', needsRescan: true,
-    lastAnalyzedAt: '2026-09-01T00:00:00Z', signalReport: report, bullets: [],
-  }));
+  localStorage.setItem(
+    'resume-game-session-v2',
+    JSON.stringify({
+      ...EMPTY_SESSION,
+      resumeText: 'A new community-focused resume.',
+      needsRescan: true,
+      lastAnalyzedAt: '2026-09-01T00:00:00Z',
+      signalReport: report,
+      bullets: [],
+    })
+  );
   const dashboard = readCareerDashboard();
   expect(dashboard.resume?.needsRescan).toBe(true);
   expect(dashboard.resume?.hardSkills).toEqual([]);
   expect(dashboard.recommendations[0].cta).toBe('Review changed resume');
-  expect(dashboard.recommendations.some((item) => item.text.includes('Your resume shows'))).toBe(false);
+  expect(dashboard.recommendations.some((item) => item.text.includes('Your resume shows'))).toBe(
+    false
+  );
 });
