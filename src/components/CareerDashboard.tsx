@@ -260,7 +260,9 @@ export default function CareerDashboard() {
       {data.reflection?.whyStatement && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Your saved reflection</CardTitle>
+            <CardTitle className="text-lg">
+              {data.reflection.snapshotCount > 0 ? 'Your saved reflection' : 'Your current reflection'}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {data.reflection.latestTopic && (
@@ -279,7 +281,7 @@ export default function CareerDashboard() {
             )}
             <p className="text-xs text-muted-foreground">
               {data.reflection.unsavedComplete
-                ? 'This chain is finished but not saved as a snapshot yet. '
+                ? `Current reflection on ${data.reflection.draftTopic || 'career direction'} is complete but not yet saved as a snapshot. `
                 : 'From your last saved 5 Whys snapshot. '}
               <a href="/career/" className="font-medium text-foam hover:underline">
                 {data.reflection.unsavedComplete ? 'Save it' : 'Revisit it'}
