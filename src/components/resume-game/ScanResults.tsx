@@ -1,9 +1,10 @@
 import * as React from 'react';
-import type { HighlightToken, SignalReport } from '../../lib/resume-game';
-import { parseHighlightedResume, suggestStrongerVerb } from '../../lib/resume-game';
+import type { BulletRecord, HighlightToken, SignalReport } from '../../lib/resume-game';
+import { generateBulletSuggestions, parseHighlightedResume, suggestStrongerVerb } from '../../lib/resume-game';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 type Props = {
+  bullets?: BulletRecord[];
   resumeText: string;
   signalReport: SignalReport;
   resumeOutOfDate: boolean;
@@ -36,7 +37,14 @@ function renderToken(token: HighlightToken, index: number) {
   return <React.Fragment key={index}>{token.text}</React.Fragment>;
 }
 
-export default function ScanResults({ resumeText, signalReport, resumeOutOfDate }: Props) {
+export default function ScanResults({ bullets = [], resumeText, signalReport, resumeOutOfDate }: Props) {
+  const nextSteps = bullets
+    .map((bullet, index) => ({
+      bullet,
+      suggestion: generateBulletSuggestions(bullet, index)[0],
+    }))
+    .filter((item) => item.suggestion)
+    .slice(0, 3);
   const hasSkills = signalReport.hardSkills.length > 0 || signalReport.softSkills.length > 0;
   const hasSections = signalReport.sections.length > 0;
   const [deepOpen, setDeepOpen] = React.useState(false);
@@ -226,36 +234,34 @@ export default function ScanResults({ resumeText, signalReport, resumeOutOfDate 
             </div>
           )}
 
-          {/* Next steps */}
-          <div className="rounded-2xl border border-border/35 bg-overlay/30 p-4">
-            <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Next steps</p>
-            <ul className="mt-2 space-y-1.5 text-sm text-muted-foreground">
-              {(signalReport.quantifiedBulletPercent ?? 0) < 100 && signalReport.bulletCount > 0 && (
-                <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-gold">+</span>
-                  <span>Where a measure would clarify the work, add one you can support. A concrete outcome or scope can be useful without a number.</span>
-                </li>
-              )}
-              {signalReport.verbs < signalReport.bulletCount && (
-                <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-gold">+</span>
-                  <span>Replace weak verbs with stronger action words in the editor below.</span>
-                </li>
-              )}
-              {signalReport.sections.length < 3 && (
-                <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-gold">+</span>
-                  <span>
-                    Make sure your resume has clear Experience, Education, and Skills sections.
-                  </span>
-                </li>
-              )}
-              <li className="flex items-start gap-2">
-                <span className="mt-0.5 text-foam">+</span>
-                <span>Select any bullet on the left to edit and watch your score update.</span>
-              </li>
-            </ul>
-          </div>
+          <section aria-label="Your next steps" className="space-y-3 border-t border-border/40 pt-4">
+            <h3 className="text-lg">Your next steps</h3>
+            {resumeOutOfDate ? (
+              <p className="text-sm text-muted-foreground">
+                Rerun the analysis before using feedback for the changed text.
+              </p>
+            ) : nextSteps.length > 0 ? (
+              <ol className="space-y-4">
+                {nextSteps.map(({ bullet, suggestion }) => (
+                  <li key={bullet.id} className="space-y-1 text-sm">
+                    <p className="font-medium text-foreground">{bullet.improved}</p>
+                    <p className="text-muted-foreground">{suggestion.message}</p>
+                    {suggestion.fix && <p className="text-muted-foreground">{suggestion.fix}</p>}
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {bullets.length > 0
+                  ? 'No obvious writing flags in the reviewed lines. Check relevance against the role and make sure every claim is accurate.'
+                  : 'Review the detected achievement lines before relying on the checklist.'}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Suggestions come from limited writing rules. Keep technical terms that matter
+              to your audience and never invent a metric to satisfy the tool.
+            </p>
+          </section>
 
           {/* Deep Analysis */}
           {hasDeepData && (

@@ -351,6 +351,7 @@ ${improved.join('\n')}
 
       {scanComplete && (
         <ScanResults
+          bullets={bullets}
           resumeText={resumeText}
           signalReport={signalReport}
           resumeOutOfDate={resumeOutOfDate}
