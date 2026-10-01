@@ -84,7 +84,7 @@ export default function RapportWarmups({ rapportSamples, scenarioId, onCopy, cop
         )}
         {rapportSamples.length > 0 && (
           <p className="text-xs text-muted-foreground/70">
-            Tip: Customize the scenario fields above to get more relevant suggestions.
+            Your custom audience and goal appear in the practice guidance. Preset examples remain fictional; adapt them to what is true for you.
           </p>
         )}
       </CardContent>

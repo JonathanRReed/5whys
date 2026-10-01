@@ -14,7 +14,7 @@ export default function WhyStepper({ responses, sequentialCount }: WhyStepperPro
       <Card className="bg-card/98 border-border/55 text-foreground">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-semibold text-foreground">Depth tracker</CardTitle>
-          <p className="text-sm text-muted-foreground">Each layer validates the one above it.</p>
+          <p className="text-sm text-muted-foreground">Each answer explores the previous one; it does not prove a single root cause.</p>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center gap-3">

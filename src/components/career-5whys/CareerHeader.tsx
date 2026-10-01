@@ -3,7 +3,7 @@ import QuickStartTiles from '../QuickStartTiles';
 import { Card, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { normalizeTopic, TRACKS, type Track, WHY_COUNT } from './shared';
+import { normalizeTopic, TRACKS, type Track } from './shared';
 
 type CareerHeaderProps = {
   showHeader: boolean;
@@ -122,7 +122,7 @@ export default function CareerHeader({
                 </div>
                 <div>
                   <p className="text-sm text-foreground">
-                    {sequentialCount === WHY_COUNT ? 'Depth found' : 'Reasoning depth'}
+                    Questions answered
                   </p>
                   <p className="text-xs text-muted-foreground">{progressPercent}% complete</p>
                 </div>
