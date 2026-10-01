@@ -1,6 +1,6 @@
 import * as React from 'react';
 import type { HighlightToken, SignalReport } from '../../lib/resume-game';
-import { parseHighlightedResume, signalGrade, suggestStrongerVerb } from '../../lib/resume-game';
+import { parseHighlightedResume, suggestStrongerVerb } from '../../lib/resume-game';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 type Props = {
@@ -37,7 +37,6 @@ function renderToken(token: HighlightToken, index: number) {
 }
 
 export default function ScanResults({ resumeText, signalReport, resumeOutOfDate }: Props) {
-  const grade = signalGrade(signalReport.visible);
   const hasSkills = signalReport.hardSkills.length > 0 || signalReport.softSkills.length > 0;
   const hasSections = signalReport.sections.length > 0;
   const [deepOpen, setDeepOpen] = React.useState(false);
@@ -81,16 +80,15 @@ export default function ScanResults({ resumeText, signalReport, resumeOutOfDate 
 
       <Card>
         <CardHeader className="space-y-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl">Signal report</CardTitle>
-            <div className={`text-4xl font-bold `}>
-              <span className="sr-only">Grade: </span>
-              {grade.grade}
-            </div>
-          </div>
+          <CardTitle className="text-xl">Resume review</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            A writing checklist, not a hiring prediction or a grade on your experience.
+            Reviewed {signalReport.bulletCount}{' '}
+            {signalReport.bulletCount === 1 ? 'achievement line' : 'achievement lines'}.
+          </p>
           <p className="text-xs text-muted-foreground">
-            {grade.label}. Based on {signalReport.bulletCount}{' '}
-            {signalReport.bulletCount === 1 ? 'bullet' : 'bullets'} scanned.
+            These rules may miss skills, context, and valid ways of describing your work.
+            Check the extracted lines before acting on a suggestion.
           </p>
           {signalReport.structureNote && (
             <p className="rounded-xl border border-border/35 bg-overlay/30 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
@@ -102,7 +100,7 @@ export default function ScanResults({ resumeText, signalReport, resumeOutOfDate 
           {/* Signal strength */}
           <div>
             <div className="mb-2 flex justify-between text-xs text-muted-foreground">
-              <span>Signal strength</span>
+              <span>Writing checklist coverage</span>
               <span className={signalReport.visible >= 70 ? 'text-love' : 'text-gold'}>
                 {signalReport.visible}%
               </span>
@@ -232,10 +230,10 @@ export default function ScanResults({ resumeText, signalReport, resumeOutOfDate 
           <div className="rounded-2xl border border-border/35 bg-overlay/30 p-4">
             <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Next steps</p>
             <ul className="mt-2 space-y-1.5 text-sm text-muted-foreground">
-              {signalReport.numbers < 5 && signalReport.bulletCount > 0 && (
+              {(signalReport.quantifiedBulletPercent ?? 0) < 100 && signalReport.bulletCount > 0 && (
                 <li className="flex items-start gap-2">
                   <span className="mt-0.5 text-gold">+</span>
-                  <span>Add 2-3 more quantified metrics (%, $, #) to bullets without numbers.</span>
+                  <span>Where a measure would clarify the work, add one you can support. A concrete outcome or scope can be useful without a number.</span>
                 </li>
               )}
               {signalReport.verbs < signalReport.bulletCount && (
@@ -249,14 +247,6 @@ export default function ScanResults({ resumeText, signalReport, resumeOutOfDate 
                   <span className="mt-0.5 text-gold">+</span>
                   <span>
                     Make sure your resume has clear Experience, Education, and Skills sections.
-                  </span>
-                </li>
-              )}
-              {signalReport.hardSkills.length < 3 && (
-                <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-gold">+</span>
-                  <span>
-                    Add more hard skills (tools, languages, frameworks) for ATS visibility.
                   </span>
                 </li>
               )}
@@ -289,7 +279,7 @@ export default function ScanResults({ resumeText, signalReport, resumeOutOfDate 
                     <div className="rounded-xl border border-border/35 bg-overlay/40 p-4">
                       <div className="flex items-center justify-between">
                         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                          Resume Health Score
+                          Writing checklist score
                         </p>
                         <span
                           className={`text-2xl font-bold ${
