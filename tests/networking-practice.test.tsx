@@ -44,7 +44,7 @@ it('deletes an intro version in-place with ConfirmButton without window.confirm'
 
   const savedBefore = localStorage.getItem('networking-practice-versions');
   const versionsBefore = JSON.parse(savedBefore ?? '[]');
-  expect(versionsBefore.length).toBeGreaterThan(1);
+  expect(versionsBefore.length).toBeGreaterThan(initialIds.size);
   const deletedId = versionsBefore.find((version: { id: string }) => !initialIds.has(version.id))?.id;
   expect(deletedId).toBeDefined();
 
