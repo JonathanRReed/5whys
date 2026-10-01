@@ -59,18 +59,70 @@ export function normalizeLine(raw: string) {
   return decoded;
 }
 
+export type HighlightToken =
+  | { type: 'text'; text: string }
+  | { type: 'number'; text: string }
+  | { type: 'verb'; text: string }
+  | { type: 'newline' };
+
+export function parseHighlightedResume(text: string): HighlightToken[] {
+  if (!text) return [];
+  const decoded = decodeEntities(text);
+  const lines = decoded.split('\n');
+  const tokens: HighlightToken[] = [];
+
+  // Combine numbers pattern and verb pattern into a tokenizing regex
+  const combinedPattern = new RegExp(
+    `(\\d+\\.?\\d*%?)|(${POWER_VERB_GLOBAL_PATTERN.source})`,
+    'gi'
+  );
+
+  for (let i = 0; i < lines.length; i++) {
+    if (i > 0) {
+      tokens.push({ type: 'newline' });
+    }
+    const line = lines[i];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    combinedPattern.lastIndex = 0;
+    match = combinedPattern.exec(line);
+    while (match !== null) {
+      if (match.index > lastIndex) {
+        tokens.push({ type: 'text', text: line.slice(lastIndex, match.index) });
+      }
+      const matchedStr = match[0];
+      if (match[1] !== undefined) {
+        tokens.push({ type: 'number', text: matchedStr });
+      } else {
+        tokens.push({ type: 'verb', text: matchedStr });
+      }
+      lastIndex = combinedPattern.lastIndex;
+      match = combinedPattern.exec(line);
+    }
+
+    if (lastIndex < line.length) {
+      tokens.push({ type: 'text', text: line.slice(lastIndex) });
+    }
+  }
+
+  return tokens;
+}
+
 export function highlightResume(text: string) {
-  if (!text) return '';
-  const escaped = escapeHtml(decodeEntities(text));
-  return escaped
-    .replace(
-      /\d+\.?\d*%?/g,
-      '<mark class="bg-primary/30 text-primary-foreground px-1 rounded">$&</mark>'
-    )
-    .replace(
-      POWER_VERB_GLOBAL_PATTERN,
-      '<mark class="bg-love/30 text-foreground px-1 rounded">$&</mark>'
-    );
+  return parseHighlightedResume(text)
+    .map((token) => {
+      if (token.type === 'newline') return '\n';
+      const escaped = escapeHtml(token.text);
+      if (token.type === 'number') {
+        return `<mark class="bg-primary/30 text-primary-foreground px-1 rounded">${escaped}</mark>`;
+      }
+      if (token.type === 'verb') {
+        return `<mark class="bg-love/30 text-foreground px-1 rounded">${escaped}</mark>`;
+      }
+      return escaped;
+    })
+    .join('');
 }
 
 export function countPowerVerbs(text: string) {

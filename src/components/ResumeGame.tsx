@@ -11,7 +11,6 @@ import {
   EMPTY_SESSION,
   EMPTY_SIGNAL_REPORT,
   exportDocx,
-  highlightResume,
   POWER_VERB_PATTERN,
   PROFESSIONAL_PLACEHOLDER,
   PROFESSIONAL_SAMPLE_RESUME,
@@ -96,7 +95,6 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
   const selectedBullet = bullets.find((bullet) => bullet.id === selectedBulletId) ?? null;
   const signalReport = session.signalReport ?? EMPTY_SIGNAL_REPORT;
 
-  const highlightedResume = React.useMemo(() => highlightResume(resumeText), [resumeText]);
   const averageScore = bullets.length
     ? Math.round(bullets.reduce((sum, bullet) => sum + bullet.improvedScore, 0) / bullets.length)
     : 0;
@@ -344,7 +342,7 @@ ${improved.join('\n')}
 
       {scanComplete && (
         <ScanResults
-          highlightedResume={highlightedResume}
+          resumeText={resumeText}
           signalReport={signalReport}
           resumeOutOfDate={resumeOutOfDate}
         />

@@ -1,10 +1,10 @@
 import * as React from 'react';
-import type { SignalReport } from '../../lib/resume-game';
-import { signalGrade, suggestStrongerVerb } from '../../lib/resume-game';
+import type { HighlightToken, SignalReport } from '../../lib/resume-game';
+import { parseHighlightedResume, signalGrade, suggestStrongerVerb } from '../../lib/resume-game';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 type Props = {
-  highlightedResume: string;
+  resumeText: string;
   signalReport: SignalReport;
   resumeOutOfDate: boolean;
 };
@@ -15,11 +15,34 @@ function benchmarkColor(value: number, goodThreshold: number, warnThreshold: num
   return 'text-love';
 }
 
-export default function ScanResults({ highlightedResume, signalReport, resumeOutOfDate }: Props) {
+function renderToken(token: HighlightToken, index: number) {
+  if (token.type === 'newline') {
+    return <br key={index} />;
+  }
+  if (token.type === 'number') {
+    return (
+      <mark key={index} className="rounded bg-primary/30 px-1 text-primary-foreground">
+        {token.text}
+      </mark>
+    );
+  }
+  if (token.type === 'verb') {
+    return (
+      <mark key={index} className="rounded bg-love/30 px-1 text-foreground">
+        {token.text}
+      </mark>
+    );
+  }
+  return <React.Fragment key={index}>{token.text}</React.Fragment>;
+}
+
+export default function ScanResults({ resumeText, signalReport, resumeOutOfDate }: Props) {
   const grade = signalGrade(signalReport.visible);
   const hasSkills = signalReport.hardSkills.length > 0 || signalReport.softSkills.length > 0;
   const hasSections = signalReport.sections.length > 0;
   const [deepOpen, setDeepOpen] = React.useState(false);
+
+  const tokens = React.useMemo(() => parseHighlightedResume(resumeText), [resumeText]);
 
   const hasDeepData =
     signalReport.benchmarkScore !== undefined ||
@@ -50,11 +73,9 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
               <mark className="rounded bg-love/30 px-1 text-foreground">Action verbs</mark>
             </span>
           </div>
-          <div
-            className="min-h-[200px] rounded-2xl border border-border/40 bg-card/65 p-6 text-sm leading-relaxed"
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: highlightResume escapes the text before wrapping matches in mark tags
-            dangerouslySetInnerHTML={{ __html: highlightedResume.replace(/\n/g, '<br/>') }}
-          />
+          <div className="min-h-[200px] rounded-2xl border border-border/40 bg-card/65 p-6 text-sm leading-relaxed">
+            {tokens.map(renderToken)}
+          </div>
         </CardContent>
       </Card>
 
