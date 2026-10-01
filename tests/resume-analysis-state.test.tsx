@@ -40,7 +40,7 @@ it('preserves the rescan warning across reload without discarding saved bullets'
 it('does not restore old analysis after Clear interrupts a scan', () => {
   render(<ResumeGame />);
   beginScan();
-  fireEvent.click(screen.getByRole('button', { name: 'Clear', exact: true }));
+  fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
   finishPendingScan();
 
   expect(screen.getByLabelText('Paste resume text')).toHaveValue('');
