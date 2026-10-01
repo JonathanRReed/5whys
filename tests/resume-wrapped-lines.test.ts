@@ -43,7 +43,9 @@ it('preserves achievements in a resume with mixed bullet markers', () => {
 });
 
 it('keeps a capitalized technical continuation after an unfinished phrase', () => {
-  expect(detectResumeStructure('• Built a reporting workflow in\nPython to save the team 6 hours per week.').bullets).toEqual([
-    'Built a reporting workflow in Python to save the team 6 hours per week.',
-  ]);
+  expect(
+    detectResumeStructure(
+      '• Built a reporting workflow in\nPython to save the team 6 hours per week.'
+    ).bullets
+  ).toEqual(['Built a reporting workflow in Python to save the team 6 hours per week.']);
 });
