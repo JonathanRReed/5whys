@@ -11,10 +11,11 @@ type Props = {
   scanComplete: boolean;
   isLoadingFile?: boolean;
   status: string | null;
+  fileError?: string | null;
   storageNotice: string | null;
   needsRescan: boolean;
   onTextChange: (value: string) => void;
-  onFileUpload: (file: File) => void;
+  onFileUpload: (file: File) => Promise<void>;
   onScan: () => void;
   onLoadSample: () => void;
   onClear: () => void;
@@ -27,6 +28,7 @@ export default function ResumeInput({
   scanComplete,
   isLoadingFile,
   status,
+  fileError,
   storageNotice,
   needsRescan,
   onTextChange,
@@ -37,7 +39,9 @@ export default function ResumeInput({
   placeholder,
 }: Props) {
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    input.value = '';
     if (file) await onFileUpload(file);
   };
 
@@ -46,8 +50,8 @@ export default function ResumeInput({
       <CardHeader className="space-y-4">
         <CardTitle className="text-2xl">Upload or paste resume</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Paste the whole thing or just the bullets. Supports .txt, .md, .docx, and .pdf. Headings,
-          contact lines, and education are recognized and left out of scoring.
+          Paste your resume or import TXT, Markdown, DOCX, or a text-based PDF. Review the extracted
+          text before analyzing. Scanned PDFs need OCR first. Everything stays in your browser.
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -121,6 +125,11 @@ export default function ResumeInput({
             <div className="h-2 w-2 rounded-full bg-foam animate-pulse" />
             <p className="text-xs text-muted-foreground">Reading file...</p>
           </div>
+        )}
+        {fileError && (
+          <p className="text-sm text-love" role="alert">
+            {fileError}
+          </p>
         )}
         {status ? (
           <p className="text-sm text-foam" role="status">
