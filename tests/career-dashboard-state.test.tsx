@@ -200,6 +200,7 @@ it('suppresses stale skills even when the old analysis found no achievement bull
   const dashboard = readCareerDashboard();
   expect(dashboard.resume?.needsRescan).toBe(true);
   expect(dashboard.resume?.hardSkills).toEqual([]);
+  expect(dashboard.recommendations.filter((item) => item.tool === 'Resume Game')).toHaveLength(1);
   expect(dashboard.recommendations[0].cta).toBe('Review changed resume');
   expect(dashboard.recommendations.some((item) => item.text.includes('Your resume shows'))).toBe(
     false
