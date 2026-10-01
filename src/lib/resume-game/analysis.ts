@@ -11,7 +11,7 @@ import {
 } from './constants';
 import { analyzeResumeLength } from './length';
 import { analyzeReadability } from './readability';
-import { findQuantifiers, hasOutcomeLink, hasQuantifier, scoreBullet } from './scoring';
+import { findQuantifiers, hasOutcomeLink, hasQualitativeOutcome, hasQuantifier, scoreBullet } from './scoring';
 import { extractSkills } from './skills';
 import { detectResumeStructure } from './structure';
 import { capitalizeWord, escapeRegExp, normalizeLine, uniqueId } from './text';
@@ -63,7 +63,7 @@ export function detectImpact(bullet: string): boolean {
   const hasScopeSignal = SCOPE_SIGNAL_PATTERNS.some((p) => p.test(lower));
   const hasQualitativeImpact = QUALITATIVE_IMPACT_PATTERNS.some((p) => p.test(lower));
   const hasMeasuredOutcome = hasQuantifier(lower) && hasOutcomeLink(lower);
-  return hasBusinessOutcome || hasScopeSignal || hasQualitativeImpact || hasMeasuredOutcome;
+  return hasBusinessOutcome || hasScopeSignal || hasQualitativeImpact || hasMeasuredOutcome || hasQualitativeOutcome(bullet);
 }
 
 // ============================================================================
@@ -247,6 +247,7 @@ function computeBulletSignal(record: BulletRecord, hardSkills: string[]): number
   else if (POWER_VERB_PATTERN.test(line)) signal += 10;
 
   if (hasQuantifier(line)) signal += 25;
+  else if (hasQualitativeOutcome(line)) signal += 15;
   if (hasOutcomeLink(line)) signal += 20;
   if (hardSkills.some((skill) => matchesTerm(line, skill))) signal += 15;
   signal += record.improvedScore >= 70 ? 15 : record.improvedScore >= 50 ? 10 : 5;

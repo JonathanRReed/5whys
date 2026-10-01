@@ -1,6 +1,6 @@
 import { BUZZWORDS, getVerbStrength, matchesTerm, suggestStrongerVerb } from './constants';
 import { analyzeReadability } from './readability';
-import { hasOutcomeLink, hasQuantifier } from './scoring';
+import { hasOutcomeLink, hasQualitativeOutcome, hasQuantifier } from './scoring';
 import { normalizeLine } from './text';
 import type { BulletRecord } from './types';
 
@@ -168,10 +168,10 @@ export function generateBulletSuggestions(
 
   // Missing quantifier (years and dates do not count as measures)
   const hasNumber = hasQuantifier(current) || hasQuantifier(fields.quantifier);
-  if (!hasNumber) {
+  if (!hasNumber && !hasQualitativeOutcome(current)) {
     suggestions.push({
       type: 'missing-number',
-      message: 'No measure yet. One concrete figure makes this line easier to trust.',
+      message: 'Make the evidence more specific. Use a real measure, adoption, or a concrete change you can explain.',
       fix: metricPromptFor(current),
       studentExample: pick(NUMBER_EXAMPLES.student, exampleSeed),
       professionalExample: pick(NUMBER_EXAMPLES.professional, exampleSeed),
