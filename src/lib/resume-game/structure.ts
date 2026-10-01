@@ -91,18 +91,33 @@ export function detectResumeStructure(text: string): ResumeStructure {
   };
 
   const glyphLines = rawLines.filter((line) => GLYPH.test(line));
-  const usedGlyphs = glyphLines.length >= 2;
+  const usedGlyphs = glyphLines.length >= 1;
 
   const bullets: string[] = [];
+  let continuingBullet = false;
   rawLines.forEach((line, index) => {
     if (usedGlyphs) {
       if (GLYPH.test(line)) {
         const normalized = normalizeLine(line);
         if (normalized) bullets.push(normalized);
+        continuingBullet = Boolean(normalized);
       } else {
-        // With markers present, unmarked lines are structure, not achievements.
         const kind = classify(line, index, wordCount(line));
-        skipped[kind === 'bullet' ? 'other' : kind] += 1;
+        // PDF extraction can put the result on its own line. Join only a
+        // plausible continuation; headings and contact/title lines end it.
+        const previous = bullets[bullets.length - 1];
+        const isContinuation =
+          continuingBullet &&
+          previous &&
+          !/[.!?]$/.test(previous) &&
+          /^[a-z(]/.test(line) &&
+          (kind === 'bullet' || kind === 'other');
+        if (isContinuation) {
+          bullets[bullets.length - 1] = `${previous} ${line}`;
+        } else {
+          continuingBullet = false;
+          skipped[kind === 'bullet' ? 'other' : kind] += 1;
+        }
       }
       return;
     }
