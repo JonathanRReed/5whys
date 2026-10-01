@@ -63,8 +63,9 @@ function ledgerSentence(data: CareerDashboardData): string {
     const n = data.reflection.snapshotCount;
     const topic = data.reflection.latestTopic ? ` on ${data.reflection.latestTopic}` : '';
     parts.push(`${n === 1 ? 'one reflection' : `${n} reflections`}${topic}`);
-  } else if (data.reflection?.latestTopic) {
-    parts.push(`a reflection in progress on ${data.reflection.latestTopic}`);
+  }
+  if (data.reflection?.hasDraft) {
+    parts.push(`a reflection in progress on ${data.reflection.draftTopic || 'career direction'}`);
   }
   if (data.resume?.bulletCount) {
     const n = data.resume.bulletCount;
@@ -79,18 +80,18 @@ function ledgerSentence(data: CareerDashboardData): string {
       `${n === 1 ? 'one practice round' : `${n} practice rounds`}${avg ? ` averaging ${avg} of 5` : ''}`
     );
   }
-  if (!data.networking?.sessionCount && data.networking?.draftedButUnpracticed) {
-    parts.push('an introduction draft awaiting practice');
+  if (data.networking?.hasDraft) {
+    parts.push('an introduction draft');
   } else if (!data.networking?.sessionCount && data.networking?.versionCount) {
     parts.push('saved introduction notes');
   }
   if (data.glowup?.storyCount) {
     const n = data.glowup.storyCount;
-    const role = data.glowup.currentRoleTitle ? ` for ${data.glowup.currentRoleTitle}` : '';
-    parts.push(`${n === 1 ? 'one interview story' : `${n} interview stories`}${role}`);
-  } else if (data.glowup?.roleCount) {
+    parts.push(n === 1 ? 'one interview story' : `${n} interview stories`);
+  }
+  if (data.glowup?.roleCount) {
     const n = data.glowup.roleCount;
-    parts.push(n === 1 ? 'an interview preparation draft' : `${n} interview preparation drafts`);
+    parts.push(n === 1 ? 'one saved role' : `${n} saved roles`);
   }
   if (parts.length === 0) return 'You have saved work in progress.';
   if (parts.length === 1) return `You have ${parts[0]}.`;
