@@ -19,7 +19,11 @@ it('preserves apostrophes without highlighting HTML entity digits as achievement
   const text = "Led O'Reilly training for 5 people";
   const card = await visualizationFor(text);
   expect(card).toHaveTextContent(text);
-  expect(Array.from(card.querySelectorAll('mark')).slice(2).map((mark) => mark.textContent)).toEqual(['Led', '5']);
+  expect(
+    Array.from(card.querySelectorAll('mark'))
+      .slice(2)
+      .map((mark) => mark.textContent)
+  ).toEqual(['Led', '5']);
 });
 
 it('renders HTML-shaped input as literal text while retaining highlights and line breaks', async () => {
@@ -27,5 +31,9 @@ it('renders HTML-shaped input as literal text while retaining highlights and lin
   expect(card).toHaveTextContent('<img src=x onerror=alert(1)>');
   expect(card.querySelector('img, script')).toBeNull();
   expect(card.querySelectorAll('br')).toHaveLength(1);
-  expect(Array.from(card.querySelectorAll('mark')).slice(2).map((mark) => mark.textContent)).toEqual(['1', 'Built', '3']);
+  expect(
+    Array.from(card.querySelectorAll('mark'))
+      .slice(2)
+      .map((mark) => mark.textContent)
+  ).toEqual(['1', 'Built', '3']);
 });

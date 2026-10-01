@@ -36,11 +36,7 @@ function renderToken(token: HighlightToken, index: number) {
   return <React.Fragment key={index}>{token.text}</React.Fragment>;
 }
 
-export default function ScanResults({
-  resumeText,
-  signalReport,
-  resumeOutOfDate,
-}: Props) {
+export default function ScanResults({ resumeText, signalReport, resumeOutOfDate }: Props) {
   const grade = signalGrade(signalReport.visible);
   const hasSkills = signalReport.hardSkills.length > 0 || signalReport.softSkills.length > 0;
   const hasSections = signalReport.sections.length > 0;
