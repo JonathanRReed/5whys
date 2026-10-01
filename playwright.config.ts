@@ -11,6 +11,9 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:4321',
     trace: 'retain-on-failure',
+    launchOptions: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
+      ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE }
+      : undefined,
   },
   projects: [
     {
@@ -24,6 +27,7 @@ export default defineConfig({
   ],
   webServer: {
     command: 'bun run preview -- --port 4321',
+    env: { ASTRO_TELEMETRY_DISABLED: '1', ASTRO_PREVIEW_BACKGROUND: '1' },
     url: 'http://localhost:4321',
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,

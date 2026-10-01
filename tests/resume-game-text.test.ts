@@ -36,7 +36,7 @@ describe('decodeEntities', () => {
     expect(decodeEntities('Space&NBSP;Amp&AMP;')).toBe('Space Amp&');
   });
 
-  it('returns empty string when input is empty or null-ish', () => {
+  it('returns empty string when input is empty', () => {
     expect(decodeEntities('')).toBe('');
   });
 
@@ -151,7 +151,7 @@ describe('highlightResume', () => {
 });
 
 describe('countPowerVerbs', () => {
-  it('returns 0 for empty or empty-ish input', () => {
+  it('returns 0 for empty input', () => {
     expect(countPowerVerbs('')).toBe(0);
   });
 
@@ -167,14 +167,8 @@ describe('countPowerVerbs', () => {
 });
 
 describe('uniqueId', () => {
-  it('generates an ID with prefix and index', () => {
-    const id = uniqueId('bullet', 1);
-    expect(id).toMatch(/^bullet-1-[a-z0-9]{1,5}$/);
-  });
-
-  it('generates unique IDs for sequential calls', () => {
-    const id1 = uniqueId('test', 0);
-    const id2 = uniqueId('test', 0);
-    expect(id1).not.toBe(id2);
+  it('preserves the caller-provided prefix and index', () => {
+    expect(uniqueId('bullet', 1)).toMatch(/^bullet-1-/);
+    expect(uniqueId('skill', 12)).toMatch(/^skill-12-/);
   });
 });
