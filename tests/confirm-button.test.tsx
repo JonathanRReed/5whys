@@ -9,7 +9,11 @@ afterEach(() => {
 
 it('executes only on the second press and disarms afterward', () => {
   const onConfirm = vi.fn();
-  render(<ConfirmButton confirmLabel="Delete snapshot?" onConfirm={onConfirm}>Delete</ConfirmButton>);
+  render(
+    <ConfirmButton confirmLabel="Delete snapshot?" onConfirm={onConfirm}>
+      Delete
+    </ConfirmButton>
+  );
   fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
   expect(onConfirm).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button', { name: 'Delete snapshot?' }));
@@ -20,7 +24,11 @@ it('executes only on the second press and disarms afterward', () => {
 it.each(['Escape', 'blur', 'timeout'])('cancels armed deletion on %s', (cancel) => {
   vi.useFakeTimers();
   const onConfirm = vi.fn();
-  render(<ConfirmButton confirmLabel="Delete snapshot?" onConfirm={onConfirm}>Delete</ConfirmButton>);
+  render(
+    <ConfirmButton confirmLabel="Delete snapshot?" onConfirm={onConfirm}>
+      Delete
+    </ConfirmButton>
+  );
   fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
   const armed = screen.getByRole('button', { name: 'Delete snapshot?' });
   if (cancel === 'Escape') fireEvent.keyDown(armed, { key: 'Escape' });
