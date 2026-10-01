@@ -47,7 +47,9 @@ test('the dashboard turns saved work into next actions and links', async ({ page
   ).toBeVisible();
   await expect(page.getByText(/Find one person who turned biology into work/)).toBeVisible();
   // The lowest networking rating was confidence, so the next step is a concrete pause-and-compare exercise.
-  await expect(page.getByText(/Try another rep with one change: pause before your opening line/)).toBeVisible();
+  await expect(
+    page.getByText(/Try another rep with one change: pause before your opening line/)
+  ).toBeVisible();
   await expect(page.getByText('Understanding as a form of help.')).toBeVisible();
 
   // Every recommendation is a link into a tool.
