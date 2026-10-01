@@ -3,7 +3,7 @@ import { afterEach, beforeEach, expect, it } from 'vitest';
 import CareerDashboard from '../src/components/CareerDashboard';
 import { readCareerDashboard } from '../src/lib/career-bridge';
 import { createDefaultData, createRole } from '../src/lib/glowup-store';
-import { createBulletRecord, EMPTY_SESSION } from '../src/lib/resume-game';
+import { buildDeepSignalReport, createBulletRecord, EMPTY_SESSION } from '../src/lib/resume-game';
 
 beforeEach(() => localStorage.clear());
 afterEach(cleanup);
@@ -181,4 +181,18 @@ it('does not show an obsolete prominent resume score beside changed text', () =>
   render(<CareerDashboard />);
   expect(screen.getByText(/Saved resume results need a fresh analysis/)).toBeVisible();
   expect(screen.queryByText(/average bullet score across/)).toBeNull();
+});
+
+it('suppresses stale skills even when the old analysis found no achievement bullets', () => {
+  const report = buildDeepSignalReport([], 'Skills: Python');
+  expect(report.hardSkills).toContain('python');
+  localStorage.setItem('resume-game-session-v2', JSON.stringify({
+    ...EMPTY_SESSION, resumeText: 'A new community-focused resume.', needsRescan: true,
+    lastAnalyzedAt: '2026-09-01T00:00:00Z', signalReport: report, bullets: [],
+  }));
+  const dashboard = readCareerDashboard();
+  expect(dashboard.resume?.needsRescan).toBe(true);
+  expect(dashboard.resume?.hardSkills).toEqual([]);
+  expect(dashboard.recommendations[0].cta).toBe('Review changed resume');
+  expect(dashboard.recommendations.some((item) => item.text.includes('Your resume shows'))).toBe(false);
 });
