@@ -1,4 +1,5 @@
 import type { NetworkingPracticeSession } from '../../utils/storage';
+import ConfirmButton from '../shared/ConfirmButton';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 
@@ -79,14 +80,16 @@ export default function SessionHistory({
           >
             Export sessions JSON
           </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="text-destructive hover:text-destructive focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
-            onClick={onClearHistory}
-          >
-            Clear history
-          </Button>
+          {sessions.length > 0 && (
+            <ConfirmButton
+              tone="destructive"
+              confirmLabel={`Clear all ${sessions.length === 1 ? '1 session' : `${sessions.length} sessions`}?`}
+              onConfirm={onClearHistory}
+              className="border-transparent bg-transparent text-destructive hover:bg-destructive/10"
+            >
+              Clear history
+            </ConfirmButton>
+          )}
         </div>
       </div>
 
@@ -160,14 +163,14 @@ export default function SessionHistory({
                         Avg
                       </div>
                     </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full border-border text-foreground sm:w-auto focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
-                      onClick={() => onRemoveSession(session.id)}
+                    <ConfirmButton
+                      tone="destructive"
+                      confirmLabel="Delete rep?"
+                      onConfirm={() => onRemoveSession(session.id)}
+                      className="w-full border-border text-foreground sm:w-auto hover:bg-destructive/10 hover:text-destructive hover:border-destructive/40"
                     >
                       Delete
-                    </Button>
+                    </ConfirmButton>
                   </div>
                 </CardContent>
               </Card>
