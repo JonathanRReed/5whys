@@ -118,7 +118,8 @@ export function detectResumeStructure(text: string): ResumeStructure {
           !startsAchievement &&
           previous &&
           !/[.!?]$/.test(previous) &&
-          /^[a-z(]/.test(line) &&
+          (/^[a-z(]/.test(line) ||
+            /\b(?:in|for|with|using|across|through|and|or|by|to|of)$/i.test(previous)) &&
           (kind === 'bullet' || kind === 'other');
         if (isContinuation) {
           bullets[bullets.length - 1] = `${previous} ${line}`;
