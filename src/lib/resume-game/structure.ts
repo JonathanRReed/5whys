@@ -47,7 +47,13 @@ const isAllCaps = (line: string) => /[A-Z]/.test(line) && line === line.toUpperC
 function classify(line: string, index: number, wordsInLine: number): SkippedKind | 'bullet' {
   if (EMAIL.test(line) || PHONE.test(line) || URL.test(line)) return 'contact';
   // A short first line without digits or a verb is almost always the name.
-  if (index === 0 && wordsInLine <= 4 && !/\d/.test(line) && !BULLET_START_PATTERN.test(line)) {
+  if (
+    index === 0 &&
+    wordsInLine <= 4 &&
+    !SECTION_WORDS.test(line.replace(/[:\s]+$/, '')) &&
+    !/\d/.test(line) &&
+    !BULLET_START_PATTERN.test(line)
+  ) {
     return 'contact';
   }
   const clean = line.replace(/[:\s]+$/, '');
@@ -91,18 +97,39 @@ export function detectResumeStructure(text: string): ResumeStructure {
   };
 
   const glyphLines = rawLines.filter((line) => GLYPH.test(line));
-  const usedGlyphs = glyphLines.length >= 2;
+  const usedGlyphs = glyphLines.length >= 1;
 
   const bullets: string[] = [];
+  let continuingBullet = false;
   rawLines.forEach((line, index) => {
     if (usedGlyphs) {
       if (GLYPH.test(line)) {
         const normalized = normalizeLine(line);
         if (normalized) bullets.push(normalized);
+        continuingBullet = Boolean(normalized);
       } else {
-        // With markers present, unmarked lines are structure, not achievements.
         const kind = classify(line, index, wordCount(line));
-        skipped[kind === 'bullet' ? 'other' : kind] += 1;
+        // PDF extraction can put the result on its own line. Join only a
+        // plausible continuation; headings and contact/title lines end it.
+        const previous = bullets[bullets.length - 1];
+        const startsAchievement = kind === 'bullet' && BULLET_START_PATTERN.test(line);
+        const isContinuation =
+          continuingBullet &&
+          !startsAchievement &&
+          previous &&
+          !/[.!?]$/.test(previous) &&
+          (/^[a-z(]/.test(line) ||
+            /\b(?:in|for|with|using|across|through|and|or|by|to|of)$/i.test(previous)) &&
+          (kind === 'bullet' || kind === 'other');
+        if (isContinuation) {
+          bullets[bullets.length - 1] = `${previous} ${line}`;
+        } else if (startsAchievement) {
+          bullets.push(line);
+          continuingBullet = true;
+        } else {
+          continuingBullet = false;
+          skipped[kind === 'bullet' ? 'other' : kind] += 1;
+        }
       }
       return;
     }

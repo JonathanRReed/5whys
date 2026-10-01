@@ -24,6 +24,7 @@ import BulletEditor from './resume-game/BulletEditor';
 import BulletList from './resume-game/BulletList';
 import ResumeHeader from './resume-game/ResumeHeader';
 import ResumeInput from './resume-game/ResumeInput';
+import ReviewLines from './resume-game/ReviewLines';
 import ScanResults from './resume-game/ScanResults';
 import Scoreboard from './resume-game/Scoreboard';
 import ShareScoreCard from './resume-game/ShareScoreCard';
@@ -350,9 +351,34 @@ ${improved.join('\n')}
 
       {scanComplete && (
         <ScanResults
+          bullets={bullets}
           resumeText={resumeText}
           signalReport={signalReport}
           resumeOutOfDate={resumeOutOfDate}
+        />
+      )}
+
+      {scanComplete && !needsRescan && (
+        <ReviewLines
+          key={session.lastAnalyzedAt}
+          bullets={bullets}
+          onApply={(lines) => {
+            const records = lines.map((line, index) => createBulletRecord(line, index));
+            setSessionState((previous) => ({
+              ...previous,
+              bullets: records,
+              selectedBulletId: records[0]?.id ?? null,
+              signalReport: buildDeepSignalReport(
+                records,
+                previous.resumeText,
+                `Reviewed ${records.length} ${records.length === 1 ? 'achievement line' : 'achievement lines'} selected by you.`,
+                0
+              ),
+              lastAnalyzedAt: new Date().toISOString(),
+              needsRescan: false,
+            }));
+            setStatus('Reviewed lines applied. Your pasted resume is unchanged.');
+          }}
         />
       )}
 
