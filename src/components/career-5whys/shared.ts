@@ -482,9 +482,9 @@ export function computeSynthesis(responses: unknown, topic: unknown, track: Trac
     const latest = chain[chain.length - 1];
     whyStatement = `Layer ${sequentialCount} of 5 answered. Latest reason: "${latest}". Keep asking why until the answer names a value or need.`;
   } else if (track === 'career') {
-    whyStatement = `You started with ${quoted}. On the surface it was about "${surface}". Five layers down, the real reason: ${root} Act on that, not the surface.`;
+    whyStatement = `You started with ${quoted}. On the surface it was about "${surface}". Working hypothesis from your final answer: ${root} Use the next step to test it against a real experience. Earlier answers may matter too.`;
   } else {
-    whyStatement = `You started with ${quoted}. What pulls you in: "${surface}". What it is really about: ${root} A path fits when it feeds that, not just the surface.`;
+    whyStatement = `You started with ${quoted}. What pulls you in: "${surface}". Working hypothesis from your final answer: ${root} Try a small activity to test whether that motivation holds up. You can revise it as you learn.`;
   }
 
   const nextStep = isComplete ? suggestNextStep(track, topicText, safe.join(' ')) : '';

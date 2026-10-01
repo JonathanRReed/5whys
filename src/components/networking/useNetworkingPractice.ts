@@ -220,10 +220,40 @@ export function useNetworkingPractice() {
     () => versions.find((v) => v.id === currentVersionId) ?? versions[0],
     [currentVersionId, versions]
   );
-  const currentScenario = React.useMemo(
+  const presetScenario = React.useMemo(
     () => scenarios.find((s) => s.id === currentVersion?.scenarioId),
     [currentVersion?.scenarioId]
   );
+  const currentScenario = React.useMemo(() => {
+    if (!presetScenario || !currentVersion) return presetScenario;
+    const who = currentVersion.who.trim() || presetScenario.who;
+    const where = currentVersion.where.trim() || presetScenario.where;
+    const customSteps = currentVersion.what
+      .split('\n')
+      .map((step) => step.trim())
+      .filter(Boolean);
+    const what = customSteps.length ? customSteps : presetScenario.what;
+    const changedAudience = who !== presetScenario.who;
+    const changedGoal = what.join('\n') !== presetScenario.what.join('\n');
+    return {
+      ...presetScenario,
+      who,
+      where,
+      what,
+      rapportSamples: changedAudience
+        ? [
+            `Prepare for: ${who}. Choose one real detail about their work that connects to your reason for speaking with them.`,
+            ...presetScenario.rapportSamples,
+          ]
+        : presetScenario.rapportSamples,
+      questionTemplates: changedGoal
+        ? [
+            { id: 'custom-goal', label: 'Your planned ask', prompt: what.join('\n') },
+            ...presetScenario.questionTemplates,
+          ]
+        : presetScenario.questionTemplates,
+    };
+  }, [presetScenario, currentVersion]);
   // Each scenario rehearses at its own length until the visitor picks one.
   const lengthPinnedRef = React.useRef(false);
   const pinTimerLength = React.useCallback(
@@ -306,7 +336,7 @@ export function useNetworkingPractice() {
   );
 
   const createNewVersion = React.useCallback(() => {
-    const scenario = currentScenario ?? scenarios[0];
+    const scenario = presetScenario ?? scenarios[0];
     if (!scenario) return;
     // Name it automatically; the "Name this intro" field renames it inline.
     const existing = versions.filter((v) => v.scenarioId === scenario.id).length;
@@ -317,7 +347,7 @@ export function useNetworkingPractice() {
     setVersions((prev) => [nextVersion, ...prev]);
     setCurrentVersionId(nextVersion.id);
     setStorageNotice(`Started "${title}". Rename it below if you like.`);
-  }, [currentScenario, versions, setVersions]);
+  }, [presetScenario, versions, setVersions]);
 
   const deleteCurrentVersion = React.useCallback(() => {
     if (!currentVersion) return;
