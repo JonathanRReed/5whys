@@ -51,7 +51,7 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
   const { session, setSession, storageNotice } = useResumeSession();
   const [isScanning, setIsScanning] = React.useState(false);
   const [scanComplete, setScanComplete] = React.useState(false);
-  const [needsRescan, setNeedsRescan] = React.useState(false);
+  const needsRescan = session.needsRescan ?? false;
   const [status, setStatus] = React.useState<string | null>(null);
   const [studentRegister, setStudentRegister] = React.useState(false);
   const scanTimeoutRef = React.useRef<number | null>(null);
@@ -77,7 +77,7 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
 
   const setResumeTextValue = React.useCallback(
     (value: string) => {
-      updateSessionPartial({ resumeText: value });
+      updateSessionPartial({ resumeText: value, needsRescan: true });
     },
     [updateSessionPartial]
   );
@@ -160,8 +160,8 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
       selectedBulletId: records[0]?.id ?? null,
       signalReport: report,
       lastAnalyzedAt: new Date().toISOString(),
+      needsRescan: false,
     }));
-    setNeedsRescan(false);
     setStatus(
       records.length === 0
         ? 'No achievement lines found. Add bullets that start with what you did.'
@@ -178,6 +178,14 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
       setScanComplete(true);
       scanTimeoutRef.current = null;
     }, SCAN_TRANSITION_MS);
+  };
+
+  const cancelScan = () => {
+    if (scanTimeoutRef.current !== null) {
+      window.clearTimeout(scanTimeoutRef.current);
+      scanTimeoutRef.current = null;
+    }
+    setIsScanning(false);
   };
 
   const [isLoadingFile, setIsLoadingFile] = React.useState(false);
@@ -198,6 +206,7 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
   };
 
   const handleFileUpload = async (file: File) => {
+    cancelScan();
     const sequence = ++uploadSequence.current;
     setFileError(null);
     setStatus(null);
@@ -212,7 +221,6 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
       const text = await extractTextFromFile(file);
       if (sequence !== uploadSequence.current) return;
       setResumeTextValue(text);
-      setNeedsRescan(true);
       setStatus('File loaded. Review the text below before analyzing.');
     } catch (error) {
       if (sequence !== uploadSequence.current) return;
@@ -223,9 +231,9 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
   };
 
   const handleTextChange = (value: string) => {
+    cancelScan();
     cancelUpload();
     setResumeTextValue(decodeEntities(value));
-    setNeedsRescan(true);
   };
 
   const updateBulletField = (id: string, field: keyof BulletFields, value: string) => {
@@ -317,16 +325,16 @@ ${improved.join('\n')}
         onFileUpload={handleFileUpload}
         onScan={handleScan}
         onLoadSample={() => {
+          cancelScan();
           cancelUpload();
           setResumeTextValue(sampleResume);
-          setNeedsRescan(true);
           setStatus('Sample resume loaded. Run the analysis to see suggestions.');
         }}
         onClear={() => {
+          cancelScan();
           cancelUpload();
           setSessionState(() => ({ ...EMPTY_SESSION }));
           setScanComplete(false);
-          setNeedsRescan(false);
           setStatus('Workspace cleared. Paste a fresh resume to begin.');
         }}
       />

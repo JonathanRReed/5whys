@@ -27,6 +27,7 @@ const EMPTY_SIGNAL_REPORT: SignalReport = {
 
 const EMPTY_SESSION: StoredResumeSession = {
   resumeText: '',
+  needsRescan: false,
   bullets: [],
   selectedBulletId: null,
   lastAnalyzedAt: null,
@@ -168,6 +169,8 @@ function normalizeStoredSession(value: unknown): StoredResumeSession {
   const signalReport = normalizeSignalReport(data.signalReport);
   return {
     resumeText,
+    // Older sessions did not record whether their saved text was re-analyzed.
+    needsRescan: typeof data.needsRescan === 'boolean' ? data.needsRescan : Boolean(lastAnalyzedAt),
     bullets,
     selectedBulletId,
     lastAnalyzedAt,
