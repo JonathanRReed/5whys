@@ -63,6 +63,8 @@ interface ResumeBulletRecord {
 }
 
 interface ResumeGameData {
+  resumeText?: string;
+  needsRescan?: boolean;
   bullets: ResumeBulletRecord[];
   lastAnalyzedAt: string | null;
   signalReport?: {
@@ -73,8 +75,18 @@ interface ResumeGameData {
 
 function readResumeGame(): ResumeGameData | null {
   const data = readJson<ResumeGameData>(RESUME_SESSION_KEY);
-  if (!data || !Array.isArray(data.bullets)) return null;
-  return data;
+  if (data && Array.isArray(data.bullets)) return data;
+  if (typeof window === 'undefined') return null;
+  try {
+    // Match Resume Game's supported legacy fallback without migrating data.
+    if (window.localStorage.getItem(RESUME_SESSION_KEY)) return null;
+    const legacy = window.localStorage.getItem('resume-game-text');
+    return legacy?.trim()
+      ? { resumeText: legacy, needsRescan: true, bullets: [], lastAnalyzedAt: null }
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 // ============================================================================
@@ -162,6 +174,7 @@ interface NetworkingSessionRaw {
 }
 
 export interface NetworkingSummary {
+  hasDraft: boolean;
   versionCount: number;
   sessionCount: number;
   latestSessionDate: string | null;
@@ -179,6 +192,7 @@ function readNetworking(): NetworkingSummary | null {
   const draft = readJson<{ text?: string }>(NETWORKING_DRAFT_KEY);
   if (!versions && !sessions && !draft) return null;
 
+  const hasDraft = typeof draft?.text === 'string' && !!draft.text.trim();
   const list = Array.isArray(sessions) ? sessions : [];
   const rated = list
     .map((s) => s.ratings)
@@ -193,13 +207,14 @@ function readNetworking(): NetworkingSummary | null {
       : null;
 
   return {
+    hasDraft,
     versionCount: Array.isArray(versions) ? versions.length : 0,
     sessionCount: list.length,
     latestSessionDate: latest?.createdAt ?? null,
     latestScenario: latest?.scenarioTitle ?? null,
     averageRating: average,
     nextStep: latestRatings ? computeNextStep(latestRatings) : null,
-    draftedButUnpracticed: list.length === 0 && !!draft?.text?.trim(),
+    draftedButUnpracticed: list.length === 0 && hasDraft,
   };
 }
 
@@ -225,6 +240,8 @@ export interface CareerDashboardData {
   hasData: boolean;
   profile: CareerProfile | null;
   resume: {
+    hasDraft: boolean;
+    needsRescan: boolean;
     lastAnalyzedAt: string | null;
     bulletCount: number;
     /** Mean of each bullet's latest score. */
@@ -232,6 +249,8 @@ export interface CareerDashboardData {
     hardSkills: string[];
   } | null;
   reflection: {
+    hasDraft: boolean;
+    draftTopic: string | null;
     latestTopic: string | null;
     latestTrack: Track | null;
     snapshotCount: number;
@@ -261,13 +280,31 @@ export function readCareerDashboard(): CareerDashboardData {
     ? computeSynthesis(why.session.responses, why.session.topic, why.session.track)
     : null;
   const latestSnapshot = why.snapshots[0] ?? null;
+  const reflectionHasDraft = !!(
+    why.session &&
+    (why.session.topic.trim() || why.session.responses.some((response) => response.trim())) &&
+    !why.snapshots.some(
+      (snapshot) =>
+        snapshot.track === why.session?.track &&
+        snapshot.topic.trim() === why.session.topic.trim() &&
+        snapshot.responses.every(
+          (response, index) => response.trim() === why.session?.responses[index]?.trim()
+        )
+    )
+  );
 
   const hasData = !!(
     resume?.bullets.length ||
+    resume?.resumeText?.trim() ||
+    why.session?.topic.trim() ||
+    why.session?.responses.some((response) => response.trim()) ||
     why.snapshots.length ||
     sessionSynthesis?.isComplete ||
     glowup?.storyCount ||
-    networking?.sessionCount
+    glowup?.roleCount ||
+    networking?.sessionCount ||
+    networking?.versionCount ||
+    networking?.draftedButUnpracticed
   );
 
   const avgScore = resume?.bullets.length
@@ -322,7 +359,10 @@ export function readCareerDashboard(): CareerDashboardData {
 
   // ---- Next actions: the concrete steps the tools themselves produced ------
   const nextActions: NextAction[] = [];
-  const reflectionNextStep = latestSnapshot?.nextStep || sessionSynthesis?.nextStep || null;
+  const reflectionNextStep =
+    reflectionHasDraft && sessionSynthesis?.isComplete
+      ? sessionSynthesis.nextStep
+      : latestSnapshot?.nextStep || sessionSynthesis?.nextStep || null;
   if (reflectionNextStep) {
     nextActions.push({
       tool: 'Career 5 Whys',
@@ -341,8 +381,23 @@ export function readCareerDashboard(): CareerDashboardData {
   // ---- Recommendations built from what was actually saved -----------------
   const recommendations: Recommendation[] = [];
 
-  // Point at the real lowest-scoring bullet, quoting what the student wrote.
-  if (resume?.bullets.length) {
+  const hasResumeAnalysis = !!(
+    resume?.lastAnalyzedAt ||
+    resume?.bullets.length ||
+    resume?.signalReport?.hardSkills?.length
+  );
+  const resumeNeedsRescan = hasResumeAnalysis && resume?.needsRescan !== false;
+  if (resumeNeedsRescan) {
+    recommendations.push({
+      tool: 'Resume Game',
+      text: 'Your saved resume results need a refresh before using their feedback.',
+      href: TOOL_URLS['Resume Game'],
+      cta: 'Review changed resume',
+    });
+  }
+
+  // Only recommend edits using results known to match the current source.
+  if (resume?.bullets.length && !resumeNeedsRescan) {
     const weakest = [...resume.bullets].sort(
       (a, b) => (a.improvedScore ?? 0) - (b.improvedScore ?? 0)
     )[0];
@@ -361,7 +416,7 @@ export function readCareerDashboard(): CareerDashboardData {
   }
 
   // Name the detected skills and turn them into stories.
-  const hardSkills = resume?.signalReport?.hardSkills ?? [];
+  const hardSkills = resumeNeedsRescan ? [] : (resume?.signalReport?.hardSkills ?? []);
   if (hardSkills.length && !glowup?.storyCount) {
     const named = hardSkills.slice(0, 3).join(', ');
     const extra = hardSkills.length > 3 ? ` and ${hardSkills.length - 3} more` : '';
@@ -377,7 +432,7 @@ export function readCareerDashboard(): CareerDashboardData {
   }
 
   // A finished chain that was never kept.
-  if (sessionSynthesis?.isComplete && !latestSnapshot) {
+  if (sessionSynthesis?.isComplete && reflectionHasDraft) {
     recommendations.push({
       tool: 'Career 5 Whys',
       text: 'Your five-round reflection is complete but not saved as a snapshot.',
@@ -415,10 +470,12 @@ export function readCareerDashboard(): CareerDashboardData {
   }
 
   // Quiet pointers for tools with nothing saved yet.
-  if (!resume?.bullets.length) {
+  if (!resume?.bullets.length && !resumeNeedsRescan) {
     recommendations.push({
       tool: 'Resume Game',
-      text: 'No resume scored yet.',
+      text: resume?.resumeText?.trim()
+        ? 'Your resume draft is ready to review.'
+        : 'No resume scored yet.',
       href: TOOL_URLS['Resume Game'],
       cta: 'Paste yours to see which bullets carry proof',
     });
@@ -437,6 +494,8 @@ export function readCareerDashboard(): CareerDashboardData {
     profile,
     resume: resume
       ? {
+          hasDraft: !!resume.resumeText?.trim(),
+          needsRescan: resumeNeedsRescan,
           lastAnalyzedAt: resume.lastAnalyzedAt ?? null,
           bulletCount: resume.bullets.length,
           averageScore: avgScore,
@@ -446,6 +505,8 @@ export function readCareerDashboard(): CareerDashboardData {
     reflection:
       why.session || latestSnapshot
         ? {
+            hasDraft: reflectionHasDraft,
+            draftTopic: reflectionHasDraft ? why.session?.topic || null : null,
             latestTopic: latestSnapshot?.topic || why.session?.topic || null,
             latestTrack: latestSnapshot?.track ?? why.session?.track ?? null,
             snapshotCount: why.snapshots.length,
@@ -456,7 +517,7 @@ export function readCareerDashboard(): CareerDashboardData {
               latestSnapshot?.rootReason ||
               (sessionSynthesis?.isComplete ? sessionSynthesis.root : null),
             nextStep: reflectionNextStep,
-            unsavedComplete: !!sessionSynthesis?.isComplete && !latestSnapshot,
+            unsavedComplete: !!sessionSynthesis?.isComplete && reflectionHasDraft,
           }
         : null,
     glowup,

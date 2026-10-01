@@ -64,9 +64,14 @@ function ledgerSentence(data: CareerDashboardData): string {
     const topic = data.reflection.latestTopic ? ` on ${data.reflection.latestTopic}` : '';
     parts.push(`${n === 1 ? 'one reflection' : `${n} reflections`}${topic}`);
   }
+  if (data.reflection?.hasDraft) {
+    parts.push(`a reflection in progress on ${data.reflection.draftTopic || 'career direction'}`);
+  }
   if (data.resume?.bulletCount) {
     const n = data.resume.bulletCount;
     parts.push(`${n === 1 ? 'one scored resume line' : `${n} scored resume lines`}`);
+  } else if (data.resume?.hasDraft) {
+    parts.push('a resume draft awaiting review');
   }
   if (data.networking?.sessionCount) {
     const n = data.networking.sessionCount;
@@ -75,12 +80,20 @@ function ledgerSentence(data: CareerDashboardData): string {
       `${n === 1 ? 'one practice round' : `${n} practice rounds`}${avg ? ` averaging ${avg} of 5` : ''}`
     );
   }
+  if (data.networking?.hasDraft) {
+    parts.push('an introduction draft');
+  } else if (!data.networking?.sessionCount && data.networking?.versionCount) {
+    parts.push('saved introduction notes');
+  }
   if (data.glowup?.storyCount) {
     const n = data.glowup.storyCount;
-    const role = data.glowup.currentRoleTitle ? ` for ${data.glowup.currentRoleTitle}` : '';
-    parts.push(`${n === 1 ? 'one interview story' : `${n} interview stories`}${role}`);
+    parts.push(n === 1 ? 'one interview story' : `${n} interview stories`);
   }
-  if (parts.length === 0) return 'Nothing saved in this browser yet.';
+  if (data.glowup?.roleCount) {
+    const n = data.glowup.roleCount;
+    parts.push(n === 1 ? 'one saved role' : `${n} saved roles`);
+  }
+  if (parts.length === 0) return 'You have saved work in progress.';
   if (parts.length === 1) return `You have ${parts[0]}.`;
   return `You have ${parts.slice(0, -1).join(', ')}, and ${parts[parts.length - 1]}.`;
 }
@@ -204,7 +217,12 @@ export default function CareerDashboard() {
         <p className="mt-3 max-w-3xl text-pretty text-lg leading-relaxed text-foreground">
           {ledgerSentence(data)}
         </p>
-        {data.resume && (
+        {data.resume?.needsRescan && (
+          <p className="mt-4 text-sm text-muted-foreground">
+            Saved resume results need a fresh analysis before their scores can guide you.
+          </p>
+        )}
+        {data.resume && data.resume.bulletCount > 0 && !data.resume.needsRescan && (
           <p className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-muted-foreground">
             <span className="font-display text-4xl leading-none text-love">
               {Math.max(0, Math.min(100, Math.round(data.resume.averageScore)))}
@@ -242,7 +260,11 @@ export default function CareerDashboard() {
       {data.reflection?.whyStatement && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Your saved reflection</CardTitle>
+            <CardTitle className="text-lg">
+              {data.reflection.snapshotCount > 0
+                ? 'Your saved reflection'
+                : 'Your current reflection'}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {data.reflection.latestTopic && (
@@ -261,7 +283,7 @@ export default function CareerDashboard() {
             )}
             <p className="text-xs text-muted-foreground">
               {data.reflection.unsavedComplete
-                ? 'This chain is finished but not saved as a snapshot yet. '
+                ? `Current reflection on ${data.reflection.draftTopic || 'career direction'} is complete but not yet saved as a snapshot. `
                 : 'From your last saved 5 Whys snapshot. '}
               <a href="/career/" className="font-medium text-foam hover:underline">
                 {data.reflection.unsavedComplete ? 'Save it' : 'Revisit it'}
