@@ -71,6 +71,8 @@ export interface DecodedRole {
   company: string;
   jdUrl?: string;
   rawJdText: string;
+  /** Exact source used for requirement analysis; absent in legacy saves. */
+  parsedJdText?: string;
   bullets: DecodedBullet[];
   createdAt: number;
   updatedAt: number;

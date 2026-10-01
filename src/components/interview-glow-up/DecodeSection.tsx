@@ -31,7 +31,10 @@ type Props = {
   currentRole: DecodedRole | undefined;
 };
 
-type RoleFields = Pick<DecodedRole, 'jobTitle' | 'company' | 'jdUrl' | 'rawJdText'>;
+type RoleFields = Pick<
+  DecodedRole,
+  'jobTitle' | 'company' | 'jdUrl' | 'rawJdText' | 'parsedJdText'
+>;
 
 /** A title for the role when none was typed: the first short line of the JD. */
 function deriveTitle(rawJdText: string): string {
@@ -88,6 +91,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
       company: merged.company,
       jdUrl: merged.jdUrl || undefined,
       rawJdText: merged.rawJdText,
+      parsedJdText: merged.parsedJdText,
       bullets: nextBullets ?? [],
     });
     setData(ensurePacketForRole(created, created.currentRoleId as string));
@@ -112,7 +116,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
     });
     setSkippedCount(skipped);
     const title = fields.jobTitle.trim() ? {} : { jobTitle: deriveTitle(fields.rawJdText) };
-    commit(title, parsed);
+    commit({ ...title, parsedJdText: fields.rawJdText }, parsed);
   };
 
   const startNewRole = () => {
