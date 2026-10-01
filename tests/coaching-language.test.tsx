@@ -1,8 +1,8 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
 import CareerHeader from '../src/components/career-5whys/CareerHeader';
-import WhyStepper from '../src/components/career-5whys/WhyStepper';
 import { computeSynthesis } from '../src/components/career-5whys/shared';
+import WhyStepper from '../src/components/career-5whys/WhyStepper';
 import { computeNextStep } from '../src/lib/networking-advice';
 
 afterEach(cleanup);
