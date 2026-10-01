@@ -80,8 +80,8 @@ export default function BulletEditor({ bullet, index, onFieldChange }: Props) {
             ) : (
               <div className="rounded-2xl border border-border/35 bg-overlay/30 p-4">
                 <p className="text-sm text-muted-foreground">
-                  No writing flags from this checklist. Read the line out loud, check that every claim
-                  is accurate, and make sure it fits the role.
+                  No writing flags from this checklist. Read the line out loud, check that every
+                  claim is accurate, and make sure it fits the role.
                 </p>
               </div>
             )}

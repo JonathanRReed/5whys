@@ -8,7 +8,10 @@ afterEach(cleanup);
 it('does not claim a qualitative achievement contains a number', () => {
   render(
     <BulletEditor
-      bullet={createBulletRecord('Designed a workshop syllabus adopted by the volunteer teaching team.', 0)}
+      bullet={createBulletRecord(
+        'Designed a workshop syllabus adopted by the volunteer teaching team.',
+        0
+      )}
       onFieldChange={() => {}}
     />
   );
