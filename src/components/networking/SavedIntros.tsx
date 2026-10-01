@@ -1,4 +1,5 @@
 import type { NetworkingPracticeVersion } from '../../utils/storage';
+import ConfirmButton from '../shared/ConfirmButton';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -60,14 +61,14 @@ export default function SavedIntros({
             Start another intro
           </Button>
           {versions.length > 1 ? (
-            <Button
-              type="button"
-              variant="ghost"
-              className="text-muted-foreground hover:text-destructive focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
-              onClick={onDeleteCurrentVersion}
+            <ConfirmButton
+              tone="destructive"
+              confirmLabel="Delete this intro?"
+              onConfirm={onDeleteCurrentVersion}
+              className="border-transparent bg-transparent text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
             >
               Delete this intro
-            </Button>
+            </ConfirmButton>
           ) : null}
         </div>
       </div>

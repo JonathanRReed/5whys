@@ -321,7 +321,6 @@ export function useNetworkingPractice() {
 
   const deleteCurrentVersion = React.useCallback(() => {
     if (!currentVersion) return;
-    if (!window.confirm('Delete this practice version?')) return;
     const idToDelete = currentVersion.id;
     deleteVersion(idToDelete);
     setVersions((prev) => {
@@ -432,7 +431,6 @@ export function useNetworkingPractice() {
 
   const clearSessionHistory = React.useCallback(() => {
     if (sessions.length === 0) return;
-    if (!window.confirm('Clear all saved networking practice sessions from this device?')) return;
     const success = clearSessions();
     if (!success) {
       setStorageNotice('Unable to clear history. Check storage permissions and try again.');
