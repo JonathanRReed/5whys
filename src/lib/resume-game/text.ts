@@ -110,17 +110,19 @@ export function parseHighlightedResume(text: string): HighlightToken[] {
 }
 
 export function highlightResume(text: string) {
-  if (!text) return '';
-  const escaped = escapeHtml(decodeEntities(text));
-  return escaped
-    .replace(
-      /\d+\.?\d*%?/g,
-      '<mark class="bg-primary/30 text-primary-foreground px-1 rounded">$&</mark>'
-    )
-    .replace(
-      POWER_VERB_GLOBAL_PATTERN,
-      '<mark class="bg-love/30 text-foreground px-1 rounded">$&</mark>'
-    );
+  return parseHighlightedResume(text)
+    .map((token) => {
+      if (token.type === 'newline') return '\n';
+      const escaped = escapeHtml(token.text);
+      if (token.type === 'number') {
+        return `<mark class="bg-primary/30 text-primary-foreground px-1 rounded">${escaped}</mark>`;
+      }
+      if (token.type === 'verb') {
+        return `<mark class="bg-love/30 text-foreground px-1 rounded">${escaped}</mark>`;
+      }
+      return escaped;
+    })
+    .join('');
 }
 
 export function countPowerVerbs(text: string) {
