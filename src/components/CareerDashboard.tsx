@@ -261,7 +261,9 @@ export default function CareerDashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">
-              {data.reflection.snapshotCount > 0 ? 'Your saved reflection' : 'Your current reflection'}
+              {data.reflection.snapshotCount > 0
+                ? 'Your saved reflection'
+                : 'Your current reflection'}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
