@@ -80,8 +80,5 @@ export function countPowerVerbs(text: string) {
 }
 
 export function uniqueId(prefix: string, index: number) {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return `${prefix}-${index}-${crypto.randomUUID().slice(0, 8)}`;
-  }
   return `${prefix}-${index}-${Math.random().toString(36).slice(2, 7)}`;
 }

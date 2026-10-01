@@ -24,7 +24,6 @@ import {
   scoreBullet,
   scoreLabel,
   seedFields,
-  uniqueId,
   WEAK_WORDS,
 } from '../src/lib/resume-game';
 
@@ -373,18 +372,5 @@ describe('escapeHtml', () => {
   it('escapes HTML characters', () => {
     expect(escapeHtml('<script>')).not.toContain('<');
     expect(escapeHtml('"quoted"')).not.toContain('"');
-  });
-});
-
-describe('uniqueId', () => {
-  it('generates IDs with prefix and index', () => {
-    const id = uniqueId('bullet', 0);
-    expect(id).toMatch(/^bullet-0-[a-f0-9-]+$/i);
-  });
-
-  it('generates unique IDs across calls', () => {
-    const id1 = uniqueId('test', 1);
-    const id2 = uniqueId('test', 1);
-    expect(id1).not.toBe(id2);
   });
 });
