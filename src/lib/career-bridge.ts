@@ -470,7 +470,7 @@ export function readCareerDashboard(): CareerDashboardData {
   }
 
   // Quiet pointers for tools with nothing saved yet.
-  if (!resume?.bullets.length) {
+  if (!resume?.bullets.length && !resumeNeedsRescan) {
     recommendations.push({
       tool: 'Resume Game',
       text: resume?.resumeText?.trim()
