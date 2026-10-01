@@ -38,6 +38,9 @@ const OUTCOME_LINK_PATTERN =
  * verify the claim or infer a business outcome from a tool name alone.
  */
 export function hasQualitativeOutcome(text: string): boolean {
+  // Be conservative when a line contains negation; a keyword match cannot
+  // establish that the outcome actually happened.
+  if (/\b(?:not|never|no longer|failed to|unable to)\b/i.test(text)) return false;
   return (
     /\b(?:adopted|used|approved|accepted|published) by\s+\S+/i.test(text) ||
     /\b(?:eliminated|removed|prevented) (?:duplicate|manual|conflicting|inaccessible|redundant|missing|broken)\s+\S+/i.test(

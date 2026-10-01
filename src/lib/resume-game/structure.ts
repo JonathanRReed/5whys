@@ -112,14 +112,19 @@ export function detectResumeStructure(text: string): ResumeStructure {
         // PDF extraction can put the result on its own line. Join only a
         // plausible continuation; headings and contact/title lines end it.
         const previous = bullets[bullets.length - 1];
+        const startsAchievement = kind === 'bullet' && BULLET_START_PATTERN.test(line);
         const isContinuation =
           continuingBullet &&
+          !startsAchievement &&
           previous &&
           !/[.!?]$/.test(previous) &&
           /^[a-z(]/.test(line) &&
           (kind === 'bullet' || kind === 'other');
         if (isContinuation) {
           bullets[bullets.length - 1] = `${previous} ${line}`;
+        } else if (startsAchievement) {
+          bullets.push(line);
+          continuingBullet = true;
         } else {
           continuingBullet = false;
           skipped[kind === 'bullet' ? 'other' : kind] += 1;
