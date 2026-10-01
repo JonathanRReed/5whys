@@ -381,7 +381,12 @@ export function readCareerDashboard(): CareerDashboardData {
   // ---- Recommendations built from what was actually saved -----------------
   const recommendations: Recommendation[] = [];
 
-  const resumeNeedsRescan = !!resume?.bullets.length && resume.needsRescan !== false;
+  const hasResumeAnalysis = !!(
+    resume?.lastAnalyzedAt ||
+    resume?.bullets.length ||
+    resume?.signalReport?.hardSkills?.length
+  );
+  const resumeNeedsRescan = hasResumeAnalysis && resume?.needsRescan !== false;
   if (resumeNeedsRescan) {
     recommendations.push({
       tool: 'Resume Game',
