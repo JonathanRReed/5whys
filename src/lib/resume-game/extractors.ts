@@ -1,6 +1,9 @@
 import JSZip from 'jszip';
 
 export async function extractTextFromFile(file: File): Promise<string> {
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error('File too large. Maximum size is 5MB.');
+  }
   const ext = file.name.split('.').pop()?.toLowerCase() || '';
 
   if (ext === 'txt' || ext === 'md' || ext === 'markdown' || ext === 'text') {
@@ -15,8 +18,7 @@ export async function extractTextFromFile(file: File): Promise<string> {
     return extractPdf(file);
   }
 
-  // Fallback: try as plain text
-  return file.text();
+  throw new Error('Unsupported file type. Use PDF, DOCX, TXT, or Markdown.');
 }
 
 async function extractDocx(file: File): Promise<string> {
@@ -65,65 +67,6 @@ async function extractDocx(file: File): Promise<string> {
 }
 
 async function extractPdf(file: File): Promise<string> {
-  try {
-    const text = await file.text();
-
-    // Try to extract readable text from PDF raw bytes
-    // PDF text streams contain text between BT (Begin Text) and ET (End Text)
-    // or between stream and endstream markers
-    let extracted = '';
-
-    // Look for text in stream blocks
-    const streamMatches = text.match(/stream\s*([\s\S]*?)\s*endstream/g);
-    if (streamMatches) {
-      for (const match of streamMatches) {
-        const content = match
-          .replace(/stream|endstream/g, '')
-          .replace(/\([^)]*\)/g, (m) => m.slice(1, -1)) // (text) format
-          .replace(/\\n/g, '\n')
-          .replace(/\\r/g, '')
-          .replace(/\\t/g, ' ')
-          .replace(/\\[0-7]{3}/g, ' ')
-          .replace(/[^\x20-\x7E\n]/g, ' ')
-          .replace(/\s+/g, ' ')
-          .trim();
-        if (content.length > 5 && /[a-zA-Z]{3,}/.test(content)) {
-          extracted += content + '\n';
-        }
-      }
-    }
-
-    // Also try direct text extraction from the raw content
-    if (!extracted.trim()) {
-      extracted = text
-        .replace(/\([^)]{2,}\)/g, (m) => m.slice(1, -1))
-        .replace(/\\n/g, '\n')
-        .replace(/\\r/g, '')
-        .replace(/\\t/g, ' ')
-        .replace(/\\[0-7]{3}/g, ' ')
-        .replace(/[^\x20-\x7E\n]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-    }
-
-    if (extracted.length < 50) {
-      throw new Error(
-        'PDF appears to be image-based or encrypted. Try: (1) Copy-paste text directly, (2) Use a .docx file, or (3) Export PDF as text first.'
-      );
-    }
-
-    if (extracted.length < 200) {
-      console.warn('[Resume Game] PDF extraction returned minimal text. Quality may be poor.');
-    }
-
-    return extracted;
-  } catch (err) {
-    if (err instanceof Error && err.message.startsWith('PDF appears')) {
-      throw err;
-    }
-    throw new Error(
-      'Could not extract text from PDF. Try pasting the text manually or use a .txt file.',
-      { cause: err }
-    );
-  }
+  const { readPdfText } = await import('./pdf-extractor');
+  return readPdfText(file);
 }

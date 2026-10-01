@@ -64,13 +64,11 @@ export default function PacketSection({
     );
   }
 
-  // Convert topStoryIds to Set for O(1) lookups and partition stories in a single O(N) pass
-  const topStorySet = new Set(currentPacket.topStoryIds);
+  const topStoryIdsSet = new Set(currentPacket.topStoryIds);
   const packetStories: Story[] = [];
   const otherStories: Story[] = [];
-
   for (const story of data.stories) {
-    if (topStorySet.has(story.id)) {
+    if (topStoryIdsSet.has(story.id)) {
       packetStories.push(story);
     } else {
       otherStories.push(story);

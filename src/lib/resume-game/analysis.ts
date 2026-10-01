@@ -5,7 +5,7 @@ import {
   matchesTerm,
   POWER_VERB_PATTERN,
   POWER_VERB_START_PATTERN,
-  POWER_VERBS_STRONG,
+  POWER_VERBS_STRONG_SET,
   STOPWORDS,
   WEAK_WORDS,
 } from './constants';
@@ -166,7 +166,7 @@ export function computeBenchmarkScore(bullets: BulletRecord[]): {
   const uniqueStrongVerbs = new Set(
     bullets
       .map((b) => b.fields.verb?.toLowerCase())
-      .filter((v): v is string => !!v && POWER_VERBS_STRONG.includes(v))
+      .filter((v): v is string => !!v && POWER_VERBS_STRONG_SET.has(v))
   );
   const strongScore = uniqueStrongVerbs.size >= 2 ? 5 : uniqueStrongVerbs.size === 1 ? 3 : 0;
 
