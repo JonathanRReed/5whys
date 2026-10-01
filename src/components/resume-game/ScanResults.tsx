@@ -1,6 +1,10 @@
 import * as React from 'react';
 import type { BulletRecord, HighlightToken, SignalReport } from '../../lib/resume-game';
-import { generateBulletSuggestions, parseHighlightedResume, suggestStrongerVerb } from '../../lib/resume-game';
+import {
+  generateBulletSuggestions,
+  parseHighlightedResume,
+  suggestStrongerVerb,
+} from '../../lib/resume-game';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 type Props = {
@@ -37,7 +41,12 @@ function renderToken(token: HighlightToken, index: number) {
   return <React.Fragment key={index}>{token.text}</React.Fragment>;
 }
 
-export default function ScanResults({ bullets = [], resumeText, signalReport, resumeOutOfDate }: Props) {
+export default function ScanResults({
+  bullets = [],
+  resumeText,
+  signalReport,
+  resumeOutOfDate,
+}: Props) {
   const nextSteps = bullets
     .map((bullet, index) => ({
       bullet,
@@ -90,13 +99,13 @@ export default function ScanResults({ bullets = [], resumeText, signalReport, re
         <CardHeader className="space-y-2">
           <CardTitle className="text-xl">Resume review</CardTitle>
           <p className="text-sm text-muted-foreground">
-            A writing checklist, not a hiring prediction or a grade on your experience.
-            Reviewed {signalReport.bulletCount}{' '}
+            A writing checklist, not a hiring prediction or a grade on your experience. Reviewed{' '}
+            {signalReport.bulletCount}{' '}
             {signalReport.bulletCount === 1 ? 'achievement line' : 'achievement lines'}.
           </p>
           <p className="text-xs text-muted-foreground">
-            These rules may miss skills, context, and valid ways of describing your work.
-            Check the extracted lines before acting on a suggestion.
+            These rules may miss skills, context, and valid ways of describing your work. Check the
+            extracted lines before acting on a suggestion.
           </p>
           {signalReport.structureNote && (
             <p className="rounded-xl border border-border/35 bg-overlay/30 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
@@ -234,7 +243,10 @@ export default function ScanResults({ bullets = [], resumeText, signalReport, re
             </div>
           )}
 
-          <section aria-label="Your next steps" className="space-y-3 border-t border-border/40 pt-4">
+          <section
+            aria-label="Your next steps"
+            className="space-y-3 border-t border-border/40 pt-4"
+          >
             <h3 className="text-lg">Your next steps</h3>
             {resumeOutOfDate ? (
               <p className="text-sm text-muted-foreground">
@@ -258,8 +270,8 @@ export default function ScanResults({ bullets = [], resumeText, signalReport, re
               </p>
             )}
             <p className="text-xs text-muted-foreground">
-              Suggestions come from limited writing rules. Keep technical terms that matter
-              to your audience and never invent a metric to satisfy the tool.
+              Suggestions come from limited writing rules. Keep technical terms that matter to your
+              audience and never invent a metric to satisfy the tool.
             </p>
           </section>
 

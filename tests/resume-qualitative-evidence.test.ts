@@ -11,12 +11,15 @@ it('recognizes adoption as qualitative evidence without demanding an invented nu
 
 it('recognizes a concrete removed obstacle as a result', () => {
   const text = 'Built a validation workflow that eliminated duplicate records before publication.';
-  expect(generateBulletSuggestions(createBulletRecord(text, 0)).map((item) => item.type))
-    .not.toContain('missing-impact');
+  expect(
+    generateBulletSuggestions(createBulletRecord(text, 0)).map((item) => item.type)
+  ).not.toContain('missing-impact');
 });
 
 it('still asks vague duties for evidence', () => {
-  const suggestions = generateBulletSuggestions(createBulletRecord('Helped with team activities', 0));
+  const suggestions = generateBulletSuggestions(
+    createBulletRecord('Helped with team activities', 0)
+  );
   expect(suggestions.map((suggestion) => suggestion.type)).toContain('missing-number');
   expect(suggestions.map((suggestion) => suggestion.type)).toContain('missing-impact');
 });

@@ -171,7 +171,8 @@ export function generateBulletSuggestions(
   if (!hasNumber && !hasQualitativeOutcome(current)) {
     suggestions.push({
       type: 'missing-number',
-      message: 'Make the evidence more specific. Use a real measure, adoption, or a concrete change you can explain.',
+      message:
+        'Make the evidence more specific. Use a real measure, adoption, or a concrete change you can explain.',
       fix: metricPromptFor(current),
       studentExample: pick(NUMBER_EXAMPLES.student, exampleSeed),
       professionalExample: pick(NUMBER_EXAMPLES.professional, exampleSeed),

@@ -24,8 +24,8 @@ import BulletEditor from './resume-game/BulletEditor';
 import BulletList from './resume-game/BulletList';
 import ResumeHeader from './resume-game/ResumeHeader';
 import ResumeInput from './resume-game/ResumeInput';
-import ScanResults from './resume-game/ScanResults';
 import ReviewLines from './resume-game/ReviewLines';
+import ScanResults from './resume-game/ScanResults';
 import Scoreboard from './resume-game/Scoreboard';
 import ShareScoreCard from './resume-game/ShareScoreCard';
 

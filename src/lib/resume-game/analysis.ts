@@ -11,7 +11,13 @@ import {
 } from './constants';
 import { analyzeResumeLength } from './length';
 import { analyzeReadability } from './readability';
-import { findQuantifiers, hasOutcomeLink, hasQualitativeOutcome, hasQuantifier, scoreBullet } from './scoring';
+import {
+  findQuantifiers,
+  hasOutcomeLink,
+  hasQualitativeOutcome,
+  hasQuantifier,
+  scoreBullet,
+} from './scoring';
 import { extractSkills } from './skills';
 import { detectResumeStructure } from './structure';
 import { capitalizeWord, escapeRegExp, normalizeLine, uniqueId } from './text';
@@ -63,7 +69,13 @@ export function detectImpact(bullet: string): boolean {
   const hasScopeSignal = SCOPE_SIGNAL_PATTERNS.some((p) => p.test(lower));
   const hasQualitativeImpact = QUALITATIVE_IMPACT_PATTERNS.some((p) => p.test(lower));
   const hasMeasuredOutcome = hasQuantifier(lower) && hasOutcomeLink(lower);
-  return hasBusinessOutcome || hasScopeSignal || hasQualitativeImpact || hasMeasuredOutcome || hasQualitativeOutcome(bullet);
+  return (
+    hasBusinessOutcome ||
+    hasScopeSignal ||
+    hasQualitativeImpact ||
+    hasMeasuredOutcome ||
+    hasQualitativeOutcome(bullet)
+  );
 }
 
 // ============================================================================

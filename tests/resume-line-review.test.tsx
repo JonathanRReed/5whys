@@ -31,7 +31,9 @@ it('lets a person correct the reviewed lines and preserves them across reload', 
   view.unmount();
   render(<ResumeGame />);
   const stored = JSON.parse(localStorage.getItem('resume-game-session-v2') ?? 'null');
-  expect(stored.bullets.map((bullet: { original: string }) => bullet.original)).toEqual([corrected]);
+  expect(stored.bullets.map((bullet: { original: string }) => bullet.original)).toEqual([
+    corrected,
+  ]);
   expect(stored.resumeText).toBe('Built a reporting tool for a research team.');
 });
 

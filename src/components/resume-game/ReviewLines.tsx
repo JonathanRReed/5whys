@@ -37,9 +37,9 @@ export default function ReviewLines({ bullets, onApply }: Props) {
       <div className="space-y-2">
         <Label htmlFor="review-achievement-lines">Achievement lines to review</Label>
         <p id="review-lines-help" className="text-sm text-muted-foreground">
-          Keep one complete achievement per line. Join wrapped text, remove headings, or add
-          a line the scanner missed. Your pasted resume stays unchanged. Applying replaces
-          the current bullet edits, so export those first if you want to keep them.
+          Keep one complete achievement per line. Join wrapped text, remove headings, or add a line
+          the scanner missed. Your pasted resume stays unchanged. Applying replaces the current
+          bullet edits, so export those first if you want to keep them.
         </p>
         <Textarea
           id="review-achievement-lines"

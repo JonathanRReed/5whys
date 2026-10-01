@@ -39,7 +39,12 @@ it('does not equate an unrecognized skills dictionary with missing qualification
 });
 
 it('limits next steps to three and ties them to the reviewed text', () => {
-  const lines = ['Helped with team events', 'Responsible for club work', 'Worked on reports', 'Helped with meetings'];
+  const lines = [
+    'Helped with team events',
+    'Responsible for club work',
+    'Worked on reports',
+    'Helped with meetings',
+  ];
   showReview(lines);
   const nextSteps = screen.getByRole('region', { name: 'Your next steps' });
   expect(within(nextSteps).getAllByRole('listitem')).toHaveLength(3);

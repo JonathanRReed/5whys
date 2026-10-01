@@ -38,8 +38,12 @@ const OUTCOME_LINK_PATTERN =
  * verify the claim or infer a business outcome from a tool name alone.
  */
 export function hasQualitativeOutcome(text: string): boolean {
-  return /\b(?:adopted|used|approved|accepted|published) by\s+\S+/i.test(text) ||
-    /\b(?:eliminated|removed|prevented) (?:duplicate|manual|conflicting|inaccessible|redundant|missing|broken)\s+\S+/i.test(text);
+  return (
+    /\b(?:adopted|used|approved|accepted|published) by\s+\S+/i.test(text) ||
+    /\b(?:eliminated|removed|prevented) (?:duplicate|manual|conflicting|inaccessible|redundant|missing|broken)\s+\S+/i.test(
+      text
+    )
+  );
 }
 
 export function hasOutcomeLink(text: string): boolean {
