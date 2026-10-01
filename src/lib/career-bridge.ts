@@ -63,6 +63,8 @@ interface ResumeBulletRecord {
 }
 
 interface ResumeGameData {
+  resumeText?: string;
+  needsRescan?: boolean;
   bullets: ResumeBulletRecord[];
   lastAnalyzedAt: string | null;
   signalReport?: {
@@ -225,6 +227,8 @@ export interface CareerDashboardData {
   hasData: boolean;
   profile: CareerProfile | null;
   resume: {
+    hasDraft: boolean;
+    needsRescan: boolean;
     lastAnalyzedAt: string | null;
     bulletCount: number;
     /** Mean of each bullet's latest score. */
@@ -264,10 +268,16 @@ export function readCareerDashboard(): CareerDashboardData {
 
   const hasData = !!(
     resume?.bullets.length ||
+    resume?.resumeText?.trim() ||
+    why.session?.topic.trim() ||
+    why.session?.responses.some((response) => response.trim()) ||
     why.snapshots.length ||
     sessionSynthesis?.isComplete ||
     glowup?.storyCount ||
-    networking?.sessionCount
+    glowup?.roleCount ||
+    networking?.sessionCount ||
+    networking?.versionCount ||
+    networking?.draftedButUnpracticed
   );
 
   const avgScore = resume?.bullets.length
@@ -341,8 +351,18 @@ export function readCareerDashboard(): CareerDashboardData {
   // ---- Recommendations built from what was actually saved -----------------
   const recommendations: Recommendation[] = [];
 
-  // Point at the real lowest-scoring bullet, quoting what the student wrote.
-  if (resume?.bullets.length) {
+  const resumeNeedsRescan = !!resume?.bullets.length && resume.needsRescan !== false;
+  if (resumeNeedsRescan) {
+    recommendations.push({
+      tool: 'Resume Game',
+      text: 'Your saved resume results need a refresh before using their feedback.',
+      href: TOOL_URLS['Resume Game'],
+      cta: 'Review changed resume',
+    });
+  }
+
+  // Only recommend edits using results known to match the current source.
+  if (resume?.bullets.length && !resumeNeedsRescan) {
     const weakest = [...resume.bullets].sort(
       (a, b) => (a.improvedScore ?? 0) - (b.improvedScore ?? 0)
     )[0];
@@ -361,7 +381,7 @@ export function readCareerDashboard(): CareerDashboardData {
   }
 
   // Name the detected skills and turn them into stories.
-  const hardSkills = resume?.signalReport?.hardSkills ?? [];
+  const hardSkills = resumeNeedsRescan ? [] : (resume?.signalReport?.hardSkills ?? []);
   if (hardSkills.length && !glowup?.storyCount) {
     const named = hardSkills.slice(0, 3).join(', ');
     const extra = hardSkills.length > 3 ? ` and ${hardSkills.length - 3} more` : '';
@@ -418,7 +438,7 @@ export function readCareerDashboard(): CareerDashboardData {
   if (!resume?.bullets.length) {
     recommendations.push({
       tool: 'Resume Game',
-      text: 'No resume scored yet.',
+      text: resume?.resumeText?.trim() ? 'Your resume draft is ready to review.' : 'No resume scored yet.',
       href: TOOL_URLS['Resume Game'],
       cta: 'Paste yours to see which bullets carry proof',
     });
@@ -437,6 +457,8 @@ export function readCareerDashboard(): CareerDashboardData {
     profile,
     resume: resume
       ? {
+          hasDraft: !!resume.resumeText?.trim(),
+          needsRescan: resumeNeedsRescan,
           lastAnalyzedAt: resume.lastAnalyzedAt ?? null,
           bulletCount: resume.bullets.length,
           averageScore: avgScore,
