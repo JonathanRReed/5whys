@@ -438,7 +438,9 @@ export function readCareerDashboard(): CareerDashboardData {
   if (!resume?.bullets.length) {
     recommendations.push({
       tool: 'Resume Game',
-      text: resume?.resumeText?.trim() ? 'Your resume draft is ready to review.' : 'No resume scored yet.',
+      text: resume?.resumeText?.trim()
+        ? 'Your resume draft is ready to review.'
+        : 'No resume scored yet.',
       href: TOOL_URLS['Resume Game'],
       cta: 'Paste yours to see which bullets carry proof',
     });
