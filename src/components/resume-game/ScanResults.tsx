@@ -4,8 +4,7 @@ import { parseHighlightedResume, signalGrade, suggestStrongerVerb } from '../../
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 type Props = {
-  highlightedResume?: string;
-  resumeText?: string;
+  resumeText: string;
   signalReport: SignalReport;
   resumeOutOfDate: boolean;
 };
@@ -38,7 +37,6 @@ function renderToken(token: HighlightToken, index: number) {
 }
 
 export default function ScanResults({
-  highlightedResume,
   resumeText,
   signalReport,
   resumeOutOfDate,
@@ -48,8 +46,7 @@ export default function ScanResults({
   const hasSections = signalReport.sections.length > 0;
   const [deepOpen, setDeepOpen] = React.useState(false);
 
-  const rawText = resumeText ?? highlightedResume ?? '';
-  const tokens = React.useMemo(() => parseHighlightedResume(rawText), [rawText]);
+  const tokens = React.useMemo(() => parseHighlightedResume(resumeText), [resumeText]);
 
   const hasDeepData =
     signalReport.benchmarkScore !== undefined ||
