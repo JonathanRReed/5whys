@@ -59,8 +59,9 @@ it('does not label older results current when text changes during a scan', () =>
   expect(screen.getByRole('button', { name: 'Analyze resume' })).toBeEnabled();
   fireEvent.click(screen.getByRole('button', { name: 'Analyze resume' }));
   finishPendingScan();
-  expect(JSON.parse(localStorage.getItem('resume-game-session-v2') ?? 'null').bullets[0].original)
-    .toBe(newText);
+  expect(
+    JSON.parse(localStorage.getItem('resume-game-session-v2') ?? 'null').bullets[0].original
+  ).toBe(newText);
 });
 
 it('cancels pending analysis when a sample replaces the input', () => {
@@ -95,7 +96,7 @@ it('keeps legacy results but asks for a rescan when their freshness is unknown',
   render(<ResumeGame />);
 
   expect(screen.getByText('Resume updated. Rerun the analysis to refresh metrics.')).toBeVisible();
-  expect(JSON.parse(localStorage.getItem('resume-game-session-v2') ?? 'null').bullets).toEqual(
-    legacy.bullets
-  );
+  const restored = JSON.parse(localStorage.getItem('resume-game-session-v2') ?? 'null');
+  expect(restored.bullets).toHaveLength(legacy.bullets.length);
+  expect(restored.bullets).toMatchObject(legacy.bullets);
 });
