@@ -21,6 +21,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
 });
 
 it('deletes an intro version in-place with ConfirmButton without window.confirm', () => {
@@ -36,16 +37,25 @@ it('deletes an intro version in-place with ConfirmButton without window.confirm'
   const deleteButton = screen.getByRole('button', { name: 'Delete this intro' });
   expect(deleteButton).toBeInTheDocument();
 
+  const savedBefore = localStorage.getItem('networking-practice-versions');
+  const versionsBefore = JSON.parse(savedBefore ?? '[]');
+  expect(versionsBefore.length).toBeGreaterThan(1);
+  const deletedId = versionsBefore[versionsBefore.length - 1].id;
+
   // First click arms the button
   fireEvent.click(deleteButton);
   expect(confirmSpy).not.toHaveBeenCalled();
 
   const armedButton = screen.getByRole('button', { name: 'Delete this intro?' });
   expect(armedButton).toBeInTheDocument();
+  expect(localStorage.getItem('networking-practice-versions')).toBe(savedBefore);
 
   // Second click executes the deletion
   fireEvent.click(armedButton);
   expect(confirmSpy).not.toHaveBeenCalled();
 
-  confirmSpy.mockRestore();
+  const versionsAfter = JSON.parse(localStorage.getItem('networking-practice-versions') ?? '[]');
+  expect(versionsAfter).toHaveLength(versionsBefore.length - 1);
+  expect(versionsAfter.some((version: { id: string }) => version.id === deletedId)).toBe(false);
+  expect(screen.queryByRole('button', { name: 'Delete this intro?' })).toBeNull();
 });
