@@ -31,6 +31,11 @@ it('deletes an intro version in-place with ConfirmButton without window.confirm'
   // Open the customize disclosure
   fireEvent.click(screen.getByRole('button', { name: /Customize this scenario/i }));
 
+  const initialIds = new Set(
+    JSON.parse(localStorage.getItem('networking-practice-versions') ?? '[]')
+      .map((version: { id: string }) => version.id)
+  );
+
   // Create another version so "Delete this intro" is rendered
   fireEvent.click(screen.getByRole('button', { name: 'Start another intro' }));
 
@@ -40,7 +45,8 @@ it('deletes an intro version in-place with ConfirmButton without window.confirm'
   const savedBefore = localStorage.getItem('networking-practice-versions');
   const versionsBefore = JSON.parse(savedBefore ?? '[]');
   expect(versionsBefore.length).toBeGreaterThan(1);
-  const deletedId = versionsBefore[versionsBefore.length - 1].id;
+  const deletedId = versionsBefore.find((version: { id: string }) => !initialIds.has(version.id))?.id;
+  expect(deletedId).toBeDefined();
 
   // First click arms the button
   fireEvent.click(deleteButton);
