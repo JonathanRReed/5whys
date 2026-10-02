@@ -29,6 +29,8 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
   const [activeTheme, setActiveTheme] = React.useState<Theme>('night');
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [showScrollTop, setShowScrollTop] = React.useState(false);
+  const compactToolsTrigger = React.useRef<HTMLButtonElement>(null);
+  const mobileMenuTrigger = React.useRef<HTMLButtonElement>(null);
 
   React.useEffect(() => {
     const onScroll = () => {
@@ -70,8 +72,14 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        if (compactToolsOpen) setCompactToolsOpen(false);
-        if (menuOpen) setMenuOpen(false);
+        if (compactToolsOpen) {
+          setCompactToolsOpen(false);
+          compactToolsTrigger.current?.focus();
+        }
+        if (menuOpen) {
+          setMenuOpen(false);
+          mobileMenuTrigger.current?.focus();
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -220,6 +228,7 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
             })}
             <button
               type="button"
+              ref={compactToolsTrigger}
               onClick={() => setCompactToolsOpen((open) => !open)}
               aria-expanded={compactToolsOpen}
               aria-controls="compact-tools-menu"
@@ -357,6 +366,7 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
           <button
             type="button"
             className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-overlay/35 hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring md:hidden"
+            ref={mobileMenuTrigger}
             onClick={() => setMenuOpen((open) => !open)}
             aria-expanded={menuOpen}
             aria-controls="primary-navigation"
