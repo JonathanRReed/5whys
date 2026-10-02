@@ -49,3 +49,24 @@ it('includes title attribute on scroll to top button when visible', () => {
   const scrollTopBtn = screen.getByRole('button', { name: 'Scroll to top' });
   expect(scrollTopBtn).toHaveAttribute('title', 'Scroll to top');
 });
+
+it('returns focus to the compact trigger after Escape from a menu link', () => {
+  const { container } = render(<Navigation currentPath="/" />);
+  const trigger = screen.getAllByRole('button', { name: /tools/i })[0];
+  fireEvent.click(trigger);
+  const link = container.querySelector<HTMLAnchorElement>('#compact-tools-menu a')!;
+  link.focus();
+  expect(link).toHaveFocus();
+  fireEvent.keyDown(link, { key: 'Escape' });
+  expect(trigger).toHaveFocus();
+});
+
+it('returns focus to the mobile trigger after Escape from the panel', () => {
+  render(<Navigation currentPath="/" />);
+  const trigger = screen.getByRole('button', { name: 'Toggle navigation' });
+  fireEvent.click(trigger);
+  const close = screen.getByRole('button', { name: 'Close navigation' });
+  close.focus();
+  fireEvent.keyDown(close, { key: 'Escape' });
+  expect(trigger).toHaveFocus();
+});
