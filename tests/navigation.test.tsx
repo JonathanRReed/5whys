@@ -54,7 +54,8 @@ it('returns focus to the compact trigger after Escape from a menu link', () => {
   const { container } = render(<Navigation currentPath="/" />);
   const trigger = screen.getAllByRole('button', { name: /tools/i })[0];
   fireEvent.click(trigger);
-  const link = container.querySelector<HTMLAnchorElement>('#compact-tools-menu a')!;
+  const link = container.querySelector<HTMLAnchorElement>('#compact-tools-menu a');
+  if (!link) throw new Error('Expected an open compact menu link');
   link.focus();
   expect(link).toHaveFocus();
   fireEvent.keyDown(link, { key: 'Escape' });
