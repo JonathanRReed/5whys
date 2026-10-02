@@ -4,8 +4,7 @@ import { siteConfig } from '../config/site';
 
 const privacyChips = ['No account', 'Local-only', 'Open source', 'Free'];
 
-// Plates: the four instruments of the field guide. Each carries a real specimen
-// of its output so the page shows usefulness, not just promises.
+// Examples show how to use each tool without promising a score or outcome.
 const plates = [
   {
     roman: 'I',
@@ -14,8 +13,8 @@ const plates = [
     name: 'The Five Whys',
     href: '/career/',
     cta: 'Open the plate',
-    desc: 'Ask why five times until the answer stops moving, and name the motivation underneath the obvious one.',
-    caption: 'Specimen · a chain that bottoms out',
+    desc: 'Explore what matters in your next step. Treat the answers as a working hypothesis you can test.',
+    caption: 'Example · a reason to explore',
   },
   {
     roman: 'II',
@@ -24,8 +23,8 @@ const plates = [
     name: 'The Resume Game',
     href: '/resume-game/',
     cta: 'Open the plate',
-    desc: 'Score each bullet for action, result, and measure, then rewrite weak lines into evidence a recruiter can scan in seconds.',
-    caption: 'Specimen · one bullet, rescored',
+    desc: 'Review unclear lines, missing context, and evidence you can strengthen. Keep what is already working.',
+    caption: 'Example · one line to review',
   },
   {
     roman: 'III',
@@ -35,7 +34,7 @@ const plates = [
     href: '/networking-practice/',
     cta: 'Open the plate',
     desc: 'Rehearse real introductions against a timer, then debrief each rep so the next conversation feels lighter.',
-    caption: 'Specimen · a two-minute opener',
+    caption: 'Example · a practice introduction',
   },
   {
     roman: 'IV',
@@ -44,8 +43,8 @@ const plates = [
     name: 'Interview Glow Up',
     href: '/interview-glow-up/',
     cta: 'Open the plate',
-    desc: 'Decode a job description into the skills it really tests, then build proof-based stories for each one.',
-    caption: 'Specimen · JD signal to story',
+    desc: 'Find likely interview themes in a job description, then connect them to stories you can support.',
+    caption: 'Example · a theme to prepare',
   },
 ];
 
@@ -56,8 +55,8 @@ const fieldNotes = [
     c: 'foam',
   },
   {
-    k: 'Made for one sitting',
-    v: 'Guided prompts, a timer, and scoring that get you to a next step before you close the tab.',
+    k: 'Work at your pace',
+    v: 'Review one line, practice an introduction, or return to saved work when you need it.',
     c: 'gold',
   },
   {
@@ -497,14 +496,14 @@ const homeStructuredData = [
                 {p.roman === 'II' && (
                   <div class="space-y-2 text-xs">
                     <div class="flex items-start gap-2 text-muted-foreground">
-                      <span class="num-index shrink-0 text-love">32</span>
-                      <span class="line-through decoration-border">
+                      <span class="num-index shrink-0 text-love">Draft</span>
+                      <span>
                         Helped improve the company website.
                       </span>
                     </div>
                     <div class="flex items-start gap-2 text-foreground">
-                      <span class="num-index shrink-0 text-gold">88</span>
-                      <span>Cut homepage load time 40%, lifting signups 12%.</span>
+                      <span class="num-index shrink-0 text-gold">Review</span>
+                      <span>Name what you changed and the evidence you can support.</span>
                     </div>
                   </div>
                 )}
@@ -516,7 +515,7 @@ const homeStructuredData = [
                       civic tech.”
                     </p>
                     <p class="eyebrow text-[0.6rem] text-muted-foreground">
-                      <span class="text-iris">02:00</span> · clarity ●●●○
+                      <span class="text-iris">Rehearse, then review</span>
                     </p>
                   </div>
                 )}
@@ -524,10 +523,10 @@ const homeStructuredData = [
                 {p.roman === 'IV' && (
                   <div class="space-y-1.5 font-mono text-xs text-muted-foreground">
                     <p>
-                      <span class="text-love">“cross-functional”</span> appears ×3
+                      <span class="text-love">“cross-functional”</span>
                     </p>
                     <p class="pl-3 text-foreground">
-                      ↳ Proof: shipped billing redesign across design, data, and support
+                      ↳ Prepare a story about working across teams
                     </p>
                   </div>
                 )}
@@ -562,8 +561,8 @@ const homeStructuredData = [
             >.
           </h2>
           <p class="dropcap max-w-md text-pretty text-base leading-relaxed text-muted-foreground">
-            No dashboard, no streak to maintain. Open one exercise before an application, come back
-            for interview prep, and leave with language you can reuse.
+            Open one exercise before an application, come back for interview prep, and pick up saved
+            work in your <a href="/dashboard/" class="underline underline-offset-4">dashboard</a>.
           </p>
         </div>
         <ul class="self-start bg-ledger">
@@ -624,25 +623,5 @@ const homeStructuredData = [
       <div class="rule-brass"></div>
     </section>
 
-    {/* SEO context: visually hidden, server-rendered */}
-    <section class="sr-only" aria-label="Career studio search context">
-      <h2>Career reflection and preparation toolkit overview</h2>
-      <p>
-        5 Whys Career Studio is a browser-based field guide to professional life: a set of career
-        planning, resume review, networking rehearsal, and interview preparation tools by Jonathan R
-        Reed. It connects the guided five whys reflection workflow with practical exercises for
-        turning rough notes into stronger application language, clearer professional stories, and
-        better next conversations. Visitors can start with a root-cause reflection, move into resume
-        bullet scoring, practice networking scenarios, or build an interview packet from job
-        description signals and proof points.
-      </p>
-      <p>
-        The studio is designed for students, early career candidates, technical job seekers, and
-        people preparing for a role change. Each tool keeps work local to the browser, requires no
-        account, and is built to produce something you can send or say out loud. The four plates of
-        the guide are the Five Whys reflection, the Resume Game bullet scorer, the Networking
-        Practice studio, and the Interview Glow Up workspace.
-      </p>
-    </section>
   </div>
 </Base>
