@@ -67,6 +67,17 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (compactToolsOpen) setCompactToolsOpen(false);
+        if (menuOpen) setMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [compactToolsOpen, menuOpen]);
+
   const toggleTheme = React.useCallback(() => {
     const next: Theme = activeTheme === 'night' ? 'dawn' : 'night';
     setTheme(next);
@@ -211,6 +222,7 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
               type="button"
               onClick={() => setCompactToolsOpen((open) => !open)}
               aria-expanded={compactToolsOpen}
+              aria-controls="compact-tools-menu"
               className={cn(
                 'inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition-colors duration-200',
                 compactToolsActive || compactToolsOpen
@@ -497,6 +509,7 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
           type="button"
           onClick={scrollToTop}
           aria-label="Scroll to top"
+          title="Scroll to top"
           className="fixed bottom-6 right-6 z-50 inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/50 bg-overlay/90 text-foreground shadow-lg transition hover:bg-overlay focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
         >
           <svg
