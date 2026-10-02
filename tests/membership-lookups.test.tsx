@@ -1,8 +1,18 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import VaultSection from '../src/components/interview-glow-up/VaultSection';
-import { createDefaultData, type GlowUpData, type InterviewPacket, type Story } from '../src/lib/glowup-store';
-import { getVerbStrength, POWER_VERBS_STRONG, POWER_VERBS_WEAK, INVOLVEMENT_VERBS } from '../src/lib/resume-game/constants';
+import {
+  createDefaultData,
+  type GlowUpData,
+  type InterviewPacket,
+  type Story,
+} from '../src/lib/glowup-store';
+import {
+  getVerbStrength,
+  INVOLVEMENT_VERBS,
+  POWER_VERBS_STRONG,
+  POWER_VERBS_WEAK,
+} from '../src/lib/resume-game/constants';
 
 afterEach(() => {
   cleanup();
@@ -11,18 +21,35 @@ afterEach(() => {
 
 function story(id: string, lastUsedAt?: number): Story {
   return {
-    id, trigger: id, primarySkillId: 'communication', otherSkillIds: [],
-    hook: '', proofSnippet: '', play: '', proof: '', confidence: 60,
-    readiness: 'solid', questionPrompts: [], tags: [], createdAt: 1,
-    updatedAt: 1, lastUsedAt,
+    id,
+    trigger: id,
+    primarySkillId: 'communication',
+    otherSkillIds: [],
+    hook: '',
+    proofSnippet: '',
+    play: '',
+    proof: '',
+    confidence: 60,
+    readiness: 'solid',
+    questionPrompts: [],
+    tags: [],
+    createdAt: 1,
+    updatedAt: 1,
+    lastUsedAt,
   };
 }
 
 it('batch-adds only new selections without changing existing or unselected stories', () => {
   vi.spyOn(Date, 'now').mockReturnValue(1000);
   const packet: InterviewPacket = {
-    id: 'packet', roleId: 'role', mode: 'prep', topStoryIds: ['existing'],
-    customQuestions: [], notes: '', createdAt: 1, updatedAt: 1,
+    id: 'packet',
+    roleId: 'role',
+    mode: 'prep',
+    topStoryIds: ['existing'],
+    customQuestions: [],
+    notes: '',
+    createdAt: 1,
+    updatedAt: 1,
   };
   const data: GlowUpData = {
     ...createDefaultData(),
@@ -33,7 +60,7 @@ it('batch-adds only new selections without changing existing or unselected stori
   render(<VaultSection data={data} setData={setData} currentPacket={packet} />);
   fireEvent.click(screen.getByRole('checkbox', { name: 'Select story: existing' }));
   fireEvent.click(screen.getByRole('checkbox', { name: 'Select story: new' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Add to Packet', exact: true }));
+  fireEvent.click(screen.getByRole('button', { name: 'Add to Packet' }));
   expect(setData).toHaveBeenCalledTimes(1);
   const result = setData.mock.calls[0][0] as GlowUpData;
   expect(result.packets[0].topStoryIds).toEqual(['existing', 'new']);
