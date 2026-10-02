@@ -355,6 +355,18 @@ const BOILERPLATE_PATTERNS: RegExp[] = [
   /visit\s+(our\s+website|us\s+at)/i,
 ];
 
+// Pre-compile multi-pattern arrays into single combined RegExp objects to avoid iterating
+// through up to 27 individual regexes on every line during job description requirement extraction.
+const COMBINED_SECTION_HEADER_PATTERN = new RegExp(
+  SECTION_HEADER_PATTERNS.map((p) => p.source).join('|'),
+  'i'
+);
+
+const COMBINED_BOILERPLATE_PATTERN = new RegExp(
+  BOILERPLATE_PATTERNS.map((p) => p.source).join('|'),
+  'i'
+);
+
 function isSectionHeader(line: string): boolean {
   const wordCount = line.split(/\s+/).length;
   // Short line ending in a colon reads as a heading.
@@ -363,12 +375,12 @@ function isSectionHeader(line: string): boolean {
   if (wordCount <= 6 && line.length >= 3 && line === line.toUpperCase() && /[A-Z]/.test(line)) {
     return true;
   }
-  if (wordCount <= 10 && SECTION_HEADER_PATTERNS.some((p) => p.test(line))) return true;
+  if (wordCount <= 10 && COMBINED_SECTION_HEADER_PATTERN.test(line)) return true;
   return false;
 }
 
 function isBoilerplate(line: string): boolean {
-  return BOILERPLATE_PATTERNS.some((p) => p.test(line));
+  return COMBINED_BOILERPLATE_PATTERN.test(line);
 }
 
 export interface JdExtractionResult {
