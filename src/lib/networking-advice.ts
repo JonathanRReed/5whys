@@ -36,11 +36,11 @@ export const RATING_FIELDS = [
 
 export const NEXT_STEPS: Record<keyof Ratings, string> = {
   confidence:
-    'Run the same scenario again right now. The second rep is always steadier, and that steadiness is what confidence is.',
+    'Try another rep with one change: pause before your opening line. Compare how it felt, and keep what helped.',
   clarity:
     'Cut your intro to two sentences and one concrete example. Read it out loud once before the next rep.',
   rapport:
-    'Start the next rep with a line about them, not you. Pick one warm-up line and use it word for word.',
+    'Choose one genuine detail about their work to ask about. Use your own words, then leave room for their answer.',
   authenticity:
     'Find the line you would never say to a friend and rewrite it the way you actually talk.',
 };

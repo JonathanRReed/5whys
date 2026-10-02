@@ -1,10 +1,15 @@
 import * as React from 'react';
-import type { SignalReport } from '../../lib/resume-game';
-import { signalGrade, suggestStrongerVerb } from '../../lib/resume-game';
+import type { BulletRecord, HighlightToken, SignalReport } from '../../lib/resume-game';
+import {
+  generateBulletSuggestions,
+  parseHighlightedResume,
+  suggestStrongerVerb,
+} from '../../lib/resume-game';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 type Props = {
-  highlightedResume: string;
+  bullets?: BulletRecord[];
+  resumeText: string;
   signalReport: SignalReport;
   resumeOutOfDate: boolean;
 };
@@ -15,11 +20,45 @@ function benchmarkColor(value: number, goodThreshold: number, warnThreshold: num
   return 'text-love';
 }
 
-export default function ScanResults({ highlightedResume, signalReport, resumeOutOfDate }: Props) {
-  const grade = signalGrade(signalReport.visible);
+function renderToken(token: HighlightToken, index: number) {
+  if (token.type === 'newline') {
+    return <br key={index} />;
+  }
+  if (token.type === 'number') {
+    return (
+      <mark key={index} className="rounded bg-primary/30 px-1 text-primary-foreground">
+        {token.text}
+      </mark>
+    );
+  }
+  if (token.type === 'verb') {
+    return (
+      <mark key={index} className="rounded bg-love/30 px-1 text-foreground">
+        {token.text}
+      </mark>
+    );
+  }
+  return <React.Fragment key={index}>{token.text}</React.Fragment>;
+}
+
+export default function ScanResults({
+  bullets = [],
+  resumeText,
+  signalReport,
+  resumeOutOfDate,
+}: Props) {
+  const nextSteps = bullets
+    .map((bullet, index) => ({
+      bullet,
+      suggestion: generateBulletSuggestions(bullet, index)[0],
+    }))
+    .filter((item) => item.suggestion)
+    .slice(0, 3);
   const hasSkills = signalReport.hardSkills.length > 0 || signalReport.softSkills.length > 0;
   const hasSections = signalReport.sections.length > 0;
   const [deepOpen, setDeepOpen] = React.useState(false);
+
+  const tokens = React.useMemo(() => parseHighlightedResume(resumeText), [resumeText]);
 
   const hasDeepData =
     signalReport.benchmarkScore !== undefined ||
@@ -50,26 +89,23 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
               <mark className="rounded bg-love/30 px-1 text-foreground">Action verbs</mark>
             </span>
           </div>
-          <div
-            className="min-h-[200px] rounded-2xl border border-border/40 bg-card/65 p-6 text-sm leading-relaxed"
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: highlightResume escapes the text before wrapping matches in mark tags
-            dangerouslySetInnerHTML={{ __html: highlightedResume.replace(/\n/g, '<br/>') }}
-          />
+          <div className="min-h-[200px] rounded-2xl border border-border/40 bg-card/65 p-6 text-sm leading-relaxed">
+            {tokens.map(renderToken)}
+          </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="space-y-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl">Signal report</CardTitle>
-            <div className={`text-4xl font-bold `}>
-              <span className="sr-only">Grade: </span>
-              {grade.grade}
-            </div>
-          </div>
+          <CardTitle className="text-xl">Resume review</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            A writing checklist, not a hiring prediction or a grade on your experience. Reviewed{' '}
+            {signalReport.bulletCount}{' '}
+            {signalReport.bulletCount === 1 ? 'achievement line' : 'achievement lines'}.
+          </p>
           <p className="text-xs text-muted-foreground">
-            {grade.label}. Based on {signalReport.bulletCount}{' '}
-            {signalReport.bulletCount === 1 ? 'bullet' : 'bullets'} scanned.
+            These rules may miss skills, context, and valid ways of describing your work. Check the
+            extracted lines before acting on a suggestion.
           </p>
           {signalReport.structureNote && (
             <p className="rounded-xl border border-border/35 bg-overlay/30 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
@@ -81,7 +117,7 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
           {/* Signal strength */}
           <div>
             <div className="mb-2 flex justify-between text-xs text-muted-foreground">
-              <span>Signal strength</span>
+              <span>Writing checklist coverage</span>
               <span className={signalReport.visible >= 70 ? 'text-love' : 'text-gold'}>
                 {signalReport.visible}%
               </span>
@@ -207,44 +243,37 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
             </div>
           )}
 
-          {/* Next steps */}
-          <div className="rounded-2xl border border-border/35 bg-overlay/30 p-4">
-            <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Next steps</p>
-            <ul className="mt-2 space-y-1.5 text-sm text-muted-foreground">
-              {signalReport.numbers < 5 && signalReport.bulletCount > 0 && (
-                <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-gold">+</span>
-                  <span>Add 2-3 more quantified metrics (%, $, #) to bullets without numbers.</span>
-                </li>
-              )}
-              {signalReport.verbs < signalReport.bulletCount && (
-                <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-gold">+</span>
-                  <span>Replace weak verbs with stronger action words in the editor below.</span>
-                </li>
-              )}
-              {signalReport.sections.length < 3 && (
-                <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-gold">+</span>
-                  <span>
-                    Make sure your resume has clear Experience, Education, and Skills sections.
-                  </span>
-                </li>
-              )}
-              {signalReport.hardSkills.length < 3 && (
-                <li className="flex items-start gap-2">
-                  <span className="mt-0.5 text-gold">+</span>
-                  <span>
-                    Add more hard skills (tools, languages, frameworks) for ATS visibility.
-                  </span>
-                </li>
-              )}
-              <li className="flex items-start gap-2">
-                <span className="mt-0.5 text-foam">+</span>
-                <span>Select any bullet on the left to edit and watch your score update.</span>
-              </li>
-            </ul>
-          </div>
+          <section
+            aria-label="Your next steps"
+            className="space-y-3 border-t border-border/40 pt-4"
+          >
+            <h3 className="text-lg">Your next steps</h3>
+            {resumeOutOfDate ? (
+              <p className="text-sm text-muted-foreground">
+                Rerun the analysis before using feedback for the changed text.
+              </p>
+            ) : nextSteps.length > 0 ? (
+              <ol className="space-y-4">
+                {nextSteps.map(({ bullet, suggestion }) => (
+                  <li key={bullet.id} className="space-y-1 text-sm">
+                    <p className="font-medium text-foreground">{bullet.improved}</p>
+                    <p className="text-muted-foreground">{suggestion.message}</p>
+                    {suggestion.fix && <p className="text-muted-foreground">{suggestion.fix}</p>}
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {bullets.length > 0
+                  ? 'No obvious writing flags in the reviewed lines. Check relevance against the role and make sure every claim is accurate.'
+                  : 'Review the detected achievement lines before relying on the checklist.'}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Suggestions come from limited writing rules. Keep technical terms that matter to your
+              audience and never invent a metric to satisfy the tool.
+            </p>
+          </section>
 
           {/* Deep Analysis */}
           {hasDeepData && (
@@ -268,7 +297,7 @@ export default function ScanResults({ highlightedResume, signalReport, resumeOut
                     <div className="rounded-xl border border-border/35 bg-overlay/40 p-4">
                       <div className="flex items-center justify-between">
                         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                          Resume Health Score
+                          Writing checklist score
                         </p>
                         <span
                           className={`text-2xl font-bold ${

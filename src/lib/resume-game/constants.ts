@@ -167,13 +167,22 @@ const bulletStartPattern = [...ACTION_VERBS, ...INVOLVEMENT_VERBS].map(escapeReg
 /** Matches a line that opens with any action or involvement verb. */
 export const BULLET_START_PATTERN = new RegExp(`^(${bulletStartPattern})\\b`, 'i');
 
+const termRegexCache = new Map<string, RegExp>();
+
 /**
  * Boundary-aware term matching. Uses non-alphanumeric boundaries so short
  * terms like "r" or "go" only match as standalone tokens, and terms with
  * punctuation like "c++" or "next.js" still match.
+ *
+ * Caches compiled RegExp objects per term to avoid re-compiling hundreds of
+ * regular expressions on every line scan during live editing.
  */
 export function matchesTerm(text: string, term: string): boolean {
-  const pattern = new RegExp(`(?:^|[^a-z0-9])${escapeRegExp(term)}(?:$|[^a-z0-9])`, 'i');
+  let pattern = termRegexCache.get(term);
+  if (!pattern) {
+    pattern = new RegExp(`(?:^|[^a-z0-9])${escapeRegExp(term)}(?:$|[^a-z0-9])`, 'i');
+    termRegexCache.set(term, pattern);
+  }
   return pattern.test(text);
 }
 

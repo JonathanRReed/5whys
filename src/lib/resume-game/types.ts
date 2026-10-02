@@ -57,6 +57,8 @@ export type BulletRecord = {
 
 export type StoredResumeSession = {
   resumeText: string;
+  /** Persisted so restored drafts do not present older scores as current. */
+  needsRescan?: boolean;
   bullets: BulletRecord[];
   selectedBulletId: string | null;
   lastAnalyzedAt: string | null;

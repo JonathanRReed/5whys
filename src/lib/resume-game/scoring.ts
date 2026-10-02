@@ -33,8 +33,24 @@ export function hasQuantifier(text: string): boolean {
 const OUTCOME_LINK_PATTERN =
   /\b(?:resulting in|leading to|which (?:led|resulted|saved|cut|grew|raised|reduced|increased|improved|doubled|freed|kept|made)|so that|by \$?\d|by [a-z]+ing\b|to (?:increase|decrease|reduce|cut|save|improve|boost|grow|raise|lower|double|triple|help|support|enable|deliver|reach|serve|speed|accelerate|streamline|eliminate|drive|generate|win|secure|keep|ensure|meet|exceed|bring|free|land|fill|recover|prevent|resolve))\b/i;
 
+/**
+ * A limited, inspectable cue for a stated qualitative result. This does not
+ * verify the claim or infer a business outcome from a tool name alone.
+ */
+export function hasQualitativeOutcome(text: string): boolean {
+  // Be conservative when a line contains negation; a keyword match cannot
+  // establish that the outcome actually happened.
+  if (/\b(?:not|never|no longer|failed to|unable to)\b/i.test(text)) return false;
+  return (
+    /\b(?:adopted|used|approved|accepted|published) by\s+\S+/i.test(text) ||
+    /\b(?:eliminated|removed|prevented) (?:duplicate|manual|conflicting|inaccessible|redundant|missing|broken)\s+\S+/i.test(
+      text
+    )
+  );
+}
+
 export function hasOutcomeLink(text: string): boolean {
-  return OUTCOME_LINK_PATTERN.test(text);
+  return OUTCOME_LINK_PATTERN.test(text) || hasQualitativeOutcome(text);
 }
 
 /**
@@ -44,7 +60,7 @@ export function hasOutcomeLink(text: string): boolean {
  * - Leading action verb (20): the first word is an action verb. A weak
  *   verb of involvement ("helped", "responsible") earns 8.
  * - Verb strength (10): strong tier 10, medium 7, weak 3, no verb 0.
- * - Quantified result (25): a count, amount, percentage, or multiplier.
+ * - Evidence (25 for a measure, 15 for a stated qualitative result):\n *   a count, amount, percentage, multiplier, adoption, or removed obstacle.
  *   Years, date ranges, and phone numbers do not count.
  * - Outcome link (20): the action connects to a result ("by batching...",
  *   "to cut...", "resulting in...").
@@ -83,7 +99,7 @@ export function scoreBullet(bullet: string) {
   const score =
     leadingScore +
     verbScore +
-    (hasQuantifier(normalized) ? 25 : 0) +
+    (hasQuantifier(normalized) ? 25 : hasQualitativeOutcome(normalized) ? 15 : 0) +
     (hasOutcomeLink(normalized) ? 20 : 0) +
     (clarity ? 15 : 0) +
     readabilityScore;

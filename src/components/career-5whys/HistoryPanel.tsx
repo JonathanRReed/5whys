@@ -147,15 +147,14 @@ export default function HistoryPanel({
                   >
                     Export
                   </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => onDeleteSnapshot(entry.id)}
-                    className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive transition-colors hover:bg-destructive/15 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
+                  <ConfirmButton
+                    tone="destructive"
+                    confirmLabel="Delete snapshot?"
+                    onConfirm={() => onDeleteSnapshot(entry.id)}
+                    className="h-9 px-3 text-xs"
                   >
                     Delete
-                  </Button>
+                  </ConfirmButton>
                 </div>
               </div>
             </div>
