@@ -381,13 +381,23 @@ export function extractBullets(text: string): string[] {
   return detectResumeStructure(text).bullets;
 }
 
+const verbWordRegexCache = new Map<string, RegExp>();
+
+function getVerbWordRegex(verb: string): RegExp {
+  const key = verb.toLowerCase();
+  let regex = verbWordRegexCache.get(key);
+  if (!regex) {
+    regex = new RegExp(`\\b${escapeRegExp(verb)}\\b`, 'i');
+    verbWordRegexCache.set(key, regex);
+  }
+  return regex;
+}
+
 export function seedFields(text: string): BulletFields {
   const cleaned = normalizeLine(text);
   const verbMatch = cleaned.match(BULLET_START_PATTERN) || cleaned.match(POWER_VERB_PATTERN);
   const verb = verbMatch ? verbMatch[1] : '';
-  const remainder = verb
-    ? cleaned.replace(new RegExp(`\\b${escapeRegExp(verb)}\\b`, 'i'), '').trim()
-    : cleaned;
+  const remainder = verb ? cleaned.replace(getVerbWordRegex(verb), '').trim() : cleaned;
   let task = remainder;
   let impact = '';
 
