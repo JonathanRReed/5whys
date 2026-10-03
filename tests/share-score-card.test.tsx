@@ -72,7 +72,7 @@ it('announces status when downloading image', async () => {
   fireEvent.click(downloadButton);
 
   await waitFor(() => {
-    expect(screen.getByRole('status')).toHaveTextContent('Score card image downloaded.');
+    expect(screen.getByRole('status')).toHaveTextContent('Score card image download started.');
   });
 });
 
