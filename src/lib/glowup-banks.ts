@@ -1041,20 +1041,43 @@ export const QUESTION_BANK: QuestionPrompt[] = [
   },
 ];
 
+// Pre-indexed Map structures for O(1) Question Bank lookups instead of O(N) linear array searches
+// during UI rendering and question resolution.
+export const QUESTION_MAP = new Map<string, QuestionPrompt>(QUESTION_BANK.map((q) => [q.id, q]));
+
+const QUESTIONS_BY_SKILL_MAP = (() => {
+  const map = new Map<string, QuestionPrompt[]>();
+  for (const question of QUESTION_BANK) {
+    for (const skillId of question.skillIds) {
+      let list = map.get(skillId);
+      if (!list) {
+        list = [];
+        map.set(skillId, list);
+      }
+      list.push(question);
+    }
+  }
+  return map;
+})();
+
 /**
  * Questions tagged to a specific skill. Does not mix in general questions;
  * use getGeneralQuestions() for those.
+ * Uses O(1) map lookup.
  */
 export function getQuestionsForSkill(skillId: string): QuestionPrompt[] {
-  return QUESTION_BANK.filter((q) => q.skillIds.includes(skillId));
+  return QUESTIONS_BY_SKILL_MAP.get(skillId) ?? [];
 }
 
 export function getGeneralQuestions(): QuestionPrompt[] {
-  return QUESTION_BANK.filter((q) => q.skillIds.includes('general'));
+  return getQuestionsForSkill('general');
 }
 
+/**
+ * Finds a question by ID in O(1) time.
+ */
 export function getQuestionById(id: string): QuestionPrompt | undefined {
-  return QUESTION_BANK.find((q) => q.id === id);
+  return QUESTION_MAP.get(id);
 }
 
 /**
@@ -1062,7 +1085,7 @@ export function getQuestionById(id: string): QuestionPrompt | undefined {
  * raw text for custom ones. This resolves either to display text.
  */
 export function resolveQuestionText(idOrText: string): string {
-  return getQuestionById(idOrText)?.text ?? idOrText;
+  return QUESTION_MAP.get(idOrText)?.text ?? idOrText;
 }
 
 // ============================================================================
