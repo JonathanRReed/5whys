@@ -52,3 +52,11 @@ describe('glowup-banks question bank lookups', () => {
     expect(resolveQuestionText(customPrompt)).toBe(customPrompt);
   });
 });
+
+
+it('returns independent skill lists so callers cannot mutate the question bank index', () => {
+  const expected = QUESTION_BANK.filter((question) => question.skillIds.includes('general'));
+  const first = getGeneralQuestions();
+  first.splice(0, first.length);
+  expect(getGeneralQuestions()).toEqual(expected);
+});
