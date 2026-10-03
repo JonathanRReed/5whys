@@ -1,5 +1,6 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
+import { toPng } from 'html-to-image';
 import ShareScoreCard from '../src/components/resume-game/ShareScoreCard';
 import type { SignalReport } from '../src/lib/resume-game';
 
@@ -11,6 +12,7 @@ vi.mock('html-to-image', () => ({
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 const mockSignalReport: SignalReport = {
@@ -72,4 +74,42 @@ it('announces status when downloading image', async () => {
   await waitFor(() => {
     expect(screen.getByRole('status')).toHaveTextContent('Score card image downloaded.');
   });
+});
+
+function renderCard() {
+  return render(<ShareScoreCard bullets={[]} averageScore={85} signalReport={mockSignalReport} verbCoverage={90} />);
+}
+it('restores keyboard focus after fallback copying succeeds', async () => {
+  Object.assign(navigator, { clipboard: { writeText: vi.fn().mockRejectedValue(new Error('Denied')) } });
+  Object.defineProperty(document, 'execCommand', { configurable: true, writable: true, value: vi.fn().mockReturnValue(true) });
+  renderCard();
+  const button = screen.getByRole('button', { name: 'Copy text' });
+  button.focus();
+  fireEvent.click(button);
+  await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Copied score card summary'));
+  expect(document.activeElement).toBe(button);
+  expect(document.querySelector('textarea')).toBeNull();
+});
+it('cleans up the fallback textarea and restores focus when copy throws', async () => {
+  Object.assign(navigator, { clipboard: { writeText: vi.fn().mockRejectedValue(new Error('Denied')) } });
+  Object.defineProperty(document, 'execCommand', { configurable: true, writable: true, value: vi.fn(() => { throw new Error('Denied'); }) });
+  renderCard();
+  const button = screen.getByRole('button', { name: 'Copy text' });
+  button.focus();
+  fireEvent.click(button);
+  await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Failed to copy'));
+  expect(document.querySelector('textarea')).toBeNull();
+  expect(document.activeElement).toBe(button);
+});
+it('an old copy timeout cannot erase a newer image-generation status', async () => {
+  vi.useFakeTimers();
+  Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
+  let finish!: (value: string) => void;
+  vi.mocked(toPng).mockImplementationOnce(() => new Promise<string>(resolve => { finish = resolve; }));
+  renderCard();
+  await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Copy text' })); });
+  fireEvent.click(screen.getByRole('button', { name: 'Download image' }));
+  await act(async () => { vi.advanceTimersByTime(2500); });
+  expect(screen.getByRole('status')).toHaveTextContent('Generating score card image');
+  await act(async () => { finish('data:image/png;base64,fake'); });
 });
