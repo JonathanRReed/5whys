@@ -53,7 +53,6 @@ describe('glowup-banks question bank lookups', () => {
   });
 });
 
-
 it('returns independent skill lists so callers cannot mutate the question bank index', () => {
   const expected = QUESTION_BANK.filter((question) => question.skillIds.includes('general'));
   const first = getGeneralQuestions();

@@ -1063,10 +1063,10 @@ const QUESTIONS_BY_SKILL_MAP = (() => {
 /**
  * Questions tagged to a specific skill. Does not mix in general questions;
  * use getGeneralQuestions() for those.
- * Uses O(1) map lookup.
+ * Uses an indexed lookup plus O(k) copying to preserve independent results.
  */
 export function getQuestionsForSkill(skillId: string): QuestionPrompt[] {
-  return QUESTIONS_BY_SKILL_MAP.get(skillId) ?? [];
+  return [...(QUESTIONS_BY_SKILL_MAP.get(skillId) ?? [])];
 }
 
 export function getGeneralQuestions(): QuestionPrompt[] {
