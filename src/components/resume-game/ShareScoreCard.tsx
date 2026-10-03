@@ -20,15 +20,20 @@ export default function ShareScoreCard({
   const cardRef = React.useRef<HTMLDivElement>(null);
   const [copied, setCopied] = React.useState(false);
   const [downloading, setDownloading] = React.useState(false);
-  const [statusMessage, setStatusMessage] = React.useState<{ text: string; id: number } | null>(null);
+  const [statusMessage, setStatusMessage] = React.useState<{ text: string; id: number } | null>(
+    null
+  );
   const operation = React.useRef(0);
   const announcement = React.useRef(0);
   const statusTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const downloadPending = React.useRef(false);
-  React.useEffect(() => () => {
-    operation.current += 1;
-    if (statusTimer.current) clearTimeout(statusTimer.current);
-  }, []);
+  React.useEffect(
+    () => () => {
+      operation.current += 1;
+      if (statusTimer.current) clearTimeout(statusTimer.current);
+    },
+    []
+  );
 
   const announce = (text: string) => {
     announcement.current += 1;
@@ -46,12 +51,15 @@ export default function ShareScoreCard({
     if (id !== operation.current) return;
     setCopied(copiedText);
     announce(text);
-    statusTimer.current = setTimeout(() => {
-      if (id !== operation.current) return;
-      setCopied(false);
-      setStatusMessage(null);
-      statusTimer.current = null;
-    }, copiedText ? 2000 : 3000);
+    statusTimer.current = setTimeout(
+      () => {
+        if (id !== operation.current) return;
+        setCopied(false);
+        setStatusMessage(null);
+        statusTimer.current = null;
+      },
+      copiedText ? 2000 : 3000
+    );
   };
 
   const handleDownload = async () => {
@@ -61,6 +69,7 @@ export default function ShareScoreCard({
     const id = startOperation('Generating score card image...');
     try {
       const dataUrl = await toPng(cardRef.current, { pixelRatio: 2 });
+      if (!cardRef.current) return;
       const link = document.createElement('a');
       link.download = `resume-score-${new Date().toISOString().slice(0, 10)}.png`;
       link.href = dataUrl;
@@ -71,7 +80,7 @@ export default function ShareScoreCard({
       finishOperation(id, 'Could not generate score card image.');
     } finally {
       downloadPending.current = false;
-      setDownloading(false);
+      if (cardRef.current) setDownloading(false);
     }
   };
 
@@ -100,9 +109,16 @@ export default function ShareScoreCard({
         // Report the failed fallback below.
       } finally {
         textarea.remove();
-        if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus();
+        if (previousFocus instanceof HTMLElement && previousFocus.isConnected)
+          previousFocus.focus();
       }
-      finishOperation(id, successful ? 'Copied score card summary to clipboard.' : 'Failed to copy score card summary.', successful);
+      finishOperation(
+        id,
+        successful
+          ? 'Copied score card summary to clipboard.'
+          : 'Failed to copy score card summary.',
+        successful
+      );
     }
   };
 

@@ -81,22 +81,45 @@ it('announces status when downloading image', async () => {
 });
 
 function renderCard() {
-  return render(<ShareScoreCard bullets={[]} averageScore={85} signalReport={mockSignalReport} verbCoverage={90} />);
+  return render(
+    <ShareScoreCard
+      bullets={[]}
+      averageScore={85}
+      signalReport={mockSignalReport}
+      verbCoverage={90}
+    />
+  );
 }
 it('restores keyboard focus after fallback copying succeeds', async () => {
-  Object.assign(navigator, { clipboard: { writeText: vi.fn().mockRejectedValue(new Error('Denied')) } });
-  Object.defineProperty(document, 'execCommand', { configurable: true, writable: true, value: vi.fn().mockReturnValue(true) });
+  Object.assign(navigator, {
+    clipboard: { writeText: vi.fn().mockRejectedValue(new Error('Denied')) },
+  });
+  Object.defineProperty(document, 'execCommand', {
+    configurable: true,
+    writable: true,
+    value: vi.fn().mockReturnValue(true),
+  });
   renderCard();
   const button = screen.getByRole('button', { name: 'Copy text' });
   button.focus();
   fireEvent.click(button);
-  await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Copied score card summary'));
+  await waitFor(() =>
+    expect(screen.getByRole('status')).toHaveTextContent('Copied score card summary')
+  );
   expect(document.activeElement).toBe(button);
   expect(document.querySelector('textarea')).toBeNull();
 });
 it('cleans up the fallback textarea and restores focus when copy throws', async () => {
-  Object.assign(navigator, { clipboard: { writeText: vi.fn().mockRejectedValue(new Error('Denied')) } });
-  Object.defineProperty(document, 'execCommand', { configurable: true, writable: true, value: vi.fn(() => { throw new Error('Denied'); }) });
+  Object.assign(navigator, {
+    clipboard: { writeText: vi.fn().mockRejectedValue(new Error('Denied')) },
+  });
+  Object.defineProperty(document, 'execCommand', {
+    configurable: true,
+    writable: true,
+    value: vi.fn(() => {
+      throw new Error('Denied');
+    }),
+  });
   renderCard();
   const button = screen.getByRole('button', { name: 'Copy text' });
   button.focus();
@@ -109,18 +132,35 @@ it('an old copy timeout cannot erase a newer image-generation status', async () 
   vi.useFakeTimers();
   Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
   let finish!: (value: string) => void;
-  vi.mocked(toPng).mockImplementationOnce(() => new Promise<string>(resolve => { finish = resolve; }));
+  vi.mocked(toPng).mockImplementationOnce(
+    () =>
+      new Promise<string>((resolve) => {
+        finish = resolve;
+      })
+  );
   renderCard();
-  await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Copy text' })); });
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Copy text' }));
+  });
   fireEvent.click(screen.getByRole('button', { name: 'Download image' }));
-  await act(async () => { vi.advanceTimersByTime(2500); });
+  await act(async () => {
+    vi.advanceTimersByTime(2500);
+  });
   expect(screen.getByRole('status')).toHaveTextContent('Generating score card image');
-  await act(async () => { finish('data:image/png;base64,fake'); });
+  await act(async () => {
+    finish('data:image/png;base64,fake');
+  });
 });
 
 it('repeated copy failures create a fresh live announcement', async () => {
-  Object.assign(navigator, { clipboard: { writeText: vi.fn().mockRejectedValue(new Error('Denied')) } });
-  Object.defineProperty(document, 'execCommand', { configurable: true, writable: true, value: vi.fn().mockReturnValue(false) });
+  Object.assign(navigator, {
+    clipboard: { writeText: vi.fn().mockRejectedValue(new Error('Denied')) },
+  });
+  Object.defineProperty(document, 'execCommand', {
+    configurable: true,
+    writable: true,
+    value: vi.fn().mockReturnValue(false),
+  });
   renderCard();
   const copy = screen.getByRole('button', { name: 'Copy text' });
   fireEvent.click(copy);
@@ -132,10 +172,17 @@ it('repeated copy failures create a fresh live announcement', async () => {
 });
 it('leaving the card while generating does not trigger a late download', async () => {
   let finish!: (value: string) => void;
-  vi.mocked(toPng).mockImplementationOnce(() => new Promise<string>(resolve => { finish = resolve; }));
+  vi.mocked(toPng).mockImplementationOnce(
+    () =>
+      new Promise<string>((resolve) => {
+        finish = resolve;
+      })
+  );
   const view = renderCard();
   fireEvent.click(screen.getByRole('button', { name: 'Download image' }));
   view.unmount();
-  await act(async () => { finish('data:image/png;base64,fake'); });
+  await act(async () => {
+    finish('data:image/png;base64,fake');
+  });
   expect(HTMLAnchorElement.prototype.click).not.toHaveBeenCalled();
 });
