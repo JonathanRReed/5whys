@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { toPng } from 'html-to-image';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import ShareScoreCard from '../src/components/resume-game/ShareScoreCard';
 import type { SignalReport } from '../src/lib/resume-game';
 
