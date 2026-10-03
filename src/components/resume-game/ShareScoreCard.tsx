@@ -19,26 +19,69 @@ export default function ShareScoreCard({
 }: Props) {
   const cardRef = React.useRef<HTMLDivElement>(null);
   const [copied, setCopied] = React.useState(false);
+  const [downloading, setDownloading] = React.useState(false);
+  const [statusMessage, setStatusMessage] = React.useState<string | null>(null);
 
   const handleDownload = async () => {
-    if (!cardRef.current) return;
+    if (!cardRef.current || downloading) return;
+    setDownloading(true);
+    setStatusMessage('Generating score card image...');
     try {
       const dataUrl = await toPng(cardRef.current, { pixelRatio: 2 });
       const link = document.createElement('a');
       link.download = `resume-score-${new Date().toISOString().slice(0, 10)}.png`;
       link.href = dataUrl;
       link.click();
+      setStatusMessage('Score card image downloaded.');
+      setTimeout(() => setStatusMessage(null), 3000);
     } catch (error) {
       console.error('Failed to generate image:', error);
+      setStatusMessage('Could not generate score card image.');
+      setTimeout(() => setStatusMessage(null), 3000);
+    } finally {
+      setDownloading(false);
     }
   };
 
-  const handleCopyText = () => {
+  const handleCopyText = async () => {
     const text = `Resume Score Card\nAverage: ${averageScore}/100\nVisible Value: ${signalReport.visible}%\nQuantified: ${signalReport.numbers} bullets\nPower Verbs: ${signalReport.verbs}\nVerb Coverage: ${verbCoverage}%\nTotal Bullets: ${bullets.length}`;
-    navigator.clipboard.writeText(text).then(() => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        throw new Error('Clipboard API unavailable');
+      }
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+      setStatusMessage('Copied score card summary to clipboard.');
+      setTimeout(() => {
+        setCopied(false);
+        setStatusMessage(null);
+      }, 2000);
+    } catch {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        if (successful) {
+          setCopied(true);
+          setStatusMessage('Copied score card summary to clipboard.');
+          setTimeout(() => {
+            setCopied(false);
+            setStatusMessage(null);
+          }, 2000);
+          return;
+        }
+      } catch {
+        // Fallback failed
+      }
+      setStatusMessage('Failed to copy score card summary.');
+    }
   };
 
   return (
@@ -69,12 +112,15 @@ export default function ShareScoreCard({
           <p className="mt-4 text-xs text-muted-foreground">5whys.jonathanrreed.com</p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Button type="button" variant="outline" onClick={handleDownload}>
-            Download image
+          <Button type="button" variant="outline" onClick={handleDownload} disabled={downloading}>
+            {downloading ? 'Downloading...' : 'Download image'}
           </Button>
           <Button type="button" variant="outline" onClick={handleCopyText}>
             {copied ? 'Copied!' : 'Copy text'}
           </Button>
+        </div>
+        <div aria-live="polite" className="sr-only" role="status">
+          {statusMessage}
         </div>
       </CardContent>
     </Card>
