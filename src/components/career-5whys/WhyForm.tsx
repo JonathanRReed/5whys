@@ -70,7 +70,7 @@ export default function WhyForm({
                 aria-expanded={isExampleVisible}
                 className="w-full justify-between rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
               >
-                Show a worked example
+                {isExampleVisible ? 'Hide worked example' : 'Show a worked example'}
                 <span aria-hidden>{isExampleVisible ? '−' : '+'}</span>
               </Button>
               {isExampleVisible && (
