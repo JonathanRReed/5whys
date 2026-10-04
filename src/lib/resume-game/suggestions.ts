@@ -73,6 +73,11 @@ function metricPromptFor(text: string): string {
   return 'Count something real: people, hours, items, dollars, or frequency. No metric? Team size, audience, or before and after is still evidence.';
 }
 
+// Pre-compiled regex patterns to eliminate inline compilation overhead when analyzing bullet suggestion triggers
+const CHANGE_WORD_PATTERN =
+  /\b(improved|reduced|increased|streamlined|automated|saved|cut|grew|doubled|eliminated)\w*\b/i;
+const PASSIVE_FRAGMENT_PATTERN = /\b(was|were|been|being|is|are|be)\s+\w+(?:ed|en)\b/i;
+
 // Example pairs rotate by bullet so a six-bullet resume does not show the
 // same sentence six times.
 const NUMBER_EXAMPLES = {
@@ -181,9 +186,7 @@ export function generateBulletSuggestions(
 
   // Missing impact
   if (!fields.impact.trim() && !hasOutcomeLink(current)) {
-    const changeWord = current.match(
-      /\b(improved|reduced|increased|streamlined|automated|saved|cut|grew|doubled|eliminated)\w*\b/i
-    )?.[0];
+    const changeWord = current.match(CHANGE_WORD_PATTERN)?.[0];
     suggestions.push({
       type: 'missing-impact',
       message:
@@ -224,9 +227,7 @@ export function generateBulletSuggestions(
 
   // Passive voice
   if (readability.passiveVoiceCount > 0) {
-    const passiveFragment = current.match(
-      /\b(was|were|been|being|is|are|be)\s+\w+(?:ed|en)\b/i
-    )?.[0];
+    const passiveFragment = current.match(PASSIVE_FRAGMENT_PATTERN)?.[0];
     suggestions.push({
       type: 'passive-voice',
       message: passiveFragment
