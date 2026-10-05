@@ -1,6 +1,8 @@
+import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
+import { useClipboard } from './useClipboard';
 
 const DRAFT_MAX_LENGTH = 1500;
 const WORDS_PER_MINUTE = 140;
@@ -24,11 +26,29 @@ function estimateSpokenSeconds(words: number) {
 export default function IntroDraft({ draft, onDraftChange }: Props) {
   const words = countWords(draft);
   const spokenSeconds = estimateSpokenSeconds(words);
+  const { copiedKey, copyStatus, handleCopy } = useClipboard();
+  const copyKey = `intro-draft:${draft}`;
+  const isCopied = copiedKey === copyKey;
+  const copyFeedback = copyStatus?.key === copyKey ? copyStatus : null;
 
   return (
     <Card className="border-gold/50 bg-overlay/30">
       <CardHeader className="space-y-2">
-        <CardTitle className="text-gold">Your intro, your words</CardTitle>
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-gold">Your intro, your words</CardTitle>
+          {draft.trim().length > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => handleCopy(draft, copyKey)}
+              aria-label={isCopied ? 'Copied intro draft to clipboard' : 'Copy intro draft'}
+              className="h-8 border-gold/40 text-xs text-gold hover:bg-gold/15 hover:text-gold focus-visible:ring-2 focus-visible:ring-foam"
+            >
+              {isCopied ? 'Copied' : 'Copy draft'}
+            </Button>
+          )}
+        </div>
         <p className="text-sm text-muted-foreground">
           The sample lines are scaffolding. This box is the practice. Write the intro you would
           actually say, then run the timer and say it out loud.
@@ -41,7 +61,7 @@ export default function IntroDraft({ draft, onDraftChange }: Props) {
             <span className="text-xs text-muted-foreground">
               {words === 0
                 ? 'Nothing yet'
-                : `${words} ${words === 1 ? 'word' : 'words'}, about ${spokenSeconds}s aloud`}
+                : `${words} ${words === 1 ? 'word' : 'words'}, about ${spokenSeconds}s aloud (${draft.length}/${DRAFT_MAX_LENGTH})`}
             </span>
           </div>
           <Textarea
@@ -58,6 +78,15 @@ export default function IntroDraft({ draft, onDraftChange }: Props) {
           how the intro changes. If a line only works with someone else's achievements in it, cut
           it.
         </p>
+        <div aria-live="polite" className="sr-only" role="status">
+          {copyFeedback ? (
+            <span key={copyFeedback.attempt}>
+              {copyFeedback.succeeded
+                ? 'Copied intro draft to clipboard.'
+                : 'Could not copy intro draft. Select the draft and copy it manually.'}
+            </span>
+          ) : null}
+        </div>
       </CardContent>
     </Card>
   );
