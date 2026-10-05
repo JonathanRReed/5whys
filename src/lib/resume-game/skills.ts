@@ -30,14 +30,37 @@ const SKILL_CONTEXT: Record<string, RegExp> = {
     /\b(?:wrote|write|writing|maintained|authored|created|technical)\s+documentation\b|\bdocumentation\s+(?:for|of|site)\b/i,
 };
 
-function skillPresent(text: string, skill: string): boolean {
+// Pre-computed lowercased skill entries to avoid string allocation on every extractSkills execution.
+const HARD_SKILLS_ENTRIES = HARD_SKILLS.map((skill) => ({
+  skill,
+  lowerSkill: skill.toLowerCase(),
+}));
+
+const SOFT_SKILLS_ENTRIES = SOFT_SKILLS.map((skill) => ({
+  skill,
+  lowerSkill: skill.toLowerCase(),
+}));
+
+function skillPresent(text: string, skill: string, lowerText: string, lowerSkill: string): boolean {
   const gate = SKILL_CONTEXT[skill];
   if (gate) return gate.test(text);
-  return matchesTerm(text, skill);
+  return matchesTerm(text, skill, lowerText, lowerSkill);
 }
 
+/**
+ * Extracts hard and soft skills present in the given text.
+ * Performance optimization: Pre-computes lowercased text and passes pre-lowercased
+ * skill tokens to `matchesTerm` to bypass regex execution when keywords are absent.
+ */
 export function extractSkills(text: string): { hard: string[]; soft: string[] } {
-  const hard = HARD_SKILLS.filter((skill) => skillPresent(text, skill));
-  const soft = SOFT_SKILLS.filter((skill) => matchesTerm(text, skill));
+  const lowerText = text.toLowerCase();
+  const hard = HARD_SKILLS_ENTRIES.filter(({ skill, lowerSkill }) =>
+    skillPresent(text, skill, lowerText, lowerSkill)
+  ).map(({ skill }) => skill);
+
+  const soft = SOFT_SKILLS_ENTRIES.filter(({ skill, lowerSkill }) =>
+    matchesTerm(text, skill, lowerText, lowerSkill)
+  ).map(({ skill }) => skill);
+
   return { hard: [...new Set(hard)], soft: [...new Set(soft)] };
 }

@@ -176,8 +176,25 @@ const termRegexCache = new Map<string, RegExp>();
  *
  * Caches compiled RegExp objects per term to avoid re-compiling hundreds of
  * regular expressions on every line scan during live editing.
+ *
+ * Performance optimization: Pre-checks substring inclusion before running the
+ * word-boundary RegExp match, skipping regex evaluations for absent terms.
+ * Accepts optional pre-lowercased text/term parameters to avoid repeated
+ * string lowercasing in loops.
  */
-export function matchesTerm(text: string, term: string): boolean {
+export function matchesTerm(
+  text: string,
+  term: string,
+  lowerText?: string,
+  lowerTerm?: string
+): boolean {
+  const lText = lowerText ?? text.toLowerCase();
+  const lTerm = lowerTerm ?? term.toLowerCase();
+  // Fast path: if substring is not present at all, regex cannot match.
+  if (!lText.includes(lTerm)) {
+    return false;
+  }
+
   let pattern = termRegexCache.get(term);
   if (!pattern) {
     pattern = new RegExp(`(?:^|[^a-z0-9])${escapeRegExp(term)}(?:$|[^a-z0-9])`, 'i');
