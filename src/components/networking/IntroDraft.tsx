@@ -26,8 +26,10 @@ function estimateSpokenSeconds(words: number) {
 export default function IntroDraft({ draft, onDraftChange }: Props) {
   const words = countWords(draft);
   const spokenSeconds = estimateSpokenSeconds(words);
-  const { copiedKey, handleCopy } = useClipboard();
-  const isCopied = copiedKey === 'intro-draft';
+  const { copiedKey, copyStatus, handleCopy } = useClipboard();
+  const copyKey = `intro-draft:${draft}`;
+  const isCopied = copiedKey === copyKey;
+  const copyFeedback = copyStatus?.key === copyKey ? copyStatus : null;
 
   return (
     <Card className="border-gold/50 bg-overlay/30">
@@ -39,11 +41,11 @@ export default function IntroDraft({ draft, onDraftChange }: Props) {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => handleCopy(draft, 'intro-draft')}
+              onClick={() => handleCopy(draft, copyKey)}
               aria-label={isCopied ? 'Copied intro draft to clipboard' : 'Copy intro draft'}
               className="h-8 border-gold/40 text-xs text-gold hover:bg-gold/15 hover:text-gold focus-visible:ring-2 focus-visible:ring-foam"
             >
-              {isCopied ? 'Copied!' : 'Copy draft'}
+              {isCopied ? 'Copied' : 'Copy draft'}
             </Button>
           )}
         </div>
@@ -77,7 +79,13 @@ export default function IntroDraft({ draft, onDraftChange }: Props) {
           it.
         </p>
         <div aria-live="polite" className="sr-only" role="status">
-          {isCopied ? 'Copied intro draft to clipboard.' : null}
+          {copyFeedback ? (
+            <span key={copyFeedback.attempt}>
+              {copyFeedback.succeeded
+                ? 'Copied intro draft to clipboard.'
+                : 'Could not copy intro draft. Select the draft and copy it manually.'}
+            </span>
+          ) : null}
         </div>
       </CardContent>
     </Card>
