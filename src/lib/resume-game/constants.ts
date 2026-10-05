@@ -178,9 +178,9 @@ const termRegexCache = new Map<string, RegExp>();
  * regular expressions on every line scan during live editing.
  *
  * Performance optimization: Pre-checks substring inclusion before running the
- * expensive word-boundary RegExp match, reducing regex evaluations by ~60%
- * when scanning large skill banks. Accepts optional pre-lowercased text/term
- * parameters to avoid repeated string lowercasing in loops.
+ * word-boundary RegExp match, skipping regex evaluations for absent terms.
+ * Accepts optional pre-lowercased text/term parameters to avoid repeated
+ * string lowercasing in loops.
  */
 export function matchesTerm(
   text: string,
