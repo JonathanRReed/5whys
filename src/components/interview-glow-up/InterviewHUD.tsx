@@ -242,12 +242,14 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
                 displayStories.map((story, index) => {
                   const isSelected = index === selectedIndex;
                   const isExpanded = expandedId === story.id;
+                  const storyContentId = `hud-story-details-${story.id}`;
 
                   return (
                     <button
                       type="button"
                       key={story.id}
                       aria-expanded={isExpanded}
+                      aria-controls={storyContentId}
                       onClick={() => {
                         setSelectedIndex(index);
                         setExpandedId(isExpanded ? null : story.id);
@@ -316,7 +318,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
 
                       {/* Expanded View */}
                       {isExpanded && (
-                        <div className="mt-4 border-t border-border/40 pt-4">
+                        <div id={storyContentId} className="mt-4 border-t border-border/40 pt-4">
                           <div className="space-y-4">
                             <div>
                               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">

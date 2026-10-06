@@ -283,6 +283,7 @@ export default function ScanResults({
                 onClick={() => setDeepOpen((prev) => !prev)}
                 className="flex w-full items-center justify-between text-left"
                 aria-expanded={deepOpen}
+                aria-controls="deep-analysis-details"
               >
                 <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                   Deep Analysis
@@ -291,7 +292,7 @@ export default function ScanResults({
               </button>
 
               {deepOpen && (
-                <div className="mt-4 space-y-4">
+                <div id="deep-analysis-details" className="mt-4 space-y-4">
                   {/* Resume Health Score */}
                   {signalReport.benchmarkScore !== undefined && (
                     <div className="rounded-xl border border-border/35 bg-overlay/40 p-4">

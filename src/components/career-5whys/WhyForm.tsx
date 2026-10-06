@@ -32,6 +32,7 @@ export default function WhyForm({
         const nudge = locked ? null : getAnswerNudge(response, previousAnswer);
         const exampleAnswer = example.answers[index] ?? '';
         const examplePrevious = index > 0 ? condenseAnswer(example.answers[index - 1] ?? '') : '';
+        const exampleId = `example-depth-${index}`;
         return (
           <Card
             key={index}
@@ -68,13 +69,17 @@ export default function WhyForm({
                 variant="ghost"
                 onClick={() => onToggleExample(index)}
                 aria-expanded={isExampleVisible}
+                aria-controls={exampleId}
                 className="w-full justify-between rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
               >
                 {isExampleVisible ? 'Hide worked example' : 'Show a worked example'}
                 <span aria-hidden>{isExampleVisible ? '−' : '+'}</span>
               </Button>
               {isExampleVisible && (
-                <div className="space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm text-foreground">
+                <div
+                  id={exampleId}
+                  className="space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm text-foreground"
+                >
                   <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                     {example.persona}
                   </p>
