@@ -31,6 +31,9 @@ it('displays "Show a worked example" when collapsed and "Hide worked example" wh
   const button = screen.getAllByRole('button', { name: /worked example/i })[0];
   expect(button).toHaveTextContent('Show a worked example');
   expect(button).toHaveAttribute('aria-expanded', 'false');
+  const exampleId = button.getAttribute('aria-controls');
+  expect(exampleId).toBeTruthy();
+  expect(document.getElementById(exampleId ?? '')).not.toBeVisible();
 
   fireEvent.click(button);
   expect(onToggleExample).toHaveBeenCalledWith(0);
@@ -51,4 +54,6 @@ it('displays "Show a worked example" when collapsed and "Hide worked example" wh
   const expandedButton = screen.getAllByRole('button', { name: /worked example/i })[0];
   expect(expandedButton).toHaveTextContent('Hide worked example');
   expect(expandedButton).toHaveAttribute('aria-expanded', 'true');
+  expect(expandedButton).toHaveAttribute('aria-controls', exampleId);
+  expect(document.getElementById(exampleId ?? '')).toBeVisible();
 });

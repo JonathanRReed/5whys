@@ -57,6 +57,7 @@ export default function ScanResults({
   const hasSkills = signalReport.hardSkills.length > 0 || signalReport.softSkills.length > 0;
   const hasSections = signalReport.sections.length > 0;
   const [deepOpen, setDeepOpen] = React.useState(false);
+  const deepAnalysisId = React.useId();
 
   const tokens = React.useMemo(() => parseHighlightedResume(resumeText), [resumeText]);
 
@@ -283,6 +284,7 @@ export default function ScanResults({
                 onClick={() => setDeepOpen((prev) => !prev)}
                 className="flex w-full items-center justify-between text-left"
                 aria-expanded={deepOpen}
+                aria-controls={deepAnalysisId}
               >
                 <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                   Deep Analysis
@@ -290,209 +292,207 @@ export default function ScanResults({
                 <span className="text-lg text-muted-foreground">{deepOpen ? '−' : '+'}</span>
               </button>
 
-              {deepOpen && (
-                <div className="mt-4 space-y-4">
-                  {/* Resume Health Score */}
-                  {signalReport.benchmarkScore !== undefined && (
-                    <div className="rounded-xl border border-border/35 bg-overlay/40 p-4">
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                          Writing checklist score
-                        </p>
-                        <span
-                          className={`text-2xl font-bold ${
-                            (signalReport.benchmarkScore ?? 0) >= 80
-                              ? 'text-foam'
-                              : (signalReport.benchmarkScore ?? 0) >= 50
-                                ? 'text-gold'
-                                : 'text-love'
-                          }`}
-                        >
-                          {signalReport.benchmarkScore}
-                        </span>
-                      </div>
-                      <div className="mt-2 h-2 w-full overflow-hidden rounded-full border border-border/35 bg-overlay/25">
-                        <div
-                          className="h-full rounded-full bg-foam"
-                          style={{ width: `${signalReport.benchmarkScore}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Benchmark grid */}
-                  <div className="grid grid-cols-2 gap-3">
-                    {/* Numbers coverage */}
-                    <div className="rounded-xl border border-border/35 bg-overlay/40 p-3 text-center">
-                      <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                        Bullets with numbers
+              <div id={deepAnalysisId} hidden={!deepOpen} className="mt-4 space-y-4">
+                {/* Resume Health Score */}
+                {signalReport.benchmarkScore !== undefined && (
+                  <div className="rounded-xl border border-border/35 bg-overlay/40 p-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                        Writing checklist score
                       </p>
-                      <p
-                        className={`text-xl font-semibold ${benchmarkColor(
-                          signalReport.quantifiedBulletPercent ?? 0,
-                          70,
-                          50
-                        )}`}
-                      >
-                        {signalReport.quantifiedBulletPercent ?? 0}%
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">Target: 70%+</p>
-                    </div>
-
-                    {/* Unique verbs */}
-                    <div className="rounded-xl border border-border/35 bg-overlay/40 p-3 text-center">
-                      <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                        Unique action verbs
-                      </p>
-                      <p
-                        className={`text-xl font-semibold ${benchmarkColor(
-                          signalReport.uniqueVerbCount ?? 0,
-                          verbTarget,
-                          Math.ceil(verbTarget / 2)
-                        )}`}
-                      >
-                        {signalReport.uniqueVerbCount ?? 0}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">
-                        Target: one per bullet, up to 8
-                      </p>
-                    </div>
-
-                    {/* Avg bullet length */}
-                    <div className="rounded-xl border border-border/35 bg-overlay/40 p-3 text-center">
-                      <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                        Avg bullet length
-                      </p>
-                      <p
-                        className={`text-xl font-semibold ${
-                          (signalReport.avgBulletLength ?? 0) <= 30
+                      <span
+                        className={`text-2xl font-bold ${
+                          (signalReport.benchmarkScore ?? 0) >= 80
                             ? 'text-foam'
-                            : (signalReport.avgBulletLength ?? 0) <= 40
+                            : (signalReport.benchmarkScore ?? 0) >= 50
                               ? 'text-gold'
                               : 'text-love'
                         }`}
                       >
-                        {signalReport.avgBulletLength ?? 0}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">Target: {'<'}30 words</p>
+                        {signalReport.benchmarkScore}
+                      </span>
                     </div>
-
-                    {/* Passive voice */}
-                    <div className="rounded-xl border border-border/35 bg-overlay/40 p-3 text-center">
-                      <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                        Passive voice
-                      </p>
-                      <p
-                        className={`text-xl font-semibold ${
-                          (signalReport.passiveVoicePercent ?? 0) === 0
-                            ? 'text-foam'
-                            : (signalReport.passiveVoicePercent ?? 0) <= 20
-                              ? 'text-gold'
-                              : 'text-love'
-                        }`}
-                      >
-                        {signalReport.passiveVoicePercent ?? 0}%
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">Target: 0%</p>
+                    <div className="mt-2 h-2 w-full overflow-hidden rounded-full border border-border/35 bg-overlay/25">
+                      <div
+                        className="h-full rounded-full bg-foam"
+                        style={{ width: `${signalReport.benchmarkScore}%` }}
+                      />
                     </div>
                   </div>
+                )}
 
-                  {/* Weak words */}
-                  {(signalReport.weakWordCount ?? 0) > 0 && (
-                    <div className="rounded-xl border border-border/35 bg-overlay/40 p-4">
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                          Weak / Hedging Words
-                        </p>
-                        <span className="text-lg font-semibold text-love">
-                          {signalReport.weakWordCount}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {(signalReport.weakWordCount ?? 0) <= 3
-                          ? 'A few hedging phrases. Swap them for direct verbs.'
-                          : 'Hedging language appears often. Lead each line with a direct verb.'}
-                      </p>
-                    </div>
-                  )}
+                {/* Benchmark grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Numbers coverage */}
+                  <div className="rounded-xl border border-border/35 bg-overlay/40 p-3 text-center">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                      Bullets with numbers
+                    </p>
+                    <p
+                      className={`text-xl font-semibold ${benchmarkColor(
+                        signalReport.quantifiedBulletPercent ?? 0,
+                        70,
+                        50
+                      )}`}
+                    >
+                      {signalReport.quantifiedBulletPercent ?? 0}%
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Target: 70%+</p>
+                  </div>
 
-                  {/* Repetitive verbs */}
-                  {signalReport.repetitiveVerbs && signalReport.repetitiveVerbs.length > 0 && (
-                    <div className="rounded-xl border border-border/35 bg-overlay/40 p-4">
-                      <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                        Repetitive Verbs
-                      </p>
-                      <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
-                        {signalReport.repetitiveVerbs.map((rv) => {
-                          const suggestion = suggestStrongerVerb(rv.verb);
-                          return (
-                            <li key={rv.verb} className="flex items-start gap-2">
-                              <span className="mt-0.5 text-gold">!</span>
-                              <span>
-                                <span className="font-medium capitalize text-foreground">
-                                  {rv.verb}
-                                </span>{' '}
-                                used {rv.count}x.{' '}
-                                {suggestion ? (
-                                  <span>
-                                    Try alternating with:{' '}
-                                    <span className="text-foam">{suggestion}</span>
-                                  </span>
-                                ) : (
-                                  'Try varying your language with stronger alternatives.'
-                                )}
-                              </span>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-                  )}
+                  {/* Unique verbs */}
+                  <div className="rounded-xl border border-border/35 bg-overlay/40 p-3 text-center">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                      Unique action verbs
+                    </p>
+                    <p
+                      className={`text-xl font-semibold ${benchmarkColor(
+                        signalReport.uniqueVerbCount ?? 0,
+                        verbTarget,
+                        Math.ceil(verbTarget / 2)
+                      )}`}
+                    >
+                      {signalReport.uniqueVerbCount ?? 0}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      Target: one per bullet, up to 8
+                    </p>
+                  </div>
 
-                  {/* Impact coverage */}
-                  {signalReport.impactCoverage !== undefined && (
-                    <div className="rounded-xl border border-border/35 bg-overlay/40 p-4">
-                      <div className="mb-2 flex justify-between text-xs text-muted-foreground">
-                        <span>Impact coverage</span>
-                        <span className={benchmarkColor(signalReport.impactCoverage, 70, 50)}>
-                          {signalReport.impactCoverage}%
-                        </span>
-                      </div>
-                      <div className="h-2 w-full overflow-hidden rounded-full border border-border/35 bg-overlay/25">
-                        <div
-                          className="h-full rounded-full bg-foam"
-                          style={{ width: `${signalReport.impactCoverage}%` }}
-                        />
-                      </div>
-                      <p className="mt-1 text-[10px] text-muted-foreground">
-                        Bullets with business outcomes, scope signals, or qualitative impact.
-                      </p>
-                    </div>
-                  )}
+                  {/* Avg bullet length */}
+                  <div className="rounded-xl border border-border/35 bg-overlay/40 p-3 text-center">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                      Avg bullet length
+                    </p>
+                    <p
+                      className={`text-xl font-semibold ${
+                        (signalReport.avgBulletLength ?? 0) <= 30
+                          ? 'text-foam'
+                          : (signalReport.avgBulletLength ?? 0) <= 40
+                            ? 'text-gold'
+                            : 'text-love'
+                      }`}
+                    >
+                      {signalReport.avgBulletLength ?? 0}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Target: {'<'}30 words</p>
+                  </div>
 
-                  {/* Keyword density */}
-                  {signalReport.keywordDensity && signalReport.keywordDensity.length > 0 && (
-                    <div className="rounded-xl border border-border/35 bg-overlay/40 p-4">
-                      <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                        Keyword Density
-                      </p>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {signalReport.keywordDensity.map((kw) => (
-                          <span
-                            key={kw.word}
-                            className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-overlay/40 px-2.5 py-1 text-xs text-muted-foreground"
-                          >
-                            <span>{kw.word}</span>
-                            <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] text-primary">
-                              {kw.count}
-                            </span>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  {/* Passive voice */}
+                  <div className="rounded-xl border border-border/35 bg-overlay/40 p-3 text-center">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                      Passive voice
+                    </p>
+                    <p
+                      className={`text-xl font-semibold ${
+                        (signalReport.passiveVoicePercent ?? 0) === 0
+                          ? 'text-foam'
+                          : (signalReport.passiveVoicePercent ?? 0) <= 20
+                            ? 'text-gold'
+                            : 'text-love'
+                      }`}
+                    >
+                      {signalReport.passiveVoicePercent ?? 0}%
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Target: 0%</p>
+                  </div>
                 </div>
-              )}
+
+                {/* Weak words */}
+                {(signalReport.weakWordCount ?? 0) > 0 && (
+                  <div className="rounded-xl border border-border/35 bg-overlay/40 p-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                        Weak / Hedging Words
+                      </p>
+                      <span className="text-lg font-semibold text-love">
+                        {signalReport.weakWordCount}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {(signalReport.weakWordCount ?? 0) <= 3
+                        ? 'A few hedging phrases. Swap them for direct verbs.'
+                        : 'Hedging language appears often. Lead each line with a direct verb.'}
+                    </p>
+                  </div>
+                )}
+
+                {/* Repetitive verbs */}
+                {signalReport.repetitiveVerbs && signalReport.repetitiveVerbs.length > 0 && (
+                  <div className="rounded-xl border border-border/35 bg-overlay/40 p-4">
+                    <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                      Repetitive Verbs
+                    </p>
+                    <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
+                      {signalReport.repetitiveVerbs.map((rv) => {
+                        const suggestion = suggestStrongerVerb(rv.verb);
+                        return (
+                          <li key={rv.verb} className="flex items-start gap-2">
+                            <span className="mt-0.5 text-gold">!</span>
+                            <span>
+                              <span className="font-medium capitalize text-foreground">
+                                {rv.verb}
+                              </span>{' '}
+                              used {rv.count}x.{' '}
+                              {suggestion ? (
+                                <span>
+                                  Try alternating with:{' '}
+                                  <span className="text-foam">{suggestion}</span>
+                                </span>
+                              ) : (
+                                'Try varying your language with stronger alternatives.'
+                              )}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Impact coverage */}
+                {signalReport.impactCoverage !== undefined && (
+                  <div className="rounded-xl border border-border/35 bg-overlay/40 p-4">
+                    <div className="mb-2 flex justify-between text-xs text-muted-foreground">
+                      <span>Impact coverage</span>
+                      <span className={benchmarkColor(signalReport.impactCoverage, 70, 50)}>
+                        {signalReport.impactCoverage}%
+                      </span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full border border-border/35 bg-overlay/25">
+                      <div
+                        className="h-full rounded-full bg-foam"
+                        style={{ width: `${signalReport.impactCoverage}%` }}
+                      />
+                    </div>
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      Bullets with business outcomes, scope signals, or qualitative impact.
+                    </p>
+                  </div>
+                )}
+
+                {/* Keyword density */}
+                {signalReport.keywordDensity && signalReport.keywordDensity.length > 0 && (
+                  <div className="rounded-xl border border-border/35 bg-overlay/40 p-4">
+                    <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                      Keyword Density
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {signalReport.keywordDensity.map((kw) => (
+                        <span
+                          key={kw.word}
+                          className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-overlay/40 px-2.5 py-1 text-xs text-muted-foreground"
+                        >
+                          <span>{kw.word}</span>
+                          <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] text-primary">
+                            {kw.count}
+                          </span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </CardContent>

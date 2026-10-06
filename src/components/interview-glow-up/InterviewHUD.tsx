@@ -31,6 +31,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
   const [selectedIndex, setSelectedIndex] = React.useState(0);
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
   const [panicMode, setPanicMode] = React.useState(false);
+  const storyIdPrefix = React.useId();
 
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -242,12 +243,14 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
                 displayStories.map((story, index) => {
                   const isSelected = index === selectedIndex;
                   const isExpanded = expandedId === story.id;
+                  const storyContentId = `${storyIdPrefix}-story-details-${stories.indexOf(story)}`;
 
                   return (
                     <button
                       type="button"
                       key={story.id}
                       aria-expanded={isExpanded}
+                      aria-controls={storyContentId}
                       onClick={() => {
                         setSelectedIndex(index);
                         setExpandedId(isExpanded ? null : story.id);
@@ -315,38 +318,40 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
                       </div>
 
                       {/* Expanded View */}
-                      {isExpanded && (
-                        <div className="mt-4 border-t border-border/40 pt-4">
-                          <div className="space-y-4">
-                            <div>
-                              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
-                                Play
-                              </p>
-                              <p className="mt-1 text-foreground leading-relaxed">{story.play}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
-                                Proof
-                              </p>
-                              <p className="mt-1 text-foam leading-relaxed">{story.proof}</p>
-                            </div>
-                            {story.questionPrompts.length > 0 && (
-                              <div>
-                                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
-                                  Questions this story answers
-                                </p>
-                                <ul className="mt-1 space-y-1">
-                                  {story.questionPrompts.map((q, i) => (
-                                    <li key={i} className="text-sm text-muted-foreground/90">
-                                      • {resolveQuestionText(q)}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
+                      <div
+                        id={storyContentId}
+                        hidden={!isExpanded}
+                        className="mt-4 border-t border-border/40 pt-4"
+                      >
+                        <div className="space-y-4">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                              Play
+                            </p>
+                            <p className="mt-1 text-foreground leading-relaxed">{story.play}</p>
                           </div>
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                              Proof
+                            </p>
+                            <p className="mt-1 text-foam leading-relaxed">{story.proof}</p>
+                          </div>
+                          {story.questionPrompts.length > 0 && (
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                                Questions this story answers
+                              </p>
+                              <ul className="mt-1 space-y-1">
+                                {story.questionPrompts.map((q, i) => (
+                                  <li key={i} className="text-sm text-muted-foreground/90">
+                                    • {resolveQuestionText(q)}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
                     </button>
                   );
                 })
