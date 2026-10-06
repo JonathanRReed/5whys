@@ -292,12 +292,35 @@ function keywordRegex(keyword: string): RegExp {
   return regex;
 }
 
+// Pre-computed skill entries with lowercased keywords to avoid repeated string operations.
+const SKILL_BANK_ENTRIES = SKILL_BANK.map((skill) => ({
+  skill,
+  keywordsWithLower: skill.keywords.map((kw) => ({
+    kw,
+    lowerKw: kw.toLowerCase(),
+  })),
+}));
+
+/**
+ * Smart skill detection using word-boundary matching.
+ *
+ * Performance optimization: Pre-lowercases input text and checks `lowerText.includes(lowerKw)`
+ * as a fast path before executing regex evaluation. This skips RegExp execution for keywords
+ * that are completely absent from the text, drastically reducing CPU time per line during live editing.
+ */
 export function detectSkillsFromText(text: string): SkillSuggestion[] {
   const suggestions: SkillSuggestion[] = [];
+  const lowerText = text.toLowerCase();
 
-  for (const skill of SKILL_BANK) {
-    if (skill.keywords.length === 0) continue;
-    const matchedKeywords = skill.keywords.filter((kw) => keywordRegex(kw).test(text));
+  for (const { skill, keywordsWithLower } of SKILL_BANK_ENTRIES) {
+    if (keywordsWithLower.length === 0) continue;
+    const matchedKeywords: string[] = [];
+    for (const { kw, lowerKw } of keywordsWithLower) {
+      // Fast path: skip RegExp if lowerKw substring is not present in lowerText
+      if (lowerText.includes(lowerKw) && keywordRegex(kw).test(text)) {
+        matchedKeywords.push(kw);
+      }
+    }
     if (matchedKeywords.length > 0) {
       suggestions.push({ skillId: skill.id, matchedKeywords });
     }
