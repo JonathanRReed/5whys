@@ -45,11 +45,24 @@ export default function BackupControls({ onRestored, className }: Props) {
   const [pending, setPending] = React.useState<StudioBackup | null>(null);
   const [status, setStatus] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [exported, setExported] = React.useState(false);
+  const exportTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (exportTimer.current) clearTimeout(exportTimer.current);
+    };
+  }, []);
 
   const handleExport = () => {
     const backup = downloadBackup();
     setError(null);
     setStatus(`Exported ${describe(summarizeBackup(backup))}. Check your downloads.`);
+    setExported(true);
+    if (exportTimer.current) clearTimeout(exportTimer.current);
+    exportTimer.current = setTimeout(() => {
+      setExported(false);
+    }, 2000);
   };
 
   const handleFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,9 +105,10 @@ export default function BackupControls({ onRestored, className }: Props) {
           <button
             type="button"
             onClick={handleExport}
+            aria-label={exported ? 'Exported my work to downloads' : 'Export my work'}
             className="rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
           >
-            Export my work
+            {exported ? 'Exported!' : 'Export my work'}
           </button>
           <button
             type="button"
@@ -152,8 +166,16 @@ export default function BackupControls({ onRestored, className }: Props) {
       )}
 
       <div aria-live="polite" className="mt-3 min-h-5 text-sm">
-        {status && <p className="text-foam">{status}</p>}
-        {error && <p className="text-destructive">{error}</p>}
+        {status && (
+          <p role="status" className="text-foam">
+            {status}
+          </p>
+        )}
+        {error && (
+          <p role="alert" className="text-destructive">
+            {error}
+          </p>
+        )}
       </div>
     </div>
   );
