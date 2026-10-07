@@ -27,10 +27,17 @@ import type { BulletFields, BulletRecord, RepetitiveVerb, SignalReport } from '.
 // Weak Word Detection
 // ============================================================================
 
+// Pre-computed entry list with lowercased weak words to avoid repeated string lowercasing inside loops
+const WEAK_WORDS_ENTRIES = WEAK_WORDS.map((word) => ({
+  word,
+  lowerWord: word.toLowerCase(),
+}));
+
 export function detectWeakWords(bullet: string): string[] {
+  const lowerText = bullet.toLowerCase();
   const found: string[] = [];
-  for (const word of WEAK_WORDS) {
-    if (matchesTerm(bullet, word)) {
+  for (const { word, lowerWord } of WEAK_WORDS_ENTRIES) {
+    if (matchesTerm(bullet, word, lowerText, lowerWord)) {
       found.push(word);
     }
   }
@@ -125,8 +132,20 @@ export function computeKeywordDensity(text: string): { word: string; count: numb
     .slice(0, 20);
 }
 
+// Pre-computed entry list with lowercased ATS keywords to avoid repeated string lowercasing inside loops
+const ATS_KEYWORDS_ENTRIES = ATS_KEYWORDS.map((kw) => ({
+  kw,
+  lowerKw: kw.toLowerCase(),
+}));
+
 export function detectAtsKeywords(text: string): string[] {
-  const found = ATS_KEYWORDS.filter((kw) => matchesTerm(text, kw));
+  const lowerText = text.toLowerCase();
+  const found: string[] = [];
+  for (const { kw, lowerKw } of ATS_KEYWORDS_ENTRIES) {
+    if (matchesTerm(text, kw, lowerText, lowerKw)) {
+      found.push(kw);
+    }
+  }
   return [...new Set(found)];
 }
 
