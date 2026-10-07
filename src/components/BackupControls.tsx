@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react';
 import * as React from 'react';
 import {
   type BackupSummary,
@@ -45,11 +46,24 @@ export default function BackupControls({ onRestored, className }: Props) {
   const [pending, setPending] = React.useState<StudioBackup | null>(null);
   const [status, setStatus] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [exported, setExported] = React.useState(false);
+  const exportTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (exportTimer.current) clearTimeout(exportTimer.current);
+    };
+  }, []);
 
   const handleExport = () => {
     const backup = downloadBackup();
     setError(null);
     setStatus(`Exported ${describe(summarizeBackup(backup))}. Check your downloads.`);
+    setExported(true);
+    if (exportTimer.current) clearTimeout(exportTimer.current);
+    exportTimer.current = setTimeout(() => {
+      setExported(false);
+    }, 2000);
   };
 
   const handleFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,8 +106,12 @@ export default function BackupControls({ onRestored, className }: Props) {
           <button
             type="button"
             onClick={handleExport}
-            className="rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+            className="inline-flex items-center gap-2 rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
           >
+            <Check
+              aria-hidden="true"
+              className={cn('size-4 shrink-0 text-foam', !exported && 'invisible')}
+            />
             Export my work
           </button>
           <button
@@ -151,9 +169,15 @@ export default function BackupControls({ onRestored, className }: Props) {
         </div>
       )}
 
-      <div aria-live="polite" className="mt-3 min-h-5 text-sm">
-        {status && <p className="text-foam">{status}</p>}
-        {error && <p className="text-destructive">{error}</p>}
+      <div className="mt-3 min-h-5 text-sm">
+        <p role="status" aria-atomic="true" className="text-foam">
+          {status}
+        </p>
+        {error && (
+          <p role="alert" className="text-destructive">
+            {error}
+          </p>
+        )}
       </div>
     </div>
   );
