@@ -318,6 +318,7 @@ export default function PacketSection({
                       setData(updatePacket(data, currentPacket.id, { customQuestions: updated }));
                     }}
                     placeholder="Your question..."
+                    aria-label={`Question to ask ${i + 1}`}
                     className="flex-1 rounded-lg border border-border/50 bg-overlay/30 px-3 py-2 text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                   />
                   <button
@@ -326,7 +327,7 @@ export default function PacketSection({
                       const updated = currentPacket.customQuestions.filter((_, j) => j !== i);
                       setData(updatePacket(data, currentPacket.id, { customQuestions: updated }));
                     }}
-                    aria-label="Remove question"
+                    aria-label={`Remove question ${i + 1}`}
                     className="rounded px-2 text-muted-foreground hover:text-destructive focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
                   >
                     &times;
