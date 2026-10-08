@@ -97,11 +97,17 @@ export function scoreBullet(bullet: string) {
   const readability = analyzeReadability(normalized);
   const readabilityScore = readability.isReadable ? 10 : 0;
 
+  // Fast-path optimization: Pre-evaluate qualitative outcome check once to avoid
+  // executing the same regexes twice when evaluating evidence and outcome links.
+  const hasQuant = hasQuantifier(normalized);
+  const hasQual = hasQualitativeOutcome(normalized);
+  const hasLink = OUTCOME_LINK_PATTERN.test(normalized) || hasQual;
+
   const score =
     leadingScore +
     verbScore +
-    (hasQuantifier(normalized) ? 25 : hasQualitativeOutcome(normalized) ? 15 : 0) +
-    (hasOutcomeLink(normalized) ? 20 : 0) +
+    (hasQuant ? 25 : hasQual ? 15 : 0) +
+    (hasLink ? 20 : 0) +
     (clarity ? 15 : 0) +
     readabilityScore;
 
