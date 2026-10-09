@@ -406,13 +406,23 @@ export function readCareerDashboard(): CareerDashboardData {
 
   // Only recommend edits using results known to match the current source.
   if (resume?.bullets.length && !resumeNeedsRescan) {
-    // Performance optimization: Linear O(N) scan to find lowest-scoring bullet
-    // without array shallow copy allocation or O(N log N) sorting.
+    // Saved data is not schema-validated here. Keep the original stable-sort
+    // behavior for malformed scores, including numeric strings and NaN comparisons.
+    const hasNumericScores = resume.bullets.every(
+      (bullet) => bullet.improvedScore == null || Number.isFinite(bullet.improvedScore)
+    );
     let weakest = resume.bullets[0];
-    for (let i = 1; i < resume.bullets.length; i++) {
-      if ((resume.bullets[i].improvedScore ?? 0) < (weakest.improvedScore ?? 0)) {
-        weakest = resume.bullets[i];
+    if (hasNumericScores) {
+      // Linear scan preserves the first bullet on ties without copying the array.
+      for (let i = 1; i < resume.bullets.length; i++) {
+        if ((resume.bullets[i].improvedScore ?? 0) < (weakest.improvedScore ?? 0)) {
+          weakest = resume.bullets[i];
+        }
       }
+    } else {
+      weakest = [...resume.bullets].sort(
+        (a, b) => (a.improvedScore ?? 0) - (b.improvedScore ?? 0)
+      )[0];
     }
     const weakestScore = weakest?.improvedScore ?? 0;
     if (weakest && weakestScore < 60) {
