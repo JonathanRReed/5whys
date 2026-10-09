@@ -1,5 +1,8 @@
-import { act, cleanup, renderHook } from '@testing-library/react';
-import { afterEach, beforeEach, expect, it } from 'vitest';
+import { act, cleanup, render, renderHook, screen } from '@testing-library/react';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import ConversationIngredients from '../src/components/networking/ConversationIngredients';
+import QuestionPrompts from '../src/components/networking/QuestionPrompts';
+import RapportWarmups from '../src/components/networking/RapportWarmups';
 import { useNetworkingPractice } from '../src/components/networking/useNetworkingPractice';
 
 beforeEach(() => localStorage.clear());
@@ -55,4 +58,76 @@ it('keeps custom guidance isolated between intro versions', () => {
   expect(result.current.currentScenario?.who).not.toBe('A research mentor');
   act(() => result.current.setCurrentVersionId(originalId));
   expect(result.current.currentScenario?.who).toBe('A research mentor');
+});
+
+it('renders descriptive aria-labels for copy buttons in helper components', () => {
+  const dummyScenario = {
+    id: 'test-scenario',
+    title: 'Test Title',
+    mode: 'fictional',
+    audience: 'student',
+    focus: 'Focus',
+    who: 'Recruiter',
+    where: 'Career Fair',
+    what: ['Step 1'],
+    ingredients: [{ id: 'ing-1', label: 'Opener', line: 'Hi there' }],
+    rapportSamples: ['Warmup 1'],
+    questionTemplates: [{ id: 'qt-1', label: 'Goal', prompt: 'What roles are open?' }],
+  };
+
+  const onCopy = vi.fn();
+
+  const { rerender } = render(
+    <ConversationIngredients currentScenario={dummyScenario} onCopy={onCopy} copiedKey={null} />
+  );
+  expect(screen.getByRole('button', { name: 'Copy Opener line' })).toBeInTheDocument();
+
+  rerender(
+    <ConversationIngredients
+      currentScenario={dummyScenario}
+      onCopy={onCopy}
+      copiedKey="ingredient-ing-1-test-scenario"
+    />
+  );
+  expect(screen.getByRole('button', { name: 'Copied Opener line' })).toBeInTheDocument();
+
+  rerender(
+    <RapportWarmups
+      rapportSamples={['Warmup 1']}
+      scenarioId="test-scenario"
+      onCopy={onCopy}
+      copiedKey={null}
+    />
+  );
+  expect(screen.getByRole('button', { name: 'Copy warm-up line 1' })).toBeInTheDocument();
+
+  rerender(
+    <RapportWarmups
+      rapportSamples={['Warmup 1']}
+      scenarioId="test-scenario"
+      onCopy={onCopy}
+      copiedKey="rapport-test-scenario-0"
+    />
+  );
+  expect(screen.getByRole('button', { name: 'Copied warm-up line 1' })).toBeInTheDocument();
+
+  rerender(
+    <QuestionPrompts
+      questionTemplates={[{ id: 'qt-1', label: 'Goal', prompt: 'What roles are open?' }]}
+      scenarioId="test-scenario"
+      onCopy={onCopy}
+      copiedKey={null}
+    />
+  );
+  expect(screen.getByRole('button', { name: 'Copy Goal question prompt' })).toBeInTheDocument();
+
+  rerender(
+    <QuestionPrompts
+      questionTemplates={[{ id: 'qt-1', label: 'Goal', prompt: 'What roles are open?' }]}
+      scenarioId="test-scenario"
+      onCopy={onCopy}
+      copiedKey="question-qt-1-test-scenario"
+    />
+  );
+  expect(screen.getByRole('button', { name: 'Copied Goal question prompt' })).toBeInTheDocument();
 });

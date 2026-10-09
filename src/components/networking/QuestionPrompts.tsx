@@ -85,6 +85,11 @@ export default function QuestionPrompts({
                   type="button"
                   size="sm"
                   variant="ghost"
+                  aria-label={
+                    isCopied
+                      ? `Copied ${template.label} question prompt`
+                      : `Copy ${template.label} question prompt`
+                  }
                   className="text-iris hover:text-iris focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                   onClick={() => onCopy(template.prompt, key)}
                 >

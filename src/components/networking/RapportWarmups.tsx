@@ -71,6 +71,9 @@ export default function RapportWarmups({ rapportSamples, scenarioId, onCopy, cop
                   type="button"
                   size="sm"
                   variant="ghost"
+                  aria-label={
+                    isCopied ? `Copied warm-up line ${index + 1}` : `Copy warm-up line ${index + 1}`
+                  }
                   className="text-gold hover:text-gold focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                   onClick={() => onCopy(sample, key)}
                 >
