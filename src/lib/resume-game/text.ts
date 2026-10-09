@@ -21,8 +21,13 @@ export function escapeRegExp(value: string) {
   return value.replace(REGEX_SPECIAL_CHARS, '\\$&');
 }
 
+/**
+ * Fast-path optimization: Skip 6 global regex replacements when no ampersand is present.
+ * Reduces CPU time during real-time resume line scanning and scoring when typing.
+ */
 export function decodeEntities(text: string) {
   if (!text) return '';
+  if (!text.includes('&')) return text;
   return text
     .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/gi, '&')
