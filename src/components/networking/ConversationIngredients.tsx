@@ -74,6 +74,11 @@ export default function ConversationIngredients({ currentScenario, onCopy, copie
                       type="button"
                       size="sm"
                       variant="outline"
+                      aria-label={
+                        isCopied
+                          ? `Copied ${ingredient.label} line`
+                          : `Copy ${ingredient.label} line`
+                      }
                       className="border-border/50 text-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                       onClick={() => onCopy(ingredient.line, key)}
                     >
