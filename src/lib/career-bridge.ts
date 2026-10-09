@@ -145,17 +145,25 @@ function readGlowUp(): GlowUpSummary | null {
   const stories = data.stories ?? [];
   const packets = data.packets ?? [];
   const currentRole = roles.find((r) => r.id === data.currentRoleId);
-  // The store keeps updatedAt per record, not at the top level.
-  const stamps = [...roles, ...stories, ...packets]
-    .map((r) => r.updatedAt)
-    .filter((t): t is number => typeof t === 'number');
+  // Performance optimization: Find max timestamp in O(N) single-pass loops
+  // to avoid intermediate array allocations and spread operator overhead.
+  let maxUpdated: number | null = null;
+  const updateMax = (updatedAt?: number) => {
+    if (typeof updatedAt === 'number' && (maxUpdated === null || updatedAt > maxUpdated)) {
+      maxUpdated = updatedAt;
+    }
+  };
+  for (const r of roles) updateMax(r.updatedAt);
+  for (const s of stories) updateMax(s.updatedAt);
+  for (const p of packets) updateMax(p.updatedAt);
+
   return {
     roleCount: roles.length,
     storyCount: stories.length,
     packetCount: packets.length,
     currentRoleTitle: currentRole?.jobTitle || null,
     currentCompany: currentRole?.company || null,
-    lastUpdated: stamps.length ? Math.max(...stamps) : null,
+    lastUpdated: maxUpdated,
   };
 }
 
@@ -398,9 +406,24 @@ export function readCareerDashboard(): CareerDashboardData {
 
   // Only recommend edits using results known to match the current source.
   if (resume?.bullets.length && !resumeNeedsRescan) {
-    const weakest = [...resume.bullets].sort(
-      (a, b) => (a.improvedScore ?? 0) - (b.improvedScore ?? 0)
-    )[0];
+    // Saved data is not schema-validated here. Keep the original stable-sort
+    // behavior for malformed scores, including numeric strings and NaN comparisons.
+    const hasNumericScores = resume.bullets.every(
+      (bullet) => bullet.improvedScore == null || Number.isFinite(bullet.improvedScore)
+    );
+    let weakest = resume.bullets[0];
+    if (hasNumericScores) {
+      // Linear scan preserves the first bullet on ties without copying the array.
+      for (let i = 1; i < resume.bullets.length; i++) {
+        if ((resume.bullets[i].improvedScore ?? 0) < (weakest.improvedScore ?? 0)) {
+          weakest = resume.bullets[i];
+        }
+      }
+    } else {
+      weakest = [...resume.bullets].sort(
+        (a, b) => (a.improvedScore ?? 0) - (b.improvedScore ?? 0)
+      )[0];
+    }
     const weakestScore = weakest?.improvedScore ?? 0;
     if (weakest && weakestScore < 60) {
       const excerpt = clip(weakest.original || '', 70);

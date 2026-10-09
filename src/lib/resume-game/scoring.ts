@@ -11,13 +11,17 @@ const DATE_RANGE = /\b(?:19|20)\d{2}\s*(?:[-–—]|to)\s*(?:(?:19|20)\d{2}|pres
 const PHONE = /(?:\+?\d{1,2}[\s.-])?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}/g;
 const ORDINAL = /^\d+(?:st|nd|rd|th)$/i;
 
+// Pre-compiled regexes hoisted to module scope to avoid re-compiling RegExp objects on every token
+const BARE_NUMBER_CLEAN_PATTERN = /[$,%kKmMxX]/g;
+const CURRENCY_OR_PERCENT_PATTERN = /[$%]/;
+
 /** Every measure-like number in a line, with years and phone numbers removed. */
 export function findQuantifiers(text: string): string[] {
   const stripped = text.replace(DATE_RANGE, ' ').replace(PHONE, ' ');
   const tokens = stripped.match(NUMBER_TOKEN) ?? [];
   return tokens.filter((token) => {
-    const bare = token.replace(/[$,%kKmMxX]/g, '');
-    if (YEAR.test(bare) && !/[$%]/.test(token)) return false;
+    const bare = token.replace(BARE_NUMBER_CLEAN_PATTERN, '');
+    if (YEAR.test(bare) && !CURRENCY_OR_PERCENT_PATTERN.test(token)) return false;
     if (ORDINAL.test(token)) return false;
     return true;
   });
