@@ -74,6 +74,7 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           placeholder="Search stories..."
+          aria-label="Search stories"
           className="flex-1 min-w-[200px] rounded-lg border border-border/50 bg-overlay/30 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
         />
         <SkillSelect
