@@ -96,17 +96,25 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
   const selectedBullet = bullets.find((bullet) => bullet.id === selectedBulletId) ?? null;
   const signalReport = session.signalReport ?? EMPTY_SIGNAL_REPORT;
 
-  const averageScore = bullets.length
-    ? Math.round(bullets.reduce((sum, bullet) => sum + bullet.improvedScore, 0) / bullets.length)
-    : 0;
-  const quantifiedBullets = bullets.filter((bullet) => /\d/.test(bullet.improved)).length;
-  const verbCoverage = bullets.length
-    ? Math.round(
-        (bullets.filter((bullet) => POWER_VERB_PATTERN.test(bullet.improved.toLowerCase())).length /
-          bullets.length) *
-          100
-      )
-    : 0;
+  // Single-pass memoized computation of overall resume metrics to avoid repeated array filtering,
+  // reduces overhead during state updates in ResumeGame.
+  const { averageScore, quantifiedBullets, verbCoverage } = React.useMemo(() => {
+    if (!bullets.length) return { averageScore: 0, quantifiedBullets: 0, verbCoverage: 0 };
+    let totalScore = 0;
+    let quantifiedCount = 0;
+    let verbCount = 0;
+    for (let i = 0; i < bullets.length; i++) {
+      const bullet = bullets[i];
+      totalScore += bullet.improvedScore;
+      if (/\d/.test(bullet.improved)) quantifiedCount++;
+      if (POWER_VERB_PATTERN.test(bullet.improved.toLowerCase())) verbCount++;
+    }
+    return {
+      averageScore: Math.round(totalScore / bullets.length),
+      quantifiedBullets: quantifiedCount,
+      verbCoverage: Math.round((verbCount / bullets.length) * 100),
+    };
+  }, [bullets]);
 
   React.useEffect(() => {
     if (!storageNotice) return;

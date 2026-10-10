@@ -15,8 +15,12 @@ const ORDINAL = /^\d+(?:st|nd|rd|th)$/i;
 const BARE_NUMBER_CLEAN_PATTERN = /[$,%kKmMxX]/g;
 const CURRENCY_OR_PERCENT_PATTERN = /[$%]/;
 
-/** Every measure-like number in a line, with years and phone numbers removed. */
+/**
+ * Every measure-like number in a line, with years and phone numbers removed.
+ * Performance optimization: Fast-paths texts without digits to skip global regex replacements.
+ */
 export function findQuantifiers(text: string): string[] {
+  if (!/\d/.test(text)) return [];
   const stripped = text.replace(DATE_RANGE, ' ').replace(PHONE, ' ');
   const tokens = stripped.match(NUMBER_TOKEN) ?? [];
   return tokens.filter((token) => {

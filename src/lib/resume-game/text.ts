@@ -51,6 +51,9 @@ export function escapeHtml(value: string) {
     .replace(/'/g, '&#39;');
 }
 
+// Pre-compiled regex to verify line has at least 3 alphanumeric characters without allocating intermediate strings
+const ALPHANUMERIC_3_PATTERN = /(?:[^a-zA-Z0-9]*[a-zA-Z0-9]){3}/;
+
 export function normalizeLine(raw: string) {
   const decoded = decodeEntities(raw)
     .replace(/^[-•*]\s*/, '')
@@ -60,7 +63,7 @@ export function normalizeLine(raw: string) {
   const heading = decoded.toLowerCase();
   if (HEADINGS.has(heading)) return '';
   if (DATE_RANGE_PATTERN.test(decoded)) return '';
-  if (decoded.replace(/[^a-zA-Z0-9]/g, '').length < 3) return '';
+  if (!ALPHANUMERIC_3_PATTERN.test(decoded)) return '';
   return decoded;
 }
 
