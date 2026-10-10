@@ -39,3 +39,24 @@ it.each(['Escape', 'blur', 'timeout'])('cancels armed deletion on %s', (cancel) 
   expect(onConfirm).not.toHaveBeenCalled();
   expect(screen.getByRole('button', { name: 'Delete snapshot?' })).toBeVisible();
 });
+
+it('updates accessible name (aria-label) when armed if aria-label prop was provided', () => {
+  const onConfirm = vi.fn();
+  render(
+    <ConfirmButton
+      confirmLabel="Delete for good?"
+      aria-label="Delete story: API redesign"
+      onConfirm={onConfirm}
+    >
+      Delete
+    </ConfirmButton>
+  );
+
+  const button = screen.getByRole('button', { name: 'Delete story: API redesign' });
+  expect(button).toBeInTheDocument();
+
+  // Clicking arms the button and updates aria-label so screen readers announce confirmLabel
+  fireEvent.click(button);
+  expect(screen.getByRole('button', { name: 'Delete for good?' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Delete story: API redesign' })).toBeNull();
+});

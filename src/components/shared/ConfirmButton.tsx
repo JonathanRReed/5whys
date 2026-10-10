@@ -54,6 +54,14 @@ export default function ConfirmButton({
     onConfirm();
   };
 
+  const currentAriaLabel = armed
+    ? ariaLabel
+      ? typeof confirmLabel === 'string'
+        ? confirmLabel
+        : undefined
+      : undefined
+    : ariaLabel;
+
   return (
     <button
       type="button"
@@ -65,7 +73,7 @@ export default function ConfirmButton({
           disarm();
         }
       }}
-      aria-label={ariaLabel}
+      aria-label={currentAriaLabel}
       // The label changes, so announce it rather than leaving the old one read out.
       aria-live="polite"
       className={cn(
