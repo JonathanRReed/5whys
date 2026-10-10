@@ -51,8 +51,8 @@ export function escapeHtml(value: string) {
     .replace(/'/g, '&#39;');
 }
 
-// Pre-compiled regex to verify line has at least 3 alphanumeric characters without allocating intermediate strings
-const ALPHANUMERIC_3_PATTERN = /(?:[^a-zA-Z0-9]*[a-zA-Z0-9]){3}/;
+// Anchor the scan to avoid quadratic retries on lines with fewer than 3 ASCII alphanumerics.
+const ALPHANUMERIC_3_PATTERN = /^(?:[^a-zA-Z0-9]*[a-zA-Z0-9]){3}/;
 
 export function normalizeLine(raw: string) {
   const decoded = decodeEntities(raw)
