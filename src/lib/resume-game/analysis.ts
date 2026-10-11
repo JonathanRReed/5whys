@@ -66,15 +66,32 @@ const QUALITATIVE_IMPACT_PATTERNS = [
   /\b(transformed|streamlined|eliminated|reduced|increased|improved|optimized|accelerated|simplified|automated|consolidated|standardized|doubled|cut|saved|grew|raised)\b/i,
 ];
 
+// Pre-compile multi-pattern arrays into single combined RegExp objects to avoid iterating
+// through array callbacks and evaluating multiple regexes on every bullet during impact detection.
+const COMBINED_BUSINESS_OUTCOME_PATTERN = new RegExp(
+  BUSINESS_OUTCOME_PATTERNS.map((p) => p.source).join('|'),
+  'i'
+);
+
+const COMBINED_SCOPE_SIGNAL_PATTERN = new RegExp(
+  SCOPE_SIGNAL_PATTERNS.map((p) => p.source).join('|'),
+  'i'
+);
+
+const COMBINED_QUALITATIVE_IMPACT_PATTERN = new RegExp(
+  QUALITATIVE_IMPACT_PATTERNS.map((p) => p.source).join('|'),
+  'i'
+);
+
 /**
  * True when the line shows an outcome, a scope, or a change. A bare number is
  * no longer enough: "Member of Chess Club 2022-2024" has digits but no impact.
  */
 export function detectImpact(bullet: string): boolean {
   const lower = bullet.toLowerCase();
-  const hasBusinessOutcome = BUSINESS_OUTCOME_PATTERNS.some((p) => p.test(lower));
-  const hasScopeSignal = SCOPE_SIGNAL_PATTERNS.some((p) => p.test(lower));
-  const hasQualitativeImpact = QUALITATIVE_IMPACT_PATTERNS.some((p) => p.test(lower));
+  const hasBusinessOutcome = COMBINED_BUSINESS_OUTCOME_PATTERN.test(lower);
+  const hasScopeSignal = COMBINED_SCOPE_SIGNAL_PATTERN.test(lower);
+  const hasQualitativeImpact = COMBINED_QUALITATIVE_IMPACT_PATTERN.test(lower);
   const hasMeasuredOutcome = hasQuantifier(lower) && hasOutcomeLink(lower);
   return (
     hasBusinessOutcome ||
@@ -356,13 +373,12 @@ export function buildDeepSignalReport(
         enriched.length
       : 0;
 
-  let passiveBullets = 0;
-  for (const b of enriched) {
-    const r = analyzeReadability(b.improved);
-    if (r.passiveVoiceCount > 0) passiveBullets++;
-  }
+  // Performance optimization: Re-use passive voice percentage calculated during computeBenchmarkScore
+  // to avoid a redundant loop executing analyzeReadability for every bullet in the resume.
   const passiveVoicePercent =
-    enriched.length > 0 ? Math.round((passiveBullets / enriched.length) * 100) : 0;
+    enriched.length > 0 && benchmark.details.passivePercent !== undefined
+      ? Math.round(benchmark.details.passivePercent * 100)
+      : 0;
 
   return {
     visible,
