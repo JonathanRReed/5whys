@@ -402,9 +402,11 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
       {/* Mobile nav panel */}
       <div
         id="primary-navigation"
+        aria-hidden={!menuOpen}
+        inert={!menuOpen ? true : undefined}
         className={cn(
           'fixed inset-y-0 right-0 z-50 w-72 flex-col gap-1 border-l border-border/25 bg-background/98 px-4 pb-4 pt-20 md:hidden transition-transform duration-300 ease-out',
-          menuOpen ? 'translate-x-0' : 'translate-x-full'
+          menuOpen ? 'translate-x-0' : 'translate-x-full pointer-events-none'
         )}
       >
         <button

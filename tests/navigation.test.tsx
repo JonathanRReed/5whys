@@ -71,3 +71,17 @@ it('returns focus to the mobile trigger after Escape from the panel', () => {
   fireEvent.keyDown(close, { key: 'Escape' });
   expect(trigger).toHaveFocus();
 });
+
+it('hides mobile nav panel with aria-hidden and inert when collapsed', () => {
+  const { container } = render(<Navigation currentPath="/" />);
+  const navPanel = container.querySelector('#primary-navigation');
+  expect(navPanel).not.toBeNull();
+  expect(navPanel).toHaveAttribute('aria-hidden', 'true');
+  expect(navPanel).toHaveAttribute('inert');
+
+  const mobileToggle = screen.getByRole('button', { name: 'Toggle navigation' });
+  fireEvent.click(mobileToggle);
+
+  expect(navPanel).toHaveAttribute('aria-hidden', 'false');
+  expect(navPanel).not.toHaveAttribute('inert');
+});
