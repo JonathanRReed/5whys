@@ -82,14 +82,22 @@ export default function BackupControls({ onRestored, className }: Props) {
 
   const finishImport = (replace: boolean) => {
     if (!pending) return;
-    const written = restoreBackup(pending, replace);
+    setError(null);
+    setStatus(null);
+    let written: ReturnType<typeof restoreBackup>;
+    try {
+      written = restoreBackup(pending, replace);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not save that file in this browser.');
+      return;
+    }
     setPending(null);
     setStatus(
       written.length === 0
         ? 'That file had nothing to bring in.'
         : `Brought in ${describe(summarizeBackup(pending))}.`
     );
-    onRestored?.();
+    if (written.length > 0) onRestored?.();
   };
 
   return (
@@ -163,8 +171,8 @@ export default function BackupControls({ onRestored, className }: Props) {
             </button>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            "Add" overwrites only the tools the file contains. "Replace" clears the studio's saved
-            work in this browser first.
+            "Add" overwrites only the tools the file contains. "Replace" also removes the studio's
+            saved work that is missing from the file.
           </p>
         </div>
       )}

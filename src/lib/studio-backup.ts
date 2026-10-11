@@ -105,7 +105,8 @@ export function parseBackup(text: string): StudioBackup {
   if (
     candidate.format !== BACKUP_FORMAT ||
     !candidate.stores ||
-    typeof candidate.stores !== 'object'
+    typeof candidate.stores !== 'object' ||
+    Array.isArray(candidate.stores)
   ) {
     throw new Error('That file was not exported by 5 Whys Career Studio.');
   }
@@ -125,20 +126,96 @@ export function parseBackup(text: string): StudioBackup {
 }
 
 /**
- * Write a backup into this browser. `replace` clears the studio's own keys
- * first; otherwise stores in the file overwrite only the keys they contain.
+ * Stage the imported values and originals before changing saved work. Replace
+ * removes omitted studio keys only after every imported store has saved.
+ * Recovery is best effort: localStorage has no transaction across keys or tabs.
  */
 export function restoreBackup(backup: StudioBackup, replace: boolean): StudioStorageKey[] {
   if (typeof window === 'undefined') return [];
-  const written: StudioStorageKey[] = [];
-  if (replace) {
-    for (const key of STUDIO_STORAGE_KEYS) window.localStorage.removeItem(key);
+  if (!backup.stores || typeof backup.stores !== 'object' || Array.isArray(backup.stores)) {
+    throw new Error('That file was not exported by 5 Whys Career Studio.');
   }
-  for (const key of STUDIO_STORAGE_KEYS) {
-    const value = backup.stores[key];
-    if (value === undefined) continue;
-    window.localStorage.setItem(key, JSON.stringify(value));
-    written.push(key);
+  const staged = new Map<StudioStorageKey, string>();
+  try {
+    for (const key of STUDIO_STORAGE_KEYS) {
+      const value = backup.stores[key];
+      if (value === undefined || value === null) continue;
+      const serialized = JSON.stringify(value);
+      if (serialized === undefined) throw new Error('Unserializable store');
+      staged.set(key, serialized);
+    }
+  } catch (cause) {
+    throw new Error(
+      'That file contains data this browser could not save. Your saved work was not changed.',
+      { cause }
+    );
   }
-  return written;
+  // An empty export is not an instruction to erase the studio.
+  if (staged.size === 0) return [];
+
+  let storage: Storage;
+  const originals = new Map<StudioStorageKey, string | null>();
+  try {
+    storage = window.localStorage;
+    for (const key of replace ? STUDIO_STORAGE_KEYS : staged.keys()) {
+      originals.set(key, storage.getItem(key));
+    }
+  } catch (cause) {
+    throw new Error(
+      'Could not save that file in this browser. Your saved work was not changed. Try again or use another browser.',
+      { cause }
+    );
+  }
+
+  const changed: StudioStorageKey[] = [];
+  try {
+    for (const [key, value] of staged) {
+      if (originals.get(key) === value) continue;
+      storage.setItem(key, value);
+      changed.push(key);
+    }
+    if (replace) {
+      for (const [key, original] of originals) {
+        if (staged.has(key) || original === null) continue;
+        storage.removeItem(key);
+        changed.push(key);
+      }
+    }
+  } catch (cause) {
+    let recovered = true;
+    // Free new stores and shrink overwritten values before restoring lost space.
+    const rollbackKeys = [
+      ...changed.filter((key) => originals.get(key) === null),
+      ...changed
+        .filter((key) => originals.get(key) !== null)
+        .sort(
+          (a, b) =>
+            (originals.get(a)?.length ?? 0) -
+            (staged.get(a)?.length ?? 0) -
+            ((originals.get(b)?.length ?? 0) - (staged.get(b)?.length ?? 0))
+        ),
+    ];
+    for (const key of rollbackKeys) {
+      try {
+        // Avoid replacing a newer value observed from another tab. This check
+        // cannot make the following write atomic with that tab's writes.
+        if (storage.getItem(key) !== (staged.get(key) ?? null)) {
+          recovered = false;
+          continue;
+        }
+        const original = originals.get(key);
+        if (original === null) storage.removeItem(key);
+        else if (original !== undefined) storage.setItem(key, original);
+      } catch {
+        recovered = false;
+      }
+    }
+    throw new Error(
+      recovered
+        ? 'Could not save that file in this browser. Your previous saved work was restored. Try again or use another browser.'
+        : 'Could not finish importing that file or restore all previous saved work. Some saved work may have changed. Keep your backup file and export what is here before trying again.',
+      { cause }
+    );
+  }
+  return [...staged.keys()];
 }
