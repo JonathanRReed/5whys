@@ -220,7 +220,7 @@ export default function OnboardingWizard() {
   const [done, setDone] = React.useState(false);
   const [restored, setRestored] = React.useState(false);
   const headingRef = React.useRef<HTMLHeadingElement>(null);
-  const initialMountRef = React.useRef(true);
+  const [navigation, setNavigation] = React.useState(0);
 
   // A returning visitor sees their recommendation straight away and can
   // change the answers instead of re-taking the review.
@@ -237,17 +237,21 @@ export default function OnboardingWizard() {
     ? getRecommendation(answers[0] || 'student', answers[1] || 'direction')
     : null;
 
-  // Shift focus to the new step question or recommendation title on navigation
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Shift focus on step/done state change
+  // Mounting and profile restoration leave focus where the visitor put it.
+  // Only a visitor-initiated transition requests focus after React commits.
   React.useEffect(() => {
-    if (initialMountRef.current) {
-      initialMountRef.current = false;
-      return;
-    }
-    headingRef.current?.focus();
-  }, [step, done]);
+    if (navigation > 0) headingRef.current?.focus();
+  }, [navigation]);
+
+  const announcement =
+    navigation === 0
+      ? ''
+      : done
+        ? 'Career review complete.'
+        : `Step ${step + 1} of ${STEPS.length}.`;
 
   const handleSelect = (value: string) => {
+    setNavigation((n) => n + 1);
     const next = { ...answers, [step]: value };
     setAnswers(next);
     if (step < STEPS.length - 1) {
@@ -261,6 +265,7 @@ export default function OnboardingWizard() {
   };
 
   const handleBack = () => {
+    setNavigation((n) => n + 1);
     if (done) {
       setDone(false);
       setRestored(false);
@@ -271,6 +276,7 @@ export default function OnboardingWizard() {
   };
 
   const handleStartOver = () => {
+    setNavigation((n) => n + 1);
     setAnswers({});
     setDone(false);
     setRestored(false);
@@ -305,8 +311,14 @@ export default function OnboardingWizard() {
 
     return (
       <div className="mx-auto w-full max-w-2xl space-y-8">
-        <div className="sr-only" role="status" aria-live="polite">
-          {`Career review result: ${recommendation.title}`}
+        <div
+          key="review-status"
+          className="sr-only"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {announcement}
         </div>
         <div className="space-y-2 text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
@@ -315,7 +327,7 @@ export default function OnboardingWizard() {
           <h2
             ref={headingRef}
             tabIndex={-1}
-            className="text-3xl font-semibold tracking-tight focus:outline-hidden"
+            className="text-3xl font-semibold tracking-tight focus:outline-2 focus:outline-offset-4 focus:outline-foam"
           >
             {restored ? 'Welcome back. Your starting point' : 'Here is your starting point'}
           </h2>
@@ -464,6 +476,15 @@ export default function OnboardingWizard() {
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-8">
+      <div
+        key="review-status"
+        className="sr-only"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {announcement}
+      </div>
       {/* Progress bar */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
@@ -501,14 +522,11 @@ export default function OnboardingWizard() {
             </button>
           )}
         </div>
-        <div className="sr-only" role="status" aria-live="polite">
-          {`Step ${step + 1} of ${STEPS.length}: ${currentStep.question}`}
-        </div>
         <div className="flex-1 text-center">
           <h2
             ref={headingRef}
             tabIndex={-1}
-            className="text-3xl font-semibold tracking-tight focus:outline-hidden"
+            className="text-3xl font-semibold tracking-tight focus:outline-2 focus:outline-offset-4 focus:outline-foam"
           >
             {currentStep.question}
           </h2>

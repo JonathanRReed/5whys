@@ -16,4 +16,4 @@
 ## 2026-10-12 - Focus Management and Live Region Announcements for Multi-Step Wizards
 
 **Learning:** When unmounting button elements during wizard step transitions, keyboard focus resets to `body`, causing screen reader and keyboard users to lose track of the active question or result screen.
-**Action:** Attach a ref to the step/recommendation heading with `tabIndex={-1}`, programmatically move focus on step changes, and include a polite `role="status"` live region for clear assistive technology updates.
+**Action:** Move focus to a visibly outlined step/recommendation heading only after visitor navigation. Initial hydration, profile restoration, and StrictMode mounting leave existing focus in place. Keep one initially empty polite status region across steps/results, with concise progress or completion text so focus and live updates do not repeat the question. DOM and keyboard tests verify the behavior; actual screen-reader announcements have not been tested.
