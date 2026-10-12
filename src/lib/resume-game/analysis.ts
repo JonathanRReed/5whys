@@ -297,7 +297,10 @@ function computeBulletSignal(record: BulletRecord, hardSkills: string[]): number
   if (hasQuantifier(line)) signal += 25;
   else if (hasQualitativeOutcome(line)) signal += 15;
   if (hasOutcomeLink(line)) signal += 20;
-  if (hardSkills.some((skill) => matchesTerm(line, skill))) signal += 15;
+  // Performance optimization: Pre-compute lowercased line and pass pre-lowercased skill tokens
+  // to matchesTerm to bypass repeated string lowercasing inside the loop across every hard skill.
+  const lowerLine = line.toLowerCase();
+  if (hardSkills.some((skill) => matchesTerm(line, skill, lowerLine, skill.toLowerCase()))) signal += 15;
   signal += record.improvedScore >= 70 ? 15 : record.improvedScore >= 50 ? 10 : 5;
 
   return Math.min(100, signal);
