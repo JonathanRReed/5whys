@@ -219,6 +219,8 @@ export default function OnboardingWizard() {
   const [answers, setAnswers] = React.useState<Record<number, string>>({});
   const [done, setDone] = React.useState(false);
   const [restored, setRestored] = React.useState(false);
+  const headingRef = React.useRef<HTMLHeadingElement>(null);
+  const [navigation, setNavigation] = React.useState(0);
 
   // A returning visitor sees their recommendation straight away and can
   // change the answers instead of re-taking the review.
@@ -235,7 +237,21 @@ export default function OnboardingWizard() {
     ? getRecommendation(answers[0] || 'student', answers[1] || 'direction')
     : null;
 
+  // Mounting and profile restoration leave focus where the visitor put it.
+  // Only a visitor-initiated transition requests focus after React commits.
+  React.useEffect(() => {
+    if (navigation > 0) headingRef.current?.focus();
+  }, [navigation]);
+
+  const announcement =
+    navigation === 0
+      ? ''
+      : done
+        ? 'Career review complete.'
+        : `Step ${step + 1} of ${STEPS.length}.`;
+
   const handleSelect = (value: string) => {
+    setNavigation((n) => n + 1);
     const next = { ...answers, [step]: value };
     setAnswers(next);
     if (step < STEPS.length - 1) {
@@ -249,6 +265,7 @@ export default function OnboardingWizard() {
   };
 
   const handleBack = () => {
+    setNavigation((n) => n + 1);
     if (done) {
       setDone(false);
       setRestored(false);
@@ -259,6 +276,7 @@ export default function OnboardingWizard() {
   };
 
   const handleStartOver = () => {
+    setNavigation((n) => n + 1);
     setAnswers({});
     setDone(false);
     setRestored(false);
@@ -293,11 +311,24 @@ export default function OnboardingWizard() {
 
     return (
       <div className="mx-auto w-full max-w-2xl space-y-8">
+        <div
+          key="review-status"
+          className="sr-only"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {announcement}
+        </div>
         <div className="space-y-2 text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
             Your career review
           </p>
-          <h2 className="text-3xl font-semibold tracking-tight">
+          <h2
+            ref={headingRef}
+            tabIndex={-1}
+            className="text-3xl font-semibold tracking-tight focus:outline-2 focus:outline-offset-4 focus:outline-foam"
+          >
             {restored ? 'Welcome back. Your starting point' : 'Here is your starting point'}
           </h2>
           <p className="text-sm text-muted-foreground">
@@ -445,6 +476,15 @@ export default function OnboardingWizard() {
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-8">
+      <div
+        key="review-status"
+        className="sr-only"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {announcement}
+      </div>
       {/* Progress bar */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
@@ -483,7 +523,13 @@ export default function OnboardingWizard() {
           )}
         </div>
         <div className="flex-1 text-center">
-          <h2 className="text-3xl font-semibold tracking-tight">{currentStep.question}</h2>
+          <h2
+            ref={headingRef}
+            tabIndex={-1}
+            className="text-3xl font-semibold tracking-tight focus:outline-2 focus:outline-offset-4 focus:outline-foam"
+          >
+            {currentStep.question}
+          </h2>
           <p className="text-muted-foreground">{currentStep.subtitle}</p>
         </div>
         <div className="w-20" />
