@@ -78,7 +78,7 @@ const CHANGE_WORD_PATTERN =
   /\b(improved|reduced|increased|streamlined|automated|saved|cut|grew|doubled|eliminated)\w*\b/i;
 const PASSIVE_FRAGMENT_PATTERN = /\b(was|were|been|being|is|are|be)\s+\w+(?:ed|en)\b/i;
 
-// Pre-computed entry list with lowercased buzzwords to avoid repeated string lowercasing inside loops
+// Normalize the finite buzzword list once, preserving its match priority.
 const BUZZWORDS_ENTRIES = BUZZWORDS.map((word) => ({
   word,
   lowerWord: word.toLowerCase(),
@@ -165,8 +165,7 @@ export function generateBulletSuggestions(
   }
 
   // Buzzwords: traits claimed instead of shown
-  // Performance optimization: Pre-compute lowercased line and pass pre-lowercased buzzword tokens
-  // to matchesTerm to avoid repeated string lowercasing inside the loop over all buzzwords.
+  // Reuse one normalized line across the buzzword candidates.
   const lowerCurrent = current.toLowerCase();
   const buzzword = BUZZWORDS_ENTRIES.find(({ word, lowerWord }) =>
     matchesTerm(current, word, lowerCurrent, lowerWord)

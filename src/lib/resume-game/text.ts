@@ -62,9 +62,7 @@ export function normalizeLine(raw: string) {
   if (!decoded) return '';
   const heading = decoded.toLowerCase();
   if (HEADINGS.has(heading)) return '';
-  // Performance optimization: Fast-path date range check by requiring at least one digit
-  // before running complex DATE_RANGE_PATTERN regex evaluation on non-date achievement lines.
-  if (/\d/.test(decoded) && DATE_RANGE_PATTERN.test(decoded)) return '';
+  if (DATE_RANGE_PATTERN.test(decoded)) return '';
   if (!ALPHANUMERIC_3_PATTERN.test(decoded)) return '';
   return decoded;
 }
