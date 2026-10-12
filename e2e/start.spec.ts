@@ -1,4 +1,3 @@
-import path from 'node:path';
 import { expect, test } from '@playwright/test';
 import { readStorage, waitForHydration, watchConsoleErrors } from './helpers';
 
@@ -55,7 +54,7 @@ for (const theme of ['night', 'dawn']) {
     await expect(page.getByRole('status')).toHaveText('Step 2 of 2.');
     await page.screenshot({
       animations: 'disabled',
-      path: path.resolve('../../evidence', `whys55-${theme}-${testInfo.project.name}-question.png`),
+      path: testInfo.outputPath(`career-review-${theme}-question.png`),
     });
     await page.getByRole('button', { name: 'Back', exact: true }).click();
     await expect(
@@ -72,7 +71,7 @@ for (const theme of ['night', 'dawn']) {
     ).toBe(true);
     await page.screenshot({
       animations: 'disabled',
-      path: path.resolve('../../evidence', `whys55-${theme}-${testInfo.project.name}-result.png`),
+      path: testInfo.outputPath(`career-review-${theme}-result.png`),
     });
     await page.getByRole('button', { name: 'Change the last answer' }).click();
     await expect(question).toBeFocused();
