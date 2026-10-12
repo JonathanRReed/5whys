@@ -219,6 +219,8 @@ export default function OnboardingWizard() {
   const [answers, setAnswers] = React.useState<Record<number, string>>({});
   const [done, setDone] = React.useState(false);
   const [restored, setRestored] = React.useState(false);
+  const headingRef = React.useRef<HTMLHeadingElement>(null);
+  const initialMountRef = React.useRef(true);
 
   // A returning visitor sees their recommendation straight away and can
   // change the answers instead of re-taking the review.
@@ -234,6 +236,16 @@ export default function OnboardingWizard() {
   const recommendation = done
     ? getRecommendation(answers[0] || 'student', answers[1] || 'direction')
     : null;
+
+  // Shift focus to the new step question or recommendation title on navigation
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Shift focus on step/done state change
+  React.useEffect(() => {
+    if (initialMountRef.current) {
+      initialMountRef.current = false;
+      return;
+    }
+    headingRef.current?.focus();
+  }, [step, done]);
 
   const handleSelect = (value: string) => {
     const next = { ...answers, [step]: value };
@@ -293,11 +305,18 @@ export default function OnboardingWizard() {
 
     return (
       <div className="mx-auto w-full max-w-2xl space-y-8">
+        <div className="sr-only" role="status" aria-live="polite">
+          {`Career review result: ${recommendation.title}`}
+        </div>
         <div className="space-y-2 text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
             Your career review
           </p>
-          <h2 className="text-3xl font-semibold tracking-tight">
+          <h2
+            ref={headingRef}
+            tabIndex={-1}
+            className="text-3xl font-semibold tracking-tight focus:outline-hidden"
+          >
             {restored ? 'Welcome back. Your starting point' : 'Here is your starting point'}
           </h2>
           <p className="text-sm text-muted-foreground">
@@ -482,8 +501,17 @@ export default function OnboardingWizard() {
             </button>
           )}
         </div>
+        <div className="sr-only" role="status" aria-live="polite">
+          {`Step ${step + 1} of ${STEPS.length}: ${currentStep.question}`}
+        </div>
         <div className="flex-1 text-center">
-          <h2 className="text-3xl font-semibold tracking-tight">{currentStep.question}</h2>
+          <h2
+            ref={headingRef}
+            tabIndex={-1}
+            className="text-3xl font-semibold tracking-tight focus:outline-hidden"
+          >
+            {currentStep.question}
+          </h2>
           <p className="text-muted-foreground">{currentStep.subtitle}</p>
         </div>
         <div className="w-20" />

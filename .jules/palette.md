@@ -12,3 +12,8 @@
 
 **Learning:** Off-screen side menus positioned via CSS `transform: translateX(100%)` remain focusable in the DOM. Using `aria-hidden` and `inert` when collapsed removes the container from screen reader trees and tab order, while avoiding `visibility: hidden` (`invisible`) allows CSS slide transitions to play smoothly without creating off-screen focus traps.
 **Action:** Apply `aria-hidden={!isOpen}` and `inert={!isOpen ? true : undefined}` to off-screen slide drawers.
+
+## 2026-10-12 - Focus Management and Live Region Announcements for Multi-Step Wizards
+
+**Learning:** When unmounting button elements during wizard step transitions, keyboard focus resets to `body`, causing screen reader and keyboard users to lose track of the active question or result screen.
+**Action:** Attach a ref to the step/recommendation heading with `tabIndex={-1}`, programmatically move focus on step changes, and include a polite `role="status"` live region for clear assistive technology updates.
