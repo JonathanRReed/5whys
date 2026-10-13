@@ -30,7 +30,37 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [showScrollTop, setShowScrollTop] = React.useState(false);
   const compactToolsTrigger = React.useRef<HTMLButtonElement>(null);
+  const compactToolsContainerRef = React.useRef<HTMLDivElement>(null);
   const mobileMenuTrigger = React.useRef<HTMLButtonElement>(null);
+
+  React.useEffect(() => {
+    if (!compactToolsOpen) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (
+        compactToolsContainerRef.current &&
+        !compactToolsContainerRef.current.contains(event.target as Node)
+      ) {
+        setCompactToolsOpen(false);
+      }
+    };
+
+    const handleFocusIn = (event: FocusEvent) => {
+      if (
+        compactToolsContainerRef.current &&
+        !compactToolsContainerRef.current.contains(event.target as Node)
+      ) {
+        setCompactToolsOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('focusin', handleFocusIn);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('focusin', handleFocusIn);
+    };
+  }, [compactToolsOpen]);
 
   React.useEffect(() => {
     const onScroll = () => {
@@ -200,7 +230,7 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
         </a>
 
         {/* Compact tablet nav */}
-        <div className="relative hidden md:flex xl:hidden">
+        <div ref={compactToolsContainerRef} className="relative hidden md:flex xl:hidden">
           <div className="flex items-center gap-1 rounded-full border border-border/38 bg-overlay/42 px-2 py-1">
             {mainLinks.map(({ href, label }) => {
               const active = isActive(href);

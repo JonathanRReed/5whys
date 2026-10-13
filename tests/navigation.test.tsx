@@ -85,3 +85,25 @@ it('hides mobile nav panel with aria-hidden and inert when collapsed', () => {
   expect(navPanel).toHaveAttribute('aria-hidden', 'false');
   expect(navPanel).not.toHaveAttribute('inert');
 });
+
+it('closes compact tools menu when clicking outside', () => {
+  render(<Navigation currentPath="/" />);
+  const [compactToolsBtn] = screen.getAllByRole('button', { name: /tools/i });
+
+  fireEvent.click(compactToolsBtn);
+  expect(compactToolsBtn).toHaveAttribute('aria-expanded', 'true');
+
+  fireEvent.pointerDown(document.body);
+  expect(compactToolsBtn).toHaveAttribute('aria-expanded', 'false');
+});
+
+it('closes compact tools menu when focus moves outside', () => {
+  render(<Navigation currentPath="/" />);
+  const [compactToolsBtn] = screen.getAllByRole('button', { name: /tools/i });
+
+  fireEvent.click(compactToolsBtn);
+  expect(compactToolsBtn).toHaveAttribute('aria-expanded', 'true');
+
+  fireEvent.focusIn(document.body);
+  expect(compactToolsBtn).toHaveAttribute('aria-expanded', 'false');
+});
