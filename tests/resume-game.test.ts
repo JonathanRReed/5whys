@@ -181,6 +181,36 @@ describe('extractSkills', () => {
       expect.arrayContaining(['python', 'r', 'go', 'spring', 'express', 'shell'])
     );
   });
+
+  it('strictly respects context ordering rules for gated skills', () => {
+    // Chef requires context keyword to appear after 'chef'
+    expect(extractSkills('Terraform automation. Professional chef.').hard).not.toContain('chef');
+    expect(extractSkills('Professional chef with Terraform automation.').hard).toContain('chef');
+
+    // Unity requires Unity keywords (e.g. 'unity project' or 'unity engine')
+    expect(extractSkills('Built Unity project with C#').hard).toContain('unity');
+    expect(extractSkills('Professional unity.').hard).not.toContain('unity');
+
+    // Lambda requires 'serverless' to appear before 'lambda' when not using 'aws lambda' or 'lambda function'
+    expect(extractSkills('Lambda. Serverless architecture.').hard).not.toContain('lambda');
+    expect(extractSkills('Serverless architecture with lambda.').hard).toContain('lambda');
+
+    // SAS requires statistical context after 'sas'
+    expect(extractSkills('Statistical analysis. Worked at SAS.').hard).not.toContain('sas');
+    expect(extractSkills('SAS programming for statistical analysis.').hard).toContain('sas');
+
+    // Sketch requires design context after 'sketch'
+    expect(extractSkills('Design prototype. Quick sketch.').hard).not.toContain('sketch');
+    expect(extractSkills('Sketch prototype for design team.').hard).toContain('sketch');
+
+    // Notion requires workspace context after 'notion'
+    expect(extractSkills('Workspace documentation. Notion.').hard).not.toContain('notion');
+    expect(extractSkills('Notion workspace for documentation.').hard).toContain('notion');
+
+    // SEM requires SEO context after 'sem'
+    expect(extractSkills('SEO campaign. SEM.').hard).not.toContain('sem');
+    expect(extractSkills('SEM campaign for SEO optimization.').hard).toContain('sem');
+  });
 });
 
 describe('scoreBullet', () => {
