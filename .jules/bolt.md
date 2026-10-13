@@ -5,5 +5,5 @@
 
 ## 2025-06-22 - Substring Fast-Paths for Context-Gated Document Matching
 
-**Learning:** Complex regexes with ordering constraints or lookaheads run unnecessarily on non-matching documents. Performing fast string substring prechecks (`lowerText.includes(kw)`) before invoking regex evaluation short-circuits regex execution for 95%+ of documents while guaranteeing 100% behavior preservation for ordering semantics.
+**Learning:** Complex regexes with ordering constraints or lookaheads run unnecessarily on non-matching documents. Performing fast string substring prechecks (`lowerText.includes(kw)`) before invoking regex evaluation short-circuits regex execution when key tokens are absent while guaranteeing 100% behavior preservation for ordering semantics.
 **Action:** Use precheck token maps to guard complex document regexes without altering regex definitions.
