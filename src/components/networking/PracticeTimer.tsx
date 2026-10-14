@@ -88,11 +88,11 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset, onLeng
         <div className="flex flex-wrap justify-center gap-2">
           <Button
             onClick={onStart}
-            disabled={timer.isRunning || isComplete}
+            disabled={timer.isRunning}
             aria-pressed={timer.isRunning}
             className="bg-primary hover:bg-primary/80 disabled:bg-primary/40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
           >
-            {timer.isRunning ? 'Running' : isComplete ? 'Done' : 'Start'}
+            {timer.isRunning ? 'Running' : isComplete ? 'Restart' : 'Start'}
           </Button>
           <Button
             onClick={onPause}

@@ -1,6 +1,21 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import NetworkingPractice from '../src/components/NetworkingPractice';
+import PracticeTimer from '../src/components/networking/PracticeTimer';
+import { useTimer } from '../src/components/networking/useTimer';
+
+function TestTimerWrapper() {
+  const { timer, startTimer, pauseTimer, resetTimer, setTimerLength } = useTimer(30);
+  return (
+    <PracticeTimer
+      timer={timer}
+      onStart={startTimer}
+      onPause={pauseTimer}
+      onReset={resetTimer}
+      onLengthChange={setTimerLength}
+    />
+  );
+}
 
 beforeEach(() => {
   localStorage.clear();
@@ -67,4 +82,29 @@ it('deletes an intro version in-place with ConfirmButton without window.confirm'
   expect(versionsAfter).toHaveLength(versionsBefore.length - 1);
   expect(versionsAfter.some((version: { id: string }) => version.id === deletedId)).toBe(false);
   expect(screen.queryByRole('button', { name: 'Delete this intro?' })).toBeNull();
+});
+
+it('displays Restart button when practice rep completes and allows immediate restart', () => {
+  vi.useFakeTimers();
+  render(<TestTimerWrapper />);
+
+  const startButton = screen.getByRole('button', { name: 'Start' });
+  expect(startButton).not.toBeDisabled();
+
+  fireEvent.click(startButton);
+
+  expect(screen.getByRole('button', { name: 'Running' })).toBeDisabled();
+
+  act(() => {
+    vi.advanceTimersByTime(30000);
+  });
+
+  const restartButton = screen.getByRole('button', { name: 'Restart' });
+  expect(restartButton).not.toBeDisabled();
+
+  fireEvent.click(restartButton);
+
+  expect(screen.getByRole('button', { name: 'Running' })).toBeDisabled();
+
+  vi.useRealTimers();
 });
