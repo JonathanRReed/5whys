@@ -86,20 +86,17 @@ const COMBINED_QUALITATIVE_IMPACT_PATTERN = new RegExp(
 /**
  * True when the line shows an outcome, a scope, or a change. A bare number is
  * no longer enough: "Member of Chess Club 2022-2024" has digits but no impact.
+ *
+ * Performance optimization: Short-circuits evaluation early so that matching lines
+ * skip expensive quantifier parsing (date/phone stripping) and secondary regex passes.
  */
 export function detectImpact(bullet: string): boolean {
   const lower = bullet.toLowerCase();
-  const hasBusinessOutcome = COMBINED_BUSINESS_OUTCOME_PATTERN.test(lower);
-  const hasScopeSignal = COMBINED_SCOPE_SIGNAL_PATTERN.test(lower);
-  const hasQualitativeImpact = COMBINED_QUALITATIVE_IMPACT_PATTERN.test(lower);
-  const hasMeasuredOutcome = hasQuantifier(lower) && hasOutcomeLink(lower);
-  return (
-    hasBusinessOutcome ||
-    hasScopeSignal ||
-    hasQualitativeImpact ||
-    hasMeasuredOutcome ||
-    hasQualitativeOutcome(bullet)
-  );
+  if (COMBINED_BUSINESS_OUTCOME_PATTERN.test(lower)) return true;
+  if (COMBINED_SCOPE_SIGNAL_PATTERN.test(lower)) return true;
+  if (COMBINED_QUALITATIVE_IMPACT_PATTERN.test(lower)) return true;
+  if (hasQuantifier(lower) && hasOutcomeLink(lower)) return true;
+  return hasQualitativeOutcome(bullet);
 }
 
 // ============================================================================
@@ -269,6 +266,7 @@ export function computeBenchmarkScore(bullets: BulletRecord[]): {
       impactPercent,
       uniqueVerbCount: uniqueVerbs.size,
       uniqueStrongVerbCount: uniqueStrongVerbs.size,
+      quantifiedCount: quantified,
     },
   };
 }
@@ -320,7 +318,17 @@ export function buildDeepSignalReport(
   structureNote?: string,
   skippedLines?: number
 ): SignalReport {
-  const enriched = enrichBulletRecords(bullets);
+  // Performance optimization: Compute repetitive verbs once for enrichment and re-use
+  // the result in the final report to avoid re-scanning bullets.
+  const repetitiveVerbs = detectRepetitiveVerbs(bullets);
+  const repetitiveSet = new Set(repetitiveVerbs.map((r) => r.verb.toLowerCase()));
+  const enriched = bullets.map((bullet) => ({
+    ...bullet,
+    isRepetitiveVerb: bullet.fields.verb
+      ? repetitiveSet.has(bullet.fields.verb.toLowerCase())
+      : false,
+  }));
+
   const benchmark = computeBenchmarkScore(enriched);
   const keywordDensity = computeKeywordDensity(resumeText);
   const atsKeywords = detectAtsKeywords(resumeText);
@@ -363,7 +371,9 @@ export function buildDeepSignalReport(
   const impactCoverage =
     enriched.length > 0 ? Math.round((impactBullets / enriched.length) * 100) : 0;
 
-  const quantifiedBullets = enriched.filter((b) => hasQuantifier(b.improved)).length;
+  // Performance optimization: Re-use quantified count computed during computeBenchmarkScore
+  // to avoid running hasQuantifier (and its date/phone regexes) on every bullet a second time.
+  const quantifiedBullets = benchmark.details.quantifiedCount ?? 0;
   const quantifiedBulletPercent =
     enriched.length > 0 ? Math.round((quantifiedBullets / enriched.length) * 100) : 0;
 
@@ -396,7 +406,7 @@ export function buildDeepSignalReport(
     structureNote,
     skippedLines,
     weakWordCount,
-    repetitiveVerbs: detectRepetitiveVerbs(enriched),
+    repetitiveVerbs,
     impactCoverage,
     keywordDensity: mergedDensity.slice(0, 20),
     benchmarkScore: benchmark.score,
