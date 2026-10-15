@@ -267,6 +267,7 @@ export function computeBenchmarkScore(bullets: BulletRecord[]): {
       avgLength,
       passivePercent,
       impactPercent,
+      quantifiedPercent: numberCoverage,
       uniqueVerbCount: uniqueVerbs.size,
       uniqueStrongVerbCount: uniqueStrongVerbs.size,
     },
@@ -320,7 +321,17 @@ export function buildDeepSignalReport(
   structureNote?: string,
   skippedLines?: number
 ): SignalReport {
-  const enriched = enrichBulletRecords(bullets);
+  // Performance optimization: Calculate repetitiveVerbs once for both bullet enrichment
+  // and the signal report return value, eliminating duplicate scans across all bullets.
+  const repetitiveVerbs = detectRepetitiveVerbs(bullets);
+  const repetitiveSet = new Set(repetitiveVerbs.map((r) => r.verb.toLowerCase()));
+  const enriched = bullets.map((bullet) => ({
+    ...bullet,
+    isRepetitiveVerb: bullet.fields.verb
+      ? repetitiveSet.has(bullet.fields.verb.toLowerCase())
+      : false,
+  }));
+
   const benchmark = computeBenchmarkScore(enriched);
   const keywordDensity = computeKeywordDensity(resumeText);
   const atsKeywords = detectAtsKeywords(resumeText);
@@ -334,18 +345,15 @@ export function buildDeepSignalReport(
     POWER_VERB_START_PATTERN.test(normalizeLine(b.improved))
   ).length;
 
-  // Merge ATS keywords into keywordDensity for visibility
-  const atsDensity = atsKeywords.map((word) => {
-    const existing = keywordDensity.find((k) => k.word === word.toLowerCase());
-    return {
-      word: word.toLowerCase(),
-      count: existing?.count ?? 1,
-    };
-  });
+  // Performance optimization: Merge ATS keywords using a Set for O(1) deduplication
+  // instead of nested O(N*M) array searches (.some/.find).
+  const existingWords = new Set(keywordDensity.map((k) => k.word));
   const mergedDensity = [...keywordDensity];
-  for (const item of atsDensity) {
-    if (!mergedDensity.some((k) => k.word === item.word)) {
-      mergedDensity.push(item);
+  for (const word of atsKeywords) {
+    const lowerWord = word.toLowerCase();
+    if (!existingWords.has(lowerWord)) {
+      existingWords.add(lowerWord);
+      mergedDensity.push({ word: lowerWord, count: 1 });
     }
   }
   mergedDensity.sort((a, b) => b.count - a.count);
@@ -359,22 +367,24 @@ export function buildDeepSignalReport(
       : 0;
 
   const weakWordCount = enriched.reduce((sum, b) => sum + (b.weakWords?.length ?? 0), 0);
-  const impactBullets = enriched.filter((b) => b.hasImpact ?? false).length;
+
+  // Performance optimization: Re-use pre-calculated metrics from computeBenchmarkScore details
+  // to avoid redundant bullet iterations, string re-splitting, and regex checks during real-time editing.
   const impactCoverage =
-    enriched.length > 0 ? Math.round((impactBullets / enriched.length) * 100) : 0;
-
-  const quantifiedBullets = enriched.filter((b) => hasQuantifier(b.improved)).length;
-  const quantifiedBulletPercent =
-    enriched.length > 0 ? Math.round((quantifiedBullets / enriched.length) * 100) : 0;
-
-  const avgBulletLength =
-    enriched.length > 0
-      ? enriched.reduce((sum, b) => sum + b.improved.split(/\s+/).filter(Boolean).length, 0) /
-        enriched.length
+    enriched.length > 0 && benchmark.details.impactPercent !== undefined
+      ? Math.round(benchmark.details.impactPercent * 100)
       : 0;
 
-  // Performance optimization: Re-use passive voice percentage calculated during computeBenchmarkScore
-  // to avoid a redundant loop executing analyzeReadability for every bullet in the resume.
+  const quantifiedBulletPercent =
+    enriched.length > 0 && benchmark.details.quantifiedPercent !== undefined
+      ? Math.round(benchmark.details.quantifiedPercent * 100)
+      : 0;
+
+  const avgBulletLength =
+    enriched.length > 0 && benchmark.details.avgLength !== undefined
+      ? Math.round(benchmark.details.avgLength * 10) / 10
+      : 0;
+
   const passiveVoicePercent =
     enriched.length > 0 && benchmark.details.passivePercent !== undefined
       ? Math.round(benchmark.details.passivePercent * 100)
@@ -396,13 +406,13 @@ export function buildDeepSignalReport(
     structureNote,
     skippedLines,
     weakWordCount,
-    repetitiveVerbs: detectRepetitiveVerbs(enriched),
+    repetitiveVerbs,
     impactCoverage,
     keywordDensity: mergedDensity.slice(0, 20),
     benchmarkScore: benchmark.score,
     uniqueVerbCount: benchmark.details.uniqueVerbCount,
     quantifiedBulletPercent,
-    avgBulletLength: Math.round(avgBulletLength * 10) / 10,
+    avgBulletLength,
     passiveVoicePercent,
   };
 }
