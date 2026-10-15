@@ -41,11 +41,31 @@ it('does not restore old analysis after Clear interrupts a scan', () => {
   render(<ResumeGame />);
   beginScan();
   fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Clear resume and scores?' }));
   finishPendingScan();
 
   expect(screen.getByLabelText('Paste resume text')).toHaveValue('');
   expect(screen.queryByRole('heading', { name: 'Analysis visualization' })).toBeNull();
   expect(JSON.parse(localStorage.getItem('resume-game-session-v2') ?? 'null').bullets).toEqual([]);
+});
+
+it('disables Clear button when empty and arms confirmation before clearing', () => {
+  render(<ResumeGame />);
+  const disabledClearBtn = screen.getByRole('button', { name: 'Clear' });
+  expect(disabledClearBtn).toBeDisabled();
+
+  fireEvent.change(screen.getByLabelText('Paste resume text'), { target: { value: oldText } });
+  const activeClearBtn = screen.getByRole('button', { name: 'Clear' });
+  expect(activeClearBtn).toBeEnabled();
+
+  // First click arms the button
+  fireEvent.click(activeClearBtn);
+  expect(screen.getByRole('button', { name: 'Clear resume and scores?' })).toBeVisible();
+  expect(screen.getByLabelText('Paste resume text')).toHaveValue(oldText);
+
+  // Second click confirms clear
+  fireEvent.click(screen.getByRole('button', { name: 'Clear resume and scores?' }));
+  expect(screen.getByLabelText('Paste resume text')).toHaveValue('');
 });
 
 it('does not label older results current when text changes during a scan', () => {
