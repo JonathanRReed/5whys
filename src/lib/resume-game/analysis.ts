@@ -285,8 +285,16 @@ export function computeBenchmarkScore(bullets: BulletRecord[]): {
  * - Recognized hard skill (15)
  * - Bullet score tier (15 at 70+, 10 at 50+, 5 below)
  */
-function computeBulletSignal(record: BulletRecord, hardSkills: string[]): number {
+/**
+ * Performance optimization: Pre-lowercases bullet lines and receives pre-lowercased
+ * skill tokens to bypass redundant string lowercasing inside matchesTerm calls.
+ */
+function computeBulletSignal(
+  record: BulletRecord,
+  hardSkillEntries: { skill: string; lowerSkill: string }[]
+): number {
   const line = normalizeLine(record.improved);
+  const lowerLine = line.toLowerCase();
   let signal = 0;
 
   const startMatch = line.match(POWER_VERB_START_PATTERN);
@@ -297,7 +305,12 @@ function computeBulletSignal(record: BulletRecord, hardSkills: string[]): number
   if (hasQuantifier(line)) signal += 25;
   else if (hasQualitativeOutcome(line)) signal += 15;
   if (hasOutcomeLink(line)) signal += 20;
-  if (hardSkills.some((skill) => matchesTerm(line, skill))) signal += 15;
+  if (
+    hardSkillEntries.some(({ skill, lowerSkill }) =>
+      matchesTerm(line, skill, lowerLine, lowerSkill)
+    )
+  )
+    signal += 15;
   signal += record.improvedScore >= 70 ? 15 : record.improvedScore >= 50 ? 10 : 5;
 
   return Math.min(100, signal);
@@ -350,10 +363,17 @@ export function buildDeepSignalReport(
   }
   mergedDensity.sort((a, b) => b.count - a.count);
 
+  // Performance optimization: Pre-compute lowercased hard skills list once per report pass
+  // to avoid repeated string lowercasing across bullet signal checks.
+  const hardSkillEntries = skills.hard.map((skill) => ({
+    skill,
+    lowerSkill: skill.toLowerCase(),
+  }));
+
   const visible =
     enriched.length > 0
       ? Math.round(
-          enriched.reduce((sum, b) => sum + computeBulletSignal(b, skills.hard), 0) /
+          enriched.reduce((sum, b) => sum + computeBulletSignal(b, hardSkillEntries), 0) /
             enriched.length
         )
       : 0;
