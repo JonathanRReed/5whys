@@ -78,6 +78,12 @@ const CHANGE_WORD_PATTERN =
   /\b(improved|reduced|increased|streamlined|automated|saved|cut|grew|doubled|eliminated)\w*\b/i;
 const PASSIVE_FRAGMENT_PATTERN = /\b(was|were|been|being|is|are|be)\s+\w+(?:ed|en)\b/i;
 
+// Pre-computed entry list with lowercased buzzwords to avoid repeated string lowercasing inside suggestion loops
+const BUZZWORD_ENTRIES = BUZZWORDS.map((word) => ({
+  word,
+  lowerWord: word.toLowerCase(),
+}));
+
 // Example pairs rotate by bullet so a six-bullet resume does not show the
 // same sentence six times.
 const NUMBER_EXAMPLES = {
@@ -159,7 +165,10 @@ export function generateBulletSuggestions(
   }
 
   // Buzzwords: traits claimed instead of shown
-  const buzzword = BUZZWORDS.find((b) => matchesTerm(current, b));
+  const lowerCurrent = current.toLowerCase();
+  const buzzword = BUZZWORD_ENTRIES.find(({ word, lowerWord }) =>
+    matchesTerm(current, word, lowerCurrent, lowerWord)
+  )?.word;
   if (buzzword) {
     suggestions.push({
       type: 'buzzword',
