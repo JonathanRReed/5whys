@@ -17,3 +17,8 @@
 
 **Learning:** When unmounting button elements during wizard step transitions, keyboard focus resets to `body`, causing screen reader and keyboard users to lose track of the active question or result screen.
 **Action:** Move focus to a visibly outlined step/recommendation heading only after visitor navigation. Initial hydration, profile restoration, and StrictMode mounting leave existing focus in place. Keep one initially empty polite status region across steps/results, with concise progress or completion text so focus and live updates do not repeat the question. DOM and keyboard tests verify the behavior; actual screen-reader announcements have not been tested.
+
+## 2026-10-13 - Preventing Screen Reader Flooding from Active Timer Live Regions
+
+**Learning:** Assigning `aria-live="polite"` directly to countdown timer containers (`role="timer"`) or active elapsed time elements causes screen readers to announce every single second tick. This creates continuous audio chatter that interrupts visitors practicing speaking or reading aloud.
+**Action:** Use `aria-live="off"` on `role="timer"` elements during rapid countdowns, and pair them with a separate polite status region (`role="status"`) that announces discrete state transitions ("Timer started", "Timer paused", "Time's up!") only when state changes.
