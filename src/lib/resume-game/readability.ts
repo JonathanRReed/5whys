@@ -5,6 +5,7 @@ const NON_ALPHA_PATTERN = /[^a-z]/g;
 const VOWEL_GROUP_PATTERN = /[aeiouy]+/g;
 const THIRD_LAST_CHAR_VOWEL_PATTERN = /[aeiouy]/;
 const SENTENCE_TERMINATOR_PATTERN = /([.!?])\s+/g;
+const WHITESPACE_PATTERN = /\s+/;
 
 // Unified, non-capturing passive voice regex avoids creating intermediate match groups on every scan
 const PASSIVE_VOICE_PATTERN = /\b(?:was|were|been|being|is|are|be)\s+\w+(?:ed|en)\b/gi;
@@ -64,7 +65,9 @@ export function analyzeReadability(text: string) {
     };
   }
 
-  const words = normalized.split(/\s+/).filter(Boolean);
+  // Performance optimization: Re-use pre-compiled WHITESPACE_PATTERN regex to avoid
+  // allocating a new RegExp object on every line during real-time typing and readability analysis.
+  const words = normalized.split(WHITESPACE_PATTERN).filter(Boolean);
   const wordCount = words.length;
   // Split on sentence terminators
   const sentences = normalized
