@@ -1,5 +1,5 @@
-import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, expect, it } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, expect, it, vi } from 'vitest';
 import BulletEditor from '../src/components/resume-game/BulletEditor';
 import { createBulletRecord, detectResumeStructure } from '../src/lib/resume-game';
 
@@ -23,4 +23,17 @@ it('recognizes a heading on the first line rather than calling it contact inform
   const parsed = detectResumeStructure('EXPERIENCE\n• Built a reporting workflow');
   expect(parsed.skipped.heading).toBe(1);
   expect(parsed.skipped.contact).toBe(0);
+});
+
+it('renders a quick-fill button when a number is detected in a bullet and populates quantifier on click', () => {
+  const onFieldChange = vi.fn();
+  const bullet = createBulletRecord('Managed a $50,000 budget for campus events.', 0);
+  bullet.fields.quantifier = '';
+  render(<BulletEditor bullet={bullet} onFieldChange={onFieldChange} />);
+
+  const fillBtn = screen.getByRole('button', { name: 'Use $50,000 as quantifier' });
+  expect(fillBtn).toBeVisible();
+
+  fireEvent.click(fillBtn);
+  expect(onFieldChange).toHaveBeenCalledWith(bullet.id, 'quantifier', '$50,000');
 });
