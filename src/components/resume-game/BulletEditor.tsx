@@ -123,11 +123,26 @@ export default function BulletEditor({ bullet, index, onFieldChange }: Props) {
                       : 'e.g., 32%, 120 users, $500K'
                   }
                 />
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {detectedNumber && !bullet.fields.quantifier.trim()
-                    ? `Your line mentions ${detectedNumber}. Use it here so it lands where readers look.`
-                    : 'A number that proves impact: percentage, count, or dollar amount. No number? Use team size, frequency, or audience.'}
-                </p>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {detectedNumber && !bullet.fields.quantifier.trim() ? (
+                    <span className="inline-flex flex-wrap items-center gap-1.5">
+                      <span>Your line mentions {detectedNumber}.</span>
+                      <button
+                        type="button"
+                        onClick={() => onFieldChange(bullet.id, 'quantifier', detectedNumber)}
+                        aria-label={`Use ${detectedNumber} as quantifier`}
+                        className="inline-flex items-center rounded-md border border-gold/40 bg-gold/15 px-2 py-0.5 text-xs font-medium text-gold transition-colors hover:bg-gold/25 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-foam"
+                      >
+                        Use {detectedNumber}
+                      </button>
+                    </span>
+                  ) : (
+                    <p>
+                      A number that proves impact: percentage, count, or dollar amount. No number?
+                      Use team size, frequency, or audience.
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
