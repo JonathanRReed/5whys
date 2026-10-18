@@ -10,7 +10,7 @@ import {
   WEAK_WORDS,
 } from './constants';
 import { analyzeResumeLength } from './length';
-import { analyzeReadability } from './readability';
+import { hasPassiveVoice } from './readability';
 import {
   findQuantifiers,
   hasOutcomeLink,
@@ -227,10 +227,11 @@ export function computeBenchmarkScore(bullets: BulletRecord[]): {
   const lengthScore = avgLength <= 30 ? 20 : avgLength <= 40 ? 10 : 0;
 
   // 5. Active voice: 15 pts
+  // Performance optimization: Call fast boolean hasPassiveVoice check instead of full analyzeReadability
+  // to avoid sentence splitting, syllable counting, and grade level math for every bullet.
   let passiveBullets = 0;
   for (const b of bullets) {
-    const r = analyzeReadability(b.improved);
-    if (r.passiveVoiceCount > 0) passiveBullets++;
+    if (hasPassiveVoice(b.improved)) passiveBullets++;
   }
   const passivePercent = passiveBullets / totalBullets;
   const passiveScore = clamp((1 - passivePercent) * 15, 0, 15);

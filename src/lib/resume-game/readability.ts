@@ -9,6 +9,18 @@ const SENTENCE_TERMINATOR_PATTERN = /([.!?])\s+/g;
 // Unified, non-capturing passive voice regex avoids creating intermediate match groups on every scan
 const PASSIVE_VOICE_PATTERN = /\b(?:was|were|been|being|is|are|be)\s+\w+(?:ed|en)\b/gi;
 
+// Stateless passive voice test pattern for fast boolean check without global regex state
+const PASSIVE_VOICE_TEST_PATTERN = /\b(?:was|were|been|being|is|are|be)\s+\w+(?:ed|en)\b/i;
+
+/**
+ * Fast boolean check for passive voice in a line.
+ * Performance optimization: Avoids sentence splitting, syllable counting, and grade level math
+ * when only passive voice detection is needed.
+ */
+export function hasPassiveVoice(text: string): boolean {
+  return PASSIVE_VOICE_TEST_PATTERN.test(text);
+}
+
 // Bounded LRU-style syllable cache to avoid re-evaluating regexes and string operations
 // on common resume words across real-time typing and scoring passes.
 const SYLLABLE_CACHE_MAX = 5000;
