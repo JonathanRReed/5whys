@@ -85,3 +85,22 @@ it('hides mobile nav panel with aria-hidden and inert when collapsed', () => {
   expect(navPanel).toHaveAttribute('aria-hidden', 'false');
   expect(navPanel).not.toHaveAttribute('inert');
 });
+
+it('moves focus to main content when scroll to top button is clicked', () => {
+  render(
+    <>
+      <Navigation currentPath="/" />
+      <main id="main-content">Main content</main>
+    </>
+  );
+
+  Object.defineProperty(window, 'scrollY', { value: 500, writable: true });
+  fireEvent.scroll(window);
+
+  const scrollTopBtn = screen.getByRole('button', { name: 'Scroll to top' });
+  fireEvent.click(scrollTopBtn);
+
+  const mainContent = document.getElementById('main-content');
+  expect(mainContent).toHaveFocus();
+  expect(mainContent).toHaveAttribute('tabindex', '-1');
+});
