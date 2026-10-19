@@ -21,28 +21,48 @@ export type BulletSuggestion = {
   professionalExample?: string;
 };
 
+// Pre-compiled regex patterns for context-sensitive verb and metric suggestions to eliminate inline compilation overhead
+const SUGGEST_VERBS_RESEARCH_PATTERN = /(research|lab|data|survey|analysis|thesis|experiment)/i;
+const SUGGEST_VERBS_CLUB_PATTERN = /(club|event|meeting|volunteer|fundrais|chapter|committee)/i;
+const SUGGEST_VERBS_CODE_PATTERN = /(code|app|website|software|script|prototype|bug)/i;
+const SUGGEST_VERBS_TUTOR_PATTERN = /(tutor|teach|train|mentor|grading|course)/i;
+const SUGGEST_VERBS_SERVICE_PATTERN = /(customer|cash|store|shift|inventory|front desk)/i;
+const SUGGEST_VERBS_MEDIA_PATTERN = /(social|instagram|tiktok|newsletter|post|content|campaign)/i;
+
+const METRIC_PROMPT_MEDIA_PATTERN = /(social|instagram|tiktok|newsletter|post|followers|content)/i;
+const METRIC_PROMPT_TEAM_PATTERN = /(team|group|club|committee|volunteers)/i;
+const METRIC_PROMPT_EVENT_PATTERN = /(event|meeting|workshop|session|game|performance)/i;
+const METRIC_PROMPT_CUSTOMER_PATTERN = /(customer|client|patient|student|user)/i;
+const METRIC_PROMPT_CODE_PATTERN = /(code|app|report|dashboard|script|process)/i;
+
+// Pre-computed lowercased buzzword entries to avoid repeated lowercasing inside array searches on every keypress
+const BUZZWORDS_ENTRIES = BUZZWORDS.map((word) => ({
+  word,
+  lowerWord: word.toLowerCase(),
+}));
+
 /**
  * Context-sensitive verb suggestions: read what the bullet is about and
  * offer verbs that fit that kind of work instead of a generic trio.
  */
 function suggestVerbsFor(text: string): string {
   const lower = text.toLowerCase();
-  if (/(research|lab|data|survey|analysis|thesis|experiment)/.test(lower)) {
+  if (SUGGEST_VERBS_RESEARCH_PATTERN.test(lower)) {
     return 'Researched, Analyzed, Presented';
   }
-  if (/(club|event|meeting|volunteer|fundrais|chapter|committee)/.test(lower)) {
+  if (SUGGEST_VERBS_CLUB_PATTERN.test(lower)) {
     return 'Organized, Coordinated, Recruited';
   }
-  if (/(code|app|website|software|script|prototype|bug)/.test(lower)) {
+  if (SUGGEST_VERBS_CODE_PATTERN.test(lower)) {
     return 'Built, Programmed, Automated';
   }
-  if (/(tutor|teach|train|mentor|grading|course)/.test(lower)) {
+  if (SUGGEST_VERBS_TUTOR_PATTERN.test(lower)) {
     return 'Taught, Tutored, Mentored';
   }
-  if (/(customer|cash|store|shift|inventory|front desk)/.test(lower)) {
+  if (SUGGEST_VERBS_SERVICE_PATTERN.test(lower)) {
     return 'Operated, Resolved, Trained';
   }
-  if (/(social|instagram|tiktok|newsletter|post|content|campaign)/.test(lower)) {
+  if (SUGGEST_VERBS_MEDIA_PATTERN.test(lower)) {
     return 'Wrote, Scheduled, Grew';
   }
   return 'Led, Built, Organized, Analyzed';
@@ -55,19 +75,19 @@ function suggestVerbsFor(text: string): string {
  */
 function metricPromptFor(text: string): string {
   const lower = text.toLowerCase();
-  if (/(social|instagram|tiktok|newsletter|post|followers|content)/.test(lower)) {
+  if (METRIC_PROMPT_MEDIA_PATTERN.test(lower)) {
     return 'How many posts a week, how many followers or subscribers, or how much did reach change?';
   }
-  if (/(team|group|club|committee|volunteers)/.test(lower)) {
+  if (METRIC_PROMPT_TEAM_PATTERN.test(lower)) {
     return 'How many people? How often did you meet or ship?';
   }
-  if (/(event|meeting|workshop|session|game|performance)/.test(lower)) {
+  if (METRIC_PROMPT_EVENT_PATTERN.test(lower)) {
     return 'How many events? How many attendees?';
   }
-  if (/(customer|client|patient|student|user)/.test(lower)) {
+  if (METRIC_PROMPT_CUSTOMER_PATTERN.test(lower)) {
     return 'How many per shift, per week, or per semester?';
   }
-  if (/(code|app|report|dashboard|script|process)/.test(lower)) {
+  if (METRIC_PROMPT_CODE_PATTERN.test(lower)) {
     return 'How many users, hours saved, or steps removed?';
   }
   return 'Count something real: people, hours, items, dollars, or frequency. No metric? Team size, audience, or before and after is still evidence.';
@@ -124,8 +144,10 @@ export function generateBulletSuggestions(
   // Analyze the current state of the bullet, so suggestions clear as the
   // user fills in fields instead of nagging about the original forever.
   const current = normalizeLine(bullet.improved) || normalizeLine(bullet.original);
+  const lowerCurrent = current.toLowerCase();
   const readability = analyzeReadability(current);
-  const firstWord = current.split(/\s+/)[0] ?? '';
+  const spaceIndex = current.indexOf(' ');
+  const firstWord = spaceIndex >= 0 ? current.slice(0, spaceIndex) : current;
 
   // Missing verb
   if (!fields.verb.trim()) {
@@ -159,8 +181,12 @@ export function generateBulletSuggestions(
   }
 
   // Buzzwords: traits claimed instead of shown
-  const buzzword = BUZZWORDS.find((b) => matchesTerm(current, b));
-  if (buzzword) {
+  // Performance optimization: Pre-lowercased current and entry terms avoid repeated string lowercasing inside loop
+  const buzzwordEntry = BUZZWORDS_ENTRIES.find(({ word, lowerWord }) =>
+    matchesTerm(current, word, lowerCurrent, lowerWord)
+  );
+  if (buzzwordEntry) {
+    const buzzword = buzzwordEntry.word;
     suggestions.push({
       type: 'buzzword',
       message: `"${buzzword}" is a claim anyone can make. Cut it and show the work that proves it.`,
