@@ -21,29 +21,76 @@ export type BulletSuggestion = {
   professionalExample?: string;
 };
 
+// Pre-compiled regex patterns hoisted to module scope to avoid re-instantiating RegExp objects
+// on every keystroke/render call during real-time bullet suggestion calculation.
+const VERB_CATEGORY_PATTERNS = [
+  {
+    pattern: /(?:research|lab|data|survey|analysis|thesis|experiment)/i,
+    verbs: 'Researched, Analyzed, Presented',
+  },
+  {
+    pattern: /(?:club|event|meeting|volunteer|fundrais|chapter|committee)/i,
+    verbs: 'Organized, Coordinated, Recruited',
+  },
+  {
+    pattern: /(?:code|app|website|software|script|prototype|bug)/i,
+    verbs: 'Built, Programmed, Automated',
+  },
+  {
+    pattern: /(?:tutor|teach|train|mentor|grading|course)/i,
+    verbs: 'Taught, Tutored, Mentored',
+  },
+  {
+    pattern: /(?:customer|cash|store|shift|inventory|front desk)/i,
+    verbs: 'Operated, Resolved, Trained',
+  },
+  {
+    pattern: /(?:social|instagram|tiktok|newsletter|post|content|campaign)/i,
+    verbs: 'Wrote, Scheduled, Grew',
+  },
+] as const;
+
+const METRIC_PROMPT_PATTERNS = [
+  {
+    pattern: /(?:social|instagram|tiktok|newsletter|post|followers|content)/i,
+    prompt:
+      'How many posts a week, how many followers or subscribers, or how much did reach change?',
+  },
+  {
+    pattern: /(?:team|group|club|committee|volunteers)/i,
+    prompt: 'How many people? How often did you meet or ship?',
+  },
+  {
+    pattern: /(?:event|meeting|workshop|session|game|performance)/i,
+    prompt: 'How many events? How many attendees?',
+  },
+  {
+    pattern: /(?:customer|client|patient|student|user)/i,
+    prompt: 'How many per shift, per week, or per semester?',
+  },
+  {
+    pattern: /(?:code|app|report|dashboard|script|process)/i,
+    prompt: 'How many users, hours saved, or steps removed?',
+  },
+] as const;
+
+// Pre-computed entry list with lowercased buzzwords to avoid repeated string lowercasing inside loops
+const BUZZWORDS_ENTRIES = BUZZWORDS.map((word) => ({
+  word,
+  lowerWord: word.toLowerCase(),
+}));
+
 /**
  * Context-sensitive verb suggestions: read what the bullet is about and
  * offer verbs that fit that kind of work instead of a generic trio.
+ * Performance optimization: Accepts optional pre-lowercased text to avoid re-lowercasing in loops.
  */
-function suggestVerbsFor(text: string): string {
-  const lower = text.toLowerCase();
-  if (/(research|lab|data|survey|analysis|thesis|experiment)/.test(lower)) {
-    return 'Researched, Analyzed, Presented';
-  }
-  if (/(club|event|meeting|volunteer|fundrais|chapter|committee)/.test(lower)) {
-    return 'Organized, Coordinated, Recruited';
-  }
-  if (/(code|app|website|software|script|prototype|bug)/.test(lower)) {
-    return 'Built, Programmed, Automated';
-  }
-  if (/(tutor|teach|train|mentor|grading|course)/.test(lower)) {
-    return 'Taught, Tutored, Mentored';
-  }
-  if (/(customer|cash|store|shift|inventory|front desk)/.test(lower)) {
-    return 'Operated, Resolved, Trained';
-  }
-  if (/(social|instagram|tiktok|newsletter|post|content|campaign)/.test(lower)) {
-    return 'Wrote, Scheduled, Grew';
+function suggestVerbsFor(text: string, lowerText?: string): string {
+  const lower = lowerText ?? text.toLowerCase();
+  for (const { pattern, verbs } of VERB_CATEGORY_PATTERNS) {
+    if (pattern.test(lower)) {
+      return verbs;
+    }
   }
   return 'Led, Built, Organized, Analyzed';
 }
@@ -52,23 +99,14 @@ function suggestVerbsFor(text: string): string {
  * A metric prompt that reads the bullet and asks for the number most likely
  * to exist for that kind of work, plus the scope fallback when no metric
  * exists. One suggestion, not two.
+ * Performance optimization: Accepts optional pre-lowercased text to avoid re-lowercasing in loops.
  */
-function metricPromptFor(text: string): string {
-  const lower = text.toLowerCase();
-  if (/(social|instagram|tiktok|newsletter|post|followers|content)/.test(lower)) {
-    return 'How many posts a week, how many followers or subscribers, or how much did reach change?';
-  }
-  if (/(team|group|club|committee|volunteers)/.test(lower)) {
-    return 'How many people? How often did you meet or ship?';
-  }
-  if (/(event|meeting|workshop|session|game|performance)/.test(lower)) {
-    return 'How many events? How many attendees?';
-  }
-  if (/(customer|client|patient|student|user)/.test(lower)) {
-    return 'How many per shift, per week, or per semester?';
-  }
-  if (/(code|app|report|dashboard|script|process)/.test(lower)) {
-    return 'How many users, hours saved, or steps removed?';
+function metricPromptFor(text: string, lowerText?: string): string {
+  const lower = lowerText ?? text.toLowerCase();
+  for (const { pattern, prompt } of METRIC_PROMPT_PATTERNS) {
+    if (pattern.test(lower)) {
+      return prompt;
+    }
   }
   return 'Count something real: people, hours, items, dollars, or frequency. No metric? Team size, audience, or before and after is still evidence.';
 }
@@ -113,6 +151,9 @@ const pick = <T>(list: T[], seed: string): T => {
 /**
  * @param seed rotates the worked examples; pass the bullet's position in the
  * list so neighbours show different sentences. Defaults to the text itself.
+ *
+ * Performance optimization: Pre-lowercases input text and passes pre-lowercased text
+ * into `matchesTerm`, `suggestVerbsFor`, and `metricPromptFor` to bypass regex execution when keywords/buzzwords are absent.
  */
 export function generateBulletSuggestions(
   bullet: BulletRecord,
@@ -124,6 +165,7 @@ export function generateBulletSuggestions(
   // Analyze the current state of the bullet, so suggestions clear as the
   // user fills in fields instead of nagging about the original forever.
   const current = normalizeLine(bullet.improved) || normalizeLine(bullet.original);
+  const lowerCurrent = current.toLowerCase();
   const readability = analyzeReadability(current);
   const firstWord = current.split(/\s+/)[0] ?? '';
 
@@ -134,7 +176,7 @@ export function generateBulletSuggestions(
       message: firstWord
         ? `This line starts with "${firstWord}" instead of an action verb.`
         : 'This line has no action verb.',
-      fix: `Try: ${suggestVerbsFor(current)}.`,
+      fix: `Try: ${suggestVerbsFor(current, lowerCurrent)}.`,
       studentExample:
         'Organized a 3-day club fundraiser with 12 volunteers, raising $1,400 for the local food bank.',
       professionalExample:
@@ -150,7 +192,7 @@ export function generateBulletSuggestions(
       message: `"${fields.verb}" describes involvement, not contribution. Name what you actually did.`,
       fix: stronger
         ? `Try "${stronger}", or the verb you would use telling a friend about it.`
-        : `Try: ${suggestVerbsFor(current)}, or the verb you would use telling a friend about it.`,
+        : `Try: ${suggestVerbsFor(current, lowerCurrent)}, or the verb you would use telling a friend about it.`,
       studentExample:
         '"Responsible for social media" becomes "Wrote and scheduled 3 posts a week for the campus radio Instagram."',
       professionalExample:
@@ -159,7 +201,9 @@ export function generateBulletSuggestions(
   }
 
   // Buzzwords: traits claimed instead of shown
-  const buzzword = BUZZWORDS.find((b) => matchesTerm(current, b));
+  const buzzword = BUZZWORDS_ENTRIES.find(({ word, lowerWord }) =>
+    matchesTerm(current, word, lowerCurrent, lowerWord)
+  )?.word;
   if (buzzword) {
     suggestions.push({
       type: 'buzzword',
@@ -178,7 +222,7 @@ export function generateBulletSuggestions(
       type: 'missing-number',
       message:
         'Make the evidence more specific. Use a real measure, adoption, or a concrete change you can explain.',
-      fix: metricPromptFor(current),
+      fix: metricPromptFor(current, lowerCurrent),
       studentExample: pick(NUMBER_EXAMPLES.student, exampleSeed),
       professionalExample: pick(NUMBER_EXAMPLES.professional, exampleSeed),
     });
