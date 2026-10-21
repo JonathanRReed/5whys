@@ -21,32 +21,35 @@ export type BulletSuggestion = {
   professionalExample?: string;
 };
 
+// Pre-compiled domain pattern regexes hoisted to module scope to avoid re-compiling
+// RegExp objects on every call during real-time bullet feedback generation.
+const VERB_RESEARCH_PATTERN = /(research|lab|data|survey|analysis|thesis|experiment)/i;
+const VERB_CLUB_PATTERN = /(club|event|meeting|volunteer|fundrais|chapter|committee)/i;
+const VERB_CODE_PATTERN = /(code|app|website|software|script|prototype|bug)/i;
+const VERB_TUTOR_PATTERN = /(tutor|teach|train|mentor|grading|course)/i;
+const VERB_CUSTOMER_PATTERN = /(customer|cash|store|shift|inventory|front desk)/i;
+const VERB_SOCIAL_PATTERN = /(social|instagram|tiktok|newsletter|post|content|campaign)/i;
+
 /**
  * Context-sensitive verb suggestions: read what the bullet is about and
  * offer verbs that fit that kind of work instead of a generic trio.
  */
 function suggestVerbsFor(text: string): string {
   const lower = text.toLowerCase();
-  if (/(research|lab|data|survey|analysis|thesis|experiment)/.test(lower)) {
-    return 'Researched, Analyzed, Presented';
-  }
-  if (/(club|event|meeting|volunteer|fundrais|chapter|committee)/.test(lower)) {
-    return 'Organized, Coordinated, Recruited';
-  }
-  if (/(code|app|website|software|script|prototype|bug)/.test(lower)) {
-    return 'Built, Programmed, Automated';
-  }
-  if (/(tutor|teach|train|mentor|grading|course)/.test(lower)) {
-    return 'Taught, Tutored, Mentored';
-  }
-  if (/(customer|cash|store|shift|inventory|front desk)/.test(lower)) {
-    return 'Operated, Resolved, Trained';
-  }
-  if (/(social|instagram|tiktok|newsletter|post|content|campaign)/.test(lower)) {
-    return 'Wrote, Scheduled, Grew';
-  }
+  if (VERB_RESEARCH_PATTERN.test(lower)) return 'Researched, Analyzed, Presented';
+  if (VERB_CLUB_PATTERN.test(lower)) return 'Organized, Coordinated, Recruited';
+  if (VERB_CODE_PATTERN.test(lower)) return 'Built, Programmed, Automated';
+  if (VERB_TUTOR_PATTERN.test(lower)) return 'Taught, Tutored, Mentored';
+  if (VERB_CUSTOMER_PATTERN.test(lower)) return 'Operated, Resolved, Trained';
+  if (VERB_SOCIAL_PATTERN.test(lower)) return 'Wrote, Scheduled, Grew';
   return 'Led, Built, Organized, Analyzed';
 }
+
+const METRIC_SOCIAL_PATTERN = /(social|instagram|tiktok|newsletter|post|followers|content)/i;
+const METRIC_TEAM_PATTERN = /(team|group|club|committee|volunteers)/i;
+const METRIC_EVENT_PATTERN = /(event|meeting|workshop|session|game|performance)/i;
+const METRIC_CUSTOMER_PATTERN = /(customer|client|patient|student|user)/i;
+const METRIC_CODE_PATTERN = /(code|app|report|dashboard|script|process)/i;
 
 /**
  * A metric prompt that reads the bullet and asks for the number most likely
@@ -55,19 +58,19 @@ function suggestVerbsFor(text: string): string {
  */
 function metricPromptFor(text: string): string {
   const lower = text.toLowerCase();
-  if (/(social|instagram|tiktok|newsletter|post|followers|content)/.test(lower)) {
+  if (METRIC_SOCIAL_PATTERN.test(lower)) {
     return 'How many posts a week, how many followers or subscribers, or how much did reach change?';
   }
-  if (/(team|group|club|committee|volunteers)/.test(lower)) {
+  if (METRIC_TEAM_PATTERN.test(lower)) {
     return 'How many people? How often did you meet or ship?';
   }
-  if (/(event|meeting|workshop|session|game|performance)/.test(lower)) {
+  if (METRIC_EVENT_PATTERN.test(lower)) {
     return 'How many events? How many attendees?';
   }
-  if (/(customer|client|patient|student|user)/.test(lower)) {
+  if (METRIC_CUSTOMER_PATTERN.test(lower)) {
     return 'How many per shift, per week, or per semester?';
   }
-  if (/(code|app|report|dashboard|script|process)/.test(lower)) {
+  if (METRIC_CODE_PATTERN.test(lower)) {
     return 'How many users, hours saved, or steps removed?';
   }
   return 'Count something real: people, hours, items, dollars, or frequency. No metric? Team size, audience, or before and after is still evidence.';
@@ -77,6 +80,12 @@ function metricPromptFor(text: string): string {
 const CHANGE_WORD_PATTERN =
   /\b(improved|reduced|increased|streamlined|automated|saved|cut|grew|doubled|eliminated)\w*\b/i;
 const PASSIVE_FRAGMENT_PATTERN = /\b(was|were|been|being|is|are|be)\s+\w+(?:ed|en)\b/i;
+
+// Pre-computed entry list with lowercased buzzwords to avoid repeated string lowercasing inside loops
+const BUZZWORDS_ENTRIES = BUZZWORDS.map((buzzword) => ({
+  buzzword,
+  lowerBuzzword: buzzword.toLowerCase(),
+}));
 
 // Example pairs rotate by bullet so a six-bullet resume does not show the
 // same sentence six times.
@@ -124,6 +133,7 @@ export function generateBulletSuggestions(
   // Analyze the current state of the bullet, so suggestions clear as the
   // user fills in fields instead of nagging about the original forever.
   const current = normalizeLine(bullet.improved) || normalizeLine(bullet.original);
+  const currentLower = current.toLowerCase();
   const readability = analyzeReadability(current);
   const firstWord = current.split(/\s+/)[0] ?? '';
 
@@ -159,8 +169,11 @@ export function generateBulletSuggestions(
   }
 
   // Buzzwords: traits claimed instead of shown
-  const buzzword = BUZZWORDS.find((b) => matchesTerm(current, b));
-  if (buzzword) {
+  const buzzwordEntry = BUZZWORDS_ENTRIES.find(({ buzzword, lowerBuzzword }) =>
+    matchesTerm(current, buzzword, currentLower, lowerBuzzword)
+  );
+  if (buzzwordEntry) {
+    const buzzword = buzzwordEntry.buzzword;
     suggestions.push({
       type: 'buzzword',
       message: `"${buzzword}" is a claim anyone can make. Cut it and show the work that proves it.`,
