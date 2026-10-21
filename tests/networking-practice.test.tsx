@@ -68,3 +68,23 @@ it('deletes an intro version in-place with ConfirmButton without window.confirm'
   expect(versionsAfter.some((version: { id: string }) => version.id === deletedId)).toBe(false);
   expect(screen.queryByRole('button', { name: 'Delete this intro?' })).toBeNull();
 });
+
+it('provides accessible aria-labels on practice timer buttons reflecting state changes', () => {
+  render(<NetworkingPractice />);
+
+  const startBtn = screen.getByRole('button', { name: 'Start practice timer' });
+  const pauseBtn = screen.getByRole('button', { name: 'Pause practice timer' });
+
+  expect(startBtn).toBeInTheDocument();
+  expect(startBtn).not.toBeDisabled();
+  expect(pauseBtn).toBeInTheDocument();
+  expect(pauseBtn).toBeDisabled();
+
+  fireEvent.click(startBtn);
+
+  const runningBtn = screen.getByRole('button', { name: 'Start practice timer (running)' });
+  const activePauseBtn = screen.getByRole('button', { name: 'Pause practice timer' });
+
+  expect(runningBtn).toBeDisabled();
+  expect(activePauseBtn).not.toBeDisabled();
+});

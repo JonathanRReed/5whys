@@ -90,6 +90,13 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset, onLeng
             onClick={onStart}
             disabled={timer.isRunning || isComplete}
             aria-pressed={timer.isRunning}
+            aria-label={
+              timer.isRunning
+                ? 'Start practice timer (running)'
+                : isComplete
+                  ? 'Done - practice rep completed'
+                  : 'Start practice timer'
+            }
             className="bg-primary hover:bg-primary/80 disabled:bg-primary/40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
           >
             {timer.isRunning ? 'Running' : isComplete ? 'Done' : 'Start'}
@@ -98,6 +105,7 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset, onLeng
             onClick={onPause}
             disabled={!timer.isRunning}
             variant="outline"
+            aria-label="Pause practice timer"
             className="border-border/60 text-foreground disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
           >
             Pause
