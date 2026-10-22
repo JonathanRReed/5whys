@@ -285,19 +285,30 @@ export function computeBenchmarkScore(bullets: BulletRecord[]): {
  * - Recognized hard skill (15)
  * - Bullet score tier (15 at 70+, 10 at 50+, 5 below)
  */
-function computeBulletSignal(record: BulletRecord, hardSkills: string[]): number {
+interface HardSkillEntry {
+  skill: string;
+  lowerSkill: string;
+}
+
+function computeBulletSignal(record: BulletRecord, hardSkillsEntries: HardSkillEntry[]): number {
   const line = normalizeLine(record.improved);
+  const lowerLine = line.toLowerCase();
   let signal = 0;
 
-  const startMatch = line.match(POWER_VERB_START_PATTERN);
+  const startMatch = lowerLine.match(POWER_VERB_START_PATTERN);
   if (startMatch && getVerbStrength(startMatch[1]) === 'strong') signal += 25;
   else if (startMatch) signal += 20;
-  else if (POWER_VERB_PATTERN.test(line)) signal += 10;
+  else if (POWER_VERB_PATTERN.test(lowerLine)) signal += 10;
 
-  if (hasQuantifier(line)) signal += 25;
+  if (hasQuantifier(lowerLine)) signal += 25;
   else if (hasQualitativeOutcome(line)) signal += 15;
-  if (hasOutcomeLink(line)) signal += 20;
-  if (hardSkills.some((skill) => matchesTerm(line, skill))) signal += 15;
+  if (hasOutcomeLink(lowerLine)) signal += 20;
+  if (
+    hardSkillsEntries.some(({ skill, lowerSkill }) =>
+      matchesTerm(line, skill, lowerLine, lowerSkill)
+    )
+  )
+    signal += 15;
   signal += record.improvedScore >= 70 ? 15 : record.improvedScore >= 50 ? 10 : 5;
 
   return Math.min(100, signal);
@@ -350,10 +361,15 @@ export function buildDeepSignalReport(
   }
   mergedDensity.sort((a, b) => b.count - a.count);
 
+  const hardSkillsEntries = skills.hard.map((skill) => ({
+    skill,
+    lowerSkill: skill.toLowerCase(),
+  }));
+
   const visible =
     enriched.length > 0
       ? Math.round(
-          enriched.reduce((sum, b) => sum + computeBulletSignal(b, skills.hard), 0) /
+          enriched.reduce((sum, b) => sum + computeBulletSignal(b, hardSkillsEntries), 0) /
             enriched.length
         )
       : 0;

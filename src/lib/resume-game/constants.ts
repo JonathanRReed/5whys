@@ -195,10 +195,10 @@ export function matchesTerm(
     return false;
   }
 
-  let pattern = termRegexCache.get(term);
+  let pattern = termRegexCache.get(lTerm);
   if (!pattern) {
-    pattern = new RegExp(`(?:^|[^a-z0-9])${escapeRegExp(term)}(?:$|[^a-z0-9])`, 'i');
-    termRegexCache.set(term, pattern);
+    pattern = new RegExp(`(?:^|[^a-z0-9])${escapeRegExp(lTerm)}(?:$|[^a-z0-9])`, 'i');
+    termRegexCache.set(lTerm, pattern);
   }
   return pattern.test(text);
 }

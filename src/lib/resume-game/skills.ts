@@ -30,6 +30,14 @@ const SKILL_CONTEXT: Record<string, RegExp> = {
     /\b(?:wrote|write|writing|maintained|authored|created|technical)\s+documentation\b|\bdocumentation\s+(?:for|of|site)\b/i,
 };
 
+// Triggers for context gates where the regex pattern matches substrings beyond the skill key name.
+const SKILL_CONTEXT_TRIGGERS: Record<string, string[]> = {
+  shell: ['shell', 'bash', 'zsh', 'unix'],
+  oracle: ['oracle', 'pl/sql'],
+  lean: ['lean', 'six sigma'],
+  lambda: ['lambda', 'serverless'],
+};
+
 // Pre-computed lowercased skill entries to avoid string allocation on every extractSkills execution.
 const HARD_SKILLS_ENTRIES = HARD_SKILLS.map((skill) => ({
   skill,
@@ -43,7 +51,16 @@ const SOFT_SKILLS_ENTRIES = SOFT_SKILLS.map((skill) => ({
 
 function skillPresent(text: string, skill: string, lowerText: string, lowerSkill: string): boolean {
   const gate = SKILL_CONTEXT[skill];
-  if (gate) return gate.test(text);
+  if (gate) {
+    // Fast path: skip evaluating context-gate regexes when trigger substrings are absent
+    const triggers = SKILL_CONTEXT_TRIGGERS[skill];
+    if (triggers) {
+      if (!triggers.some((t) => lowerText.includes(t))) return false;
+    } else if (!lowerText.includes(lowerSkill)) {
+      return false;
+    }
+    return gate.test(text);
+  }
   return matchesTerm(text, skill, lowerText, lowerSkill);
 }
 
