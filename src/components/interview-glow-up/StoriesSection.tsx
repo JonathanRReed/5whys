@@ -497,6 +497,7 @@ export default function StoriesSection({
             <button
               type="button"
               onClick={() => setShowGeneralQuestions(!showGeneralQuestions)}
+              aria-expanded={showGeneralQuestions}
               className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
             >
               {showGeneralQuestions

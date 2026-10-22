@@ -17,3 +17,8 @@
 
 **Learning:** When unmounting button elements during wizard step transitions, keyboard focus resets to `body`, causing screen reader and keyboard users to lose track of the active question or result screen.
 **Action:** Move focus to a visibly outlined step/recommendation heading only after visitor navigation. Initial hydration, profile restoration, and StrictMode mounting leave existing focus in place. Keep one initially empty polite status region across steps/results, with concise progress or completion text so focus and live updates do not repeat the question. DOM and keyboard tests verify the behavior; actual screen-reader announcements have not been tested.
+
+## 2026-10-13 - Conveying State on Interactive Toggle and Mode Switch Controls
+
+**Learning:** Buttons that toggle between view modes (e.g. Prep vs. Review), filter states (e.g. Unused only), or collapsible lists often rely purely on visual styles. Without `aria-pressed` or `aria-expanded`, screen reader users cannot determine whether a mode, filter, or section is currently active or expanded.
+**Action:** Always include `aria-pressed={booleanState}` on toggle/mode buttons and `aria-expanded={booleanState}` on disclosure/accordion trigger buttons.
