@@ -178,7 +178,7 @@ export default function BackupControls({ onRestored, className }: Props) {
       )}
 
       <div className="mt-3 min-h-5 text-sm">
-        <p role="status" aria-atomic="true" className="text-foam">
+        <p role="status" aria-live="polite" aria-atomic="true" className="text-foam">
           {status}
         </p>
         {error && (
