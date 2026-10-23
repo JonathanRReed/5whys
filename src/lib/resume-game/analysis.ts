@@ -131,10 +131,16 @@ export function enrichBulletRecords(bullets: BulletRecord[]): BulletRecord[] {
 }
 
 // ============================================================================
-// Keyword Density
+// Keyword Density & ATS Keywords
 // ============================================================================
 
+const keywordDensityCache = new Map<string, { word: string; count: number }[]>();
+const KEYWORD_DENSITY_CACHE_MAX = 100;
+
 export function computeKeywordDensity(text: string): { word: string; count: number }[] {
+  const cached = keywordDensityCache.get(text);
+  if (cached) return cached;
+
   const lower = text.toLowerCase();
   // Tokenize: keep only alphabetic words 3+ chars
   const tokens = lower.match(/[a-z]{3,}/g) || [];
@@ -143,10 +149,16 @@ export function computeKeywordDensity(text: string): { word: string; count: numb
     if (STOPWORDS.has(token)) continue;
     counts[token] = (counts[token] || 0) + 1;
   }
-  return Object.entries(counts)
+  const result = Object.entries(counts)
     .map(([word, count]) => ({ word, count }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 20);
+
+  if (keywordDensityCache.size >= KEYWORD_DENSITY_CACHE_MAX) {
+    keywordDensityCache.clear();
+  }
+  keywordDensityCache.set(text, result);
+  return result;
 }
 
 // Pre-computed entry list with lowercased ATS keywords to avoid repeated string lowercasing inside loops
@@ -155,7 +167,13 @@ const ATS_KEYWORDS_ENTRIES = ATS_KEYWORDS.map((kw) => ({
   lowerKw: kw.toLowerCase(),
 }));
 
+const atsKeywordsCache = new Map<string, string[]>();
+const ATS_CACHE_MAX = 100;
+
 export function detectAtsKeywords(text: string): string[] {
+  const cached = atsKeywordsCache.get(text);
+  if (cached) return cached;
+
   const lowerText = text.toLowerCase();
   const found: string[] = [];
   for (const { kw, lowerKw } of ATS_KEYWORDS_ENTRIES) {
@@ -163,7 +181,12 @@ export function detectAtsKeywords(text: string): string[] {
       found.push(kw);
     }
   }
-  return [...new Set(found)];
+  const result = [...new Set(found)];
+  if (atsKeywordsCache.size >= ATS_CACHE_MAX) {
+    atsKeywordsCache.clear();
+  }
+  atsKeywordsCache.set(text, result);
+  return result;
 }
 
 // ============================================================================

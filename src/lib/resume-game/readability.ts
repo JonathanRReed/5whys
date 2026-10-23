@@ -17,16 +17,11 @@ const syllableCache = new Map<string, number>();
 function countSyllables(word: string): number {
   if (!word) return 0;
 
-  const cached = syllableCache.get(word);
-  if (cached !== undefined) return cached;
-
   const lower = word.toLowerCase().replace(NON_ALPHA_PATTERN, '');
-  if (!lower) {
-    if (syllableCache.size < SYLLABLE_CACHE_MAX) {
-      syllableCache.set(word, 0);
-    }
-    return 0;
-  }
+  if (!lower) return 0;
+
+  const cached = syllableCache.get(lower);
+  if (cached !== undefined) return cached;
 
   // Count vowel groups
   const matches = lower.match(VOWEL_GROUP_PATTERN);
@@ -44,7 +39,7 @@ function countSyllables(word: string): number {
 
   const result = Math.max(1, count);
   if (syllableCache.size < SYLLABLE_CACHE_MAX) {
-    syllableCache.set(word, result);
+    syllableCache.set(lower, result);
   }
   return result;
 }

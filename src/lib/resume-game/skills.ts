@@ -47,12 +47,20 @@ function skillPresent(text: string, skill: string, lowerText: string, lowerSkill
   return matchesTerm(text, skill, lowerText, lowerSkill);
 }
 
+// Bounded cache for extractSkills to eliminate redundant scans across 180+ skill terms when resume text is unchanged during bullet edits.
+const extractSkillsCache = new Map<string, { hard: string[]; soft: string[] }>();
+const EXTRACT_SKILLS_CACHE_MAX = 100;
+
 /**
  * Extracts hard and soft skills present in the given text.
- * Performance optimization: Pre-computes lowercased text and passes pre-lowercased
- * skill tokens to `matchesTerm` to bypass regex execution when keywords are absent.
+ * Performance optimization: Bounded Map caching for input text avoids repeating
+ * 180+ keyword scans during real-time bullet editing, and pre-lowercased checks bypass
+ * regex execution when keywords are absent.
  */
 export function extractSkills(text: string): { hard: string[]; soft: string[] } {
+  const cached = extractSkillsCache.get(text);
+  if (cached) return cached;
+
   const lowerText = text.toLowerCase();
   const hard = HARD_SKILLS_ENTRIES.filter(({ skill, lowerSkill }) =>
     skillPresent(text, skill, lowerText, lowerSkill)
@@ -62,5 +70,10 @@ export function extractSkills(text: string): { hard: string[]; soft: string[] } 
     matchesTerm(text, skill, lowerText, lowerSkill)
   ).map(({ skill }) => skill);
 
-  return { hard: [...new Set(hard)], soft: [...new Set(soft)] };
+  const result = { hard: [...new Set(hard)], soft: [...new Set(soft)] };
+  if (extractSkillsCache.size >= EXTRACT_SKILLS_CACHE_MAX) {
+    extractSkillsCache.clear();
+  }
+  extractSkillsCache.set(text, result);
+  return result;
 }
