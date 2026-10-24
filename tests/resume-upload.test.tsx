@@ -42,3 +42,39 @@ it('keeps the previous resume on import failure and provides a persistent error'
   await expect(screen.findByRole('alert')).resolves.toHaveTextContent('no selectable text');
   expect(screen.getByLabelText('Paste resume text')).toHaveValue('Keep this resume');
 });
+
+it.each(['resolve', 'reject'])(
+  'keeps a pending upload canceled after confirmed Clear when it later %ss',
+  async (outcome) => {
+    let finish!: (text: string) => void;
+    let fail!: (error: Error) => void;
+    extract.mockReturnValue(
+      new Promise<string>((resolve, reject) => {
+        finish = resolve;
+        fail = reject;
+      })
+    );
+    render(<ResumeGame />);
+    fireEvent.change(screen.getByLabelText('Upload resume file (PDF, DOCX, TXT, or Markdown)'), {
+      target: { files: [new File(['synthetic'], 'resume.pdf', { type: 'application/pdf' })] },
+    });
+    await waitFor(() => expect(extract).toHaveBeenCalledOnce());
+    expect(screen.getByLabelText('Paste resume text')).toHaveValue('');
+    const clear = screen.getByRole('button', { name: 'Clear' });
+    expect(clear).toBeEnabled();
+    fireEvent.click(clear);
+    expect(screen.getByText('Reading file...')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Clear resume and scores?' }));
+    expect(screen.queryByText('Reading file...')).toBeNull();
+    await act(async () => {
+      if (outcome === 'resolve') finish('Older uploaded text');
+      else fail(new Error('Older upload failed'));
+    });
+    expect(screen.getByLabelText('Paste resume text')).toHaveValue('');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('status')).toHaveTextContent('Workspace cleared.');
+    const stored = JSON.parse(localStorage.getItem('resume-game-session-v2') ?? 'null');
+    expect(stored.resumeText).toBe('');
+    expect(stored.bullets).toEqual([]);
+  }
+);

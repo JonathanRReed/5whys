@@ -82,6 +82,7 @@ export function useTimer(initialSeconds: number = DEFAULT_TIMER_SECONDS) {
     setTimer((prev) => ({
       ...prev,
       remaining: prev.remaining === 0 ? prev.total : prev.remaining,
+      elapsed: prev.remaining === 0 ? 0 : prev.elapsed,
       isRunning: true,
       startedAt: Date.now(),
     }));
