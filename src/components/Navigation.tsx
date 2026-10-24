@@ -30,6 +30,7 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [showScrollTop, setShowScrollTop] = React.useState(false);
   const compactToolsTrigger = React.useRef<HTMLButtonElement>(null);
+  const compactToolsMenu = React.useRef<HTMLDivElement>(null);
   const mobileMenuTrigger = React.useRef<HTMLButtonElement>(null);
 
   React.useEffect(() => {
@@ -92,6 +93,28 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [compactToolsOpen, menuOpen]);
+
+  React.useEffect(() => {
+    if (!compactToolsOpen) return;
+
+    const dismissOutside = (event: PointerEvent | FocusEvent) => {
+      const target = event.target;
+      if (
+        target instanceof Node &&
+        !compactToolsTrigger.current?.contains(target) &&
+        !compactToolsMenu.current?.contains(target)
+      ) {
+        setCompactToolsOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', dismissOutside);
+    document.addEventListener('focusin', dismissOutside);
+    return () => {
+      document.removeEventListener('pointerdown', dismissOutside);
+      document.removeEventListener('focusin', dismissOutside);
+    };
+  }, [compactToolsOpen]);
 
   const toggleTheme = React.useCallback(() => {
     const next: Theme = activeTheme === 'night' ? 'dawn' : 'night';
@@ -270,6 +293,7 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
           {compactToolsOpen && (
             <div
               id="compact-tools-menu"
+              ref={compactToolsMenu}
               className="absolute right-0 top-full z-50 mt-3 w-56 rounded-2xl border border-border/42 bg-popover/98 p-2 shadow-[0_28px_72px_-42px_hsl(var(--background)/0.95)]"
             >
               {toolsLinks.map(({ href, label }) => {
