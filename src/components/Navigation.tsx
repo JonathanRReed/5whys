@@ -44,6 +44,13 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
 
   const scrollToTop = React.useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    const mainContent = document.getElementById('main-content');
+    if (mainContent) {
+      if (!mainContent.hasAttribute('tabindex')) {
+        mainContent.setAttribute('tabindex', '-1');
+      }
+      mainContent.focus({ preventScroll: true });
+    }
   }, []);
 
   // The boot script has already applied the saved theme before hydration;

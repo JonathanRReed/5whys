@@ -1,9 +1,53 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import Navigation from '../src/components/Navigation';
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
+  Object.defineProperty(window, 'scrollY', { value: 0, writable: true });
+});
+
+it.each([undefined, -1, 0])(
+  'keeps focus on main after scroll-to-top disappears, preserving tabindex %s',
+  (tabIndex) => {
+    render(
+      <>
+        <Navigation currentPath="/" />
+        <main id="main-content" tabIndex={tabIndex}>
+          Main content
+        </main>
+      </>
+    );
+    const main = screen.getByRole('main');
+    const focus = vi.spyOn(main, 'focus');
+    const scroll = vi.spyOn(window, 'scrollTo').mockImplementation(() => {
+      Object.defineProperty(window, 'scrollY', { value: 0, writable: true });
+      fireEvent.scroll(window);
+    });
+    expect(main).not.toHaveFocus();
+    Object.defineProperty(window, 'scrollY', { value: 500, writable: true });
+    fireEvent.scroll(window);
+    const trigger = screen.getByRole('button', { name: 'Scroll to top' });
+    trigger.focus();
+    expect(trigger).toHaveFocus();
+    fireEvent.click(trigger);
+
+    expect(scroll).toHaveBeenCalledExactlyOnceWith({ top: 0, behavior: 'smooth' });
+    expect(focus).toHaveBeenCalledExactlyOnceWith({ preventScroll: true });
+    expect(main).toHaveFocus();
+    expect(main).toHaveAttribute('tabindex', String(tabIndex ?? -1));
+    expect(screen.queryByRole('button', { name: 'Scroll to top' })).not.toBeInTheDocument();
+  }
+);
+
+it('still scrolls when no main landmark is present', () => {
+  const scroll = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+  render(<Navigation currentPath="/" />);
+  Object.defineProperty(window, 'scrollY', { value: 500, writable: true });
+  fireEvent.scroll(window);
+  fireEvent.click(screen.getByRole('button', { name: 'Scroll to top' }));
+  expect(scroll).toHaveBeenCalledExactlyOnceWith({ top: 0, behavior: 'smooth' });
 });
 
 it('links compact tools trigger button to its dropdown container via aria-controls', () => {
