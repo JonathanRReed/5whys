@@ -112,53 +112,61 @@ export default function HistoryPanel({
             browser only.
           </div>
         ) : (
-          history.map((entry) => (
-            <div
-              key={`${entry.id}-${entry.timestamp}`}
-              className="rounded-2xl border border-border/50 bg-overlay/20 p-5"
-            >
-              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                    {formatSnapshotTime(entry.timestamp)} \u2022 {TRACKS[entry.track].label}
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-foreground">
-                    {entry.topic || 'Untitled session'}
-                  </p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {entry.whyStatement || 'Snapshot saved without a summary.'}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2 md:justify-end">
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => onRestoreSnapshot(entry)}
-                    className="rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
-                  >
-                    Load snapshot
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onExportSnapshot(entry)}
-                    className="rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
-                  >
-                    Export
-                  </Button>
-                  <ConfirmButton
-                    tone="destructive"
-                    confirmLabel="Delete snapshot?"
-                    onConfirm={() => onDeleteSnapshot(entry.id)}
-                    className="h-9 px-3 text-xs"
-                  >
-                    Delete
-                  </ConfirmButton>
+          history.map((entry, index) => {
+            const position = `snapshot ${index + 1} of ${history.length}`;
+            const entryTitle = `${entry.topic || 'Untitled session'} (${formatSnapshotTime(entry.timestamp)}, ${position})`;
+            return (
+              <div
+                key={`${entry.id}-${entry.timestamp}`}
+                className="rounded-2xl border border-border/50 bg-overlay/20 p-5"
+              >
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                      Snapshot {index + 1} of {history.length} ·{' '}
+                      {formatSnapshotTime(entry.timestamp)} · {TRACKS[entry.track].label}
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-foreground">
+                      {entry.topic || 'Untitled session'}
+                    </p>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      {entry.whyStatement || 'Snapshot saved without a summary.'}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2 md:justify-end">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => onRestoreSnapshot(entry)}
+                      aria-label={`Load snapshot: ${entryTitle}`}
+                      className="rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+                    >
+                      Load snapshot
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onExportSnapshot(entry)}
+                      aria-label={`Export snapshot: ${entryTitle}`}
+                      className="rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+                    >
+                      Export
+                    </Button>
+                    <ConfirmButton
+                      tone="destructive"
+                      confirmLabel={`Delete snapshot: ${entryTitle}?`}
+                      onConfirm={() => onDeleteSnapshot(entry.id)}
+                      aria-label={`Delete snapshot: ${entryTitle}`}
+                      className="min-h-9 max-w-full break-words px-3 text-left text-xs"
+                    >
+                      Delete
+                    </ConfirmButton>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </CardContent>
     </Card>
