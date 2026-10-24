@@ -87,6 +87,7 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
           <button
             type="button"
             onClick={() => setShowUnused(!showUnused)}
+            aria-pressed={showUnused}
             className={cn(
               'rounded-lg border px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2',
               showUnused

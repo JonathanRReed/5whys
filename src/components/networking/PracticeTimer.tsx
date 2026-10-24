@@ -26,6 +26,13 @@ function formatTime(seconds: number) {
 export default function PracticeTimer({ timer, onStart, onPause, onReset, onLengthChange }: Props) {
   const progress = timer.total > 0 ? (timer.total - timer.remaining) / timer.total : 0;
   const isComplete = timer.remaining === 0 && !timer.isRunning && timer.startedAt !== null;
+  const statusAnnouncement = isComplete
+    ? "Time's up! Rep finished."
+    : timer.isRunning
+      ? 'Timer started'
+      : timer.startedAt !== null
+        ? 'Timer paused'
+        : '';
   const ringStyle: React.CSSProperties = {
     background: `conic-gradient(hsl(var(--primary)) ${progress * 360}deg, hsl(var(--border)/0.3) 0deg)`,
   };
@@ -36,6 +43,9 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset, onLeng
         <CardTitle className="text-primary">Rep timer</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-4">
+        <div role="status" aria-live="polite" className="sr-only">
+          {statusAnnouncement}
+        </div>
         <div
           className="relative flex items-center justify-center w-48 h-48 rounded-full border border-border/60"
           role="progressbar"
@@ -53,7 +63,7 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset, onLeng
           <div
             className="relative flex flex-col items-center justify-center w-40 h-40 rounded-full bg-overlay/30 text-3xl font-semibold"
             role="timer"
-            aria-live="polite"
+            aria-live="off"
             aria-label="Time remaining"
           >
             {formatTime(timer.remaining)}
@@ -111,7 +121,7 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset, onLeng
           </Button>
         </div>
         {timer.elapsed > 0 ? (
-          <p className="text-sm font-medium text-foam" aria-live="polite">
+          <p className="text-sm font-medium text-foam">
             {formatTime(timer.elapsed)} practiced this rep
           </p>
         ) : null}

@@ -104,6 +104,7 @@ export default function PacketSection({
           <button
             type="button"
             onClick={() => setMode('prep')}
+            aria-pressed={mode === 'prep'}
             className={cn(
               'rounded-lg px-3 py-1.5 text-sm font-medium focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2',
               mode === 'prep'
@@ -116,6 +117,7 @@ export default function PacketSection({
           <button
             type="button"
             onClick={() => setMode('review')}
+            aria-pressed={mode === 'review'}
             className={cn(
               'rounded-lg px-3 py-1.5 text-sm font-medium focus-visible:ring-2 focus-visible:ring-iris focus-visible:ring-offset-2',
               mode === 'review'
