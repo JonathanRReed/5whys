@@ -26,6 +26,7 @@ export default function WhyStepper({ responses, sequentialCount }: WhyStepperPro
               return (
                 <React.Fragment key={index}>
                   <div
+                    role="img"
                     className={cn(
                       'flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors',
                       isFilled
@@ -35,6 +36,9 @@ export default function WhyStepper({ responses, sequentialCount }: WhyStepperPro
                           : 'border-border/50 text-muted-foreground'
                     )}
                     aria-current={isCurrent ? 'step' : undefined}
+                    aria-label={`Depth ${index + 1}: ${
+                      isFilled ? 'Completed' : isCurrent ? 'Current step' : 'Pending'
+                    }`}
                   >
                     {index + 1}
                   </div>
