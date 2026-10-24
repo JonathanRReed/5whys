@@ -84,6 +84,7 @@ it('updates one pre-existing status region without a nested live-region ancestor
 
   expect(screen.getAllByRole('status')).toEqual([status]);
   expect(status).toHaveAttribute('aria-atomic', 'true');
+  expect(status).toHaveAttribute('aria-live', 'polite');
   expect(status).toHaveTextContent('Exported nothing yet. Check your downloads.');
   expect(status.parentElement?.closest('[aria-live], [role="status"], [role="alert"]')).toBeNull();
 });
