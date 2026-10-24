@@ -42,13 +42,7 @@ export function capitalizeWord(value: string) {
   return value.slice(0, 1).toUpperCase() + value.slice(1).toLowerCase();
 }
 
-// Fast-path optimization: Skip 5 global regex replacements when no HTML special characters are present.
-// Reduces CPU overhead when highlighting/parsing plain text resume tokens.
-const HTML_CHAR_PATTERN = /[&<>"']/;
-
 export function escapeHtml(value: string) {
-  if (!value) return '';
-  if (!HTML_CHAR_PATTERN.test(value)) return value;
   return value
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
