@@ -1,4 +1,5 @@
 import type * as React from 'react';
+import ConfirmButton from '../shared/ConfirmButton';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
@@ -73,14 +74,14 @@ export default function ResumeInput({
             />
           </div>
           <div className="flex flex-col gap-2 w-full md:w-auto md:flex-row">
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full md:w-auto rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
-              onClick={onClear}
+            <ConfirmButton
+              tone="neutral"
+              confirmLabel="Clear resume and scores?"
+              onConfirm={onClear}
+              className="w-full md:w-auto px-4"
             >
               Clear
-            </Button>
+            </ConfirmButton>
             <Button
               type="button"
               variant="outline"
