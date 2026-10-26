@@ -65,6 +65,28 @@ it('moves focus back to Step 2 when clicking Change the last answer', () => {
   expect(step2Heading).toHaveFocus();
 });
 
+it('reflects selection state via aria-pressed when navigating steps', () => {
+  render(<OnboardingWizard />);
+
+  const studentBtn = screen.getByRole('button', { name: 'Student' });
+  const earlyBtn = screen.getByRole('button', { name: 'Early career' });
+
+  expect(studentBtn).toHaveAttribute('aria-pressed', 'false');
+  expect(earlyBtn).toHaveAttribute('aria-pressed', 'false');
+
+  // Select "Student" to advance to Step 2
+  fireEvent.click(studentBtn);
+
+  // Navigate back to Step 1
+  fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+
+  const studentBtnBack = screen.getByRole('button', { name: 'Student' });
+  const earlyBtnBack = screen.getByRole('button', { name: 'Early career' });
+
+  expect(studentBtnBack).toHaveAttribute('aria-pressed', 'true');
+  expect(earlyBtnBack).toHaveAttribute('aria-pressed', 'false');
+});
+
 it.each([false, true])('does not steal initial focus with StrictMode=%s', (strict) => {
   const outside = document.createElement('button');
   document.body.append(outside);
