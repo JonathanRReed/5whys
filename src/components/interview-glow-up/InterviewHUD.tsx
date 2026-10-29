@@ -202,6 +202,10 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
                 setSearchOpen((prev) => !prev);
                 if (searchOpen) setSearchQuery('');
               }}
+              onKeyDown={(event) => {
+                // Keep native button activation out of the HUD shortcuts.
+                if (event.key === 'Enter' || event.key === ' ') event.stopPropagation();
+              }}
               aria-label="Search stories"
               aria-expanded={searchOpen}
               className="inline-flex items-center gap-1.5 rounded-lg border border-border/50 bg-overlay/20 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-overlay/35 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"

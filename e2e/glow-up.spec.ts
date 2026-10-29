@@ -62,6 +62,27 @@ test('a job is decoded, a story is built into the packet, and the HUD opens abov
   await page.getByRole('button', { name: 'Open the HUD' }).first().click();
   const dialog = page.getByRole('dialog', { name: 'Interview HUD' });
   await expect(dialog).toBeVisible();
+  const searchButton = dialog.getByRole('button', { name: 'Search stories' });
+  for (const key of ['Enter', 'Space']) {
+    for (let cycle = 0; cycle < 2; cycle++) {
+      await searchButton.focus();
+      await page.keyboard.press(key);
+      await expect(searchButton).toHaveAttribute('aria-expanded', 'true');
+      const searchInput = dialog.getByRole('textbox', { name: 'Search stories' });
+      await expect(searchInput).toBeFocused();
+      await searchInput.fill('Capstone');
+      await searchButton.focus();
+      await page.keyboard.press(key);
+      await expect(searchButton).toHaveAttribute('aria-expanded', 'false');
+      await expect(searchInput).toHaveCount(0);
+    }
+  }
+  // Global Space still opens search away from the toggle, and closing clears it.
+  await dialog.focus();
+  await page.keyboard.press('Space');
+  await expect(dialog.getByRole('textbox', { name: 'Search stories' })).toHaveValue('');
+  await page.keyboard.press('Escape');
+  await expect(searchButton).toHaveAttribute('aria-expanded', 'false');
   const closeButton = dialog.getByRole('button', { name: 'Close HUD' });
   const hitTest = await closeButton.evaluate((el) => {
     const rect = el.getBoundingClientRect();
