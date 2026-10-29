@@ -151,3 +151,73 @@ it('toggles HUD search with accessible button state and labeled search input', (
   expect(searchButton).toHaveAttribute('aria-expanded', 'false');
   expect(screen.queryByRole('textbox', { name: 'Search stories' })).toBeNull();
 });
+
+it.each(['Enter', ' '])('leaves %j activation on the search toggle to the native button', (key) => {
+  render(<InterviewHUD packet={packet} stories={[]} role={role} onClose={vi.fn()} />);
+  const button = screen.getByRole('button', { name: 'Search stories' });
+  for (let cycle = 0; cycle < 2; cycle++) {
+    button.focus();
+    // jsdom does not synthesize native button activation. Verify the key is not
+    // canceled or handled as a global shortcut, then model the native click.
+    expect(fireEvent.keyDown(button, { key })).toBe(true);
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(button);
+    expect(button).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search stories' }), {
+      target: { value: 'a query' },
+    });
+    button.focus();
+    expect(fireEvent.keyDown(button, { key })).toBe(true);
+    fireEvent.click(button);
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('textbox', { name: 'Search stories' })).toBeNull();
+  }
+  fireEvent.keyDown(screen.getByRole('dialog'), { key: ' ' });
+  expect(button).toHaveAttribute('aria-expanded', 'true');
+  expect(screen.getByRole('textbox', { name: 'Search stories' })).toHaveValue('');
+});
+
+it('Escape unwinds search, then the expanded story, then dismisses the HUD', () => {
+  const story: Story = {
+    id: 'story',
+    trigger: 'Capstone story',
+    primarySkillId: 'communication',
+    otherSkillIds: [],
+    hook: '',
+    proofSnippet: '',
+    play: 'Explained the project.',
+    proof: '',
+    confidence: 60,
+    readiness: 'solid',
+    questionPrompts: [],
+    tags: [],
+    createdAt: 1000,
+    updatedAt: 1000,
+  };
+  const onClose = vi.fn();
+  render(
+    <InterviewHUD
+      packet={{ ...packet, topStoryIds: [story.id] }}
+      stories={[story]}
+      role={role}
+      onClose={onClose}
+    />
+  );
+  const dialog = screen.getByRole('dialog');
+  const storyButton = screen.getByRole('button', { name: /Capstone story/ });
+  fireEvent.click(storyButton);
+  expect(storyButton).toHaveAttribute('aria-expanded', 'true');
+  fireEvent.keyDown(dialog, { key: ' ' });
+  const input = screen.getByRole('textbox', { name: 'Search stories' });
+  fireEvent.change(input, { target: { value: 'Capstone' } });
+  fireEvent.keyDown(input, { key: 'Escape' });
+  expect(onClose).not.toHaveBeenCalled();
+  expect(screen.queryByRole('textbox', { name: 'Search stories' })).toBeNull();
+  expect(storyButton).toHaveAttribute('aria-expanded', 'true');
+  expect(dialog).toHaveFocus();
+  fireEvent.keyDown(dialog, { key: 'Escape' });
+  expect(onClose).not.toHaveBeenCalled();
+  expect(storyButton).toHaveAttribute('aria-expanded', 'false');
+  fireEvent.keyDown(dialog, { key: 'Escape' });
+  expect(onClose).toHaveBeenCalledTimes(1);
+});
