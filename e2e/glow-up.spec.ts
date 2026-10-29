@@ -93,6 +93,12 @@ test('a job is decoded, a story is built into the packet, and the HUD opens abov
     return el.contains(target);
   });
   expect(hitTest).toBe(true);
+  const storyButton = dialog.getByRole('button', { name: /Capstone scraper/ });
+  await storyButton.click();
+  await expect(storyButton).toHaveAttribute('aria-expanded', 'true');
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeVisible();
+  await expect(storyButton).toHaveAttribute('aria-expanded', 'false');
   await page.keyboard.press('Escape');
   await expect(dialog).toHaveCount(0);
 

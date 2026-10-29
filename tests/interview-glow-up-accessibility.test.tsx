@@ -176,3 +176,48 @@ it.each(['Enter', ' '])('leaves %j activation on the search toggle to the native
   expect(button).toHaveAttribute('aria-expanded', 'true');
   expect(screen.getByRole('textbox', { name: 'Search stories' })).toHaveValue('');
 });
+
+it('Escape unwinds search, then the expanded story, then dismisses the HUD', () => {
+  const story: Story = {
+    id: 'story',
+    trigger: 'Capstone story',
+    primarySkillId: 'communication',
+    otherSkillIds: [],
+    hook: '',
+    proofSnippet: '',
+    play: 'Explained the project.',
+    proof: '',
+    confidence: 60,
+    readiness: 'solid',
+    questionPrompts: [],
+    tags: [],
+    createdAt: 1000,
+    updatedAt: 1000,
+  };
+  const onClose = vi.fn();
+  render(
+    <InterviewHUD
+      packet={{ ...packet, topStoryIds: [story.id] }}
+      stories={[story]}
+      role={role}
+      onClose={onClose}
+    />
+  );
+  const dialog = screen.getByRole('dialog');
+  const storyButton = screen.getByRole('button', { name: /Capstone story/ });
+  fireEvent.click(storyButton);
+  expect(storyButton).toHaveAttribute('aria-expanded', 'true');
+  fireEvent.keyDown(dialog, { key: ' ' });
+  const input = screen.getByRole('textbox', { name: 'Search stories' });
+  fireEvent.change(input, { target: { value: 'Capstone' } });
+  fireEvent.keyDown(input, { key: 'Escape' });
+  expect(onClose).not.toHaveBeenCalled();
+  expect(screen.queryByRole('textbox', { name: 'Search stories' })).toBeNull();
+  expect(storyButton).toHaveAttribute('aria-expanded', 'true');
+  expect(dialog).toHaveFocus();
+  fireEvent.keyDown(dialog, { key: 'Escape' });
+  expect(onClose).not.toHaveBeenCalled();
+  expect(storyButton).toHaveAttribute('aria-expanded', 'false');
+  fireEvent.keyDown(dialog, { key: 'Escape' });
+  expect(onClose).toHaveBeenCalledTimes(1);
+});

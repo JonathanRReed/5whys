@@ -85,11 +85,6 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if typing in input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        if (e.key === 'Escape') {
-          setSearchOpen(false);
-          setSearchQuery('');
-          containerRef.current?.focus();
-        }
         return;
       }
 
@@ -97,18 +92,6 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
         case ' ':
           e.preventDefault();
           setSearchOpen(true);
-          break;
-        case 'Escape':
-          // Escape unwinds search, then an expanded story. Radix closes the
-          // dialog itself once there is nothing left to unwind.
-          if (searchOpen) {
-            e.stopPropagation();
-            setSearchOpen(false);
-            setSearchQuery('');
-          } else if (expandedId) {
-            e.stopPropagation();
-            setExpandedId(null);
-          }
           break;
         case 'ArrowUp':
           e.preventDefault();
@@ -138,7 +121,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [searchOpen, expandedId, displayStories, selectedIndex, panicMode]);
+  }, [expandedId, displayStories, selectedIndex, panicMode]);
 
   // Keep selected index in bounds
   React.useEffect(() => {
@@ -154,6 +137,19 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
       <DialogContent
         ref={containerRef}
         showCloseButton={false}
+        onEscapeKeyDown={(event) => {
+          // Intercept Radix dismissal before unwinding the HUD's nested state.
+          if (searchOpen) {
+            event.preventDefault();
+            setSearchOpen(false);
+            setSearchQuery('');
+            containerRef.current?.focus();
+          } else if (expandedId) {
+            event.preventDefault();
+            setExpandedId(null);
+            containerRef.current?.focus();
+          }
+        }}
         className="flex h-dvh max-h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-0 bg-background p-0 text-foreground shadow-none top-0 left-0 sm:max-w-none print:relative print:h-auto print:max-h-none print:overflow-visible print:bg-white print:text-black"
       >
         <DialogTitle className="sr-only">
