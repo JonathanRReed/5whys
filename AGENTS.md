@@ -17,7 +17,7 @@ analytics, forms, or fetches that would make it false.
 bun install            # bun 1.4 is the only package manager
 bun run dev            # http://localhost:4321
 bun run build          # static output in dist/
-bun run typecheck      # tsc + astro check
+bun run typecheck      # bun check + astro check
 bun run lint           # biome (ts/tsx/css/json) + eslint (.astro only)
 bun run format         # biome format --write
 bun run test           # vitest unit tests in tests/
