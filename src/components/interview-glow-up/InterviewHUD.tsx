@@ -195,12 +195,40 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
               </div>
             </div>
           </div>
-          <div className="hidden md:flex items-center gap-3 text-sm text-muted-foreground print:hidden">
-            <kbd className="rounded bg-overlay/25 px-2 py-0.5">Space</kbd> Search
-            <kbd className="rounded bg-overlay/25 px-2 py-0.5">↑↓</kbd> Navigate
-            <kbd className="rounded bg-overlay/25 px-2 py-0.5">Enter</kbd> Expand
-            <kbd className="rounded bg-overlay/25 px-2 py-0.5">P</kbd> Panic
-            <kbd className="rounded bg-overlay/25 px-2 py-0.5">Esc</kbd> Close
+          <div className="flex items-center gap-2 print:hidden">
+            <button
+              type="button"
+              onClick={() => {
+                setSearchOpen((prev) => !prev);
+                if (searchOpen) setSearchQuery('');
+              }}
+              aria-label="Search stories"
+              aria-expanded={searchOpen}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border/50 bg-overlay/20 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-overlay/35 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+            >
+              <svg
+                aria-hidden="true"
+                className="h-3.5 w-3.5 text-muted-foreground"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+                />
+              </svg>
+              Search
+            </button>
+            <div className="hidden md:flex items-center gap-3 text-sm text-muted-foreground">
+              <kbd className="rounded bg-overlay/25 px-2 py-0.5">Space</kbd> Search
+              <kbd className="rounded bg-overlay/25 px-2 py-0.5">↑↓</kbd> Navigate
+              <kbd className="rounded bg-overlay/25 px-2 py-0.5">Enter</kbd> Expand
+              <kbd className="rounded bg-overlay/25 px-2 py-0.5">P</kbd> Panic
+              <kbd className="rounded bg-overlay/25 px-2 py-0.5">Esc</kbd> Close
+            </div>
           </div>
         </header>
 
@@ -214,6 +242,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
                 <input
                   ref={searchInputRef}
                   type="text"
+                  aria-label="Search stories"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search stories by skill, keyword..."
