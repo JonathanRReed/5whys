@@ -15,7 +15,7 @@ import {
   updatePacket,
 } from '../../lib/glowup-store';
 import { cn } from '../../lib/utils';
-import { ClipboardIcon, PrinterIcon, TargetIcon } from './icons';
+import { ClipboardIcon, PrinterIcon, TargetIcon, XIcon } from './icons';
 
 type Props = {
   data: GlowUpData;
@@ -329,10 +329,10 @@ export default function PacketSection({
                       const updated = currentPacket.customQuestions.filter((_, j) => j !== i);
                       setData(updatePacket(data, currentPacket.id, { customQuestions: updated }));
                     }}
-                    aria-label={`Remove question ${i + 1}`}
-                    className="rounded px-2 text-muted-foreground hover:text-destructive focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
+                    aria-label={`Remove question ${i + 1}${q.trim() ? `: ${q.trim()}` : ''}`}
+                    className="rounded p-2 text-muted-foreground hover:text-destructive focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
                   >
-                    &times;
+                    <XIcon className="h-4 w-4" />
                   </button>
                 </div>
               ))}

@@ -134,3 +134,27 @@ it('reports general question disclosure state across collapse, cancel and reopen
   );
   expect(screen.queryByRole('button', { name: questionName })).toBeNull();
 });
+
+it('renders descriptive aria-labels for question removal buttons in PacketSection', () => {
+  const packetWithQuestions: InterviewPacket = {
+    ...packet,
+    customQuestions: ['What is your team culture?', 'How do you measure success?'],
+  };
+  render(
+    <PacketSection
+      data={{ ...data, packets: [packetWithQuestions] }}
+      setData={vi.fn()}
+      currentRole={role}
+      currentPacket={packetWithQuestions}
+      onLaunchHUD={vi.fn()}
+      onGoToStories={vi.fn()}
+      onGoToDecode={vi.fn()}
+    />
+  );
+  expect(
+    screen.getByRole('button', { name: 'Remove question 1: What is your team culture?' })
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole('button', { name: 'Remove question 2: How do you measure success?' })
+  ).toBeInTheDocument();
+});
