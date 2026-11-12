@@ -45,6 +45,74 @@
   --color-ring: hsl(var(--ring));
 }
 
+/* Alternative typefaces for the Aa menu. Self-hosted under the SIL Open Font
+   License (licences sit beside the files in public/fonts). A browser only
+   downloads a face once something on the page uses it, so visitors on the
+   default faces never fetch these. */
+@font-face {
+  font-family: "Nebula Sans";
+  src: url("/fonts/NebulaSans-Book-latin.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nebula Sans";
+  src: url("/fonts/NebulaSans-BookItalic-latin.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nebula Sans";
+  src: url("/fonts/NebulaSans-Medium-latin.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nebula Sans";
+  src: url("/fonts/NebulaSans-Semibold-latin.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nebula Sans";
+  src: url("/fonts/NebulaSans-Bold-latin.woff2") format("woff2");
+  font-weight: 700 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "OpenDyslexic";
+  src: url("/fonts/OpenDyslexic-400-normal-latin.woff2") format("woff2");
+  font-weight: 100 499;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "OpenDyslexic";
+  src: url("/fonts/OpenDyslexic-400-italic-latin.woff2") format("woff2");
+  font-weight: 100 499;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "OpenDyslexic";
+  src: url("/fonts/OpenDyslexic-700-normal-latin.woff2") format("woff2");
+  font-weight: 500 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "OpenDyslexic";
+  src: url("/fonts/OpenDyslexic-700-italic-latin.woff2") format("woff2");
+  font-weight: 500 900;
+  font-style: italic;
+  font-display: swap;
+}
+
 @theme {
   --font-display: "Fraunces Variable", Georgia, Cambria, ui-serif, serif;
   --font-sans:
@@ -80,6 +148,21 @@
       opacity: 1;
     }
   }
+}
+
+/* Visitor typeface preference, set as <html data-font> by the boot script and
+   the Aa menu. The two alternatives replace headings, body, and labels alike:
+   a reader who needs a plainer face needs it everywhere. */
+:root[data-font="readable"] {
+  --font-display: "Nebula Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Nebula Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Nebula Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+:root[data-font="dyslexic"] {
+  --font-display: "OpenDyslexic", "Nebula Sans", system-ui, sans-serif;
+  --font-sans: "OpenDyslexic", "Nebula Sans", system-ui, sans-serif;
+  --font-mono: "OpenDyslexic", "Nebula Sans", system-ui, sans-serif;
 }
 
 @utility nav-pill-group {
@@ -824,6 +907,45 @@ input[type="range"]::-moz-range-thumb {
 /* ============================================================================
    Print Stylesheet for Interview Glow Up
    ============================================================================ */
+/* OpenDyslexic sets wide and tall. Headings lose their negative tracking and
+   are normalized by x-height so the type scale does not overflow; the tracked
+   uppercase label relaxes; long words may break rather than push the page
+   sideways. */
+:root[data-font="dyslexic"] {
+  & h1,
+  & h2,
+  & h3,
+  & h4 {
+    letter-spacing: 0;
+    line-height: 1.25;
+    font-size-adjust: 0.44;
+    overflow-wrap: anywhere;
+  }
+
+  & body {
+    line-height: 1.7;
+  }
+
+  & .eyebrow {
+    letter-spacing: 0.06em;
+    line-height: 1.4;
+  }
+}
+
+:root[data-font="readable"] {
+  & h1,
+  & h2,
+  & h3,
+  & h4 {
+    letter-spacing: -0.015em;
+    font-weight: 600;
+  }
+
+  & .eyebrow {
+    letter-spacing: 0.14em;
+  }
+}
+
 @media print {
   /* The dialog scrim and its scroll lock belong to the screen only. */
   [data-slot="dialog-overlay"] {

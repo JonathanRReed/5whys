@@ -1,13 +1,6 @@
 import * as React from 'react';
-import {
-  applyTheme,
-  isTheme,
-  readAppliedTheme,
-  setTheme,
-  THEME_STORAGE_KEY,
-  type Theme,
-} from '../lib/theme';
 import { cn } from '../lib/utils';
+import DisplayMenu from './DisplayMenu';
 
 type NavigationProps = {
   currentPath?: string;
@@ -26,7 +19,6 @@ const navLinks = [
 export default function Navigation({ currentPath = '/' }: NavigationProps) {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [compactToolsOpen, setCompactToolsOpen] = React.useState(false);
-  const [activeTheme, setActiveTheme] = React.useState<Theme>('night');
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [showScrollTop, setShowScrollTop] = React.useState(false);
   const compactToolsTrigger = React.useRef<HTMLButtonElement>(null);
@@ -52,20 +44,6 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
       }
       mainContent.focus({ preventScroll: true });
     }
-  }, []);
-
-  // The boot script has already applied the saved theme before hydration;
-  // pick it up for the toggle icon, and follow changes made in other tabs.
-  React.useEffect(() => {
-    const applied = readAppliedTheme();
-    if (applied) setActiveTheme(applied);
-    const onStorage = (event: StorageEvent) => {
-      if (event.key !== THEME_STORAGE_KEY || !isTheme(event.newValue)) return;
-      applyTheme(event.newValue);
-      setActiveTheme(event.newValue);
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
   }, []);
 
   React.useEffect(() => {
@@ -116,12 +94,6 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
     };
   }, [compactToolsOpen]);
 
-  const toggleTheme = React.useCallback(() => {
-    const next: Theme = activeTheme === 'night' ? 'dawn' : 'night';
-    setTheme(next);
-    setActiveTheme(next);
-  }, [activeTheme]);
-
   const isActive = React.useCallback(
     (href: string) => {
       if (href === '/') return currentPath === '/';
@@ -129,8 +101,6 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
     },
     [currentPath]
   );
-
-  const isNight = activeTheme === 'night';
 
   const mainLinks = navLinks.filter(
     (l) => l.href === '/' || l.href === '/start/' || l.href === '/dashboard/'
@@ -350,48 +320,9 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
           })}
         </div>
 
-        {/* Right side: theme + mobile menu */}
+        {/* Right side: display settings + mobile menu */}
         <div className="flex items-center gap-2">
-          {/* Theme toggle */}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-foreground/78 transition-colors hover:bg-overlay/35 hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label={isNight ? 'Switch to light theme' : 'Switch to dark theme'}
-            title={isNight ? 'Switch to light theme' : 'Switch to dark theme'}
-          >
-            {isNight ? (
-              <svg
-                aria-hidden="true"
-                className="h-[1.1rem] w-[1.1rem]"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.8}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"
-                />
-              </svg>
-            ) : (
-              <svg
-                aria-hidden="true"
-                className="h-[1.1rem] w-[1.1rem]"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.8}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"
-                />
-              </svg>
-            )}
-          </button>
+          <DisplayMenu />
 
           {/* Mobile menu toggle */}
           <button

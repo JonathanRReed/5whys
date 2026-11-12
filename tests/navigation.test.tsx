@@ -167,10 +167,10 @@ it('dismisses compact tools when focus moves backward to its neighboring Dashboa
   expect(trigger).toHaveAttribute('aria-expanded', 'false');
 });
 
-it('dismisses compact tools when focus leaves the last link for the theme toggle', () => {
+it('dismisses compact tools when focus leaves the last link for the display settings button', () => {
   const { container } = render(<Navigation currentPath="/" />);
   const trigger = screen.getAllByRole('button', { name: /tools/i })[0];
-  const themeToggle = screen.getByRole('button', { name: /switch to .* theme/i });
+  const themeToggle = screen.getByRole('button', { name: 'Display settings' });
   fireEvent.click(trigger);
   const menu = container.querySelector('#compact-tools-menu');
   if (!menu) throw new Error('Expected compact tools menu');
