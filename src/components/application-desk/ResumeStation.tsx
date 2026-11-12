@@ -207,7 +207,12 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
       </ul>
 
       <div className="space-y-2 border-t border-border/40 pt-5">
-        <Button type="button" onClick={download} disabled={selected.size === 0}>
+        <Button
+          type="button"
+          onClick={download}
+          disabled={selected.size === 0}
+          className="h-auto min-h-9 max-w-full whitespace-normal py-2 text-left"
+        >
           Download the resume for this role (.docx)
         </Button>
         <p role="status" className="min-h-5 text-sm text-foreground">

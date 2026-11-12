@@ -101,8 +101,49 @@ const includesName = (text: string, name: string) => {
   const haystack = text.toLowerCase();
   if (haystack.includes(wanted)) return true;
   const core = coreTitle(name).toLowerCase();
-  return core.length > 2 && haystack.includes(core);
+  if (core.length > 2 && haystack.includes(core)) return true;
+  // A company is usually named by its distinctive first word: "Northgate"
+  // for "Northgate Logistics Partners".
+  const first = wanted.split(/\s+/)[0]?.replace(/[^a-z0-9]/g, '') ?? '';
+  return (
+    first.length >= 4 &&
+    !GENERIC_NAME_WORDS.has(first) &&
+    new RegExp(`\\b${first}\\b`).test(haystack)
+  );
 };
+
+/** First words that do not identify an employer on their own. */
+const GENERIC_NAME_WORDS = new Set([
+  'the',
+  'city',
+  'county',
+  'state',
+  'university',
+  'college',
+  'national',
+  'american',
+  'united',
+  'first',
+  'new',
+  'north',
+  'south',
+  'east',
+  'west',
+  'general',
+  'global',
+  'international',
+  'community',
+  'department',
+  'office',
+  'marketing',
+  'operations',
+  'project',
+  'program',
+  'senior',
+  'junior',
+  'assistant',
+  'associate',
+]);
 
 /** Square-bracket placeholders left in from a template, such as "[your proof]". */
 export function findPlaceholders(text: string): string[] {

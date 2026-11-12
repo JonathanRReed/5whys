@@ -24,6 +24,7 @@ import {
   type TitleCandidate,
   type WageDataset,
 } from '../../lib/pay';
+import { type ParsedAmount, parseAmount } from '../../lib/pay-input';
 import { cn } from '../../lib/utils';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -43,11 +44,6 @@ const money = (value: number | null, unit: 'hour' | 'year') =>
         currency: 'USD',
         maximumFractionDigits: unit === 'hour' ? 2 : 0,
       }).format(value)} ${unit === 'hour' ? 'an hour' : 'a year'}`;
-
-const toNumber = (value: string): number | null => {
-  const parsed = Number.parseFloat(value.replace(/[$,\s]/g, ''));
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
-};
 
 type Search = (query: string, limit?: number) => TitleCandidate[];
 
@@ -173,23 +169,40 @@ export default function PayTool() {
   const equivalents = offerEquivalents(offer);
   const credits = payAttributions();
 
-  const numberField = (
+  // Yearly base pay, when it can be worked out, is what a percentage refers to.
+  const yearlyBase = offerEquivalents({ ...offer, overtimeHoursPerWeek: null }).annualBase;
+
+  const field = (
     label: string,
-    key: 'basePay' | 'guaranteedBonus' | 'variablePay' | 'hoursPerWeek' | 'weeksPerYear',
-    hint?: string
+    key: NumberKey,
+    options: { hint?: string; min?: number; max?: number; percent?: boolean } = {}
   ) => (
-    <label className="space-y-1">
-      <span className="block text-sm text-muted-foreground">{label}</span>
-      <Input
-        inputMode="decimal"
-        data-guide={`offer-${key}`}
-        value={offer[key] ?? ''}
-        onChange={(event) => changeOffer({ [key]: toNumber(event.target.value) })}
-        className="text-base"
-      />
-      {hint && <span className="block text-xs text-muted-foreground">{hint}</span>}
-    </label>
+    <AmountField
+      key={`${appId}-${key}`}
+      label={label}
+      hint={options.hint}
+      guide={`offer-${key}`}
+      value={offer[key]}
+      parse={(text) =>
+        parseAmount(text, {
+          label,
+          min: options.min,
+          max: options.max,
+          ...(options.percent ? { percentOf: yearlyBase } : {}),
+        })
+      }
+      onCommit={(value) => changeOffer({ [key]: value })}
+    />
   );
+
+  // Every application with an offer started, for the side-by-side table.
+  const compared = applications
+    .map((application) => ({ application, offer: desks.desks[application.id]?.offer }))
+    .filter(
+      (entry): entry is { application: TrackedApplication; offer: OfferWorksheet } =>
+        entry.offer !== undefined && entry.offer.basePay !== null
+    )
+    .map((entry) => ({ ...entry, figures: offerEquivalents(entry.offer) }));
 
   return (
     <div className="space-y-14">
@@ -402,7 +415,7 @@ export default function PayTool() {
 
         <div className="grid gap-8 lg:grid-cols-2">
           <div className="grid content-start gap-4 sm:grid-cols-2">
-            {numberField('Base pay', 'basePay')}
+            {field('Base pay', 'basePay', { hint: 'Write it as offered: 26, 62000 or 62k.' })}
             <label className="space-y-1">
               <span className="block text-sm text-muted-foreground">Paid</span>
               <select
@@ -421,21 +434,37 @@ export default function PayTool() {
                 ))}
               </select>
             </label>
-            {numberField('Hours a week', 'hoursPerWeek')}
-            {numberField('Weeks a year', 'weeksPerYear', 'An internship might be 10 or 12.')}
-            {numberField('Guaranteed bonus, a year', 'guaranteedBonus', 'A signing bonus counts.')}
-            {numberField(
-              'Variable pay, a year',
-              'variablePay',
-              'Commission or tips: not promised.'
-            )}
+            {field('Hours a week', 'hoursPerWeek', {
+              min: 1,
+              max: 100,
+              hint: 'The hours you expect to work, even on a salary.',
+            })}
+            {field('Weeks a year', 'weeksPerYear', {
+              min: 1,
+              max: 52,
+              hint: 'A full year is 52. A summer role might be 10 or 12.',
+            })}
+            {offer.payPeriod === 'hour' &&
+              field('Overtime each week, in hours', 'overtimeHoursPerWeek', {
+                min: 0,
+                max: 60,
+                hint: 'Counted at time and a half. Leave blank if there is none.',
+              })}
+            {field('Guaranteed bonus, a year', 'guaranteedBonus', {
+              percent: true,
+              hint: 'An amount, or a percentage of base pay such as 5%.',
+            })}
+            {field('Variable pay, a year', 'variablePay', {
+              percent: true,
+              hint: 'Commission, tips or a bonus "up to" an amount: not promised.',
+            })}
             <label className="space-y-1 sm:col-span-2">
               <span className="block text-sm text-muted-foreground">Notes</span>
               <Textarea
                 rows={3}
                 value={offer.notes}
                 onChange={(event) => changeOffer({ notes: event.target.value })}
-                placeholder="Housing stipend, transit pass, start date..."
+                placeholder="Benefits, schedule, start date, anything else that matters to you."
                 className="text-base"
               />
             </label>
@@ -468,6 +497,17 @@ export default function PayTool() {
                 </dd>
               </div>
             ))}
+            {equivalents.overtimeAnnual > 0 && (
+              <p className="pt-1 text-xs text-muted-foreground">
+                The yearly figures include {money(equivalents.overtimeAnnual, 'year')} of overtime.
+              </p>
+            )}
+            {offer.payPeriod !== null && offer.payPeriod !== 'hour' && offer.basePay !== null && (
+              <p className="pt-1 text-xs text-muted-foreground">
+                A salary usually pays the same however many hours you work, so more hours a week
+                means less an hour.
+              </p>
+            )}
             {equivalents.missing.length > 0 && offer.basePay !== null && (
               <p className="pt-1 text-xs text-muted-foreground">
                 Fill in hours and weeks to complete the blank figures.
@@ -475,7 +515,140 @@ export default function PayTool() {
             )}
           </dl>
         </div>
+
+        {compared.length > 1 && (
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold">Side by side</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[32rem] text-sm" data-testid="offer-compare">
+                <thead>
+                  <tr className="border-b border-border/40 text-left text-muted-foreground">
+                    <th scope="col" className="py-2 pr-4 font-medium">
+                      Offer
+                    </th>
+                    <th scope="col" className="py-2 pr-4 font-medium">
+                      An hour
+                    </th>
+                    <th scope="col" className="py-2 pr-4 font-medium">
+                      A year, base
+                    </th>
+                    <th scope="col" className="py-2 pr-4 font-medium">
+                      With guaranteed bonus
+                    </th>
+                    <th scope="col" className="py-2 font-medium">
+                      If variable pay comes through
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {compared.map(({ application, figures }) => (
+                    <tr key={application.id} className="border-b border-border/25 align-top">
+                      <th scope="row" className="py-2 pr-4 text-left font-normal text-foreground">
+                        {application.title}
+                        {application.company && (
+                          <span className="block text-xs text-muted-foreground">
+                            {application.company}
+                          </span>
+                        )}
+                      </th>
+                      <td className="py-2 pr-4 font-mono tabular-nums">
+                        {money(figures.hourly, 'hour')}
+                      </td>
+                      <td className="py-2 pr-4 font-mono tabular-nums">
+                        {money(figures.annualBase, 'year')}
+                      </td>
+                      <td className="py-2 pr-4 font-mono tabular-nums">
+                        {money(figures.annualGuaranteed, 'year')}
+                      </td>
+                      <td className="py-2 font-mono tabular-nums">
+                        {money(figures.annualWithVariable, 'year')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              The hourly figure divides pay by the hours you entered, so a salary with long weeks
+              shows what an hour of it is really worth.
+            </p>
+          </div>
+        )}
       </section>
+    </div>
+  );
+}
+
+type NumberKey =
+  | 'basePay'
+  | 'guaranteedBonus'
+  | 'variablePay'
+  | 'hoursPerWeek'
+  | 'weeksPerYear'
+  | 'overtimeHoursPerWeek';
+
+type AmountFieldProps = {
+  label: string;
+  hint?: string;
+  guide: string;
+  value: number | null;
+  parse: (text: string) => ParsedAmount;
+  onCommit: (value: number | null) => void;
+};
+
+/**
+ * A pay field that keeps what was typed. "62k" and "5%" are understood and
+ * shown as understood; anything else is refused with a reason, never guessed.
+ */
+function AmountField({ label, hint, guide, value, parse, onCommit }: AmountFieldProps) {
+  const [text, setText] = React.useState(value === null ? '' : String(value));
+  const [error, setError] = React.useState<string | null>(null);
+  const lastCommitted = React.useRef(value);
+  const noteId = React.useId();
+
+  // Follow changes that came from elsewhere (another application, a reload).
+  React.useEffect(() => {
+    if (value === lastCommitted.current) return;
+    lastCommitted.current = value;
+    setText(value === null ? '' : String(value));
+    setError(null);
+  }, [value]);
+
+  const change = (next: string) => {
+    setText(next);
+    const parsed = parse(next);
+    setError(parsed.ok ? null : parsed.error);
+    lastCommitted.current = parsed.value;
+    onCommit(parsed.value);
+  };
+
+  const understood =
+    !error && value !== null && text.trim() !== '' && String(value) !== text.trim();
+  const note =
+    error ??
+    (understood
+      ? `Read as ${new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(value ?? 0)}.`
+      : hint);
+
+  return (
+    <div className="space-y-1">
+      <label className="block space-y-1">
+        <span className="block text-sm text-muted-foreground">{label}</span>
+        <Input
+          inputMode="decimal"
+          data-guide={guide}
+          value={text}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={note ? noteId : undefined}
+          onChange={(event) => change(event.target.value)}
+          className="text-base"
+        />
+      </label>
+      {note && (
+        <p id={noteId} className={cn('text-xs', error ? 'text-love' : 'text-muted-foreground')}>
+          {note}
+        </p>
+      )}
     </div>
   );
 }

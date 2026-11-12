@@ -427,6 +427,7 @@ describe('pay normalization', () => {
     expect(offerEquivalents(offer)).toEqual({
       hourly: 20,
       annualBase: null,
+      overtimeAnnual: 0,
       annualGuaranteed: null,
       annualWithVariable: null,
       missing: ['weeksPerYear'],
@@ -434,6 +435,7 @@ describe('pay normalization', () => {
     expect(offerEquivalents({ ...offer, weeksPerYear: 50 })).toEqual({
       hourly: 20,
       annualBase: 40_000,
+      overtimeAnnual: 0,
       annualGuaranteed: 41_000,
       annualWithVariable: 41_500,
       missing: [],

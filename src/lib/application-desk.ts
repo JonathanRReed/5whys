@@ -129,6 +129,11 @@ export interface OfferWorksheet {
   variablePay: number | null;
   hoursPerWeek: number | null;
   weeksPerYear: number | null;
+  /**
+   * Hours a week expected beyond the regular hours, paid at time and a half.
+   * Only counted for hourly pay; a salary does not earn overtime here.
+   */
+  overtimeHoursPerWeek: number | null;
   notes: string;
   /** Where the comparison wage came from, in the student's words or the pay page's label. */
   wageSource: string;
@@ -192,6 +197,7 @@ export function createEmptyDesk(now = 0): ApplicationDesk {
       variablePay: null,
       hoursPerWeek: null,
       weeksPerYear: null,
+      overtimeHoursPerWeek: null,
       notes: '',
       wageSource: '',
       wageSourceDate: null,
@@ -342,6 +348,7 @@ export function normalizeDesk(value: unknown, now = Date.now()): ApplicationDesk
       variablePay: amount(o.variablePay),
       hoursPerWeek: amount(o.hoursPerWeek),
       weeksPerYear: amount(o.weeksPerYear),
+      overtimeHoursPerWeek: amount(o.overtimeHoursPerWeek),
       notes: text(o.notes),
       wageSource: text(o.wageSource),
       wageSourceDate: date(o.wageSourceDate),
@@ -630,6 +637,7 @@ export function updateOfferWorksheet(
       'variablePay',
       'hoursPerWeek',
       'weeksPerYear',
+      'overtimeHoursPerWeek',
     ] as const) {
       if (field in changes) offer[field] = amount(changes[field]);
     }
@@ -891,11 +899,16 @@ export function annualEquivalent(
   return weekly === null ? null : weekly * weeksPerYear;
 }
 
+/** Overtime is counted at time and a half, the usual rate for hourly work in the US. */
+export const OVERTIME_MULTIPLIER = 1.5;
+
 export interface OfferEquivalents {
   /** Base pay per hour, or null. */
   hourly: number | null;
-  /** Base pay per year, or null. */
+  /** Base pay per year including any overtime entered, or null. */
   annualBase: number | null;
+  /** The part of the yearly figure that is overtime. Zero when none applies. */
+  overtimeAnnual: number;
   /** Base plus the guaranteed bonus. Null when the base is unknown. */
   annualGuaranteed: number | null;
   /** Guaranteed pay plus variable pay if all of it were paid. Null when the base is unknown. */
@@ -912,7 +925,16 @@ export interface OfferEquivalents {
 export function offerEquivalents(offer: OfferWorksheet): OfferEquivalents {
   const { basePay, payPeriod, hoursPerWeek, weeksPerYear } = offer;
   const hourly = hourlyEquivalent(basePay, payPeriod, hoursPerWeek, weeksPerYear);
-  const annualBase = annualEquivalent(basePay, payPeriod, hoursPerWeek, weeksPerYear);
+  const regular = annualEquivalent(basePay, payPeriod, hoursPerWeek, weeksPerYear);
+  // Overtime only exists for hourly pay, at time and a half.
+  const overtimeAnnual =
+    payPeriod === 'hour' &&
+    basePay !== null &&
+    positive(offer.overtimeHoursPerWeek) &&
+    positive(weeksPerYear)
+      ? basePay * OVERTIME_MULTIPLIER * offer.overtimeHoursPerWeek * weeksPerYear
+      : 0;
+  const annualBase = regular === null ? null : regular + overtimeAnnual;
   const annualGuaranteed = annualBase === null ? null : annualBase + (offer.guaranteedBonus ?? 0);
   const annualWithVariable =
     annualGuaranteed === null ? null : annualGuaranteed + (offer.variablePay ?? 0);
@@ -924,5 +946,5 @@ export function offerEquivalents(offer: OfferWorksheet): OfferEquivalents {
   if (payPeriod === null) missing.push('payPeriod');
   if (!positive(hoursPerWeek)) missing.push('hoursPerWeek');
   if (!positive(weeksPerYear)) missing.push('weeksPerYear');
-  return { hourly, annualBase, annualGuaranteed, annualWithVariable, missing };
+  return { hourly, annualBase, overtimeAnnual, annualGuaranteed, annualWithVariable, missing };
 }

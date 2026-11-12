@@ -101,3 +101,22 @@ it('fails a letter that still has template placeholders in it', () => {
   expect(check?.passed).toBe(false);
   expect(check?.detail).toBe('Still to replace: [your proof].');
 });
+
+it('accepts a company named by its distinctive first word', () => {
+  const checks = runSendChecks({
+    letter: letter({
+      hook: 'As an operations coordinator at Northgate I would keep trucks moving.',
+    }),
+    title: 'Operations Coordinator',
+    company: 'Northgate Logistics Partners',
+    requirements: [],
+  });
+  expect(checks.find((check) => check.id === 'names')?.passed).toBe(true);
+  const generic = runSendChecks({
+    letter: letter({ hook: 'As a program assistant at the university I would help.' }),
+    title: 'Program Assistant',
+    company: 'University of Somewhere',
+    requirements: [],
+  });
+  expect(generic.find((check) => check.id === 'names')?.passed).toBe(false);
+});
