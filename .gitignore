@@ -36,3 +36,8 @@ pnpm-debug.log*
 # playwright output
 test-results/
 playwright-report/
+
+# Opt-in hosted models and verified download cache
+public/models/
+public/models.staging/
+scripts/models/.cache/

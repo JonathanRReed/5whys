@@ -4,9 +4,11 @@
     "src/scripts/reveal.ts",
     "src/scripts/theme-init.js",
     "e2e/**/*.spec.ts",
-    "src/lib/pay/index.ts"
+    "src/lib/pay/index.ts",
+    "src/lib/models/index.ts",
+    "src/lib/speech/index.ts"
   ],
-  "project": ["src/**", "tests/**", "e2e/**", "scripts/pay-data/**/*.ts"],
+  "project": ["src/**", "tests/**", "e2e/**", "scripts/pay-data/**/*.ts", "scripts/models/**"],
   "ignoreDependencies": ["@fontsource/fraunces", "@fontsource/inter"],
   "ignoreExportsUsedInFile": true,
   "ignore": ["src/components/ui/**"]
