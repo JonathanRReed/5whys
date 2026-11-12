@@ -14,7 +14,13 @@ import { Button } from '../ui/button';
 import type { DeskState } from './useDesk';
 
 /** A bullet with the rest of its wrapped lines joined on. */
-type Bullet = { id: string; text: string; requirements: string[] };
+type Bullet = {
+  id: string;
+  text: string;
+  /** The line as the resume has it, reduced to its words. */
+  key: string;
+  requirements: string[];
+};
 
 function bulletsOf(doc: ResumeDoc): { id: string; text: string }[] {
   const byId = new Map(doc.lines.map((line) => [line.id, line]));
@@ -58,6 +64,29 @@ export function sameResume(doc: ResumeDoc, resumeText: string): boolean {
   if (bullets.length === 0) return true;
   const found = bullets.filter((start) => text.includes(start)).length;
   return found * 2 >= bullets.length;
+}
+
+/**
+ * Which bullets a saved choice covers in the resume as it is now. The choice
+ * is matched on the bullets' words, because line ids are positions and stop
+ * naming the same bullets once the resume is edited. If none of the chosen
+ * bullets is in the resume any more, it is a different resume and nothing
+ * has been chosen for it yet, so every bullet is included.
+ */
+export function selectedIds(
+  bullets: readonly { id: string; key: string }[],
+  saved: { bulletIds: string[]; bulletTexts?: string[] } | null
+): string[] {
+  const all = bullets.map((b) => b.id);
+  if (!saved) return all;
+  if (!saved.bulletTexts) {
+    const known = new Set(all);
+    return saved.bulletIds.filter((id) => known.has(id));
+  }
+  if (saved.bulletTexts.length === 0) return [];
+  const keys = new Set(saved.bulletTexts);
+  const matched = bullets.filter((b) => keys.has(b.key)).map((b) => b.id);
+  return matched.length > 0 ? matched : all;
 }
 
 /**
@@ -112,6 +141,7 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
     const reworded = new Map(rewrites.map((r) => [wordsOf(r.original), r.improved.trim()]));
     return bulletsOf(doc).map((bullet) => ({
       ...bullet,
+      key: wordsOf(bullet.text),
       text: reworded.get(wordsOf(bullet.text)) ?? bullet.text,
       requirements: terms
         .filter((entry) => findTermMatches(entry.terms, bullet.text).length > 0)
@@ -142,13 +172,21 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
     );
   }
 
-  const saved = desk.desk.resumeSelection?.bulletIds ?? null;
   const known = new Set(bullets.map((b) => b.id));
-  const selected = new Set(saved ? saved.filter((id) => known.has(id)) : bullets.map((b) => b.id));
+  const selected = new Set(selectedIds(bullets, desk.desk.resumeSelection));
   const matching = bullets.filter((b) => b.requirements.length > 0);
 
-  const choose = (ids: string[] | null) =>
-    changeDesks((data) => setResumeSelection(data, appId, ids));
+  const choose = (ids: string[] | null) => {
+    const chosen = ids && new Set(ids);
+    changeDesks((data) =>
+      setResumeSelection(
+        data,
+        appId,
+        ids,
+        chosen ? bullets.filter((b) => chosen.has(b.id)).map((b) => b.key) : undefined
+      )
+    );
+  };
   const toggle = (id: string, on: boolean) => {
     const next = new Set(selected);
     if (on) next.add(id);

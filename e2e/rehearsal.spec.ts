@@ -1,6 +1,10 @@
 import { expect, test } from '@playwright/test';
 import { waitForHydration } from './helpers';
 
+// One recording at a time. Several fake microphones opening at once on a busy
+// machine made the recorder slow to start, and these tests timed out together.
+test.describe.configure({ mode: 'serial' });
+
 // A fake microphone, so recording can be tested without a real device.
 test.use({
   permissions: ['microphone'],

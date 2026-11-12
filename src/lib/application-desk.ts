@@ -148,6 +148,12 @@ export interface OfferWorksheet {
 /** Which master-resume bullets to include when exporting for this role. */
 export interface ResumeSelection {
   bulletIds: string[];
+  /**
+   * The chosen bullets by their words. Line ids are positions in the resume,
+   * so they stop meaning the same bullets once the resume is edited; the
+   * words still do. Absent on selections saved before this was recorded.
+   */
+  bulletTexts?: string[];
   updatedAt: number;
 }
 
@@ -367,6 +373,17 @@ export function normalizeDesk(value: unknown, now = Date.now()): ApplicationDesk
           )
         ),
       ],
+      ...(Array.isArray(value.resumeSelection.bulletTexts)
+        ? {
+            bulletTexts: [
+              ...new Set(
+                value.resumeSelection.bulletTexts.filter(
+                  (entry): entry is string => typeof entry === 'string' && !!entry
+                )
+              ),
+            ],
+          }
+        : {}),
       updatedAt: time(value.resumeSelection.updatedAt, now),
     };
   }
@@ -660,7 +677,9 @@ export function updateOfferWorksheet(
 export function setResumeSelection(
   data: ApplicationDeskData,
   applicationId: string,
-  bulletIds: string[] | null
+  bulletIds: string[] | null,
+  /** The same bullets by their words, so the choice survives an edited resume. */
+  bulletTexts?: string[]
 ): ApplicationDeskData {
   return updateDesk(data, applicationId, (desk) => ({
     ...desk,
@@ -669,6 +688,9 @@ export function setResumeSelection(
         ? null
         : {
             bulletIds: [...new Set(bulletIds.filter((id) => typeof id === 'string' && !!id))],
+            ...(bulletTexts
+              ? { bulletTexts: [...new Set(bulletTexts.filter((entry) => !!entry))] }
+              : {}),
             updatedAt: Date.now(),
           },
   }));

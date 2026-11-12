@@ -139,3 +139,35 @@ describe('review fixes', () => {
     expect(datesIn('Intern 05/2024 to 08/2024').map((d) => d.text)).toEqual(['05/2024', '08/2024']);
   });
 });
+
+describe('a saved bullet choice and an edited resume', () => {
+  it('follows the bullets by their words, not their positions', async () => {
+    const { selectedIds } = await import('../src/components/application-desk/ResumeStation');
+    const before = [
+      { id: 'text:2', key: 'posted three times a week' },
+      { id: 'text:3', key: 'grew the account' },
+    ];
+    const saved = { bulletIds: ['text:3'], bulletTexts: ['grew the account'] };
+    expect(selectedIds(before, saved)).toEqual(['text:3']);
+    // A line was added above: the same bullets now sit at other positions.
+    const after = [
+      { id: 'text:3', key: 'posted three times a week' },
+      { id: 'text:4', key: 'grew the account' },
+    ];
+    expect(selectedIds(after, saved)).toEqual(['text:4']);
+    // A different resume: nothing chosen for it yet, so everything is in.
+    const other = [{ id: 'text:2', key: 'ran the evening shift' }];
+    expect(selectedIds(other, saved)).toEqual(['text:2']);
+    expect(selectedIds(after, { bulletIds: [], bulletTexts: [] })).toEqual([]);
+    expect(selectedIds(after, null)).toEqual(['text:3', 'text:4']);
+  });
+
+  it('reads a job at a university as work, not schooling', async () => {
+    const { findRequirementEvidence } = await import('../src/lib/posting');
+    const resume = `Sam Lee\nsam@example.edu\n\nEXPERIENCE\nLibrary Assistant, State University | Jan 2024 - Dec 2025\n- Shelved returns and helped visitors find books`;
+    const city = resume.replace('State University', 'City Library');
+    const a = findRequirementEvidence('1 year of library experience', resume);
+    const b = findRequirementEvidence('1 year of library experience', city);
+    expect(a.state).toBe(b.state);
+  });
+});

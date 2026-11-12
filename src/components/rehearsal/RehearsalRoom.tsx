@@ -61,7 +61,10 @@ export default function RehearsalRoom() {
   const [typed, setTyped] = React.useState('');
   const [take, setTake] = React.useState<Take | null>(null);
   const [transcribing, setTranscribing] = React.useState(false);
-  const [kept, setKept] = React.useState(false);
+  // The audio that was saved. Tied to one take, so a save that finishes after
+  // the visitor has moved on cannot mark the next answer as kept.
+  const [keptAudio, setKeptAudio] = React.useState<RecordedAudio | null>(null);
+  const kept = Boolean(take?.audio && take.audio === keptAudio);
   // Kept for the visit, not saved: the choice applies to every answer until the page closes.
   const [countDelivery, setCountDelivery] = React.useState(true);
   const [answered, setAnswered] = React.useState(0);
@@ -217,7 +220,7 @@ export default function RehearsalRoom() {
       setIndex(next);
       setTake(null);
       setTyped('');
-      setKept(false);
+      setKeptAudio(null);
       setElapsed(0);
       setNotice(null);
       setShowStory(false);
@@ -371,6 +374,7 @@ export default function RehearsalRoom() {
 
   const keep = async () => {
     if (!take?.audio) return;
+    const saving = take.audio;
     const { saveRecording } = await loadFeature(import('../../lib/local-db'));
     const result = await saveRecording({
       tool: 'interview-glow-up',
@@ -380,7 +384,7 @@ export default function RehearsalRoom() {
       mimeType: take.audio.mimeType,
       transcript: take.text,
     });
-    if (result.ok) setKept(true);
+    if (result.ok) setKeptAudio(saving);
     else setNotice(result.message);
   };
 

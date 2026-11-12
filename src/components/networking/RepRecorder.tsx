@@ -23,7 +23,9 @@ export default function RepRecorder({ label }: Props) {
   const [elapsed, setElapsed] = React.useState(0);
   const [level, setLevel] = React.useState(0);
   const [take, setTake] = React.useState<RecordedAudio | null>(null);
-  const [kept, setKept] = React.useState(false);
+  // The take that was saved, so a save finishing after a new recording cannot mark it kept.
+  const [keptTake, setKeptTake] = React.useState<typeof take>(null);
+  const kept = Boolean(take && take === keptTake);
   const [notice, setNotice] = React.useState<string | null>(null);
   const recorder = React.useRef<SpeechRecorder | null>(null);
   const starting = React.useRef(false);
@@ -62,7 +64,7 @@ export default function RepRecorder({ label }: Props) {
     starting.current = true;
     setNotice(null);
     setTake(null);
-    setKept(false);
+    setKeptTake(null);
     try {
       const { createRecorder } = await loadFeature(import('../../lib/speech'));
       recorder.current = createRecorder({ onLevel: setLevel });
@@ -98,6 +100,7 @@ export default function RepRecorder({ label }: Props) {
 
   const keep = async () => {
     if (!take) return;
+    const saving = take;
     const { saveRecording } = await loadFeature(import('../../lib/local-db'));
     const result = await saveRecording({
       tool: 'networking-practice',
@@ -106,7 +109,7 @@ export default function RepRecorder({ label }: Props) {
       audio: take.blob,
       mimeType: take.mimeType,
     });
-    if (result.ok) setKept(true);
+    if (result.ok) setKeptTake(saving);
     else setNotice(result.message);
   };
 
@@ -174,7 +177,7 @@ export default function RepRecorder({ label }: Props) {
       <p role="status" className="min-h-5 text-sm text-foreground">
         {notice}
       </p>
-      <SavedRecordings tool="networking-practice" refresh={kept} />
+      <SavedRecordings tool="networking-practice" refresh={keptTake} />
     </section>
   );
 }

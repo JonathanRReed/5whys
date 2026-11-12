@@ -274,9 +274,14 @@ function classifyLine(
   const words = wordCount(line);
   const action = startsWithAction(line);
   if (!action && words <= 14 && (DATE_RANGE.test(line) || (ANY_DATE.test(line) && words <= 10))) {
-    return EDUCATION.test(line) ? 'education' : 'title';
+    // "Library Assistant, State University | Jan 2024 - Dec 2025" is a job:
+    // under Experience, or with a job title in it, the employer's name does
+    // not make it schooling.
+    const job = section === 'experience' || JOB_TITLE_WORDS.test(line);
+    return EDUCATION.test(line) && !job ? 'education' : 'title';
   }
-  if (!action && EDUCATION.test(line) && words <= 14) return 'education';
+  if (!action && EDUCATION.test(line) && words <= 14 && section !== 'experience')
+    return 'education';
   if (
     !action &&
     words <= 12 &&
