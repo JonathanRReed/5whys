@@ -335,6 +335,11 @@ Known limits to raise with the owner or fix next:
 
 Suite after merge and fix: 1014 unit, 88 browser.
 
+### Rule for the lead: never chain a commit after a test run with `;`
+
+Twice a commit went out with failing browser tests because the commit was
+chained unconditionally. Run the suite, read the result, then commit.
+
 ## In flight (builders, started 2026-11-12)
 
 | Piece | Model | Paths |
