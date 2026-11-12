@@ -131,7 +131,7 @@ export function highlightResume(text: string) {
       if (token.type === 'newline') return '\n';
       const escaped = escapeHtml(token.text);
       if (token.type === 'number') {
-        return `<mark class="bg-primary/30 text-primary-foreground px-1 rounded">${escaped}</mark>`;
+        return `<mark class="bg-primary/25 text-foreground font-semibold underline decoration-primary decoration-2 underline-offset-2 px-1 rounded">${escaped}</mark>`;
       }
       if (token.type === 'verb') {
         return `<mark class="bg-love/30 text-foreground px-1 rounded">${escaped}</mark>`;

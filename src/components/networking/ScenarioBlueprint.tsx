@@ -65,7 +65,7 @@ export default function ScenarioBlueprint({ currentScenario, scenarioSteps, time
                       ? 'bg-foam/15 text-foam ring-1 ring-foam/40'
                       : isPast
                         ? 'bg-overlay/30 text-muted-foreground'
-                        : 'bg-overlay/20 text-muted-foreground/70'
+                        : 'bg-overlay/20 text-muted-foreground'
                   }`}
                   aria-current={isActive ? 'step' : undefined}
                 >

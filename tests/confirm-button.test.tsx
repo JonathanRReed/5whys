@@ -21,7 +21,7 @@ it('executes only on the second press and disarms afterward', () => {
   expect(screen.getByRole('button', { name: 'Delete' })).toBeVisible();
 });
 
-it.each(['Escape', 'blur', 'timeout'])('cancels armed deletion on %s', (cancel) => {
+it.each(['Escape', 'blur'])('cancels armed deletion on %s', (cancel) => {
   vi.useFakeTimers();
   const onConfirm = vi.fn();
   render(
@@ -59,4 +59,19 @@ it('updates accessible name (aria-label) when armed if aria-label prop was provi
   fireEvent.click(button);
   expect(screen.getByRole('button', { name: 'Delete for good?' })).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Delete story: API redesign' })).toBeNull();
+});
+
+it('stays armed with no timer, so nobody is raced into confirming', () => {
+  vi.useFakeTimers();
+  const onConfirm = vi.fn();
+  render(
+    <ConfirmButton confirmLabel="Delete snapshot?" onConfirm={onConfirm}>
+      Delete
+    </ConfirmButton>
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+  act(() => vi.advanceTimersByTime(60_000));
+  fireEvent.click(screen.getByRole('button', { name: 'Delete snapshot?' }));
+  expect(onConfirm).toHaveBeenCalledOnce();
+  vi.useRealTimers();
 });

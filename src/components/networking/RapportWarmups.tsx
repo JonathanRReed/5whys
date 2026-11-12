@@ -86,7 +86,7 @@ export default function RapportWarmups({ rapportSamples, scenarioId, onCopy, cop
           <p className="text-sm text-muted-foreground">Drop your favorite opener ideas here.</p>
         )}
         {rapportSamples.length > 0 && (
-          <p className="text-xs text-muted-foreground/70">
+          <p className="text-xs text-muted-foreground">
             Your custom audience and goal appear in the practice guidance. Preset examples remain
             fictional; adapt them to what is true for you.
           </p>

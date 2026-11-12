@@ -38,9 +38,9 @@ export default function UpdateNotice() {
   return (
     <div
       role="status"
-      className="fixed inset-x-3 top-20 z-40 mx-auto flex max-w-xl flex-wrap items-center justify-between gap-3 rounded-xl bg-popover px-4 py-3 text-sm text-popover-foreground shadow-[0_28px_70px_-32px_hsl(var(--background))] ring-1 ring-border/50 print:hidden"
+      className="fixed inset-x-3 top-20 z-40 mx-auto flex max-w-xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-xl bg-popover px-4 py-3 text-sm text-popover-foreground shadow-[0_28px_70px_-32px_hsl(var(--background))] ring-1 ring-border/50 print:hidden"
     >
-      <p className="min-w-0 flex-1">
+      <p className="min-w-0 sm:flex-1">
         A new version of the studio is ready. Your saved work stays as it is.
       </p>
       <div className="flex gap-2">

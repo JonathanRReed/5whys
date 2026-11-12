@@ -447,7 +447,7 @@
     --overlay: 150 7% 14%;
     --popover: 152 8% 11%;
     --popover-foreground: 75 11% 91%;
-    --primary: 150 44% 42%;
+    --primary: 150 44% 46%;
     --primary-foreground: 150 40% 7%;
     --secondary: 150 7% 17%;
     --secondary-foreground: 75 11% 91%;
@@ -455,13 +455,13 @@
     --muted-foreground: 100 8% 72%;
     --accent: 40 54% 56%;
     --accent-foreground: 40 45% 9%;
-    --destructive: 6 58% 56%;
+    --destructive: 6 62% 64%;
     --destructive-foreground: 60 12% 96%;
     --love: 14 56% 57%;
     --gold: 40 56% 57%;
     --rose: 14 44% 67%;
     --pine: 150 42% 34%;
-    --foam: 150 48% 45%;
+    --foam: 150 46% 50%;
     --iris: 286 24% 65%;
     /* Plates V and VI: a lichen yellow-green and a madder red, both from the
        same dyed-earth family as brass and terracotta. */
@@ -469,7 +469,10 @@
     --madder: 346 40% 68%;
     --border: 150 7% 22%;
     --input: 150 7% 22%;
-    --ring: 150 48% 45%;
+    --ring: 150 46% 55%;
+    /* The edge of a text field. A boundary a low-vision reader has to find,
+       so it meets 3:1 against the page, unlike decorative hairlines. */
+    --field-border: 150 8% 42%;
     --radius: 0.5rem;
     --logo-stop-1: color-mix(in srgb, #3f9f78 54%, transparent);
     --logo-stop-2: color-mix(in srgb, #cda24c 48%, transparent);
@@ -495,7 +498,7 @@
     --overlay: 48 24% 90%;
     --popover: 50 40% 98%;
     --popover-foreground: 150 14% 15%;
-    --primary: 150 50% 26%;
+    --primary: 150 52% 23%;
     --primary-foreground: 50 40% 97%;
     --secondary: 48 22% 91%;
     --secondary-foreground: 150 14% 15%;
@@ -515,7 +518,8 @@
     --madder: 346 46% 38%;
     --border: 48 20% 80%;
     --input: 48 20% 80%;
-    --ring: 150 50% 26%;
+    --ring: 150 52% 23%;
+    --field-border: 48 12% 46%;
     --logo-stop-1: color-mix(in srgb, #2c7a57 40%, transparent);
     --logo-stop-2: color-mix(in srgb, #9a7b27 30%, transparent);
     --logo-stop-3: color-mix(in srgb, #fbfaf3 65%, transparent);
@@ -536,7 +540,7 @@
     background-color: hsl(var(--background));
     /* clip, not hidden: hidden would turn <html> into a scroll container */
     overflow-x: clip;
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
   }
 
   body {
@@ -688,7 +692,7 @@
   transform-origin: center;
   animation:
     fg-rise 0.6s ease forwards,
-    fg-glow 3.4s ease-in-out 2.4s infinite;
+    fg-glow 3.4s ease-in-out 2.4s 3;
   animation-delay: 1.9s, 2.4s;
 }
 
@@ -1146,5 +1150,99 @@ input[type="range"]::-moz-range-thumb {
      scroll-to-top button would sit on top of its controls. */
   body:has(aside[aria-label="Guide"]) button[aria-label="Scroll to top"] {
     display: none;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   Access floor, measured in the relaunch walkthrough.
+   ---------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Reduced motion means no movement at all, including the small things:
+   header padding, chevrons, colour fades, anything a library animates. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Text fields: an edge that can be found. Unlayered so it holds wherever a
+   component set a fainter hairline. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+textarea,
+select {
+  border-color: hsl(var(--field-border));
+}
+
+input[aria-invalid="true"],
+textarea[aria-invalid="true"],
+select[aria-invalid="true"] {
+  border-color: hsl(var(--destructive));
+}
+
+/* Focus: one ring, full strength, clear of the control so it shows on filled
+   buttons as well as on the page. */
+:where(
+  a,
+  button,
+  input,
+  textarea,
+  select,
+  summary,
+  [tabindex],
+  [role="tab"],
+  [role="radio"]
+):focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Windows High Contrast and other forced-colour modes drop backgrounds and
+   shadows, so state has to be carried by borders and outlines. */
+@media (forced-colors: active) {
+  button,
+  [role="tab"],
+  .peer + span,
+  select,
+  input,
+  textarea {
+    border: 1px solid ButtonText;
+  }
+
+  .peer:checked + span,
+  [aria-pressed="true"],
+  [aria-current="page"],
+  [data-state="active"],
+  [data-state="on"],
+  [data-guide-active] {
+    outline: 3px solid Highlight;
+    outline-offset: 1px;
+  }
+
+  :focus-visible {
+    outline: 3px solid Highlight !important;
+    outline-offset: 2px;
+  }
+
+  mark {
+    forced-color-adjust: none;
+    background: Mark;
+    color: MarkText;
+  }
+
+  aside[aria-label="Guide"],
+  [role="dialog"],
+  [role="status"].fixed {
+    border: 2px solid CanvasText;
   }
 }

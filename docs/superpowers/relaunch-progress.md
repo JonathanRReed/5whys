@@ -278,6 +278,34 @@ Left from that builder's notes:
 - Resume and machine-view browser flows run close to the time limit under
   load; rerun alone before treating a timeout as a failure.
 
+### Accessibility report (in: `stories/access.md`, 37 findings, tested at b8fae31)
+
+Already fixed before it reported: 1 (coach under the footer), 6 and 7 (coach
+announcements, focus, covering its target), 24 (guide bar one word wide), 31
+(scroll-to-top overlap).
+
+Fixed by the lead now: field borders at 3:1 (`--field-border`); one strong
+focus ring everywhere; Night primary, foam and destructive lightened and
+Dawn primary darkened so button text and tinted text reach 4.5:1; resume
+number highlights readable and underlined (not colour alone); faded small
+text in Networking at full contrast; reduced motion stops every transition
+and smooth scroll; the homepage glow no longer loops forever; forced-colours
+block for selected states, focus and edges; ConfirmButton no longer disarms
+on a 4-second timer; update notice and phone menu stack correctly.
+
+Still to do (one builder after the posting and interview builders merge):
+2, 3, 30 (interview workspace tab bar overlap, question field off screen at
+320, skill labels cut off); 4, 16 (large text: menu, coach and Aa panel off
+screen); 5, 20 (focus drops to body after main actions; results not
+announced: desk, workspace, pay, resume game); 12 (highlight categories by
+colour only on the posting specimen); 14, 15 (clipping at 320); 17 (phone
+menu stays open while Tab leaves it); 18 (invisible Tab stop on dashboard);
+19 (Five Whys track not exposed); 21 (names and required fields); 22
+(targets under 24px); 25 done; 27 (coach first in Tab order); 28 (identical
+names); 29 (headings and landmarks); 33 (collapsed coach title cut off in
+OpenDyslexic); 35 (Rep length arrow keys); 37; faded text in the three Glow
+Up files.
+
 ## In flight (builders, started 2026-11-12)
 
 | Piece | Model | Paths |

@@ -124,7 +124,7 @@ it('requires a new confirmation for every clear without overriding the armed sty
   }
 });
 
-it.each(['Escape', 'blur', 'timeout'])(
+it.each(['Escape', 'blur'])(
   'keeps resume and scores when Clear is interrupted by %s',
   (interruption) => {
     render(<ResumeGame />);

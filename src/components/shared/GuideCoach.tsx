@@ -180,7 +180,7 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
   return (
     <>
       <div
-        className="mx-auto flex w-full max-w-6xl flex-col gap-3 rounded-xl border border-border/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+        className="mx-auto mb-10 flex w-full max-w-6xl flex-col gap-3 rounded-xl border border-border/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
         data-guide-bar
       >
         <p className="min-w-0 text-sm text-muted-foreground sm:flex-1">

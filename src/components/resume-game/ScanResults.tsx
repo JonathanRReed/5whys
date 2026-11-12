@@ -21,7 +21,10 @@ function renderToken(token: HighlightToken, index: number) {
   }
   if (token.type === 'number') {
     return (
-      <mark key={index} className="rounded bg-primary/30 px-1 text-primary-foreground">
+      <mark
+        key={index}
+        className="rounded bg-primary/25 px-1 font-semibold text-foreground underline decoration-primary decoration-2 underline-offset-2"
+      >
         {token.text}
       </mark>
     );
@@ -81,7 +84,9 @@ export default function ScanResults({
         <CardContent>
           <div className="mb-3 flex items-center gap-4 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
-              <mark className="rounded bg-primary/30 px-1 text-primary-foreground">Numbers</mark>
+              <mark className="rounded bg-primary/25 px-1 font-semibold text-foreground underline decoration-primary decoration-2 underline-offset-2">
+                Numbers
+              </mark>
             </span>
             <span className="inline-flex items-center gap-1.5">
               <mark className="rounded bg-love/30 px-1 text-foreground">Action verbs</mark>

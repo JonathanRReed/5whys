@@ -102,7 +102,7 @@ export default function QuestionPrompts({
           <p className="text-sm text-muted-foreground">Document your go-to questions.</p>
         )}
         {questionTemplates.length > 0 && (
-          <p className="text-xs text-muted-foreground/70">
+          <p className="text-xs text-muted-foreground">
             Your custom audience and goal appear in the practice guidance. Preset examples remain
             fictional; adapt them to what is true for you.
           </p>

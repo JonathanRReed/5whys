@@ -88,7 +88,7 @@ export default function ConversationIngredients({ currentScenario, onCopy, copie
                 </div>
               );
             })}
-            <p className="text-xs text-muted-foreground/70">
+            <p className="text-xs text-muted-foreground">
               No achievements to cite? Look for the honest lines: preparation, curiosity, and
               specific interest in the other person's work all count as value.
             </p>

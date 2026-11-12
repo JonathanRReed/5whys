@@ -73,7 +73,7 @@ export default function IntroDraft({ draft, onDraftChange }: Props) {
             className="min-h-[180px] bg-overlay/30 border-border/60 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-foam"
           />
         </div>
-        <p className="text-xs text-muted-foreground/80">
+        <p className="text-xs text-muted-foreground">
           Your draft saves as you type, and every rep you save keeps a copy, so the history shows
           how the intro changes. If a line only works with someone else's achievements in it, cut
           it.

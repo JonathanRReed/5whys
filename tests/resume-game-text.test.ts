@@ -124,10 +124,10 @@ describe('highlightResume', () => {
     const text = 'Increased sales by 50% across 3 departments.';
     const highlighted = highlightResume(text);
     expect(highlighted).toContain(
-      '<mark class="bg-primary/30 text-primary-foreground px-1 rounded">50%</mark>'
+      '<mark class="bg-primary/25 text-foreground font-semibold underline decoration-primary decoration-2 underline-offset-2 px-1 rounded">50%</mark>'
     );
     expect(highlighted).toContain(
-      '<mark class="bg-primary/30 text-primary-foreground px-1 rounded">3</mark>'
+      '<mark class="bg-primary/25 text-foreground font-semibold underline decoration-primary decoration-2 underline-offset-2 px-1 rounded">3</mark>'
     );
   });
 
