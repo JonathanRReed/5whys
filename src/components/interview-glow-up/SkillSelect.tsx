@@ -19,6 +19,10 @@ type Props = {
   placeholder: string;
   id?: string;
   'aria-label'?: string;
+  /** A field the form cannot be saved without. */
+  required?: boolean;
+  /** Id of a sentence that explains what is missing. */
+  'aria-describedby'?: string;
   className?: string;
   /** Skill ids to leave out, e.g. ones already tagged on this story. */
   exclude?: string[];
@@ -54,6 +58,8 @@ export default function SkillSelect({
   placeholder,
   id,
   'aria-label': ariaLabel,
+  required = false,
+  'aria-describedby': describedBy,
   className,
   exclude = [],
   resetAfterSelect = false,
@@ -86,6 +92,8 @@ export default function SkillSelect({
       <SelectTrigger
         id={id}
         aria-label={ariaLabel}
+        aria-required={required || undefined}
+        aria-describedby={describedBy}
         className={cn('border-border/50 bg-overlay/30', className)}
       >
         <SelectValue placeholder={placeholder}>

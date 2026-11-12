@@ -54,7 +54,11 @@ it('still scrolls when no main landmark is present', () => {
 it('links compact tools trigger button to its dropdown container via aria-controls', () => {
   render(<Navigation currentPath="/" />);
   const [compactToolsBtn] = screen.getAllByRole('button', { name: /tools/i });
+  // Only while the menu exists: a reference to a missing id helps no one.
+  expect(compactToolsBtn).not.toHaveAttribute('aria-controls');
+  fireEvent.click(compactToolsBtn);
   expect(compactToolsBtn).toHaveAttribute('aria-controls', 'compact-tools-menu');
+  expect(document.getElementById('compact-tools-menu')).not.toBeNull();
 });
 
 it('closes open compact tools menu when Escape key is pressed', () => {
@@ -171,7 +175,7 @@ it('dismisses compact tools when focus moves backward to its neighboring Dashboa
 it('dismisses compact tools when focus leaves the last link for the display settings button', () => {
   const { container } = render(<Navigation currentPath="/" />);
   const trigger = screen.getAllByRole('button', { name: /tools/i })[0];
-  const themeToggle = screen.getByRole('button', { name: 'Display settings' });
+  const themeToggle = screen.getByRole('button', { name: 'Aa, display settings' });
   fireEvent.click(trigger);
   const menu = container.querySelector('#compact-tools-menu');
   if (!menu) throw new Error('Expected compact tools menu');

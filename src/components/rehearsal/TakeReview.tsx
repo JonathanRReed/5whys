@@ -105,7 +105,13 @@ export default function TakeReview({
     <div className="space-y-8">
       <div className="space-y-2">
         <p className="text-sm text-muted-foreground">You were asked</p>
-        <h2 className="text-2xl font-semibold leading-snug">{take.question}</h2>
+        <h2
+          id="rehearsal-review-heading"
+          tabIndex={-1}
+          className="text-2xl font-semibold leading-snug focus-visible:outline-hidden"
+        >
+          {take.question}
+        </h2>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)]">

@@ -24,6 +24,7 @@ import {
   updateStory,
 } from '../../lib/glowup-store';
 import { cn } from '../../lib/utils';
+import Announcer, { useAnnouncer } from '../shared/Announcer';
 import { LightbulbIcon, PencilIcon, WarningIcon, XIcon } from './icons';
 import SkillSelect from './SkillSelect';
 
@@ -72,10 +73,18 @@ export default function StoriesSection({
   const [formData, setFormData] = React.useState<Partial<Story>>({});
   const [customQuestion, setCustomQuestion] = React.useState('');
   const [showGeneralQuestions, setShowGeneralQuestions] = React.useState(false);
+  const [announcement, announce] = useAnnouncer();
+  // Where focus goes when the editor opens or closes: the editor's heading, or
+  // back to the start of the list it replaced.
+  const editorHeadingRef = React.useRef<HTMLHeadingElement>(null);
+  const newStoryRef = React.useRef<HTMLButtonElement>(null);
+  const focusAfterRender = (target: React.RefObject<HTMLElement | null>) =>
+    window.requestAnimationFrame(() => target.current?.focus());
 
   const recentStories = [...data.stories].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 6);
 
   const startNew = (skillId?: string) => {
+    focusAfterRender(editorHeadingRef);
     setEditingId('new');
     setCustomQuestion('');
     setShowGeneralQuestions(false);
@@ -113,15 +122,21 @@ export default function StoriesSection({
     } else if (editingId) {
       setData(updateStory(data, editingId, payload));
     }
+    announce(
+      editingId === 'new' && currentPacket ? 'Story saved and added to the packet.' : 'Story saved.'
+    );
+    focusAfterRender(newStoryRef);
     setEditingId(null);
     setFormData({});
   };
 
   const cancelEdit = () => {
+    focusAfterRender(newStoryRef);
     setEditingId(null);
     setFormData({});
   };
 
+  const canSave = Boolean(formData.primarySkillId && formData.play);
   const playSentences = (formData.play ?? '').split(/[.!?]+/).filter((s) => s.trim()).length;
   const hasNumbers = /[$%#0-9]/.test(formData.proof ?? '');
   const topGaps = currentRole ? getTopGaps(data, currentRole.bullets) : [];
@@ -177,9 +192,11 @@ export default function StoriesSection({
 
   return (
     <div className="space-y-6">
+      <Announcer message={announcement} />
       {!editingId && (
         <div className="flex flex-wrap items-center gap-3" data-guide="stories-start">
           <button
+            ref={newStoryRef}
             type="button"
             onClick={() => startNew()}
             className="rounded-lg bg-foam px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-foam/90 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
@@ -194,6 +211,7 @@ export default function StoriesSection({
                   key={skillId}
                   type="button"
                   onClick={() => startNew(skillId)}
+                  aria-label={`Start a story for ${getSkillName(skillId)}`}
                   className="rounded-full border border-destructive/30 bg-destructive/8 px-3 py-1 text-sm text-destructive hover:bg-destructive/15 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
                 >
                   {getSkillName(skillId)}
@@ -207,9 +225,13 @@ export default function StoriesSection({
       {editingId && (
         <div className="space-y-4 rounded-xl border border-foam/30 bg-foam/5 p-5">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-foreground">
+            <h2
+              ref={editorHeadingRef}
+              tabIndex={-1}
+              className="text-lg font-semibold text-foreground focus-visible:outline-hidden"
+            >
               {editingId === 'new' ? 'New story' : 'Edit story'}
-            </h3>
+            </h2>
             <button
               type="button"
               onClick={cancelEdit}
@@ -319,10 +341,13 @@ export default function StoriesSection({
                 htmlFor="story-primary-skill"
                 className="mb-1 block text-sm font-medium text-foreground"
               >
-                Primary skill *
+                Primary skill <span aria-hidden="true">*</span>
+                <span className="sr-only">(required)</span>
               </label>
               <SkillSelect
                 id="story-primary-skill"
+                required
+                aria-describedby={canSave ? undefined : 'story-save-missing'}
                 value={formData.primarySkillId ?? null}
                 onChange={(skillId) => setFormData({ ...formData, primarySkillId: skillId ?? '' })}
                 placeholder="Select skill..."
@@ -398,7 +423,7 @@ export default function StoriesSection({
                         ),
                       })
                     }
-                    className="text-foam/70 hover:text-foam"
+                    className="inline-flex min-h-6 min-w-6 items-center justify-center text-foam hover:text-foreground"
                   >
                     &times;
                   </button>
@@ -482,7 +507,10 @@ export default function StoriesSection({
               htmlFor="story-play"
               className="mb-1 flex items-center justify-between text-sm font-medium text-foreground"
             >
-              <span>Play: what you did *</span>
+              <span>
+                Play: what you did <span aria-hidden="true">*</span>
+                <span className="sr-only">(required)</span>
+              </span>
               {playSentences > 4 && (
                 <span className="flex items-center gap-1 text-xs text-gold">
                   <WarningIcon className="h-3 w-3" />
@@ -495,6 +523,8 @@ export default function StoriesSection({
             </p>
             <textarea
               id="story-play"
+              required
+              aria-describedby={canSave ? undefined : 'story-save-missing'}
               value={formData.play ?? ''}
               onChange={(e) => setFormData({ ...formData, play: e.target.value })}
               placeholder="What was the challenge? What exactly did you do?"
@@ -531,7 +561,7 @@ export default function StoriesSection({
           </div>
 
           <div className="space-y-2 rounded-lg border border-border/40 bg-overlay/15 p-4">
-            <h4 className="text-sm font-medium text-foreground">Questions this story answers</h4>
+            <h3 className="text-sm font-medium text-foreground">Questions this story answers</h3>
             <p className="text-xs text-muted-foreground">
               Attach the interview questions you would answer with this story. They show up in the
               packet and on the HUD, the one-screen cheat sheet for the call, so you practice from
@@ -550,7 +580,7 @@ export default function StoriesSection({
                       type="button"
                       aria-label={`Detach question: ${resolveQuestionText(idOrText)}`}
                       onClick={() => detachQuestion(idOrText)}
-                      className="text-muted-foreground hover:text-destructive"
+                      className="inline-flex min-h-6 min-w-6 items-center justify-center text-muted-foreground hover:text-destructive"
                     >
                       &times;
                     </button>
@@ -610,7 +640,7 @@ export default function StoriesSection({
               </div>
             )}
 
-            <div className="flex gap-2 pt-1">
+            <div className="flex flex-wrap gap-2 pt-1">
               <input
                 type="text"
                 aria-label="Add your own interview question"
@@ -624,7 +654,7 @@ export default function StoriesSection({
                   }
                 }}
                 placeholder="Add your own question..."
-                className="flex-1 rounded-lg border border-border/50 bg-overlay/30 px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+                className="min-w-0 flex-[1_1_12rem] rounded-lg border border-border/50 bg-overlay/30 px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
               />
               <button
                 type="button"
@@ -652,14 +682,15 @@ export default function StoriesSection({
               type="button"
               onClick={saveStory}
               data-guide="story-save"
-              disabled={!formData.primarySkillId || !formData.play}
+              disabled={!canSave}
+              aria-describedby={canSave ? undefined : 'story-save-missing'}
               className="rounded-lg bg-foam px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-foam/90 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
             >
               {editingId === 'new' && currentPacket ? 'Save and add to packet' : 'Save story'}
             </button>
           </div>
-          {(!formData.primarySkillId || !formData.play) && (
-            <p role="status" className="text-xs text-muted-foreground">
+          {!canSave && (
+            <p id="story-save-missing" className="text-xs text-muted-foreground">
               {!formData.primarySkillId && !formData.play
                 ? 'To save, choose the skill this story proves and write what you did.'
                 : !formData.primarySkillId
@@ -672,9 +703,9 @@ export default function StoriesSection({
 
       {!editingId && recentStories.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Recent Stories
-          </h3>
+          </h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {recentStories.map((story) => (
               <div
@@ -705,6 +736,7 @@ export default function StoriesSection({
                     <button
                       type="button"
                       onClick={() => {
+                        focusAfterRender(editorHeadingRef);
                         setEditingId(story.id);
                         setFormData(story);
                         setCustomQuestion('');
@@ -712,7 +744,7 @@ export default function StoriesSection({
                       }}
                       className="rounded-lg border border-border/50 bg-overlay/30 px-2 py-1 text-xs text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                     >
-                      Edit
+                      Edit <span className="sr-only">story: {story.trigger || 'Untitled'}</span>
                     </button>
                     {currentPacket && (
                       <button
@@ -723,13 +755,14 @@ export default function StoriesSection({
                         className={cn(
                           'rounded-lg border px-2 py-1 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2',
                           currentPacket.topStoryIds.includes(story.id)
-                            ? 'border-foam/50 bg-foam/15 text-foam hover:bg-foam/25'
+                            ? 'border-foam/50 bg-foam/15 text-foam hover:border-foam'
                             : 'border-border/50 bg-overlay/30 text-foreground hover:bg-overlay/50'
                         )}
                       >
                         {currentPacket.topStoryIds.includes(story.id)
                           ? 'In packet'
                           : 'Add to packet'}
+                        <span className="sr-only">: {story.trigger || 'Untitled'}</span>
                       </button>
                     )}
                   </div>

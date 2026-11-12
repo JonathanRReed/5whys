@@ -27,6 +27,7 @@ export default function ExportActions({
           onClick={onSaveSnapshot}
           data-guide="why-save"
           disabled={!canExport}
+          aria-describedby={canExport ? undefined : 'why-save-needs'}
           className="h-12 rounded-lg bg-foam px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-foam/90 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
         >
           Save snapshot
@@ -36,6 +37,7 @@ export default function ExportActions({
           variant="outline"
           onClick={onExport}
           disabled={!canExport}
+          aria-describedby={canExport ? undefined : 'why-save-needs'}
           className="h-12 rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
         >
           Export JSON
@@ -61,11 +63,15 @@ export default function ExportActions({
         )}
       </div>
 
-      {status && (
-        <p className="text-center text-sm text-primary" role="status">
-          {status}
+      {!canExport && (
+        <p id="why-save-needs" className="text-center text-xs text-muted-foreground">
+          Answer the first four questions to save or export.
         </p>
       )}
+      {/* Always in the page, so each new message is read when it arrives. */}
+      <p className={status ? 'text-center text-sm text-primary' : 'sr-only'} role="status">
+        {status}
+      </p>
     </>
   );
 }

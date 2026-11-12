@@ -16,27 +16,35 @@ async function visualizationFor(text: string) {
   return card;
 }
 
+/** What a sighted reader sees: the text without the visually hidden labels. */
+function visibleText(element: Element) {
+  const copy = element.cloneNode(true) as Element;
+  for (const hidden of copy.querySelectorAll('.sr-only')) hidden.remove();
+  return copy;
+}
+
+/** Each highlight's own words, without its hidden category label. */
+const markedWords = (card: Element) =>
+  Array.from(visibleText(card).querySelectorAll('mark')).map((mark) => mark.textContent);
+
 it('preserves apostrophes without highlighting HTML entity digits as achievements', async () => {
   const text = "Led O'Reilly training for 5 people";
   const card = await visualizationFor(text);
-  expect(card).toHaveTextContent(text);
-  expect(
-    Array.from(card.querySelectorAll('mark'))
-      .slice(2)
-      .map((mark) => mark.textContent)
-  ).toEqual(['Led', '5']);
+  expect(visibleText(card)).toHaveTextContent(text);
+  expect(markedWords(card)).toEqual(['Led', '5']);
+  // The category is in the text too, not only in the color.
+  expect(Array.from(card.querySelectorAll('mark')).map((mark) => mark.textContent)).toEqual([
+    'Action verb: Led',
+    'Number: 5',
+  ]);
 });
 
 it('renders HTML-shaped input as literal text while retaining highlights and line breaks', async () => {
   const card = await visualizationFor('<img src=x onerror=alert(1)>\nBuilt 3 tools.');
-  expect(card).toHaveTextContent('<img src=x onerror=alert(1)>');
+  expect(visibleText(card)).toHaveTextContent('<img src=x onerror=alert(1)>');
   expect(card.querySelector('img, script')).toBeNull();
   expect(card.querySelectorAll('br')).toHaveLength(1);
-  expect(
-    Array.from(card.querySelectorAll('mark'))
-      .slice(2)
-      .map((mark) => mark.textContent)
-  ).toEqual(['1', 'Built', '3']);
+  expect(markedWords(card)).toEqual(['1', 'Built', '3']);
 });
 
 it('keeps the legacy HTML formatter consistent with literal text highlighting', () => {

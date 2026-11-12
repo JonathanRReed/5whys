@@ -173,7 +173,7 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
                         className={cn(
                           'rounded-lg border px-3 py-1 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2',
                           inPacket
-                            ? 'border-foam/50 bg-foam/15 text-foam hover:bg-foam/25'
+                            ? 'border-foam/50 bg-foam/15 text-foam hover:border-foam'
                             : 'border-border/50 bg-overlay/30 text-foreground hover:bg-overlay/50'
                         )}
                       >

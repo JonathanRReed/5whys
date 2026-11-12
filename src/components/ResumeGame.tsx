@@ -23,7 +23,7 @@ import {
   STUDENT_SAMPLE_RESUME,
   useResumeSession,
 } from '../lib/resume-game';
-import { cn } from '../lib/utils';
+import { cn, scrollBehavior } from '../lib/utils';
 import BeforeAfter from './resume-game/BeforeAfter';
 import BulletEditor from './resume-game/BulletEditor';
 import BulletList from './resume-game/BulletList';
@@ -35,6 +35,7 @@ import ReviewLines from './resume-game/ReviewLines';
 import ScanResults from './resume-game/ScanResults';
 import Scoreboard from './resume-game/Scoreboard';
 import ShareScoreCard from './resume-game/ShareScoreCard';
+import Announcer, { useAnnouncer } from './shared/Announcer';
 
 // Analysis is synchronous and instant. This brief transition only exists so
 // the button press has visible feedback; it is not a fake progress display.
@@ -49,6 +50,7 @@ type ResumeGameProps = {
 export default function ResumeGame({ showHeader = true, className }: ResumeGameProps) {
   const { session, setSession, storageNotice } = useResumeSession();
   const [isScanning, setIsScanning] = React.useState(false);
+  const [announcement, announce] = useAnnouncer();
   const [scanComplete, setScanComplete] = React.useState(false);
   const needsRescan = session.needsRescan ?? false;
   const [status, setStatus] = React.useState<string | null>(null);
@@ -130,7 +132,7 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     window.requestAnimationFrame(() => {
       document
         .getElementById('bullet-editor')
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        ?.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
     });
   }, [bullets, setSelectedBulletId]);
 
@@ -414,8 +416,19 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
           <BulletList
             bullets={bullets}
             selectedBulletId={selectedBulletId}
-            onSelect={setSelectedBulletId}
+            onSelect={(id) => {
+              setSelectedBulletId(id);
+              const chosen = bullets.find((b) => b.id === id);
+              if (chosen) {
+                const line =
+                  chosen.original.length > 60
+                    ? `${chosen.original.slice(0, 57).trimEnd()}...`
+                    : chosen.original.replace(/[.\s]+$/, '');
+                announce(`Rewriting: ${line}. Scores ${chosen.improvedScore}/100.`);
+              }
+            }}
           />
+          <Announcer message={announcement} />
           <BulletEditor
             bullet={selectedBullet}
             index={bullets.findIndex((b) => b.id === selectedBulletId)}

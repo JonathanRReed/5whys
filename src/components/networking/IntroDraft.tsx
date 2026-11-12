@@ -42,7 +42,6 @@ export default function IntroDraft({ draft, onDraftChange }: Props) {
               variant="outline"
               size="sm"
               onClick={() => handleCopy(draft, copyKey)}
-              aria-label={isCopied ? 'Copied intro draft to clipboard' : 'Copy intro draft'}
               className="h-8 border-gold/40 text-xs text-gold hover:bg-gold/15 hover:text-gold focus-visible:ring-2 focus-visible:ring-foam"
             >
               {isCopied ? 'Copied' : 'Copy draft'}

@@ -27,6 +27,7 @@ import {
 } from '../../lib/posting';
 import { cn } from '../../lib/utils';
 import { withViewTransition } from '../../lib/view-transition';
+import Announcer, { useAnnouncer } from '../shared/Announcer';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -39,12 +40,23 @@ const SECTION_LABEL: Record<PostingSection, string> = {
   unclassified: 'Not sorted yet',
 };
 
-/** One mark color per section, so the specimen and the list read as one key. */
+/**
+ * One mark color per section, so the specimen and the list read as one key.
+ * Each section also has its own underline style, so the key does not depend
+ * on telling the colors apart.
+ */
 const SECTION_MARK: Record<PostingSection, string> = {
-  required: 'bg-foam/22 decoration-foam',
-  preferred: 'bg-gold/22 decoration-gold',
-  responsibility: 'bg-iris/22 decoration-iris',
-  unclassified: 'bg-foreground/10 decoration-muted-foreground',
+  required: 'bg-foam/22',
+  preferred: 'bg-gold/22',
+  responsibility: 'bg-iris/22',
+  unclassified: 'bg-foreground/10',
+};
+
+const SECTION_LINE: Record<PostingSection, string> = {
+  required: 'decoration-foam decoration-solid',
+  preferred: 'decoration-gold decoration-dashed',
+  responsibility: 'decoration-iris decoration-dotted',
+  unclassified: 'decoration-muted-foreground decoration-double',
 };
 
 const SECTION_DOT: Record<PostingSection, string> = {
@@ -55,6 +67,11 @@ const SECTION_DOT: Record<PostingSection, string> = {
 };
 
 const SECTION_ORDER: PostingSection[] = ['required', 'preferred', 'responsibility', 'unclassified'];
+
+/** A requirement, cut short enough to sit inside a button's name. */
+function shortText(text: string): string {
+  return text.length > 60 ? `${text.slice(0, 57).trimEnd()}...` : text;
+}
 
 /** Glow Up expects skill suggestions on each requirement; add them where missing. */
 function withSkills(bullets: DecodedBullet[]): DecodedBullet[] {
@@ -76,6 +93,17 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
   const [editing, setEditing] = React.useState(false);
   const [activeId, setActiveId] = React.useState<string | null>(null);
   const [own, setOwn] = React.useState('');
+  const [announcement, announce] = useAnnouncer();
+  // After an action replaces the control that had focus, the id of the
+  // element that takes it. Applied once that element is on the page.
+  const pendingFocus = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!pendingFocus.current) return;
+    const target = document.getElementById(pendingFocus.current);
+    if (!target) return;
+    pendingFocus.current = null;
+    target.focus();
+  });
 
   const sourceText = role?.parsedJdText ?? role?.rawJdText ?? '';
   const requirements = React.useMemo(
@@ -100,6 +128,21 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
     );
   };
 
+  /** The count line under "What it asks for", for the status message. */
+  const countLine = (list: PostingRequirement[]) => {
+    const kept = list.filter((r) => r.status !== 'dismissed');
+    const done = kept.filter((r) => r.status === 'confirmed').length;
+    const left = kept.filter((r) => r.status === 'suggested').length;
+    return `${done} confirmed, ${left} to review.`;
+  };
+
+  /** Save, then say what changed and put focus on `focusId` if given. */
+  const act = (next: PostingRequirement[], said: string, focusId?: string) => {
+    if (focusId) pendingFocus.current = focusId;
+    saveRequirements(next);
+    announce(`${said} ${countLine(next)}`);
+  };
+
   const decode = () => {
     const text = draft.trim();
     if (!text) return;
@@ -108,6 +151,8 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
       ? carryOverDecisions(requirements, parsed.requirements, sourceText, parsed.text)
       : parsed.requirements;
     const bullets = withSkills(bulletsFromRequirements(next, role?.bullets ?? []));
+    pendingFocus.current = 'desk-posting-heading';
+    announce(`Posting decoded. ${countLine(next)}`);
     const fields = {
       rawJdText: text,
       parsedJdText: parsed.text,
@@ -138,7 +183,13 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
     return (
       <div className="max-w-3xl space-y-4" data-guide="posting-editor">
         <div className="space-y-2">
-          <h2 className="text-2xl font-semibold">Paste the posting</h2>
+          <h2
+            id="desk-paste-heading"
+            tabIndex={-1}
+            className="text-2xl font-semibold focus-visible:outline-hidden"
+          >
+            Paste the posting
+          </h2>
           <p className="text-sm leading-relaxed text-muted-foreground">
             Paste the whole job description once. Every other station on this desk works from it,
             and it stays on this device.
@@ -147,6 +198,7 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
         <label className="block space-y-2">
           <span className="text-sm text-muted-foreground">Job description</span>
           <Textarea
+            id="desk-posting-text"
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             rows={14}
@@ -155,7 +207,13 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
           />
         </label>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" onClick={decode} disabled={!draft.trim()}>
+          <Button
+            id="desk-decode"
+            type="button"
+            onClick={decode}
+            disabled={!draft.trim()}
+            aria-describedby={draft.trim() ? undefined : 'desk-decode-needs'}
+          >
             Decode the posting
           </Button>
           {!draft.trim() && (
@@ -163,17 +221,34 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
               type="button"
               variant="outline"
               data-guide="posting-sample"
-              onClick={() => setDraft(SAMPLE_POSTING)}
+              onClick={() => {
+                // This button goes away once there is text; Decode is next.
+                pendingFocus.current = 'desk-decode';
+                setDraft(SAMPLE_POSTING);
+              }}
             >
               Use a sample posting
             </Button>
           )}
           {role && sourceText.trim() && (
-            <Button type="button" variant="outline" onClick={() => setEditing(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                pendingFocus.current = 'desk-posting-heading';
+                setEditing(false);
+              }}
+            >
               Keep the current one
             </Button>
           )}
         </div>
+        {!draft.trim() && (
+          <p id="desk-decode-needs" className="text-xs text-muted-foreground">
+            Paste a posting, or use the sample, to decode it.
+          </p>
+        )}
+        <Announcer message={announcement} />
       </div>
     );
   }
@@ -184,6 +259,14 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
   // The button confirms only these; duties and unsorted lines wait for the student.
   const confirmable = live.filter((r) => r.status === 'suggested' && confirmsByDefault(r)).length;
   const confirmed = live.filter((r) => r.status === 'confirmed').length;
+  // In the order the list shows them, so a dismissed line hands focus to the
+  // one below it, or the heading when it was the last.
+  const shown = SECTION_ORDER.flatMap((section) => live.filter((r) => r.section === section));
+  const nextFocusAfter = (id: string) => {
+    const index = shown.findIndex((r) => r.id === id);
+    const next = shown[index + 1] ?? shown[index - 1];
+    return next ? `confirm-${next.id}` : 'desk-asks-heading';
+  };
 
   // The posting, cut into plain text and the sentences requirements came from.
   const marks = live
@@ -200,15 +283,17 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
         key={requirement.id}
         id={`mark-${requirement.id}`}
         className={cn(
-          'rounded-[3px] px-0.5 text-foreground transition-colors',
+          'rounded-[3px] px-0.5 text-foreground underline underline-offset-4 transition-colors',
           SECTION_MARK[requirement.section],
-          requirement.status === 'suggested' && 'underline decoration-dotted underline-offset-4',
+          SECTION_LINE[requirement.section],
+          requirement.status === 'confirmed' && 'decoration-2',
           activeId === requirement.id && 'ring-2 ring-gold/70'
         )}
         style={{ viewTransitionName: `req-${requirement.id.replace(/[^a-zA-Z0-9_-]/g, '')}` }}
         onMouseEnter={() => setActiveId(requirement.id)}
         onMouseLeave={() => setActiveId(null)}
       >
+        <span className="sr-only">{SECTION_LABEL[requirement.section]}: </span>
         {sourceText.slice(span.start, span.end)}
       </mark>
     );
@@ -220,30 +305,61 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
     <div className="grid gap-8 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)]">
       <div className="min-w-0 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-2xl font-semibold">The posting</h2>
-          <Button type="button" size="sm" variant="outline" onClick={() => setEditing(true)}>
+          <h2
+            id="desk-posting-heading"
+            tabIndex={-1}
+            className="text-2xl font-semibold focus-visible:outline-hidden"
+          >
+            The posting
+          </h2>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              pendingFocus.current = 'desk-posting-text';
+              setEditing(true);
+            }}
+          >
             Edit the text
           </Button>
         </div>
-        <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <ul
+          aria-label="Key to the highlights"
+          className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground"
+        >
           {SECTION_ORDER.map((section) => (
             <li key={section} className="flex items-center gap-1.5">
-              <span className={cn('h-2 w-2 rounded-full', SECTION_DOT[section])} />
-              {SECTION_LABEL[section]}
+              <span
+                className={cn('forced-fill h-2 w-2 rounded-full', SECTION_DOT[section])}
+                aria-hidden="true"
+              />
+              <span className={cn('underline underline-offset-4', SECTION_LINE[section])}>
+                {SECTION_LABEL[section]}
+              </span>
             </li>
           ))}
         </ul>
-        <div
+        {/* Named, so a browser that puts the scroller in the Tab order announces it. */}
+        <section
+          aria-label="The posting, highlighted"
           className="max-h-[36rem] overflow-y-auto rounded-xl border border-border/40 bg-card/60 p-5 text-sm leading-7 whitespace-pre-wrap lg:sticky lg:top-24"
           data-testid="posting-specimen"
         >
           {pieces}
-        </div>
+        </section>
       </div>
 
       <div className="min-w-0 space-y-6" data-guide="posting-requirements">
+        <Announcer message={announcement} />
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold">What it asks for</h3>
+          <h3
+            id="desk-asks-heading"
+            tabIndex={-1}
+            className="text-lg font-semibold focus-visible:outline-hidden"
+          >
+            What it asks for
+          </h3>
           <p className="text-sm leading-relaxed text-muted-foreground" data-testid="posting-count">
             {confirmed} confirmed, {suggested} to review. Confirm the ones that matter, dismiss what
             is not a real requirement, and sort any we could not place.
@@ -253,7 +369,9 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
               type="button"
               size="sm"
               variant="outline"
-              onClick={() => saveRequirements(confirmAllSuggested(requirements))}
+              onClick={() =>
+                act(confirmAllSuggested(requirements), 'Confirmed.', 'desk-asks-heading')
+              }
             >
               Confirm the required and preferred ones ({confirmable})
             </Button>
@@ -266,7 +384,10 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
           return (
             <section key={section} className="space-y-2">
               <h4 className="flex items-center gap-2 font-sans text-sm font-medium text-muted-foreground">
-                <span className={cn('h-2 w-2 rounded-full', SECTION_DOT[section])} />
+                <span
+                  className={cn('forced-fill h-2 w-2 rounded-full', SECTION_DOT[section])}
+                  aria-hidden="true"
+                />
                 {SECTION_LABEL[section]}
               </h4>
               <ul className="space-y-2">
@@ -286,28 +407,40 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
                   >
                     <p className="text-sm leading-relaxed text-foreground">{requirement.text}</p>
                     <div className="flex flex-wrap items-center gap-2">
-                      {requirement.status === 'confirmed' ? (
-                        <span className="text-xs font-medium text-foam">Confirmed</span>
-                      ) : (
-                        <Button
-                          type="button"
-                          size="xs"
-                          onClick={() =>
-                            saveRequirements(confirmRequirement(requirements, requirement.id))
-                          }
-                        >
-                          Confirm
-                        </Button>
-                      )}
+                      {/* A toggle, so focus stays here and a second press undoes it. */}
+                      <Button
+                        id={`confirm-${requirement.id}`}
+                        type="button"
+                        size="xs"
+                        variant={requirement.status === 'confirmed' ? 'outline' : 'default'}
+                        aria-pressed={requirement.status === 'confirmed'}
+                        className="max-sm:min-h-11 max-sm:px-3"
+                        onClick={() =>
+                          requirement.status === 'confirmed'
+                            ? act(
+                                restoreRequirement(requirements, requirement.id),
+                                'Back to review.'
+                              )
+                            : act(confirmRequirement(requirements, requirement.id), 'Confirmed.')
+                        }
+                      >
+                        {requirement.status === 'confirmed' ? 'Confirmed' : 'Confirm'}
+                        <span className="sr-only">: {shortText(requirement.text)}</span>
+                      </Button>
                       <Button
                         type="button"
                         size="xs"
                         variant="ghost"
+                        className="max-sm:min-h-11 max-sm:px-3"
                         onClick={() =>
-                          saveRequirements(dismissRequirement(requirements, requirement.id))
+                          act(
+                            dismissRequirement(requirements, requirement.id),
+                            'Dismissed.',
+                            nextFocusAfter(requirement.id)
+                          )
                         }
                       >
-                        Dismiss
+                        Dismiss<span className="sr-only">: {shortText(requirement.text)}</span>
                       </Button>
                       <label className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
                         <span className="sr-only">Section for: {requirement.text}</span>
@@ -322,7 +455,7 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
                               )
                             )
                           }
-                          className="h-7 rounded-md border border-border/50 bg-transparent px-1.5 text-xs text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                          className="h-7 max-sm:h-11 rounded-md border border-border/50 bg-transparent px-1.5 text-xs text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                         >
                           {SECTION_ORDER.map((option) => (
                             <option key={option} value={option}>
@@ -343,7 +476,7 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
           className="flex gap-2"
           onSubmit={(event) => {
             event.preventDefault();
-            saveRequirements(addRequirement(requirements, own, { section: 'required' }));
+            act(addRequirement(requirements, own, { section: 'required' }), 'Added.');
             setOwn('');
           }}
         >
@@ -375,10 +508,14 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
                     size="xs"
                     variant="ghost"
                     onClick={() =>
-                      saveRequirements(restoreRequirement(requirements, requirement.id))
+                      act(
+                        restoreRequirement(requirements, requirement.id),
+                        'Restored.',
+                        `confirm-${requirement.id}`
+                      )
                     }
                   >
-                    Restore
+                    Restore<span className="sr-only">: {shortText(requirement.text)}</span>
                   </Button>
                 </li>
               ))}

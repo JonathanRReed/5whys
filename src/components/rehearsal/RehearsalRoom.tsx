@@ -12,8 +12,9 @@ import { loadData, requirementBullets } from '../../lib/glowup-store';
 import { loadFeature, reportFeatureFailure, runFeature } from '../../lib/lazy-feature';
 import type { HostedModel, ModelState } from '../../lib/models';
 import type { RecordedAudio, SpeechRecorder } from '../../lib/speech';
-import { cn } from '../../lib/utils';
+import { cn, focusWhenReady } from '../../lib/utils';
 import { formatBytes } from '../StoragePanel';
+import Announcer, { useAnnouncer } from '../shared/Announcer';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import TakeReview, { type Take } from './TakeReview';
@@ -62,6 +63,7 @@ export default function RehearsalRoom() {
   const [kept, setKept] = React.useState(false);
   const [answered, setAnswered] = React.useState(0);
   const [notice, setNotice] = React.useState<string | null>(null);
+  const [announcement, announce] = useAnnouncer();
   const recorder = React.useRef<SpeechRecorder | null>(null);
   const startedAt = React.useRef(0);
   const speech = React.useRef<AbortController | null>(null);
@@ -213,10 +215,13 @@ export default function RehearsalRoom() {
       setNotice(null);
       setShowStory(false);
       setPhase('asking');
+      // The button pressed is gone; the question that replaced it takes focus.
+      focusWhenReady('rehearsal-question');
+      announce(`Question ${next + 1} of ${questions.length}.`);
       const text = questions[next]?.question;
       if (text && readAloud && (hasVoice || prepared?.has(text))) void speak(text);
     },
-    [questions, readAloud, hasVoice, prepared, speak]
+    [questions, readAloud, hasVoice, prepared, speak, announce]
   );
 
   const download = async (id: HostedModel['id']) => {
@@ -291,6 +296,8 @@ export default function RehearsalRoom() {
     setTake(next);
     setAnswered((count) => count + 1);
     setPhase('review');
+    focusWhenReady('rehearsal-review-heading');
+    announce(`Review. Question ${index + 1} of ${questions.length}.`);
     if (!audio || !whisperReady) return;
     setTranscribing(true);
     try {
@@ -536,9 +543,15 @@ export default function RehearsalRoom() {
         <p role="status" className="min-h-5 text-sm text-foreground">
           {notice}
         </p>
-        <Button type="button" size="lg" onClick={() => ask(0)}>
+        <Button
+          type="button"
+          size="lg"
+          onClick={() => ask(0)}
+          className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left"
+        >
           Start with the first question
         </Button>
+        <Announcer message={announcement} />
       </div>
     );
   }
@@ -546,7 +559,13 @@ export default function RehearsalRoom() {
   if (phase === 'done') {
     return (
       <div className="max-w-2xl space-y-4">
-        <h2 className="text-2xl font-semibold">That was the last question</h2>
+        <h2
+          id="rehearsal-done-heading"
+          tabIndex={-1}
+          className="text-2xl font-semibold focus-visible:outline-hidden"
+        >
+          That was the last question
+        </h2>
         <p
           className="text-sm leading-relaxed text-muted-foreground"
           data-testid="rehearsal-summary"
@@ -591,12 +610,20 @@ export default function RehearsalRoom() {
               : undefined
           }
           onRetry={() => ask(index)}
-          onNext={() => (index + 1 < questions.length ? ask(index + 1) : setPhase('done'))}
+          onNext={() => {
+            if (index + 1 < questions.length) {
+              ask(index + 1);
+              return;
+            }
+            setPhase('done');
+            focusWhenReady('rehearsal-done-heading');
+          }}
           isLast={index + 1 >= questions.length}
         />
         <p role="status" className="min-h-5 text-sm text-foreground">
           {notice}
         </p>
+        <Announcer message={announcement} />
       </div>
     );
   }
@@ -608,7 +635,9 @@ export default function RehearsalRoom() {
           Question {index + 1} of {questions.length}
         </p>
         <h2
-          className="text-balance text-3xl font-semibold leading-tight sm:text-4xl"
+          id="rehearsal-question"
+          tabIndex={-1}
+          className="text-balance text-3xl font-semibold leading-tight focus-visible:outline-hidden sm:text-4xl"
           data-testid="rehearsal-question"
         >
           {current?.question}
@@ -722,6 +751,7 @@ export default function RehearsalRoom() {
       <p role="status" className="min-h-5 text-sm text-foreground">
         {notice}
       </p>
+      <Announcer message={announcement} />
     </div>
   );
 }

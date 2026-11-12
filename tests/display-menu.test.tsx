@@ -9,7 +9,8 @@ afterEach(() => {
   delete document.documentElement.dataset.theme;
 });
 
-const openMenu = () => fireEvent.click(screen.getByRole('button', { name: 'Display settings' }));
+const openMenu = () =>
+  fireEvent.click(screen.getByRole('button', { name: 'Aa, display settings' }));
 
 it('opens a panel with theme and typeface choices', () => {
   render(<DisplayMenu />);
@@ -52,7 +53,7 @@ it('applies and remembers a theme', () => {
 
 it('closes on Escape and returns focus to the button', () => {
   render(<DisplayMenu />);
-  const button = screen.getByRole('button', { name: 'Display settings' });
+  const button = screen.getByRole('button', { name: 'Aa, display settings' });
   openMenu();
   fireEvent.keyDown(document, { key: 'Escape' });
   expect(screen.queryByRole('dialog')).toBeNull();

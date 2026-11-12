@@ -39,7 +39,7 @@ it('announces start, immediate pause and resume without waiting for an elapsed t
 
   fireEvent.click(screen.getByRole('button', { name: 'Start' }));
   expect(status).toHaveTextContent('Timer started');
-  expect(screen.getByRole('button', { name: 'Running' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Running' })).toHaveAttribute('aria-disabled', 'true');
   fireEvent.click(screen.getByRole('button', { name: 'Pause' }));
   expect(status).toHaveTextContent('Timer paused');
   expect(countdown).toHaveTextContent('00:30');
@@ -81,7 +81,7 @@ it('keeps per-second updates outside the live region and announces completion on
   expect(status).toHaveTextContent("Time's up! Rep finished.");
   expect(screen.getByRole('timer')).toHaveTextContent('00:00');
   expect(screen.getByRole('button', { name: 'Restart' })).toBeEnabled();
-  expect(screen.getByRole('button', { name: 'Pause' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Pause' })).toHaveAttribute('aria-disabled', 'true');
   expect(mutations).toHaveLength(1);
   await act(async () => vi.advanceTimersByTime(5000));
   expect(mutations).toHaveLength(1);
@@ -94,7 +94,7 @@ it('clears the announcement on reset or length change and can announce a fresh r
   const status = screen.getByRole('status');
   fireEvent.click(screen.getByRole('button', { name: 'Start' }));
   act(() => vi.advanceTimersByTime(1000));
-  fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Reset timer' }));
   expect(status).toBeEmptyDOMElement();
   expect(screen.getByRole('timer')).toHaveTextContent('00:30');
   expect(screen.queryByText(/practiced this rep/)).not.toBeInTheDocument();
@@ -108,7 +108,7 @@ it('clears the announcement on reset or length change and can announce a fresh r
   fireEvent.click(screen.getByRole('button', { name: 'Start' }));
   act(() => vi.advanceTimersByTime(60000));
   expect(status).toHaveTextContent("Time's up! Rep finished.");
-  fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Reset timer' }));
   expect(status).toBeEmptyDOMElement();
   expect(screen.getByRole('timer')).toHaveTextContent('01:00');
   fireEvent.click(screen.getByRole('button', { name: 'Start' }));
@@ -126,7 +126,10 @@ it('restarts completed reps from zero without accumulating displayed practice ti
     expect(screen.getByRole('timer')).toHaveTextContent('00:30');
     expect(screen.queryByText(/practiced this rep/)).not.toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('Timer started');
-    expect(screen.getByRole('button', { name: 'Running' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Running' })).toHaveAttribute(
+      'aria-disabled',
+      'true'
+    );
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
     act(() => vi.advanceTimersByTime(1000));
     expect(screen.getByRole('timer')).toHaveTextContent('00:29');

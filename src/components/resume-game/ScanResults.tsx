@@ -15,6 +15,10 @@ type Props = {
   resumeOutOfDate: boolean;
 };
 
+/** Verbs carry a dotted underline as well as a tint, so the key is not color alone. */
+const VERB_MARK =
+  'rounded bg-love/30 px-1 text-foreground underline decoration-love decoration-dotted decoration-2 underline-offset-2';
+
 function renderToken(token: HighlightToken, index: number) {
   if (token.type === 'newline') {
     return <br key={index} />;
@@ -25,13 +29,15 @@ function renderToken(token: HighlightToken, index: number) {
         key={index}
         className="rounded bg-primary/25 px-1 font-semibold text-foreground underline decoration-primary decoration-2 underline-offset-2"
       >
+        <span className="sr-only">Number: </span>
         {token.text}
       </mark>
     );
   }
   if (token.type === 'verb') {
     return (
-      <mark key={index} className="rounded bg-love/30 px-1 text-foreground">
+      <mark key={index} className={VERB_MARK}>
+        <span className="sr-only">Action verb: </span>
         {token.text}
       </mark>
     );
@@ -82,16 +88,20 @@ export default function ScanResults({
           )}
         </CardHeader>
         <CardContent>
-          <div className="mb-3 flex items-center gap-4 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5">
-              <mark className="rounded bg-primary/25 px-1 font-semibold text-foreground underline decoration-primary decoration-2 underline-offset-2">
+          {/* The key: styled like the marks, but not marks itself. */}
+          <ul
+            aria-label="Key to the highlights"
+            className="mb-3 flex flex-wrap items-center gap-4 text-xs text-muted-foreground"
+          >
+            <li className="inline-flex items-center gap-1.5">
+              <span className="rounded bg-primary/25 px-1 font-semibold text-foreground underline decoration-primary decoration-2 underline-offset-2">
                 Numbers
-              </mark>
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <mark className="rounded bg-love/30 px-1 text-foreground">Action verbs</mark>
-            </span>
-          </div>
+              </span>
+            </li>
+            <li className="inline-flex items-center gap-1.5">
+              <span className={VERB_MARK}>Action verbs</span>
+            </li>
+          </ul>
           <div className="min-h-[200px] rounded-2xl border border-border/40 bg-card/65 p-6 text-sm leading-relaxed">
             {tokens.map(renderToken)}
           </div>
