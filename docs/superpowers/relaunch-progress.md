@@ -189,6 +189,42 @@ Still for the lead after those merge:
 - Pay: save the wage source with the offer once wage data exists; title
   search ranks badly for coordinator titles (check after data lands).
 
+### Career advisor report (the lead reviewer ended without a final report;
+its four sub-reports are in `stories/advisor/`: factcheck.md, privacy.md,
+bias.md, workshop.md)
+
+Fixed by the lead: coach portalled to body (its buttons were dead under the
+footer on 1366x768 and iPads), folds on small screens, announces each step,
+moves focus on "Show me where", keeps focus when a step changes, and opens
+from `?guide=1`; "Clear everything on this device" (`src/lib/clear-device.ts`)
+with a shared-computer warning on the dashboard and privacy page; backup
+plain-text warning; `img-src` no longer allows other sites.
+
+Still to do from the advisor (after the three fix builders merge):
+- Resume: "stronger verb" table inflates roles (Championed, Drove,
+  Engineered); page estimate from word count is wrong and calls two pages
+  optimal for students; numeric "Target" lines; dates earn "measure" credit;
+  retail, food, childcare verbs score as no action verb; visa or declaration
+  lines scored as bullets; buzzword check flags real technical terms. (Check
+  what the Resume Game builder already covered, then follow up.)
+- Desk: eligibility and legally sensitive lines (work authorization, "native
+  speaker", criminal record, age proxies, lifting) shown as qualifications to
+  "have" or "get". They need their own treatment: a condition, not a skill,
+  with a plain note and no "plan to get".
+- Interview: "Write the Proof first. If the receipt is weak, the story needs
+  a different example" is bad advice; delivery counts cannot be turned off
+  and typed answers are counted; timers assume fast fluent speech.
+- Letter: 400 words called "one page" (use about 350 and say it is a guide);
+  LinkedIn note written to 300 characters (free accounts allow fewer: write
+  to 200); a first message should not ask a stranger for time.
+- Gaps: work authorization and international students; employment gaps;
+  thank-you note and follow-up timing; guided mode is hard to find (homepage
+  and /start do not mention it; link tools with `?guide=1`).
+- Privacy page: say whether analytics is on (owner must confirm in the
+  Cloudflare dashboard); subprocessors page says Pages and analytics.
+- Resume Game opened directly shows the professional sample, not a student
+  one (student register first).
+
 ## In flight (builders, started 2026-11-12)
 
 | Piece | Model | Paths |

@@ -113,6 +113,10 @@ export default function BackupControls({ onRestored, className }: Props) {
             Everything stays in this browser. To keep a copy, or move it to another device, export
             it as one file and import it there.
           </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            The file holds everything you wrote, in plain text that anyone can open. Keep it
+            somewhere private.
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button

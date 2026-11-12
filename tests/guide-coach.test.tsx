@@ -1,10 +1,12 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import GuideCoach from '../src/components/shared/GuideCoach';
 import { type GuideTool, loadGuideProgress } from '../src/lib/guide';
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => {
+  // Unmount first: the coach lives in a portal on <body>.
+  cleanup();
   vi.useRealTimers();
   window.localStorage.clear();
   document.body.innerHTML = '';
@@ -54,4 +56,5 @@ it('shows nothing for a tool that has no guide', () => {
   // Every listed tool has a guide now, so stand in a name the registry lacks.
   const { container } = render(<GuideCoach tool={'unlisted' as GuideTool} />);
   expect(container).toBeEmptyDOMElement();
+  expect(screen.queryByRole('complementary', { name: 'Guide' })).toBeNull();
 });

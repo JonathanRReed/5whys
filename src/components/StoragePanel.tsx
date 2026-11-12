@@ -46,6 +46,20 @@ export default function StoragePanel() {
     await measure();
   };
 
+  const clearAll = async () => {
+    const { clearDevice } = await import('../lib/clear-device');
+    const result = await clearDevice();
+    if (!result.complete) {
+      setNotice(
+        'Most of it is gone, but something is still open in another tab. Close the other tabs for this site and clear again.'
+      );
+      await measure();
+      return;
+    }
+    // Start again from an empty page so nothing stays on screen.
+    window.location.assign('/');
+  };
+
   const removeResumeFile = async () => {
     const { deleteResumeFile } = await import('../lib/local-db');
     const result = await deleteResumeFile();
@@ -104,6 +118,20 @@ export default function StoragePanel() {
         >
           {open ? 'Hide' : 'Measure it'}
         </button>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/40 px-4 py-3">
+        <p className="min-w-0 flex-1 text-sm leading-relaxed text-muted-foreground">
+          On a shared or lab computer, the next person can see what you wrote. Clear everything
+          before you leave, or use a private window.
+        </p>
+        <ConfirmButton
+          confirmLabel="Delete everything you wrote, uploaded and recorded here? Export first if you want a copy."
+          onConfirm={clearAll}
+          className="px-3 py-1.5 text-sm"
+        >
+          Clear everything on this device
+        </ConfirmButton>
       </div>
 
       {open &&

@@ -7,6 +7,7 @@
 export {
   closeLocalDb,
   isLocalDbAvailable,
+  LOCAL_DB_NAME,
   type LocalDbFailure,
   type LocalDbFailureReason,
   type LocalDbResult,

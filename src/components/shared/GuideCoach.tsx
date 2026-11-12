@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 import {
   currentStep,
   evaluateCheck,
@@ -14,6 +15,11 @@ import { cn } from '../../lib/utils';
 
 const WATCH_MS = 500;
 const TARGET_ATTR = 'data-guide-active';
+/**
+ * Screens where an open coach would sit on top of the thing it describes:
+ * phones, tablets, and short laptops such as a 1366 by 768 Chromebook.
+ */
+const COMPACT_QUERY = '(max-width: 1279px), (max-height: 820px)';
 
 /**
  * Guided mode for one tool. Renders a small bar where it is mounted (the
@@ -30,18 +36,29 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
   const [collapsed, setCollapsed] = React.useState(false);
   const [justDone, setJustDone] = React.useState<string | null>(null);
 
-  // On a phone the coach is a one-line bar, so it never sits on top of the
+  // On a small screen the coach is a one-line bar, so it never sits on top of the
   // control a step is asking for. It opens on demand and folds away again
   // each time a step changes.
   const stepId = guide && progress ? (currentStep(guide, progress)?.id ?? 'finished') : null;
   // biome-ignore lint/correctness/useExhaustiveDependencies: fold when the step changes
   React.useEffect(() => {
-    if (window.matchMedia?.('(max-width: 639px)').matches) setCollapsed(true);
+    if (window.matchMedia?.(COMPACT_QUERY).matches) setCollapsed(true);
   }, [stepId]);
 
   // Hydrate from empty state, then read the saved choice.
   React.useEffect(() => {
     const saved = loadGuideProgress(tool);
+    // A link can open a tool with the guide already on (?guide=1), for
+    // someone sent here by the career review or a teacher.
+    const asked = new URLSearchParams(window.location.search).get('guide') === '1';
+    if (asked && saved?.mode !== 'guided') {
+      const next =
+        saved && !saved.finished ? { ...saved, mode: 'guided' as const } : restartGuide();
+      saveGuideProgress(tool, next);
+      setChosen(true);
+      setProgress(next);
+      return;
+    }
     setChosen(saved !== null);
     setProgress(saved ?? { mode: 'free', done: [], finished: false });
   }, [tool]);
@@ -95,6 +112,21 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
     };
   }, [step]);
 
+  // When a step finishes while the keyboard is inside the coach, the button
+  // that had focus is replaced. Put focus on the new step's title instead of
+  // letting it fall back to the top of the page.
+  const coachRef = React.useRef<HTMLElement>(null);
+  const titleRef = React.useRef<HTMLHeadingElement>(null);
+  const hadFocus = React.useRef(false);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs when the step changes
+  React.useEffect(() => {
+    if (hadFocus.current) titleRef.current?.focus({ preventScroll: true });
+    hadFocus.current = false;
+  }, [stepId]);
+  const noteFocus = () => {
+    hadFocus.current = Boolean(coachRef.current?.contains(document.activeElement));
+  };
+
   if (!guide || !progress) return null;
 
   const total = guide.steps.length;
@@ -103,7 +135,23 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
   const showTarget = () => {
     if (!step?.target) return;
     try {
-      document.querySelector(step.target)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      const target = document.querySelector<HTMLElement>(step.target);
+      if (!target) return;
+      const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      target.scrollIntoView({ block: 'center', behavior: reduced ? 'auto' : 'smooth' });
+      // Take the keyboard there too: the first control inside it, or the
+      // region itself.
+      const control = target.matches('input, textarea, select, button, a[href]')
+        ? target
+        : target.querySelector<HTMLElement>(
+            'input:not([type="hidden"]), textarea, select, button, a[href]'
+          );
+      if (control) {
+        control.focus({ preventScroll: true });
+      } else {
+        if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
+        target.focus({ preventScroll: true });
+      }
     } catch {
       /* a selector that matches nothing has nothing to show */
     }
@@ -171,127 +219,146 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
         </fieldset>
       </div>
 
-      {guided && (
-        <aside
-          aria-label="Guide"
-          className={cn(
-            'fixed inset-x-3 bottom-3 z-40 rounded-xl bg-popover text-popover-foreground shadow-[0_28px_70px_-32px_hsl(var(--background))] ring-1 ring-border/50 print:hidden',
-            'sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[22rem]'
-          )}
-        >
-          <div className="flex items-center justify-between gap-3 px-4 pt-3">
-            <p className="min-w-0 text-xs text-muted-foreground" aria-live="polite">
-              <span className="font-mono tabular-nums">
-                {step ? `Step ${position} of ${total}` : 'Guide finished'}
-              </span>
-              {collapsed && (
-                <span className="mt-0.5 block truncate text-sm font-medium text-foreground">
-                  {step ? step.title : guide.finish.title}
-                </span>
-              )}
-            </p>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                aria-expanded={!collapsed}
-                onClick={() => setCollapsed((value) => !value)}
-                className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-overlay/40 hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                {collapsed ? 'Show' : 'Hide'}
-              </button>
-              <button
-                type="button"
-                onClick={() => choose('free')}
-                className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-overlay/40 hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                End guide
-              </button>
-            </div>
-          </div>
-
-          <div
+      {guided &&
+        createPortal(
+          <aside
+            ref={coachRef}
+            onClickCapture={noteFocus}
+            onKeyDownCapture={noteFocus}
+            aria-label="Guide"
             className={cn(
-              'mx-4 mt-2 h-1 overflow-hidden rounded-full bg-foreground/10',
-              collapsed && 'mb-3'
+              'fixed inset-x-3 bottom-3 z-40 rounded-xl bg-popover text-popover-foreground shadow-[0_28px_70px_-32px_hsl(var(--background))] ring-1 ring-border/50 print:hidden',
+              'sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[22rem]'
             )}
-            aria-hidden="true"
           >
-            <div
-              className="h-full origin-left rounded-full bg-foam transition-transform duration-300 motion-reduce:transition-none"
-              style={{ transform: `scaleX(${progress.done.length / total})` }}
-            />
-          </div>
-
-          <div className={cn('px-4 pb-4 pt-3', collapsed && 'hidden')}>
-            {step ? (
-              <div className="space-y-2">
-                {justDone && <p className="text-xs text-foam">Done: {justDone}.</p>}
-                <h2 className="font-display text-lg font-semibold leading-snug">{step.title}</h2>
-                <p className="text-sm leading-relaxed">{step.body}</p>
-                {step.why && (
-                  <p className="hidden text-xs leading-relaxed text-muted-foreground sm:block">
-                    {step.why}
-                  </p>
+            <div className="flex items-center justify-between gap-3 px-4 pt-3">
+              <p className="min-w-0 text-xs text-muted-foreground">
+                <span className="font-mono tabular-nums">
+                  {step ? `Step ${position} of ${total}` : 'Guide finished'}
+                </span>
+                {collapsed && (
+                  <span className="mt-0.5 block truncate text-sm font-medium text-foreground">
+                    {step ? step.title : guide.finish.title}
+                  </span>
                 )}
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {step.target && (
-                    <button
-                      type="button"
-                      onClick={showTarget}
-                      className="inline-flex min-h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      Show me where
-                    </button>
+              </p>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  aria-expanded={!collapsed}
+                  onClick={() => setCollapsed((value) => !value)}
+                  className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-overlay/40 hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {collapsed ? 'Show' : 'Hide'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => choose('free')}
+                  className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-overlay/40 hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  End guide
+                </button>
+              </div>
+            </div>
+
+            <div
+              className={cn(
+                'mx-4 mt-2 h-1 overflow-hidden rounded-full bg-foreground/10',
+                collapsed && 'mb-3'
+              )}
+              aria-hidden="true"
+            >
+              <div
+                className="h-full origin-left rounded-full bg-foam transition-transform duration-300 motion-reduce:transition-none"
+                style={{ transform: `scaleX(${progress.done.length / total})` }}
+              />
+            </div>
+
+            <div className={cn('px-4 pb-4 pt-3', collapsed && 'hidden')}>
+              {step ? (
+                <div className="space-y-2">
+                  {justDone && <p className="text-xs text-foam">Done: {justDone}.</p>}
+                  <h2
+                    ref={titleRef}
+                    tabIndex={-1}
+                    className="font-display text-lg font-semibold leading-snug focus-visible:outline-hidden"
+                  >
+                    {step.title}
+                  </h2>
+                  <p className="text-sm leading-relaxed">{step.body}</p>
+                  {step.why && (
+                    <p className="hidden text-xs leading-relaxed text-muted-foreground sm:block">
+                      {step.why}
+                    </p>
                   )}
-                  {step.example && (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {step.target && (
+                      <button
+                        type="button"
+                        onClick={showTarget}
+                        className="inline-flex min-h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        Show me where
+                      </button>
+                    )}
+                    {step.example && (
+                      <button
+                        type="button"
+                        onClick={useExample}
+                        className="inline-flex min-h-9 items-center rounded-lg border border-border/60 px-3 text-sm hover:bg-overlay/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        {step.example.label}
+                      </button>
+                    )}
                     <button
                       type="button"
-                      onClick={useExample}
+                      onClick={() => {
+                        setJustDone(null);
+                        update(markStepDone(guide, progress, step.id));
+                      }}
+                      className="inline-flex min-h-9 items-center rounded-lg px-3 text-sm text-muted-foreground hover:bg-overlay/40 hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      {step.done.kind === 'manual' ? 'I did this' : 'Skip this step'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <h2 className="font-display text-lg font-semibold leading-snug">
+                    {guide.finish.title}
+                  </h2>
+                  <p className="text-sm leading-relaxed">{guide.finish.body}</p>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {guide.finish.link && (
+                      <a
+                        href={guide.finish.link.href}
+                        className="inline-flex min-h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        {guide.finish.link.label}
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => update(restartGuide())}
                       className="inline-flex min-h-9 items-center rounded-lg border border-border/60 px-3 text-sm hover:bg-overlay/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                     >
-                      {step.example.label}
+                      Start the guide again
                     </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setJustDone(null);
-                      update(markStepDone(guide, progress, step.id));
-                    }}
-                    className="inline-flex min-h-9 items-center rounded-lg px-3 text-sm text-muted-foreground hover:bg-overlay/40 hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    {step.done.kind === 'manual' ? 'I did this' : 'Skip this step'}
-                  </button>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <h2 className="font-display text-lg font-semibold leading-snug">
-                  {guide.finish.title}
-                </h2>
-                <p className="text-sm leading-relaxed">{guide.finish.body}</p>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {guide.finish.link && (
-                    <a
-                      href={guide.finish.link.href}
-                      className="inline-flex min-h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      {guide.finish.link.label}
-                    </a>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => update(restartGuide())}
-                    className="inline-flex min-h-9 items-center rounded-lg border border-border/60 px-3 text-sm hover:bg-overlay/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    Start the guide again
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </aside>
-      )}
+              )}
+            </div>
+          </aside>,
+          document.body
+        )}
+      {/* Read each new step aloud in full, whether the coach is open or folded. */}
+      <p className="sr-only" role="status">
+        {guided && step
+          ? `Step ${position} of ${total}. ${step.title}. ${step.body}`
+          : guided
+            ? `Guide finished. ${guide.finish.title}. ${guide.finish.body}`
+            : ''}
+      </p>
     </>
   );
 }

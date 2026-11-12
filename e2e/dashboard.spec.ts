@@ -147,3 +147,25 @@ test('the dashboard says so when the whole loop is closed', async ({ page }) => 
   // The line names the in-focus deadline when there is one.
   await expect(page.getByText(/STEP Intern is due in 4 days/)).toBeVisible();
 });
+
+test('one button clears everything written on a shared computer', async ({ page }) => {
+  await page.goto('/networking-practice/');
+  await page.evaluate(() => {
+    localStorage.setItem('networking-practice-draft', 'Hi, I am Maria. My number is 555-0187.');
+    localStorage.setItem('career-why-history', JSON.stringify([{ topic: 'private' }]));
+    localStorage.setItem('career-tools-theme', 'dawn');
+  });
+  await page.goto('/dashboard/');
+  await expect(page.getByText('On a shared or lab computer')).toBeVisible();
+  const clear = page.getByRole('button', { name: 'Clear everything on this device' });
+  await clear.click();
+  // It arms in place and says what will be lost before anything is deleted.
+  await expect(page.getByText(/Delete everything you wrote/)).toBeVisible();
+  expect(
+    await page.evaluate(() => localStorage.getItem('networking-practice-draft'))
+  ).not.toBeNull();
+  await page.getByRole('button', { name: /Delete everything you wrote/ }).click();
+  await page.waitForURL((url) => url.pathname === '/');
+  const left = await page.evaluate(() => Object.keys(localStorage).sort());
+  expect(left).toEqual(['career-tools-theme']);
+});
