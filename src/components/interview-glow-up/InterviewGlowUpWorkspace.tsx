@@ -169,7 +169,13 @@ export default function InterviewGlowUpWorkspace() {
             {currentRole.jobTitle || 'Untitled role'}
             {currentRole.company ? ` at ${currentRole.company}` : ''}
           </span>
-          <span className="ml-auto">
+          <span className="ml-auto flex flex-wrap items-center">
+            <a
+              href="/interview-glow-up/rehearse/"
+              className="mr-3 underline underline-offset-4 hover:text-foam focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-foam"
+            >
+              Rehearse out loud
+            </a>
             <TrackApplication role={currentRole} />
           </span>
         </div>

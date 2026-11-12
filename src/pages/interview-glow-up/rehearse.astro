@@ -1,0 +1,39 @@
+---
+import PlateHeader from '../../components/PlateHeader.astro';
+import RehearsalRoom from '../../components/rehearsal/RehearsalRoom';
+import ErrorBoundary from '../../components/shared/ErrorBoundary';
+import Base from '../../layouts/Base.astro';
+
+const noScript = [
+  'The rehearsal room asks one interview question at a time. You answer out loud or in writing, then review the answer before moving on. Questions come from the job posting you decoded, and each one shows which requirement it is testing.',
+  'A spoken answer is recorded on your device so you can listen back. The page shows what can be counted: how long you spoke, how many words, your pace, pauses longer than two seconds, and filler words. These are counts, not grades. There is no proven right pace or number of pauses.',
+  'Without JavaScript you can rehearse the same way with a phone timer: read a question aloud, answer for one to two minutes, then ask yourself whether you answered the question that was asked, said what you did yourself, and said what happened because of it.',
+  'Recordings stay on this device. Nothing you say or write is sent to a server.',
+];
+---
+
+<Base
+  title="Rehearsal Room"
+  description="Practice interview questions out loud or in writing, one at a time. Listen back and see what can be counted. Nothing leaves your device."
+  breadcrumbs={[
+    { label: 'Home', href: '/' },
+    { label: 'Interview Glow Up', href: '/interview-glow-up/' },
+    { label: 'Rehearsal Room', href: '/interview-glow-up/rehearse/' },
+  ]}
+  noScriptContext={noScript}
+>
+  <div class="relative space-y-10 px-4 pb-16 pt-4 sm:pt-6">
+    <PlateHeader
+      tag="Plate IV · Prepare"
+      roman="IV"
+      title="The Rehearsal Room"
+      description="One question at a time, answered out loud or in writing. Listen back, see what can be counted, and try again."
+      accent="love"
+    />
+    <section class="mx-auto w-full max-w-6xl">
+      <ErrorBoundary client:load>
+        <RehearsalRoom client:load />
+      </ErrorBoundary>
+    </section>
+  </div>
+</Base>

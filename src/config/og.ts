@@ -108,6 +108,7 @@ const PATH_TO_SLUG: Record<string, string> = {
   '/networking-practice/': 'networking-practice',
   '/interview-glow-up/': 'interview-glow-up',
   '/interview-glow-up/workspace/': 'interview-glow-up',
+  '/interview-glow-up/rehearse/': 'interview-glow-up',
   '/application/': 'application',
   '/pay/': 'pay',
   '/dashboard/': 'dashboard',

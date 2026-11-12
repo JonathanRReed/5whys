@@ -243,6 +243,18 @@ export default function ApplicationDesk() {
         >
           Build interview stories
         </a>
+        <a
+          className="underline underline-offset-4 hover:text-foam"
+          href="/interview-glow-up/rehearse/"
+        >
+          Rehearse the interview
+        </a>
+        <a
+          className="underline underline-offset-4 hover:text-foam"
+          href={`/pay/?id=${encodeURIComponent(application.id)}`}
+        >
+          Weigh the pay
+        </a>
       </nav>
     </div>
   );

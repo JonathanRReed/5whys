@@ -83,6 +83,19 @@ describe('speech capability detection', () => {
     expect((await pending).localVoices).toEqual([]);
     expect((await pending).mediaRecorder).toEqual({ supported: false, mimeType: null });
   });
+  test('does not probe on-device recognition unless asked', async () => {
+    const available = vi.fn(async () => 'available');
+    class Recognition {
+      processLocally = false;
+      static available = available;
+    }
+    vi.stubGlobal('SpeechRecognition', Recognition);
+    vi.stubGlobal('speechSynthesis', { getVoices: () => [{ localService: true }] });
+    expect((await speechCapabilities()).recognition).toBe('unsupported');
+    expect(available).not.toHaveBeenCalled();
+    await speechCapabilities({ probeRecognition: true });
+    expect(available).toHaveBeenCalled();
+  });
   test('never speaks using a remote voice', async () => {
     const speak = vi.fn();
     vi.stubGlobal('speechSynthesis', { getVoices: () => [{ localService: false }], speak });

@@ -71,8 +71,24 @@ export interface SpeechCapabilities {
   mediaRecorder: { supported: boolean; mimeType: string | null };
   webGPU: boolean;
 }
-export async function speechCapabilities(): Promise<SpeechCapabilities> {
-  const [voices, recognition] = await Promise.all([localVoices(), onDeviceRecognitionState()]);
+export interface SpeechCapabilityOptions {
+  /**
+   * Ask the browser whether it can recognize speech on the device. Off by
+   * default: `SpeechRecognition.available()` crashed the page outright in a
+   * headless Chromium build, so nothing should call it while a page loads.
+   * Turn it on only from an action the visitor took.
+   */
+  probeRecognition?: boolean;
+}
+export async function speechCapabilities(
+  options: SpeechCapabilityOptions = {}
+): Promise<SpeechCapabilities> {
+  const [voices, recognition] = await Promise.all([
+    localVoices(),
+    options.probeRecognition
+      ? onDeviceRecognitionState()
+      : Promise.resolve<RecognitionState>('unsupported'),
+  ]);
   const mimeType = recorderMimeType();
   return {
     localVoices: voices,

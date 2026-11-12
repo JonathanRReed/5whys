@@ -72,6 +72,16 @@ end of every working pass. Delete it in the final pull request.
 - 2026-11-12: Letter station gained recipient, sender, a worked example,
   and "skill: proof" scaffolding from requirements marked "have it";
   the full letter is assembled with greeting and sign-off.
+- 2026-11-12: speech and hosted model libraries merged
+  (`t3/production-speech-model-libraries`; report in `scripts/models/REPORT.md`).
+- 2026-11-12: Rehearsal Room at `/interview-glow-up/rehearse/`: questions from
+  the decoded role, typed or recorded answers, playback, editable transcript
+  (Whisper when hosted and downloaded), counted delivery facts, self-check,
+  follow-up question, keep a recording. Linked from the desk and Glow Up.
+- 2026-11-12: `speechCapabilities()` no longer probes on-device recognition
+  unless asked: `SpeechRecognition.available()` crashed headless Chromium.
+- 2026-11-12 12:55: full suite green with builders idle (891 unit, 50 browser,
+  2 skipped opt-in model tests). The earlier desk timeout was load.
 
 ## Engine follow-ups to hand back
 
@@ -86,7 +96,7 @@ end of every working pass. Delete it in the final pull request.
 
 | Piece | Model | Paths |
 | --- | --- | --- |
-| Speech and hosted model libraries | GPT-6.1 Sol | `src/lib/models/`, `src/lib/speech/`, `scripts/models/`, `public/_headers` |
+| Guides for career, networking, glow-up, pay | Opus 5.5 | `src/lib/guides/`, `data-guide` hooks, `e2e/guided-mode.spec.ts` |
 
 ## Next for the lead
 
@@ -113,7 +123,8 @@ end of every working pass. Delete it in the final pull request.
   move the pure helpers into `src/lib` when touching Five Whys.
 - Still to build (lead): dashboard links into the desk and dated steps;
   desk resume station (per-application bullet selection and export); worksheet print export for the bullets flow;
-  rehearsal room and Networking rep loop (after the speech library lands);
+  Networking rep loop with recording and playback (reuse `createRecorder`,
+  `TakeReview` ideas); a guide for the rehearsal room;
   Five Whys: start from an experience, identity statement from own phrases,
   send to a story or intro;
   homepage specimen hero (plates and nav are done);  offline and install;
@@ -142,6 +153,10 @@ confused them, and what they would change. Fix what they find before the
 final pull request.
 
 ## Open questions for the owner
+
+- Preview does not serve route-specific headers, so the microphone header is
+  simulated in `e2e/rehearsal.spec.ts`. Real microphone use on the deployed
+  site is unverified until a preview deploy.
 
 - BLS wage files must be downloaded by hand in a browser into
   `scripts/pay-data/input/` (oesm25nat.zip, oesm25st.zip, oesm25ma.zip from
