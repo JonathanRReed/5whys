@@ -1,7 +1,9 @@
 import { useId } from 'react';
+import type { FollowUpWhyInput } from '../../lib/local-ai';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Textarea } from '../ui/textarea';
+import SharperWhy from './SharperWhy';
 import { condenseAnswer, getAnswerNudge, type TrackExample } from './shared';
 
 type WhyFormProps = {
@@ -12,6 +14,8 @@ type WhyFormProps = {
   exampleOpen: Record<number, boolean>;
   onResponseChange: (index: number, value: string) => void;
   onToggleExample: (index: number) => void;
+  /** Set only when the browser's own model is ready to write follow-ups. */
+  sharper?: Pick<FollowUpWhyInput, 'track' | 'topic'>;
 };
 
 export default function WhyForm({
@@ -22,6 +26,7 @@ export default function WhyForm({
   exampleOpen,
   onResponseChange,
   onToggleExample,
+  sharper,
 }: WhyFormProps) {
   const exampleIdPrefix = useId();
   return (
@@ -66,6 +71,13 @@ export default function WhyForm({
                 </p>
               )}
               {nudge && <p className="text-xs leading-relaxed text-gold">{nudge}</p>}
+              {sharper && !locked && index > 0 && previousAnswer.trim() && !response.trim() && (
+                <SharperWhy
+                  track={sharper.track}
+                  topic={sharper.topic}
+                  answers={responses.slice(0, index)}
+                />
+              )}
               <Button
                 type="button"
                 variant="ghost"

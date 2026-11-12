@@ -36,6 +36,20 @@ export default function Career5Whys({
   const [history, setHistory] = React.useState<WhySnapshot[]>([]);
   const [historyLimit, setHistoryLimit] = React.useState<number>(DEFAULT_HISTORY_LIMIT);
   const activeTrack = TRACKS[session.track];
+
+  // Offer model-written follow-ups only when the browser already has its own
+  // model. This check never downloads anything.
+  const [modelReady, setModelReady] = React.useState(false);
+  React.useEffect(() => {
+    let cancelled = false;
+    void import('../lib/local-ai').then(async ({ getBrowserModelCapability }) => {
+      const capability = await getBrowserModelCapability();
+      if (!cancelled) setModelReady(capability.state === 'available');
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const historyIsFull = history.length >= historyLimit;
   const {
     surface,
@@ -261,6 +275,7 @@ export default function Career5Whys({
               prompts={prompts}
               example={activeTrack.example}
               exampleOpen={exampleOpen}
+              sharper={modelReady ? { track: session.track, topic: session.topic } : undefined}
               onResponseChange={handleResponseChange}
               onToggleExample={(index) =>
                 setExampleOpen((prev) => ({ ...prev, [index]: !prev[index] }))

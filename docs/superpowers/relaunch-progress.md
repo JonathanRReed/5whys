@@ -59,6 +59,9 @@ end of every working pass. Delete it in the final pull request.
   deploy with 163 MB of model chunks is unproven.
 - 2026-11-12: navigation now keeps the six tools behind one Tools menu at
   every width; homepage shows six plates and says six tools.
+- 2026-11-12: storage panel on the dashboard (`StoragePanel`).
+- 2026-11-12: Five Whys offers a model-written follow-up question when the
+  browser's own model is ready (`SharperWhy`).
 
 ## Engine follow-ups to hand back
 
@@ -96,7 +99,9 @@ end of every working pass. Delete it in the final pull request.
   move the pure helpers into `src/lib` when touching Five Whys.
 - Still to build (lead): dashboard links into the desk and dated steps;
   desk resume station (per-application bullet selection and export); worksheet print export for the bullets flow;
-  Storage panel; rehearsal room (after spikes); Five Whys and Networking upgrades;
+  rehearsal room and Networking rep loop (after the speech library lands);
+  Five Whys: start from an experience, identity statement from own phrases,
+  send to a story or intro;
   homepage specimen hero (plates and nav are done); OG images for
   `/application/` and `/pay/`; offline and install;
   privacy copy; DESIGN.md specimen section.
