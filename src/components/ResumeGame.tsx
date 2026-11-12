@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { isStudentLike, readProfile } from '../lib/profile';
+import type { ResumeDoc } from '../lib/resume-doc';
 import type { BulletFields, BulletRecord, StoredResumeSession } from '../lib/resume-game';
 import {
   applyFieldChange,
@@ -22,6 +23,7 @@ import { cn } from '../lib/utils';
 import BeforeAfter from './resume-game/BeforeAfter';
 import BulletEditor from './resume-game/BulletEditor';
 import BulletList from './resume-game/BulletList';
+import MachineView from './resume-game/MachineView';
 import ResumeHeader from './resume-game/ResumeHeader';
 import ResumeInput from './resume-game/ResumeInput';
 import ReviewLines from './resume-game/ReviewLines';
@@ -200,6 +202,9 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
   const [isLoadingFile, setIsLoadingFile] = React.useState(false);
   const [fileError, setFileError] = React.useState<string | null>(null);
   const uploadSequence = React.useRef(0);
+  // The structured copy of an uploaded file, for the machine view. Pasted
+  // text has no layout to inspect, so it stays null until a file is loaded.
+  const [resumeDoc, setResumeDoc] = React.useState<ResumeDoc | null>(null);
 
   React.useEffect(
     () => () => {
@@ -231,6 +236,20 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
       if (sequence !== uploadSequence.current) return;
       setResumeTextValue(text);
       setStatus('File loaded. Review the text below before analyzing.');
+      // The machine view is extra: if the layout cannot be read, the text
+      // above is still loaded and scoring still works.
+      try {
+        const name = file.name.toLowerCase();
+        const engine = await import('../lib/resume-doc');
+        const doc = name.endsWith('.pdf')
+          ? await engine.extractPdf(file)
+          : name.endsWith('.docx')
+            ? await engine.extractDocx(new Uint8Array(await file.arrayBuffer()), file.name)
+            : null;
+        if (sequence === uploadSequence.current) setResumeDoc(doc);
+      } catch {
+        if (sequence === uploadSequence.current) setResumeDoc(null);
+      }
     } catch (error) {
       if (sequence !== uploadSequence.current) return;
       setFileError(error instanceof Error ? error.message : 'Failed to read file.');
@@ -337,6 +356,7 @@ ${improved.join('\n')}
           cancelScan();
           cancelUpload();
           setResumeTextValue(sampleResume);
+          setResumeDoc(null);
           setStatus('Sample resume loaded. Run the analysis to see suggestions.');
         }}
         onClear={() => {
@@ -344,9 +364,12 @@ ${improved.join('\n')}
           cancelUpload();
           setSessionState(() => ({ ...EMPTY_SESSION }));
           setScanComplete(false);
+          setResumeDoc(null);
           setStatus('Workspace cleared. Paste a fresh resume to begin.');
         }}
       />
+
+      {resumeDoc && <MachineView doc={resumeDoc} onChange={setResumeDoc} />}
 
       {!scanComplete && resumeText.trim() && (
         <div className="rounded-2xl border border-dashed border-border/35 bg-overlay/15 p-8 text-center">
