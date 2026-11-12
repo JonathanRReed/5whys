@@ -7,7 +7,7 @@
  * the resume gives instead of guessed.
  */
 
-import { BULLET_START_PATTERN } from '../resume-game/constants';
+import { ACTION_VERBS as RESUME_ACTION_VERBS } from '../resume-game/constants';
 import { ACTION_VERBS } from './lexicon';
 import { splitSentences, trimmedSegment, wordCount } from './text';
 import type { SourceSpan } from './types';
@@ -201,12 +201,38 @@ const IRREGULAR_PAST = new Set([
   'read',
 ]);
 
+/** Openings that say someone took part without naming an action of their own. */
+const INVOLVEMENT_VERBS = [
+  'helped',
+  'supported',
+  'assisted',
+  'participated',
+  'worked',
+  'involved',
+  'handled',
+  'performed',
+  'responsible',
+  'aided',
+  'volunteered',
+  'served',
+  'attended',
+  'member',
+  'tasked',
+  'contributed',
+];
+
+const LISTED_VERBS = new Set(
+  [...RESUME_ACTION_VERBS, ...INVOLVEMENT_VERBS].map((verb) => verb.toLowerCase())
+);
+
 /** True when a line opens with something a person did ("Coordinated", "Ran", "Answer"). */
 export function startsWithAction(line: string): boolean {
   const first = (line.match(/^[A-Za-z]+/)?.[0] ?? '').toLowerCase();
   if (!first) return false;
-  if (BULLET_START_PATTERN.test(line) || IRREGULAR_PAST.has(first) || ACTION_VERBS.has(first))
-    return true;
+  // A word list, on purpose. The Resume Game's looser check also accepts any
+  // word shaped like a past tense, which reads "Advanced Excel skills" as an
+  // action and turns a tool requirement into a task.
+  if (LISTED_VERBS.has(first) || IRREGULAR_PAST.has(first) || ACTION_VERBS.has(first)) return true;
   const bases = [
     first.replace(/ied$/, 'y'),
     first.replace(/ed$/, ''),

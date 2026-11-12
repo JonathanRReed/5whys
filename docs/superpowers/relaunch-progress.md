@@ -306,6 +306,35 @@ names); 29 (headings and landmarks); 33 (collapsed coach title cut off in
 OpenDyslexic); 35 (Rep length arrow keys); 37; faded text in the three Glow
 Up files.
 
+### Posting engine repairs merged (`t3/repair-posting-engine-evidence`)
+
+Evidence is now strict: a weak word alone never counts; tool requirements
+need the tool; education, contact, heading and summary lines are not
+evidence for tools or tasks; alternatives and years of experience are read;
+a `partial` state says which parts are shown; `findNearMisses` offers "this
+line may already say it, in other words" from a 65-group synonym table;
+logistics, company description, role-summary and pitch lines are set aside;
+Confirm covers required and preferred only; qualifications are grouped.
+
+Merge note: this branch imported `BULLET_START_PATTERN` and
+`INVOLVEMENT_VERBS` from the Resume Game, which that builder removed. The
+posting code now keeps its own list (`resume-lines.ts`). Do not swap in the
+Resume Game's `startsWithVerb`: it accepts any past-tense shape and reads
+"Advanced Excel skills" as an action.
+
+Known limits to raise with the owner or fix next:
+- It may now be too strict. The career changer reads 1 of 16 on the
+  operations posting. "Retail store operations experience" is `none` for
+  someone who ran stores for eight years, because only her summary says it.
+  Near misses carry most of the value; the interface must lead with them.
+- Set-aside lines have no recovery control in the interface.
+- Years count every dated role, volunteer work included.
+- Near misses and partial rows are plain text and need the lead's design.
+- Roles already confirmed with the old "Confirm all" keep their sort until
+  re-parsed.
+
+Suite after merge and fix: 1014 unit, 88 browser.
+
 ## In flight (builders, started 2026-11-12)
 
 | Piece | Model | Paths |
