@@ -721,15 +721,6 @@ export type DeskStationId =
   | 'before-you-send'
   | 'pay';
 
-export const DESK_STATIONS: readonly DeskStationId[] = [
-  'qualifications',
-  'bullets',
-  'resume',
-  'letter',
-  'before-you-send',
-  'pay',
-];
-
 const filled = (value: string): boolean => value.trim().length > 0;
 
 /**

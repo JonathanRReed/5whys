@@ -6,10 +6,24 @@
     "e2e/**/*.spec.ts",
     "src/lib/pay/index.ts",
     "src/lib/models/index.ts",
-    "src/lib/speech/index.ts"
+    "src/lib/speech/index.ts",
+    "src/lib/posting/index.ts",
+    "src/lib/resume-game/index.ts",
+    "src/lib/glowup-banks/index.ts",
+    "src/lib/resume-doc/index.ts",
+    "src/lib/local-ai/index.ts",
+    "scripts/models/fetch-models.mjs"
   ],
   "project": ["src/**", "tests/**", "e2e/**", "scripts/pay-data/**/*.ts", "scripts/models/**"],
-  "ignoreDependencies": ["@fontsource/fraunces", "@fontsource/inter"],
+  "ignoreDependencies": [
+    "@fontsource/fraunces",
+    "@fontsource/inter",
+    "devalue",
+    "fast-uri",
+    "onnxruntime-web",
+    "vite"
+  ],
   "ignoreExportsUsedInFile": true,
-  "ignore": ["src/components/ui/**"]
+  "ignore": ["src/components/ui/**"],
+  "ignoreBinaries": ["say", "afconvert", "espeak-ng", "check"]
 }
