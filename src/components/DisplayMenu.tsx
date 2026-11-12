@@ -18,6 +18,18 @@ import {
 } from '../lib/typeface';
 import { cn } from '../lib/utils';
 
+type ModelState = 'unknown' | 'unsupported' | 'downloadable' | 'downloading' | 'available';
+
+const MODEL_COPY: Record<ModelState, string> = {
+  unknown: 'Checking this browser.',
+  unsupported:
+    'This browser has no built-in model. Every tool still works; suggestions come from the built-in rules.',
+  downloadable:
+    'This browser can add its own model. Your browser downloads it from its maker; what you write still stays on this device.',
+  downloading: 'Your browser is downloading its model.',
+  available: "Your browser's model is ready. Suggestions are written on this device.",
+};
+
 const THEME_OPTIONS: { value: Theme; label: string }[] = [
   { value: 'night', label: 'Night' },
   { value: 'dawn', label: 'Dawn' },
@@ -42,6 +54,31 @@ export default function DisplayMenu() {
   const titleId = React.useId();
   const themeName = React.useId();
   const typefaceName = React.useId();
+  const [model, setModel] = React.useState<ModelState>('unknown');
+  const [progress, setProgress] = React.useState<number | null>(null);
+
+  // Ask the browser about its model only once the panel is open. This check
+  // never downloads anything.
+  React.useEffect(() => {
+    if (!open || model !== 'unknown') return undefined;
+    let cancelled = false;
+    void import('../lib/local-ai').then(async ({ getBrowserModelCapability }) => {
+      const capability = await getBrowserModelCapability();
+      if (!cancelled) setModel(capability.state);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, model]);
+
+  const downloadModel = async () => {
+    setModel('downloading');
+    setProgress(0);
+    const { downloadBrowserModel } = await import('../lib/local-ai');
+    const capability = await downloadBrowserModel({ onProgress: setProgress });
+    setProgress(null);
+    setModel(capability.state);
+  };
 
   // Follow the boot script's choice, and changes made in other tabs.
   React.useEffect(() => {
@@ -188,6 +225,25 @@ export default function DisplayMenu() {
           </fieldset>
 
           <p className="mt-3 text-xs text-muted-foreground">Saved on this device.</p>
+
+          <div className="mt-4 border-t border-border/40 pt-4">
+            <h3 className="font-sans text-sm text-muted-foreground">On-device AI</h3>
+            <p className="mt-2 text-sm leading-relaxed" aria-live="polite">
+              {MODEL_COPY[model]}
+              {model === 'downloading' && progress !== null
+                ? ` ${Math.round(progress * 100)} percent.`
+                : ''}
+            </p>
+            {model === 'downloadable' && (
+              <button
+                type="button"
+                onClick={downloadModel}
+                className="mt-2 inline-flex min-h-9 items-center rounded-lg border border-border/60 px-3 text-sm transition-colors hover:bg-overlay/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                Let my browser download its model
+              </button>
+            )}
+          </div>
         </div>
       ) : null}
     </div>

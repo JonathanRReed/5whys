@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
+import RewriteHelp from './RewriteHelp';
 
 type Props = {
   bullet: BulletRecord | null;
@@ -85,6 +86,8 @@ export default function BulletEditor({ bullet, index, onFieldChange }: Props) {
                 </p>
               </div>
             )}
+
+            <RewriteHelp line={bullet.improved || bullet.original} />
 
             <div className="grid gap-4 md:grid-cols-2">
               <div>

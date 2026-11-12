@@ -206,6 +206,27 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
   // text has no layout to inspect, so it stays null until a file is loaded.
   const [resumeDoc, setResumeDoc] = React.useState<ResumeDoc | null>(null);
 
+  // Restore the structured copy saved on this device. Reading never writes:
+  // it is only saved again after an upload or a repair the visitor made.
+  React.useEffect(() => {
+    let cancelled = false;
+    void import('../lib/local-db').then(async ({ getResumeDoc }) => {
+      const saved = await getResumeDoc<ResumeDoc>();
+      if (!cancelled && saved) setResumeDoc((current) => current ?? saved.doc);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const keepResumeDoc = React.useCallback((doc: ResumeDoc | null) => {
+    setResumeDoc(doc);
+    void import('../lib/local-db').then(async ({ saveResumeDoc, deleteResumeDoc }) => {
+      if (doc) await saveResumeDoc(doc);
+      else await deleteResumeDoc();
+    });
+  }, []);
+
   React.useEffect(
     () => () => {
       uploadSequence.current += 1;
@@ -246,9 +267,9 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
           : name.endsWith('.docx')
             ? await engine.extractDocx(new Uint8Array(await file.arrayBuffer()), file.name)
             : null;
-        if (sequence === uploadSequence.current) setResumeDoc(doc);
+        if (sequence === uploadSequence.current) keepResumeDoc(doc);
       } catch {
-        if (sequence === uploadSequence.current) setResumeDoc(null);
+        if (sequence === uploadSequence.current) keepResumeDoc(null);
       }
     } catch (error) {
       if (sequence !== uploadSequence.current) return;
@@ -364,12 +385,12 @@ ${improved.join('\n')}
           cancelUpload();
           setSessionState(() => ({ ...EMPTY_SESSION }));
           setScanComplete(false);
-          setResumeDoc(null);
+          keepResumeDoc(null);
           setStatus('Workspace cleared. Paste a fresh resume to begin.');
         }}
       />
 
-      {resumeDoc && <MachineView doc={resumeDoc} onChange={setResumeDoc} />}
+      {resumeDoc && <MachineView doc={resumeDoc} onChange={keepResumeDoc} />}
 
       {!scanComplete && resumeText.trim() && (
         <div className="rounded-2xl border border-dashed border-border/35 bg-overlay/15 p-8 text-center">
