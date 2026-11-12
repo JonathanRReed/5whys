@@ -9,6 +9,7 @@ import {
 import { loadApplications, type TrackedApplication } from '../../lib/applications';
 import { type DecodedRole, loadData } from '../../lib/glowup-store';
 import {
+  type CoverageState,
   describeCoverage,
   describeParts,
   requirementsFromBullets,
@@ -16,6 +17,14 @@ import {
 } from '../../lib/posting';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
+
+/** Every state is named in words; colour only repeats it. */
+const STATE_LABEL: Record<CoverageState, { text: string; tone: string }> = {
+  evidence: { text: 'Shown', tone: 'text-foam' },
+  partial: { text: 'Partly shown', tone: 'text-gold' },
+  none: { text: 'Not mentioned yet', tone: 'text-muted-foreground' },
+  'not-checkable': { text: 'For you to judge', tone: 'text-muted-foreground' },
+};
 
 type Target = { application: TrackedApplication; role: DecodedRole };
 
@@ -86,6 +95,11 @@ export default function PostingMatch({ resumeText }: Props) {
 
   if (!target || !coverage) return null;
   const appId = target.application.id;
+  const partly = coverage.partialCount;
+  const missing = coverage.withoutEvidenceCount - coverage.partialCount;
+  const maybe = coverage.rows.filter(
+    (row) => (row.state === 'none' || row.state === 'partial') && row.nearMisses.length > 0
+  ).length;
   const planned = new Map(
     (desks.desks[appId]?.qualifications ?? []).map((row) => [row.requirementId, row.status])
   );
@@ -131,10 +145,22 @@ export default function PostingMatch({ resumeText }: Props) {
         <p className="text-base font-medium text-foreground" data-testid="match-summary">
           {describeCoverage(coverage)}
         </p>
+        <p className="text-sm text-foreground" data-testid="match-breakdown">
+          {[
+            partly > 0 && `${partly} partly shown`,
+            missing > 0 && `${missing} not mentioned yet`,
+            coverage.notCheckableCount > 0 && `${coverage.notCheckableCount} for you to judge`,
+          ]
+            .filter(Boolean)
+            .join(', ')}
+          {partly + missing + coverage.notCheckableCount > 0 ? '.' : ''}
+          {maybe > 0 &&
+            ` ${maybe === 1 ? 'One of those' : `${maybe} of those`} may already be in your resume in other words.`}
+        </p>
         <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
-          Evidence means a line of your resume mentions what the requirement asks for. If you have
-          the experience but the resume does not say so, write a bullet for it. If you do not have
-          it yet, plan for it. Do not add the word without the work.
+          Shown means a line of your resume names what the requirement asks for. A low count is
+          common when your experience is real but worded differently: look for "You may already have
+          this" below. Use the posting's words only where they are true of what you did.
         </p>
       </div>
 
@@ -142,80 +168,121 @@ export default function PostingMatch({ resumeText }: Props) {
         {coverage.rows.map((row) => {
           const excerpt = row.excerpts[0];
           const status = planned.get(row.requirement.id);
+          const label = STATE_LABEL[row.state];
+          const parts = describeParts(row);
           return (
             <li
               key={row.requirement.id}
               className={cn(
-                'grid gap-2 rounded-xl border p-4 md:grid-cols-2 md:gap-6',
-                row.state === 'evidence' ? 'border-foam/40' : 'border-border/40'
+                'grid gap-3 rounded-xl border p-4 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-6',
+                row.state === 'evidence' ? 'border-foam/45' : 'border-border/40'
               )}
             >
-              <p className="text-sm leading-relaxed text-foreground">{row.requirement.text}</p>
-              <div className="min-w-0 space-y-2 text-sm">
-                {row.state === 'evidence' && excerpt ? (
+              <div className="min-w-0 space-y-1.5">
+                <p className={cn('text-xs font-semibold', label.tone)}>{label.text}</p>
+                <p className="text-sm leading-relaxed text-foreground">{row.requirement.text}</p>
+              </div>
+              <div className="min-w-0 space-y-3 text-sm">
+                {row.state === 'evidence' && excerpt && (
                   <p className="leading-relaxed text-muted-foreground">
-                    <span className="font-medium text-foam">In your resume: </span>"
-                    {excerpt.text.trim()}"
+                    <span className="text-foreground">Your line: </span>"{excerpt.text.trim()}"
                     {excerpt.listedOnly && (
-                      <span className="block text-xs">
+                      <span className="mt-1 block text-xs">
                         This is in a skills list. A bullet showing you using it is stronger.
                       </span>
                     )}
-                    {row.note && <span className="block text-xs">{row.note}</span>}
                   </p>
-                ) : row.state === 'none' || row.state === 'partial' ? (
-                  <>
-                    {row.state === 'partial' ? (
-                      <div className="space-y-1 text-muted-foreground">
-                        <p>Shown: {describeParts(row).shown.join('; ')}.</p>
-                        {excerpt && <p>In your resume: "{excerpt.text.trim()}"</p>}
-                        <p>Not shown yet: {describeParts(row).notShown.join('; ')}.</p>
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground">
-                        Nothing in your resume mentions this yet.
-                      </p>
-                    )}
-                    {row.note && <p className="text-xs text-muted-foreground">{row.note}</p>}
-                    {row.nearMisses.map((miss) => (
-                      <div key={miss.start} className="space-y-1 text-muted-foreground">
-                        <p>This line may already say it, in other words: "{miss.text.trim()}"</p>
-                        <p>
-                          If it is the same work, say it with the posting's words:{' '}
-                          {miss.postingTerms.join(', ')}.
-                        </p>
-                      </div>
-                    ))}
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Button asChild size="xs" variant="outline">
-                        <a href={`/application/?id=${encodeURIComponent(appId)}&station=bullets`}>
-                          I have this: write a bullet
-                        </a>
-                      </Button>
-                      {status === 'not-yet' ? (
-                        <a
-                          className="text-xs underline underline-offset-2"
-                          href={`/application/?id=${encodeURIComponent(appId)}&station=qualifications`}
-                        >
-                          Marked not yet. Plan for it on the desk.
-                        </a>
-                      ) : (
-                        <Button
-                          type="button"
-                          size="xs"
-                          variant="ghost"
-                          onClick={() => markNotYet(row.requirement.id)}
-                        >
-                          Not yet
-                        </Button>
-                      )}
+                )}
+
+                {row.state === 'partial' && (
+                  <dl className="space-y-1 leading-relaxed">
+                    <div>
+                      <dt className="inline text-foreground">Shown: </dt>
+                      <dd className="inline text-muted-foreground">{parts.shown.join('; ')}.</dd>
                     </div>
-                  </>
-                ) : (
+                    {excerpt && (
+                      <div>
+                        <dt className="inline text-foreground">Your line: </dt>
+                        <dd className="inline text-muted-foreground">"{excerpt.text.trim()}"</dd>
+                      </div>
+                    )}
+                    <div>
+                      <dt className="inline text-foreground">Not shown yet: </dt>
+                      <dd className="inline text-muted-foreground">{parts.notShown.join('; ')}.</dd>
+                    </div>
+                  </dl>
+                )}
+
+                {row.state === 'none' && row.nearMisses.length === 0 && (
+                  <p className="text-muted-foreground">Nothing in your resume mentions this yet.</p>
+                )}
+
+                {row.state === 'not-checkable' && (
                   <p className="text-muted-foreground">
                     {row.note ??
-                      'This one is not something a resume line can be checked against. Judge it yourself.'}
+                      'A resume line cannot be checked against this one. Judge it yourself, and be ready to show it in the interview.'}
                   </p>
+                )}
+
+                {row.state !== 'not-checkable' && row.note && (
+                  <p className="text-xs leading-relaxed text-muted-foreground">{row.note}</p>
+                )}
+
+                {(row.state === 'none' || row.state === 'partial') &&
+                  row.nearMisses.map((miss) => (
+                    <div
+                      key={miss.start}
+                      className="space-y-2 rounded-lg bg-gold/10 p-3 leading-relaxed"
+                      data-testid="near-miss"
+                    >
+                      <p className="font-medium text-foreground">You may already have this.</p>
+                      <p className="text-muted-foreground">
+                        <span className="text-foreground">Your line: </span>"
+                        {miss.text.trim().replace(/^[-•*]\s*/, '')}"
+                      </p>
+                      {miss.postingTerms.length > 0 && (
+                        <p className="text-muted-foreground">
+                          If that is the same work, the posting calls it{' '}
+                          {miss.postingTerms.map((term, index) => (
+                            <React.Fragment key={term}>
+                              {index > 0 &&
+                                (index === miss.postingTerms.length - 1 ? ' and ' : ', ')}
+                              <strong className="font-semibold text-foreground">{term}</strong>
+                            </React.Fragment>
+                          ))}
+                          .
+                        </p>
+                      )}
+                    </div>
+                  ))}
+
+                {(row.state === 'none' || row.state === 'partial') && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button asChild size="xs" variant="outline">
+                      <a
+                        href={`/application/?id=${encodeURIComponent(appId)}&station=bullets&requirement=${encodeURIComponent(row.requirement.id)}`}
+                      >
+                        I have this: write a bullet
+                      </a>
+                    </Button>
+                    {status === 'not-yet' ? (
+                      <a
+                        className="text-xs underline underline-offset-2"
+                        href={`/application/?id=${encodeURIComponent(appId)}&station=qualifications`}
+                      >
+                        Marked not yet. Plan for it on the desk.
+                      </a>
+                    ) : (
+                      <Button
+                        type="button"
+                        size="xs"
+                        variant="ghost"
+                        onClick={() => markNotYet(row.requirement.id)}
+                      >
+                        Not yet
+                      </Button>
+                    )}
+                  </div>
                 )}
               </div>
             </li>

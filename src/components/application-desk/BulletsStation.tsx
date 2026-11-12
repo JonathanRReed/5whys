@@ -27,12 +27,21 @@ export default function BulletsStation({ desk }: { desk: DeskState }) {
   const { application, role, changeDesks } = desk;
   const [printing, setPrinting] = React.useState(false);
   const donePrinting = React.useCallback(() => setPrinting(false), []);
+  // Arriving from "I have this: write a bullet" carries the requirement, so
+  // the bullet is written against it instead of in the abstract.
+  const [wantedId, setWantedId] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    setWantedId(new URLSearchParams(window.location.search).get('requirement'));
+  }, []);
   if (!application) return null;
   const flow = desk.desk.bullets;
   const appId = application.id;
   const confirmed = requirementsFromBullets(role?.bullets ?? []).filter(
     (r) => r.status === 'confirmed'
   );
+  const wanted = wantedId
+    ? (requirementsFromBullets(role?.bullets ?? []).find((r) => r.id === wantedId) ?? null)
+    : null;
   const hasWork = Boolean(
     flow.experience.trim() || flow.impact.trim() || flow.bullets.some((b) => b.text.trim())
   );
@@ -46,6 +55,17 @@ export default function BulletsStation({ desk }: { desk: DeskState }) {
           for. Each step builds on the last.
         </p>
       </div>
+
+      {wanted && (
+        <div className="space-y-1 rounded-xl border border-lichen/50 bg-lichen/8 p-4" role="note">
+          <p className="text-sm font-medium text-foreground">Write a bullet that shows this</p>
+          <p className="text-sm leading-relaxed text-muted-foreground">{wanted.text}</p>
+          <p className="text-xs text-muted-foreground">
+            Pick the experience where you did this, and use the posting's words only where they are
+            true of what you did.
+          </p>
+        </div>
+      )}
 
       <ol className="space-y-8">
         {STEPS.map((step, index) => (
