@@ -71,31 +71,34 @@ export function detectUnreadablePages(doc: ResumeDoc): ResumeFinding[] {
 export function detectColumns(doc: ResumeDoc): ResumeFinding[] {
   return doc.pages
     .filter((page) => pageColumns(doc, page.index).length > 1)
-    .map((page) =>
+    .map((page, index) =>
       finding(
         'columns',
         'This looks like columns. Check the order below.',
         'We found text on both sides of a persistent gap. Compare the extraction order with the geometric order.',
         doc.lines.filter((line) => line.pageIndex === page.index).map((line) => line.id),
         'check',
-        'linearize',
+        index === 0 ? 'linearize' : undefined,
         String(page.index)
       )
     );
 }
 export function detectReadingOrder(doc: ResumeDoc): ResumeFinding[] {
-  return doc.extractionOrder.some((id, index) => id !== doc.geometricOrder[index])
-    ? [
-        finding(
-          'reading-order',
-          'The extraction order differs from the page order.',
-          'The content stream and our geometric reading order put these lines in different positions. Review both previews before changing the order.',
-          doc.extractionOrder.filter((id, index) => id !== doc.geometricOrder[index]),
-          'check',
-          'linearize'
-        ),
-      ]
-    : [];
+  const differs = doc.extractionOrder.some((id, index) => id !== doc.geometricOrder[index]);
+  if (!differs) return [];
+  const hasColumns = detectColumns(doc).length > 0;
+  return [
+    finding(
+      'reading-order',
+      'The extraction order differs from the page order.',
+      hasColumns
+        ? 'The content stream and our geometric reading order differ. Fixing the columns also fixes this order. Review both previews first.'
+        : 'The content stream and our geometric reading order put these lines in different positions. Review both previews before changing the order.',
+      doc.extractionOrder.filter((id, index) => id !== doc.geometricOrder[index]),
+      'check',
+      hasColumns ? undefined : 'linearize'
+    ),
+  ];
 }
 export function detectContactPlacement(doc: ResumeDoc): ResumeFinding[] {
   const ids = new Set([

@@ -57,3 +57,22 @@ export function geometricLineOrder(doc: ResumeDoc): string[] {
     ].map((line) => line.id);
   });
 }
+
+/** Collapse visual continuations for text consumers while leaving page records intact. */
+export function logicalLines(lines: ResumeLine[]): ResumeLine[] {
+  const byId = new Map(lines.map((line) => [line.id, line]));
+  const continuations = new Map<string, ResumeLine[]>();
+  for (const line of lines) {
+    if (!line.continuationOf || !byId.has(line.continuationOf)) continue;
+    const group = continuations.get(line.continuationOf) ?? [];
+    group.push(line);
+    continuations.set(line.continuationOf, group);
+  }
+  return lines.flatMap((line) => {
+    if (line.continuationOf && byId.has(line.continuationOf)) return [];
+    const group = continuations.get(line.id);
+    return [
+      group ? { ...line, text: [line, ...group].map((part) => part.text.trim()).join(' ') } : line,
+    ];
+  });
+}

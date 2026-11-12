@@ -1,6 +1,7 @@
 import type { TextItem } from 'pdfjs-dist/types/src/display/api';
 import { createPdfDataFactory } from '../resume-game/pdf-data';
 import { recomputeDoc } from './model';
+import { normalizePdfLines } from './pdf-lines';
 import type { BoundingBox, ResumeDoc, ResumeLine, ResumePage, ResumeTextItem } from './types';
 
 function union(a: BoundingBox, b: BoundingBox): BoundingBox {
@@ -148,18 +149,20 @@ export async function extractPdf(file: File): Promise<ResumeDoc> {
         line.text = line.text.trimEnd();
         line.bullet = /^\s*[-•*◦○●▪]\s+/.test(line.text);
       }
-      return recomputeDoc({
-        source: 'pdf',
-        file: { name: file.name, sizeBytes: file.size, pageCount: pdf.numPages },
-        pages,
-        lines,
-        extractionOrder: [],
-        geometricOrder: [],
-        sections: [],
-        contact: { email: null, phone: null, links: [] },
-        plainText: '',
-        findings: [],
-      });
+      return recomputeDoc(
+        normalizePdfLines({
+          source: 'pdf',
+          file: { name: file.name, sizeBytes: file.size, pageCount: pdf.numPages },
+          pages,
+          lines,
+          extractionOrder: [],
+          geometricOrder: [],
+          sections: [],
+          contact: { email: null, phone: null, links: [] },
+          plainText: '',
+          findings: [],
+        })
+      );
     };
     return await Promise.race([
       extract(),
