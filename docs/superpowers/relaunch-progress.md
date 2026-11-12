@@ -34,6 +34,9 @@ end of every working pass. Delete it in the final pull request.
 - 2026-11-12: structured resume persists in IndexedDB; rewrite help in the
   bullet editor (`RewriteHelp`, `shared/AiText`); on-device AI status in the
   Aa menu.
+- 2026-11-12: pay library and pipeline merged (`t3/pay-data-pipeline-and-library`).
+  Titles index is committed. Wage data is NOT: BLS returns 403 to every
+  automated download (curl, pipeline, headless browser).
 
 ## Engine follow-ups to hand back
 
@@ -52,7 +55,6 @@ end of every working pass. Delete it in the final pull request.
 | --- | --- | --- |
 | Posting engine | Opus 5.5 | `src/lib/posting/` |
 | Resume engine follow-up (bullets, wrapped lines) | GPT-6.1 Sol | `src/lib/resume-doc/` |
-| Pay data and lookup | GPT-6.1 Sol | `scripts/pay-data/`, `public/data/pay/`, `src/lib/pay/` |
 | Model hosting and speech spikes | GPT-6.1 Sol | `spikes/`, `scripts/models/` |
 
 ## Next for the lead
@@ -85,6 +87,11 @@ end of every working pass. Delete it in the final pull request.
   builders are running in parallel; rerun before treating it as a failure.
 
 ## Open questions for the owner
+
+- BLS wage files must be downloaded by hand in a browser into
+  `scripts/pay-data/input/` (oesm25nat.zip, oesm25st.zip, oesm25ma.zip from
+  https://www.bls.gov/oes/tables.htm), then `bun run pay:data --offline`.
+  Until then `/pay/` can ship only the offer worksheet and title search.
 
 - A real phone is needed to test hosted voice and transcription; until then
   they are desktop only.
