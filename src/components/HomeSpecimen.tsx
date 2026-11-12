@@ -40,6 +40,10 @@ const SHOWN: PostingSection[] = ['required', 'preferred', 'responsibility'];
 export default function HomeSpecimen() {
   const [requirements, setRequirements] = React.useState<PostingRequirement[] | null>(null);
   const [text, setText] = React.useState(SAMPLE_POSTING);
+  // The button is server-rendered before this island loads. Until it is live
+  // it says so, instead of swallowing a tap.
+  const [live, setLive] = React.useState(false);
+  React.useEffect(() => setLive(true), []);
 
   const sort = () => {
     const parsed = parsePosting(SAMPLE_POSTING);
@@ -112,9 +116,10 @@ export default function HomeSpecimen() {
             <button
               type="button"
               onClick={sort}
-              className="inline-flex min-h-11 items-center rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+              disabled={!live}
+              className="inline-flex min-h-11 items-center rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
             >
-              Sort what it asks for
+              {live ? 'Sort what it asks for' : 'Getting ready'}
             </button>
           )}
         </div>
@@ -137,7 +142,7 @@ export default function HomeSpecimen() {
       </div>
 
       <div
-        className="max-h-[30rem] overflow-y-auto rounded-xl border border-border/50 bg-card/60 p-5 text-sm leading-7 whitespace-pre-wrap sm:p-6"
+        className="rounded-xl sm:max-h-[30rem] sm:overflow-y-auto border border-border/50 bg-card/60 p-5 text-sm leading-7 whitespace-pre-wrap sm:p-6"
         style={{ viewTransitionName: 'home-specimen' }}
         data-testid="home-specimen"
       >

@@ -132,7 +132,7 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
               className="text-base"
             />
             <span className="block text-xs text-muted-foreground">
-              No name on the posting? Use the team: "Marketing Team".
+              No name on the posting? Use the team, such as "Hiring Team".
             </span>
           </label>
           <label className="space-y-1">
@@ -230,12 +230,18 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
           </p>
         </div>
         <div className="flex flex-wrap items-end gap-2">
-          <Button type="button" onClick={derive} disabled={busy || !letter.hook.trim()}>
+          <Button type="button" onClick={derive} disabled={busy || !letter.hook.trim() || generic}>
             {busy ? 'Writing' : hasMessages ? 'Write them again' : 'Write the three messages'}
           </Button>
         </div>
         {!letter.hook.trim() && (
           <p className="text-sm text-muted-foreground">Write the hook first.</p>
+        )}
+        {letter.hook.trim() && generic && (
+          <p className="text-sm text-muted-foreground">
+            Rewrite the hook first. These messages reuse it, and a generic opener would be repeated
+            three more times.
+          </p>
         )}
 
         {MESSAGES.map(({ kind, title }) => {

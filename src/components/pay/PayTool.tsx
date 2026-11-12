@@ -103,9 +103,29 @@ export default function PayTool() {
     };
   }, [placeId, loaders]);
 
+  // "Marketing intern, summer 2027" is not an occupation. Search on the work
+  // itself, and say that intern pay is not measured separately.
+  const occupationQuery = React.useMemo(
+    () =>
+      query
+        .replace(
+          /\b(intern(ship)?|co-?op|trainee|summer|fall|autumn|winter|spring|part[- ]time|full[- ]time|(19|20)\d{2})\b/gi,
+          ' '
+        )
+        .replace(/[,()|-]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim(),
+    [query]
+  );
+  const isInternSearch = /\b(intern(ship)?|co-?op|trainee)\b/i.test(query);
+  // A title carried over from an application loads the list without a tap.
+  React.useEffect(() => {
+    if (query && dataState === 'idle') void ensureData();
+  }, [query, dataState, ensureData]);
+
   const candidates = React.useMemo(
-    () => (search && query.trim().length >= 2 ? search(query, 8) : []),
-    [search, query]
+    () => (search && occupationQuery.length >= 2 ? search(occupationQuery, 8) : []),
+    [search, occupationQuery]
   );
 
   const lookup: PayLookup | null = React.useMemo(() => {
@@ -134,6 +154,10 @@ export default function PayTool() {
     const wanted = new URLSearchParams(window.location.search).get('id');
     const known = apps.applications.some((a) => a.id === wanted);
     setAppId(known && wanted ? wanted : (apps.activeId ?? ''));
+    // Arriving from an application's desk: start from that role's title. The
+    // title is read from this device's storage, never from the address.
+    const from = apps.applications.find((a) => a.id === wanted);
+    if (from?.title) setQuery(from.title);
   }, []);
 
   const offer = appId ? (desks.desks[appId]?.offer ?? createEmptyDesk().offer) : scratch;
@@ -183,7 +207,7 @@ export default function PayTool() {
           <span className="block text-sm text-muted-foreground">Job title</span>
           <Input
             value={query}
-            onFocus={ensureData}
+            onFocus={() => void ensureData()}
             data-guide="pay-title"
             onChange={(event) => {
               setQuery(event.target.value);
@@ -203,6 +227,8 @@ export default function PayTool() {
           <div className="max-w-xl space-y-2">
             <p className="text-sm text-muted-foreground">
               Titles mean different things at different employers. Pick the occupation that fits.
+              {isInternSearch &&
+                ' Intern pay is not measured separately: these are figures for the occupation as a whole, and interns usually earn less.'}
             </p>
             <ul
               className="divide-y divide-border/30 rounded-xl border border-border/40"
@@ -223,7 +249,7 @@ export default function PayTool() {
             </ul>
           </div>
         )}
-        {search && query.trim().length >= 2 && candidates.length === 0 && (
+        {search && occupationQuery.length >= 2 && candidates.length === 0 && (
           <p className="text-sm text-muted-foreground">
             No occupation matches that title. Try a plainer version of it.
           </p>

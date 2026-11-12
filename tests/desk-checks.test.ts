@@ -71,3 +71,33 @@ it('assembles the full letter with a greeting and a sign-off', async () => {
     )
   ).toBe('Dear Hiring Team,\n\nI grew a club.\n\nCould we talk?\n\nSincerely,\nSam Alvarez');
 });
+
+it('accepts the role named without the season or extras from the posting title', async () => {
+  const { coreTitle } = await import('../src/lib/desk-checks');
+  expect(coreTitle('Operations Intern, Summer 2027')).toBe('Operations Intern');
+  expect(coreTitle('Data Analyst (Remote)')).toBe('Data Analyst');
+  expect(coreTitle('Program Assistant - Night shift')).toBe('Program Assistant');
+  const checks = runSendChecks({
+    letter: letter({
+      hook: 'I want the operations intern position at Harbor Freight Logistics.',
+    }),
+    title: 'Operations Intern, Summer 2027',
+    company: 'Harbor Freight Logistics',
+    requirements: [],
+  });
+  const names = checks.find((check) => check.id === 'names');
+  expect(names?.passed).toBe(true);
+  expect(names?.detail).toBe('Mentions Operations Intern and Harbor Freight Logistics.');
+});
+
+it('fails a letter that still has template placeholders in it', () => {
+  const checks = runSendChecks({
+    letter: letter({ hook: 'I ran a club.', whyYou: 'Attention to detail: [your proof]' }),
+    title: 'Intern',
+    company: 'Acme',
+    requirements: [],
+  });
+  const check = checks.find((c) => c.id === 'no-placeholders');
+  expect(check?.passed).toBe(false);
+  expect(check?.detail).toBe('Still to replace: [your proof].');
+});

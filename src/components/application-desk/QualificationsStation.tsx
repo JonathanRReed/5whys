@@ -43,6 +43,8 @@ export default function QualificationsStation({ desk }: { desk: DeskState }) {
   const appId = application.id;
   const rows = new Map(desk.desk.qualifications.map((row) => [row.requirementId, row]));
   const evidence = new Map(coverage?.rows.map((row) => [row.requirement.id, row]) ?? []);
+  const tally = { have: 0, maybe: 0, 'not-yet': 0, unset: 0 };
+  for (const requirement of requirements) tally[rows.get(requirement.id)?.status ?? 'unset'] += 1;
 
   if (!requirements.length) {
     return (
@@ -60,6 +62,19 @@ export default function QualificationsStation({ desk }: { desk: DeskState }) {
         <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
           You do not need every qualification to apply. Mark each one honestly, then say how you
           will show it or how you could get it.
+        </p>
+        <p className="text-sm font-medium text-foreground" data-testid="standing-line">
+          {tally.unset === requirements.length
+            ? `${requirements.length} to mark.`
+            : `${tally.have} have it, ${tally.maybe} maybe, ${tally['not-yet']} not yet${
+                tally.unset ? `, ${tally.unset} still to mark` : ''
+              }.`}{' '}
+          {tally.unset === 0 &&
+            (tally['not-yet'] + tally.maybe === 0
+              ? 'You can show every one of these. Apply.'
+              : tally.have >= tally['not-yet']
+                ? 'You have more than you are missing. That is enough to apply; plan for the gaps below.'
+                : 'You are missing more than you have. You can still apply, and the plan below is where to start.')}
         </p>
         <p className="text-sm text-foreground" data-testid="coverage-line">
           {coverage ? (

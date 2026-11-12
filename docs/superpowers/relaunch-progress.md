@@ -127,6 +127,41 @@ land in the session scratchpad under `stories/`: `dev.md`, `student.md`,
 `changer.md`, `advisor.md`, `access.md`. When they report: triage, fix what
 is real, rerun the suite, then the final pull request.
 
+### Student report (in), fixed so far
+
+Send checks (role named without season, placeholder check, generic hook is
+not reused for messages); qualifications tally; browser-model download copy;
+invented time estimates removed; guide bar stacks on phones and opens when
+turned on; scenario select wraps; homepage demo button waits until live and
+the box does not scroll inside the page on phones; Pay starts from the
+application's title and searches intern titles by occupation; the desk's
+Resume station accepts a pasted resume.
+
+### Student report, still to do (batch with the other four reports)
+
+1. Resume Game: eight overlapping numbers; honest student lines score 0 to
+   11; "Aim for 80+"; share card for a low score; structured rewrite builds
+   broken sentences ("to so", verb prepended to a verb); inflated verb
+   suggestions ("Built" for working a register, "Enabled" for helped);
+   "posted" not recognized as a verb; corporate placeholders; exports are a
+   report, not a resume (label them).
+2. Posting engine: closing and admin lines ("Application closes...",
+   "reviewed on a rolling basis") filed as preferred; plain company
+   description sentences come back as requirements; "Confirm all" should
+   cover Required and Preferred only.
+3. /start: no "I found a posting" answer leading to the desk; lists three of
+   six tools; assumes a resume exists. Homepage primary action leads to the
+   Five Whys only.
+4. Five Whys: summary and dashboard use the final answer as the "root
+   reason" even when it is the vaguest; add "choose the answer that is the
+   real reason"; start from an experience.
+5. Glow Up: engineer-register copy ("Decode the JD", JWT sample, "revenue
+   impact", "Panic-proof HUD"); "What this job tests" percentages add to more
+   than 100; repeated phrases count the employer's name.
+6. Vocabulary a student would not know (see the report's table): Plate,
+   Hidden value, Signal, OCR, HUD, Packet, percentile, Subprocessors.
+7. Pay cannot ship without wage data (owner).
+
 ## In flight (builders, started 2026-11-12)
 
 | Piece | Model | Paths |

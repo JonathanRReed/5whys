@@ -120,6 +120,8 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
 
   const choose = (mode: 'guided' | 'free') => {
     setJustDone(null);
+    // Someone who just asked for the guide wants to read the first step.
+    if (mode === 'guided') setCollapsed(false);
     if (mode === 'free') update({ ...progress, mode: 'free' });
     else update(progress.finished ? restartGuide() : { ...progress, mode: 'guided' });
   };
@@ -127,10 +129,10 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
   return (
     <>
       <div
-        className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 rounded-xl border border-border/40 px-4 py-3"
+        className="mx-auto flex w-full max-w-6xl flex-col gap-3 rounded-xl border border-border/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
         data-guide-bar
       >
-        <p className="min-w-0 flex-1 text-sm text-muted-foreground">
+        <p className="min-w-0 text-sm text-muted-foreground sm:flex-1">
           {guided
             ? 'Guided mode is on. The coach follows what you do on this page.'
             : chosen

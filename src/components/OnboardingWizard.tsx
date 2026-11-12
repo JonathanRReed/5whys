@@ -108,7 +108,6 @@ function getRecommendation(level: string, challenge: string): Recommendation {
         ],
         stats: [
           { label: 'Questions', value: '5, in order' },
-          { label: 'Takes', value: '10 to 15 min' },
           { label: 'You leave with', value: 'A statement + next step' },
         ],
         icon: 'M7 8h10M7 12h4',
@@ -131,7 +130,6 @@ function getRecommendation(level: string, challenge: string): Recommendation {
       ],
       stats: [
         { label: 'Questions', value: '5, in order' },
-        { label: 'Takes', value: '10 to 15 min' },
         { label: 'You leave with', value: 'A statement + next step' },
       ],
       icon: 'M7 8h10M7 12h4',

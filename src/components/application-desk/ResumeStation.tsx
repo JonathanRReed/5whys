@@ -35,7 +35,7 @@ function bulletsOf(doc: ResumeDoc): { id: string; text: string }[] {
  * selection is all an application keeps.
  */
 export default function ResumeStation({ desk }: { desk: DeskState }) {
-  const { application, role, changeDesks } = desk;
+  const { application, role, resumeText, changeDesks } = desk;
   const [doc, setDoc] = React.useState<ResumeDoc | null | undefined>(undefined);
   const [notice, setNotice] = React.useState<string | null>(null);
 
@@ -43,12 +43,23 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
     let cancelled = false;
     void import('../../lib/local-db').then(async ({ getResumeDoc }) => {
       const saved = await getResumeDoc<ResumeDoc>();
-      if (!cancelled) setDoc(saved?.doc ?? null);
+      if (cancelled) return;
+      if (saved) {
+        setDoc(saved.doc);
+        return;
+      }
+      // No uploaded file: a resume pasted into the Resume Game still counts.
+      if (resumeText.trim()) {
+        const { fromText } = await import('../../lib/resume-doc');
+        if (!cancelled) setDoc(fromText(resumeText));
+      } else {
+        setDoc(null);
+      }
     });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [resumeText]);
 
   const confirmed = React.useMemo(
     () => requirementsFromBullets(role?.bullets ?? []).filter((r) => r.status === 'confirmed'),
@@ -77,7 +88,7 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
         <p className="text-sm leading-relaxed text-muted-foreground">
           {doc
             ? 'Your uploaded resume has no bullets we could read. Check it in the machine view first.'
-            : 'Upload your resume as a PDF or Word file in the Resume Game. Then come back here to choose which bullets go into the copy for this role.'}
+            : 'Add your resume in the Resume Game: paste it, or upload a PDF or Word file. Then come back here to choose which bullets go into the copy for this role.'}
         </p>
         <Button asChild>
           <a href={`/resume-game/?application=${encodeURIComponent(appId)}`}>

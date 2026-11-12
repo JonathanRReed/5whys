@@ -41,7 +41,7 @@ export default function InterviewGlowUpAdvice() {
       <div className="flex items-center gap-3 rounded-2xl border border-gold/35 bg-gold/8 px-5 py-4">
         <ClockIcon className="h-6 w-6 shrink-0 text-gold" />
         <p className="text-sm font-medium text-foreground sm:text-base">
-          <strong>Got an interview tomorrow?</strong> Build your cheat sheet in 20 minutes.
+          <strong>Got an interview tomorrow?</strong> Build your cheat sheet tonight.
         </p>
       </div>
 

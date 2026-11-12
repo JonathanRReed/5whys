@@ -33,7 +33,7 @@ export default function SendStation({ desk }: { desk: DeskState }) {
       <div className="space-y-2">
         <h2 className="text-2xl font-semibold">Before you send</h2>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          The first four are checked against what you wrote. The last two only you can answer.
+          The first five are checked against what you wrote. The last two only you can answer.
         </p>
       </div>
 

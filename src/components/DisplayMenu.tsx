@@ -25,7 +25,7 @@ const MODEL_COPY: Record<ModelState, string> = {
   unsupported:
     'This browser has no built-in model. Every tool still works; suggestions come from the built-in rules.',
   downloadable:
-    'This browser can add its own model. Your browser downloads it from its maker; what you write still stays on this device.',
+    'This browser can add its own model. Your browser downloads it from its maker, and what you write still stays on this device. The browser decides the size and does not tell this site; it is large, often several gigabytes, so use Wi-Fi.',
   downloading: 'Your browser is downloading its model.',
   available: "Your browser's model is ready. Suggestions are written on this device.",
 };

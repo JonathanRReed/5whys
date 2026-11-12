@@ -58,7 +58,12 @@ export function countWords(text: string): number {
 /** A page of body text at a normal size holds roughly this many words. */
 export const ONE_PAGE_WORDS = 400;
 
-export type SendCheckId = 'names' | 'one-page' | 'posting-words' | 'ends-with-ask';
+export type SendCheckId =
+  | 'names'
+  | 'one-page'
+  | 'posting-words'
+  | 'ends-with-ask'
+  | 'no-placeholders';
 
 export interface SendCheck {
   id: SendCheckId;
@@ -75,8 +80,34 @@ export interface SendCheckInput {
   requirements: PostingRequirement[];
 }
 
-const includesName = (text: string, name: string) =>
-  name.trim().length > 0 && text.toLowerCase().includes(name.trim().toLowerCase());
+/**
+ * A posting's title often carries extras a letter would never repeat:
+ * "Operations Intern, Summer 2027", "Analyst (Remote)", "Associate - Night
+ * shift". The role is named if its core words appear, in order.
+ */
+export function coreTitle(title: string): string {
+  return title
+    .replace(/\(.*?\)/g, ' ')
+    .split(/\s[-–|]\s|,|:/)[0]
+    .replace(/\b(summer|fall|autumn|winter|spring)\b/gi, ' ')
+    .replace(/\b(19|20)\d{2}\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+const includesName = (text: string, name: string) => {
+  const wanted = name.trim().toLowerCase();
+  if (!wanted) return false;
+  const haystack = text.toLowerCase();
+  if (haystack.includes(wanted)) return true;
+  const core = coreTitle(name).toLowerCase();
+  return core.length > 2 && haystack.includes(core);
+};
+
+/** Square-bracket placeholders left in from a template, such as "[your proof]". */
+export function findPlaceholders(text: string): string[] {
+  return [...new Set(text.match(/\[[^\]\n]{2,60}\]/g) ?? [])];
+}
 
 /** The checks the site can compute. Proofreading by another person is not one. */
 export function runSendChecks({
@@ -98,7 +129,19 @@ export function runSendChecks({
     (r) => findTermMatches(extractRequirementTerms(r.text), text).length > 0
   ).length;
 
+  const placeholders = findPlaceholders(text);
+
   return [
+    {
+      id: 'no-placeholders',
+      label: 'Nothing left to fill in',
+      passed: written ? placeholders.length === 0 : null,
+      detail: !written
+        ? 'Nothing written yet.'
+        : placeholders.length === 0
+          ? 'No bracketed placeholders remain.'
+          : `Still to replace: ${placeholders.slice(0, 3).join(', ')}.`,
+    },
     {
       id: 'names',
       label: 'Names the right role and company',
@@ -108,8 +151,11 @@ export function runSendChecks({
         : !written
           ? 'Nothing written yet.'
           : hasRole && hasCompany
-            ? `Mentions ${title.trim()} and ${company.trim()}.`
-            : `Does not mention ${[!hasRole && title.trim(), !hasCompany && company.trim()]
+            ? `Mentions ${coreTitle(title) || title.trim()} and ${company.trim()}.`
+            : `Does not mention ${[
+                !hasRole && (coreTitle(title) || title.trim()),
+                !hasCompany && company.trim(),
+              ]
                 .filter(Boolean)
                 .join(' or ')}.`,
     },
