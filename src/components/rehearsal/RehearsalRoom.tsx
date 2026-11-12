@@ -61,6 +61,8 @@ export default function RehearsalRoom() {
   const [take, setTake] = React.useState<Take | null>(null);
   const [transcribing, setTranscribing] = React.useState(false);
   const [kept, setKept] = React.useState(false);
+  // Kept for the visit, not saved: the choice applies to every answer until the page closes.
+  const [countDelivery, setCountDelivery] = React.useState(true);
   const [answered, setAnswered] = React.useState(0);
   const [notice, setNotice] = React.useState<string | null>(null);
   const [announcement, announce] = useAnnouncer();
@@ -604,6 +606,8 @@ export default function RehearsalRoom() {
           onTextChange={(text) => setTake({ ...take, text })}
           onKeep={take.audio ? () => runFeature(keep) : null}
           kept={kept}
+          countDelivery={countDelivery}
+          onCountDeliveryChange={setCountDelivery}
           notes={
             current?.strongAnswer || current?.commonMistake
               ? { strongAnswer: current.strongAnswer, commonMistake: current.commonMistake }

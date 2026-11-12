@@ -39,6 +39,13 @@ type Props = {
   onRetry: () => void;
   onNext: () => void;
   isLast: boolean;
+  /**
+   * Whether pace, pauses and repeated words are counted. Some people do not
+   * want them: a stutter, a second language, or a speech device makes those
+   * counts say nothing useful.
+   */
+  countDelivery: boolean;
+  onCountDeliveryChange: (on: boolean) => void;
   /** What a strong answer to this question shows, and one common mistake. */
   notes?: { strongAnswer?: string; commonMistake?: string };
 };
@@ -58,6 +65,8 @@ export default function TakeReview({
   onRetry,
   onNext,
   isLast,
+  countDelivery,
+  onCountDeliveryChange,
   notes,
 }: Props) {
   const [facts, setFacts] = React.useState<DeliveryFacts | null>(null);
@@ -98,8 +107,10 @@ export default function TakeReview({
     setFollowUp(await interviewFollowUp({ question: take.question, answer: take.text }));
   };
 
-  const fillers = facts?.fillers.filter((filler) => filler.count > 0) ?? [];
   const spoken = Boolean(take.audio);
+  // A typed answer has no pace or pauses, and words like "so" in writing are not fillers.
+  const delivery = spoken && countDelivery;
+  const fillers = delivery ? (facts?.fillers.filter((filler) => filler.count > 0) ?? []) : [];
 
   return (
     <div className="space-y-8">
@@ -167,7 +178,7 @@ export default function TakeReview({
                   {facts?.wordCount ?? 0}
                 </dd>
               </div>
-              {spoken && (
+              {delivery && (
                 <div className="flex justify-between gap-4 px-4 py-2.5">
                   <dt className="text-muted-foreground">Pace</dt>
                   <dd className="font-mono tabular-nums">
@@ -177,7 +188,7 @@ export default function TakeReview({
                   </dd>
                 </div>
               )}
-              {spoken && facts && facts.pauses.length > 0 && (
+              {delivery && facts && facts.pauses.length > 0 && (
                 <div className="flex justify-between gap-4 px-4 py-2.5">
                   <dt className="text-muted-foreground">Pauses over two seconds</dt>
                   <dd className="font-mono tabular-nums">
@@ -197,6 +208,17 @@ export default function TakeReview({
                 </div>
               ))}
             </dl>
+            {spoken && (
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+                <input
+                  type="checkbox"
+                  checked={countDelivery}
+                  onChange={(event) => onCountDeliveryChange(event.target.checked)}
+                  className="h-4 w-4 accent-[hsl(var(--love))]"
+                />
+                Count pace, pauses and repeated words
+              </label>
+            )}
             <p className="text-xs leading-relaxed text-muted-foreground">
               These are counts, not grades. There is no proven right pace or number of pauses. One
               common guide is that a structured answer runs one to two minutes.

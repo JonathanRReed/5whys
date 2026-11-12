@@ -28,7 +28,9 @@ test('a question is answered in writing and reviewed with counts, not a grade', 
   await page.getByRole('button', { name: 'Review my answer' }).click();
 
   await expect(page.getByTestId('take-words')).toHaveText('15');
-  await expect(page.getByText('Said "um"')).toBeVisible();
+  // A typed answer has no pace or pauses, and its words are not counted as fillers.
+  await expect(page.getByText('Said "um"')).toHaveCount(0);
+  await expect(page.getByText('Count pace, pauses and repeated words')).toHaveCount(0);
   await expect(page.getByText('These are counts, not grades.')).toBeVisible();
   await expect(page.locator('main')).not.toContainText(/\d+\s?%|\/100|out of 10/);
 
@@ -69,6 +71,12 @@ test('an answer is recorded on the device, played back, and kept only when asked
 
   await expect(page.locator('audio')).toBeVisible();
   await expect(page.getByTestId('take-length')).toHaveText(/^0:0[1-9]$/);
+
+  // A spoken answer counts pace by default, and the visitor can switch that off.
+  await expect(page.getByText('Pace', { exact: true })).toBeVisible();
+  await page.getByLabel('Count pace, pauses and repeated words').uncheck();
+  await expect(page.getByText('Pace', { exact: true })).toHaveCount(0);
+  await expect(page.getByTestId('take-length')).toBeVisible();
 
   // Nothing is stored until the visitor says so.
   const stored = () =>
