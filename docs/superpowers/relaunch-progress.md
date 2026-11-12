@@ -119,6 +119,14 @@ end of every working pass. Delete it in the final pull request.
 - One browser test failed once after the engine merge and passed on three
   reruns; the failing test was not captured. Watch for a flaky `toBe`.
 
+## User-story walkthroughs (started 2026-11-12 13:30)
+
+Five Opus 5.5 reviewers, each with up to four Sonnet 5.5 sub-agents in poteto
+mode, review-only, each in its own worktree and port (4701 to 4705). Reports
+land in the session scratchpad under `stories/`: `dev.md`, `student.md`,
+`changer.md`, `advisor.md`, `access.md`. When they report: triage, fix what
+is real, rerun the suite, then the final pull request.
+
 ## In flight (builders, started 2026-11-12)
 
 | Piece | Model | Paths |
