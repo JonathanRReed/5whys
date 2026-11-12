@@ -174,7 +174,7 @@ it('dismisses compact tools when focus leaves the last link for the display sett
   fireEvent.click(trigger);
   const menu = container.querySelector('#compact-tools-menu');
   if (!menu) throw new Error('Expected compact tools menu');
-  const lastLink = within(menu as HTMLElement).getByRole('link', { name: 'Interview' });
+  const lastLink = within(menu as HTMLElement).getByRole('link', { name: 'Apply' });
   act(() => lastLink.focus());
   expect(trigger).toHaveAttribute('aria-expanded', 'true');
 

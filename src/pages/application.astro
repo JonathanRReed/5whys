@@ -1,0 +1,38 @@
+---
+import ApplicationDesk from '../components/application-desk/ApplicationDesk';
+import PlateHeader from '../components/PlateHeader.astro';
+import ErrorBoundary from '../components/shared/ErrorBoundary';
+import Base from '../layouts/Base.astro';
+
+const noScript = [
+  'The Application Desk works one job application from start to finish. You paste the posting once. The desk sorts it into what is required, what is preferred, and what the work involves, and keeps each requirement next to the sentence it came from so you can check it.',
+  'From there you mark where you stand on each requirement (have it, maybe, or not yet) and write how you will show it or get it. You then work from one real experience to two resume bullets for this role, draft a short cover letter in four parts, turn its opening line into a LinkedIn message, a follow-up email, and an opener for a call, and run a last check before you send.',
+  'Without JavaScript you can follow the same order on paper: list the top four or five requirements, mark each as yes, maybe, or no, choose one experience that answers them, write what happened because of your work, and turn that into two bullets that start with an action verb.',
+  'Everything you write on the desk is saved in your browser on this device. Nothing is sent to a server.',
+];
+---
+
+<Base
+  title="The Application Desk"
+  description="Paste a job posting once, then work it through: what it asks for, where you stand, two bullets, a letter, and a last check before you send."
+  breadcrumbs={[
+    { label: 'Home', href: '/' },
+    { label: 'Application Desk', href: '/application/' },
+  ]}
+  noScriptContext={noScript}
+>
+  <div class="relative space-y-10 px-4 pb-16 pt-4 sm:pt-6">
+    <PlateHeader
+      tag="Plate V · Apply"
+      roman="V"
+      title="The Application Desk"
+      description="Paste a posting once. Leave with what it asks for, where you stand, two bullets, a letter, and a last check before you send."
+      accent="lichen"
+    />
+    <section class="mx-auto w-full max-w-6xl">
+      <ErrorBoundary client:load>
+        <ApplicationDesk client:load />
+      </ErrorBoundary>
+    </section>
+  </div>
+</Base>

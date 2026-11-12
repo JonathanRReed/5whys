@@ -14,6 +14,7 @@ const navLinks = [
   { href: '/resume-game/', label: 'Resume Game' },
   { href: '/networking-practice/', label: 'Networking' },
   { href: '/interview-glow-up/', label: 'Interview' },
+  { href: '/application/', label: 'Apply' },
 ];
 
 export default function Navigation({ currentPath = '/' }: NavigationProps) {

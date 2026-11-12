@@ -37,6 +37,12 @@ end of every working pass. Delete it in the final pull request.
 - 2026-11-12: pay library and pipeline merged (`t3/pay-data-pipeline-and-library`).
   Titles index is committed. Wage data is NOT: BLS returns 403 to every
   automated download (curl, pipeline, headless browser).
+- 2026-11-12: posting engine merged (`t3/relaunch-posting-engine`).
+- 2026-11-12: Application Desk at `/application/` (Plate V): posting specimen
+  with editable requirements and questions to ask, qualifications with resume
+  evidence and an action plan, the two-bullet flow, letter with the three
+  message variants, before-you-send checks (`src/lib/desk-checks.ts`). Nav
+  link "Apply". Shared `src/lib/view-transition.ts`. Browser test added.
 
 ## Engine follow-ups to hand back
 
@@ -53,7 +59,6 @@ end of every working pass. Delete it in the final pull request.
 
 | Piece | Model | Paths |
 | --- | --- | --- |
-| Posting engine | Opus 5.5 | `src/lib/posting/` |
 | Resume engine follow-up (bullets, wrapped lines) | GPT-6.1 Sol | `src/lib/resume-doc/` |
 | Model hosting and speech spikes | GPT-6.1 Sol | `spikes/`, `scripts/models/` |
 
@@ -80,9 +85,15 @@ end of every working pass. Delete it in the final pull request.
 - Backup import has no double-click guard.
 - `rules.ts` in local-ai imports from `components/career-5whys/shared.ts`;
   move the pure helpers into `src/lib` when touching Five Whys.
-- Next interface: `/application/` desk (Plate V, lichen) once the posting
-  engine lands: posting, qualifications, bullets, letter and messages,
-  before you send; then a Storage panel, `/pay/`, the rehearsal room.
+- Still to build (lead): dashboard links into the desk and dated steps;
+  desk resume station (per-application bullet selection and export); posting
+  match inside the Resume Game; worksheet print export for the bullets flow;
+  Storage panel; `/pay/` (worksheet and title search now, wages when data
+  arrives); rehearsal room (after spikes); Five Whys and Networking upgrades;
+  homepage with six plates and the specimen hero; offline and install;
+  privacy copy; DESIGN.md specimen section.
+- Posting engine noise: plain description sentences can come through as
+  unclassified requirements; the student dismisses them.
 - The mobile glow-up browser test is slow (8 s) and can time out when
   builders are running in parallel; rerun before treating it as a failure.
 

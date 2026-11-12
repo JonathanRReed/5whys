@@ -744,3 +744,19 @@ export function readCareerDashboard(): CareerDashboardData {
     nextActions,
   };
 }
+
+/**
+ * The master resume's text, for tools that compare it with a posting. Read
+ * only: this never writes to the Resume Game's session.
+ */
+export function readResumeText(): string {
+  if (typeof window === 'undefined') return '';
+  try {
+    const raw = window.localStorage.getItem(RESUME_SESSION_KEY);
+    if (!raw) return '';
+    const parsed = JSON.parse(raw) as { resumeText?: unknown };
+    return typeof parsed.resumeText === 'string' ? parsed.resumeText : '';
+  } catch {
+    return '';
+  }
+}

@@ -11,6 +11,7 @@ import {
   toPrintModel,
 } from '../../lib/resume-doc';
 import { cn } from '../../lib/utils';
+import { withViewTransition } from '../../lib/view-transition';
 import { Button } from '../ui/button';
 
 type Props = {
@@ -114,14 +115,9 @@ export default function MachineView({ doc, onChange }: Props) {
     const repair = finding.repairId ? REPAIRS[finding.repairId] : undefined;
     if (!repair) return;
     try {
-      const apply = () => onChange(repair.run(doc));
       // The reorder is the change the visitor asked for, so let them see it.
-      const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-      if (!reduced && typeof document.startViewTransition === 'function') {
-        document.startViewTransition(apply);
-      } else {
-        apply();
-      }
+      const repaired = repair.run(doc);
+      withViewTransition(() => onChange(repaired));
       setActiveFinding(null);
       setNotice(repair.done);
     } catch (error) {
