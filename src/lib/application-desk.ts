@@ -60,7 +60,11 @@ export interface ActionStep {
 
 /** A bullet in the bullets flow: a master-resume bullet, or text not yet added to it. */
 export interface BulletSlot {
-  /** Id of the bullet in the master resume once it has been added there. */
+  /**
+   * Id of the resume line this bullet follows in the copy tailored for this
+   * role, or null while it is not in that copy. The resume itself is never
+   * edited from the desk.
+   */
   bulletId: string | null;
   text: string;
 }

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { setResumeSelection } from '../../lib/application-desk';
+import { setResumeSelection, updateBulletsFlow } from '../../lib/application-desk';
 import { loadFeature, reportFeatureFailure } from '../../lib/lazy-feature';
 import {
   extractRequirementTerms,
@@ -119,10 +119,26 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
     choose(bullets.filter((b) => next.has(b.id)).map((b) => b.id));
   };
 
+  // Bullets written on the Bullets station. They join this copy only.
+  const written = desk.desk.bullets.bullets
+    .map((slot, index) => ({ index: index as 0 | 1, text: slot.text.trim(), after: slot.bulletId }))
+    .filter((slot) => slot.text);
+  const defaultAfter = (bullets.find((b) => selected.has(b.id)) ?? bullets[0]).id;
+  const place = (index: 0 | 1, after: string | null) =>
+    changeDesks((data) =>
+      updateBulletsFlow(data, appId, { bullet: { index, slot: { bulletId: after ?? '' } } })
+    );
+  const addedBullets = written
+    .filter((slot) => slot.after !== null)
+    .map((slot) => ({
+      afterLineId: slot.after && known.has(slot.after) ? slot.after : defaultAfter,
+      text: slot.text,
+    }));
+
   const download = async () => {
     try {
       const { toDocx, checkExport } = await loadFeature(import('../../lib/resume-doc'));
-      const bytes = await toDocx(doc, { bulletLineIds: selected });
+      const bytes = await toDocx(doc, { bulletLineIds: selected, addedBullets });
       const url = URL.createObjectURL(
         new Blob([bytes as BlobPart], {
           type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -212,11 +228,76 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
         })}
       </ul>
 
+      {written.length > 0 && (
+        <section aria-labelledby="desk-written-heading" className="space-y-2">
+          <h3 id="desk-written-heading" className="text-lg font-semibold">
+            Written on this desk
+          </h3>
+          <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
+            These go into the copy for this role only. To keep one for every application, add it to
+            your resume in the Resume Game.
+          </p>
+          <ul className="space-y-2">
+            {written.map((slot) => {
+              const on = slot.after !== null;
+              const after = slot.after && known.has(slot.after) ? slot.after : defaultAfter;
+              return (
+                <li
+                  key={slot.index}
+                  className={cn(
+                    'space-y-2 rounded-xl border p-3 transition-colors',
+                    on ? 'border-lichen/50 bg-lichen/6' : 'border-border/40'
+                  )}
+                >
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={on}
+                      onChange={(event) => place(slot.index, event.target.checked ? after : null)}
+                      className="mt-1 h-4 w-4 accent-[hsl(var(--lichen))]"
+                    />
+                    <span
+                      className={cn(
+                        'min-w-0 text-sm leading-relaxed',
+                        !on && 'text-muted-foreground'
+                      )}
+                    >
+                      {slot.text}
+                    </span>
+                  </label>
+                  {on && (
+                    <label className="flex flex-wrap items-center gap-2 pl-7 text-xs text-muted-foreground">
+                      <span>
+                        Place it after
+                        <span className="sr-only"> (for: {slot.text.slice(0, 60)})</span>
+                      </span>
+                      <select
+                        value={after}
+                        onChange={(event) => place(slot.index, event.target.value)}
+                        className="h-9 max-w-full min-w-0 flex-1 rounded-md border border-border/50 bg-transparent px-1.5 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        {bullets.map((bullet) => (
+                          <option key={bullet.id} value={bullet.id}>
+                            {bullet.text.length > 70
+                              ? `${bullet.text.slice(0, 67).trimEnd()}...`
+                              : bullet.text}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       <div className="space-y-2 border-t border-border/40 pt-5">
         <Button
           type="button"
           onClick={download}
-          disabled={selected.size === 0}
+          disabled={selected.size === 0 && addedBullets.length === 0}
           className="h-auto min-h-9 max-w-full whitespace-normal py-2 text-left"
         >
           Download the resume for this role (.docx)

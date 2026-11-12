@@ -31,6 +31,16 @@ export function toPrintModel(doc: ResumeDoc, options: ExportOptions = {}): Print
               : 'text',
       text: line.bullet ? line.text.replace(/^\s*[-–•*◦○●▪·o]\s+/, '') : line.text,
     }));
+  (options.addedBullets ?? []).forEach((added, index) => {
+    const text = added.text.replace(/^\s*[-–•*◦○●▪·]\s+/, '').trim();
+    if (!text) return;
+    let at = paragraphs.findIndex((paragraph) => paragraph.lineId === added.afterLineId);
+    if (at === -1) at = paragraphs.findLastIndex((paragraph) => paragraph.kind === 'bullet');
+    // Keep earlier additions placed after the same line in the order given.
+    while (paragraphs[at + 1]?.lineId.startsWith('added-')) at++;
+    const paragraph: PrintParagraph = { lineId: `added-${index}`, kind: 'bullet', text };
+    paragraphs.splice(at === -1 ? paragraphs.length : at + 1, 0, paragraph);
+  });
   return {
     fontFamily: 'Arial',
     fontSizePt: 11,

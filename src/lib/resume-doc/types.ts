@@ -90,6 +90,11 @@ export type DateStyle = 'short-month' | 'long-month' | 'numeric';
 export type ExportOptions = {
   /** Omit to include every bullet. Non-bullet lines always remain. */
   bulletLineIds?: ReadonlySet<string>;
+  /**
+   * Bullets that are not in the resume, each placed after one of its lines.
+   * One whose line is missing from the copy goes after the last bullet.
+   */
+  addedBullets?: readonly { afterLineId: string; text: string }[];
   /** Omit to preserve dates exactly as written. */
   dateStyle?: DateStyle;
 };
