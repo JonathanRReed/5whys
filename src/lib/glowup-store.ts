@@ -171,7 +171,7 @@ export interface GlowUpData {
 // Constants
 // ============================================================================
 
-const STORAGE_KEY = 'interview-glow-up-data';
+export const STORAGE_KEY = 'interview-glow-up-data';
 const CURRENT_VERSION = 1;
 
 // ============================================================================

@@ -1,38 +1,58 @@
 import { beforeEach, expect, it } from 'vitest';
 import { readCareerDashboard } from '../src/lib/career-bridge';
+import { scoreBullet } from '../src/lib/resume-game';
 
 beforeEach(() => localStorage.clear());
 
-it.each([
-  { name: 'numeric scores', scores: [100, 20, 40], expected: 1 },
-  { name: 'numeric ties', scores: [20, 20, 40], expected: 0 },
-  { name: 'numeric strings', scores: ['20', '100'], expected: 0 },
-  { name: 'reversed numeric strings', scores: ['100', '20'], expected: 1 },
-  { name: 'nonnumeric separator', scores: [20, 'bad', 10], expected: 0 },
-  { name: 'nonnumeric separator after high score', scores: [100, 'bad', 20], expected: null },
-  { name: 'leading nonnumeric score', scores: ['bad', 20, 10], expected: null },
-  { name: 'null score', scores: [20, null], expected: 1 },
-  { name: 'missing score', scores: [20, undefined], expected: 1 },
-  { name: 'missing and zero tie', scores: [undefined, 0], expected: 0 },
-  { name: 'mixed numeric tie', scores: ['20', 20], expected: 0 },
-])('preserves the saved recommendation for $name', ({ scores, expected }) => {
+const STRONG =
+  'Grew the station Instagram from 400 to 2,100 followers by posting three times a week';
+const WEAK = 'Helped with stuff';
+const MIDDLE = 'Responsible for social media for the campus radio station';
+
+const save = (lines: string[], storedScores: unknown[]) => {
   const saved = JSON.stringify({
     needsRescan: false,
-    bullets: scores.map((score, index) => ({
+    bullets: lines.map((line, index) => ({
       id: String(index),
-      original: `Saved bullet ${index}`,
-      improved: `Saved bullet ${index}`,
-      baselineScore: score,
-      improvedScore: score,
+      original: line,
+      improved: line,
+      baselineScore: storedScores[index],
+      improvedScore: storedScores[index],
     })),
     lastAnalyzedAt: '2026-10-09T00:00:00Z',
   });
   localStorage.setItem('resume-game-session-v2', saved);
-  const recommendations = readCareerDashboard().recommendations.filter(
-    (item) => item.cta === 'Rewrite it'
-  );
-  expect(recommendations.map((item) => item.href)).toEqual(
-    expected === null ? [] : [`/resume-game/?bullet=${expected}`]
-  );
+  return saved;
+};
+
+const rewriteLinks = () =>
+  readCareerDashboard()
+    .recommendations.filter((item) => item.cta === 'Rewrite it')
+    .map((item) => item.href);
+
+it('points at the line that scores lowest as written, whatever score was stored with it', () => {
+  const lines = [STRONG, MIDDLE, WEAK];
+  const scores = lines.map((line) => scoreBullet(line));
+  const weakest = scores.indexOf(Math.min(...scores));
+  expect(weakest).toBe(2);
+  // The stored numbers say the opposite, as a session saved under an older rubric can.
+  const saved = save(lines, [10, 50, 100]);
+  expect(rewriteLinks()).toEqual([`/resume-game/?bullet=${weakest}`]);
+  // Reading never writes.
   expect(localStorage.getItem('resume-game-session-v2')).toBe(saved);
+});
+
+it.each([
+  { name: 'strings', stored: ['20', '100', 'bad'] },
+  { name: 'nothing', stored: [null, undefined, null] },
+])('is not thrown by stored scores that are $name', ({ stored }) => {
+  save([STRONG, MIDDLE, WEAK], stored);
+  expect(rewriteLinks()).toEqual(['/resume-game/?bullet=2']);
+});
+
+it('counts strong lines by the current rules', () => {
+  save([STRONG, WEAK], [0, 100]);
+  const resume = readCareerDashboard().resume;
+  expect(scoreBullet(STRONG)).toBeGreaterThanOrEqual(80);
+  expect(resume?.strongCount).toBe(1);
 });

@@ -17,6 +17,7 @@ import {
   summarizeCoverage,
 } from '../../lib/posting';
 import { cn } from '../../lib/utils';
+import ConfirmButton from '../shared/ConfirmButton';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -347,15 +348,13 @@ export default function QualificationsStation({ desk }: { desk: DeskState }) {
                   </span>
                 )}
               </span>
-              <Button
-                type="button"
-                size="xs"
-                variant="ghost"
-                aria-label={`Remove step: ${item.text}`}
-                onClick={() => changeDesks((data) => removeActionStep(data, appId, item.id))}
+              <ConfirmButton
+                confirmLabel="Remove this step and its date?"
+                onConfirm={() => changeDesks((data) => removeActionStep(data, appId, item.id))}
+                className="px-3 py-1.5 text-xs"
               >
-                Remove
-              </Button>
+                Remove<span className="sr-only"> step: {item.text}</span>
+              </ConfirmButton>
             </li>
           ))}
         </ul>

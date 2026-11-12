@@ -40,7 +40,9 @@ test('a posting is pasted once and worked through the desk, and it survives a re
   await page.getByLabel('Next step').fill('Finish the SQL course project');
   await page.getByLabel('Do it by').fill('2027-01-15');
   await page.getByRole('button', { name: 'Add step' }).click();
-  await expect(page.getByText('Finish the SQL course project')).toBeVisible();
+  await expect(
+    page.getByRole('checkbox', { name: 'Done: Finish the SQL course project' })
+  ).toBeVisible();
 
   // Letter: the generic opener is flagged, a specific one is not.
   await page.getByRole('tab', { name: /Letter/ }).click();

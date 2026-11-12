@@ -272,7 +272,15 @@ function classifyLine(
   if (section === 'skills' || SKILLS_LABEL.test(bare)) return 'skills';
   if (GLYPH.test(line)) return 'experience';
   const words = wordCount(line);
-  const action = startsWithAction(line);
+  // "Lead Software Engineer | Jan 2020 - Jan 2025" starts with a word that is
+  // also a verb. A short line with a date range and a job title, a separator,
+  // or no sentence in it is a job heading, not an achievement.
+  const datedTitle =
+    DATE_RANGE.test(line) &&
+    words <= 14 &&
+    !/[.;]$/.test(line) &&
+    (JOB_TITLE_WORDS.test(line) || /\s\|\s/.test(line));
+  const action = startsWithAction(line) && !datedTitle;
   if (!action && words <= 14 && (DATE_RANGE.test(line) || (ANY_DATE.test(line) && words <= 10))) {
     // "Library Assistant, State University | Jan 2024 - Dec 2025" is a job:
     // under Experience, or with a job title in it, the employer's name does

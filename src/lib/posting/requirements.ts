@@ -203,6 +203,35 @@ export function carryOverDecisions(
   return [...merged, ...previous.filter((r) => r.origin === 'student')];
 }
 
+/**
+ * Where each parsed requirement went when a posting was decoded again: its
+ * old id to its new one, matched on the source sentence. Ids are positions
+ * in the text, so an edit above a requirement changes its id without
+ * changing the requirement. One that is no longer in the posting is absent.
+ */
+export function requirementIdMap(
+  previous: PostingRequirement[],
+  reparsed: PostingRequirement[],
+  previousText: string,
+  nextText: string
+): Map<string, string> {
+  const bySentence = new Map<string, string[]>();
+  for (const next of reparsed) {
+    if (!next.span) continue;
+    const sentence = nextText.slice(next.span.start, next.span.end);
+    bySentence.set(sentence, [...(bySentence.get(sentence) ?? []), next.id]);
+  }
+  const map = new Map<string, string>();
+  for (const prior of previous) {
+    if (prior.origin !== 'parsed' || !prior.span) continue;
+    const sentence = previousText.slice(prior.span.start, prior.span.end);
+    // The same sentence twice keeps its order.
+    const next = bySentence.get(sentence)?.shift();
+    if (next) map.set(prior.id, next);
+  }
+  return map;
+}
+
 // ============================================================================
 // Glow Up decoded bullets
 // ============================================================================

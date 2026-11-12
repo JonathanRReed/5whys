@@ -451,6 +451,35 @@ export function updateDesk(
   };
 }
 
+/**
+ * After a posting is decoded again, move each qualification row to its
+ * requirement's new id. `parsedIds` are the ids the posting's own
+ * requirements had before; a row for one that is no longer in the posting is
+ * dropped, so it cannot land on whatever requirement now has its old id.
+ */
+export function remapQualifications(
+  data: ApplicationDeskData,
+  applicationId: string,
+  map: ReadonlyMap<string, string>,
+  parsedIds: ReadonlySet<string>
+): ApplicationDeskData {
+  return updateDesk(data, applicationId, (desk) => {
+    const seen = new Set<string>();
+    const qualifications = desk.qualifications.flatMap((row) => {
+      const moved = parsedIds.has(row.requirementId)
+        ? map.get(row.requirementId)
+        : row.requirementId;
+      if (!moved || seen.has(moved)) return [];
+      seen.add(moved);
+      return [moved === row.requirementId ? row : { ...row, requirementId: moved }];
+    });
+    const same =
+      qualifications.length === desk.qualifications.length &&
+      qualifications.every((row, index) => row === desk.qualifications[index]);
+    return same ? desk : { ...desk, qualifications };
+  });
+}
+
 export function setQualification(
   data: ApplicationDeskData,
   applicationId: string,

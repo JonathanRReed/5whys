@@ -447,7 +447,14 @@ describe('older saved work', () => {
         ...oldSession,
         bullets: [
           { ...oldSession.bullets[0], improvedScore: 30 },
-          { ...oldSession.bullets[0], id: 'b2', improvedScore: 100 },
+          {
+            ...oldSession.bullets[0],
+            id: 'b2',
+            // Scored as written by the current rules, whatever number was stored.
+            improved:
+              'Grew the station Instagram from 400 to 2,100 followers by posting three times a week',
+            improvedScore: 0,
+          },
         ],
       })
     );

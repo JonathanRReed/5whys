@@ -35,6 +35,7 @@ import {
 } from './applications';
 import { averageRating, computeNextStep, type Ratings } from './networking-advice';
 import { type CareerProfile, readProfile } from './profile';
+import { scoreBullet } from './resume-game/scoring';
 import { STRONG_SCORE } from './resume-game/thresholds';
 
 export type ToolName =
@@ -92,7 +93,24 @@ interface ResumeGameData {
 
 function readResumeGame(): ResumeGameData | null {
   const data = readJson<ResumeGameData>(RESUME_SESSION_KEY);
-  if (data && Array.isArray(data.bullets)) return data;
+  if (data && Array.isArray(data.bullets)) {
+    // A score is a pure function of the line, and the Resume Game works it
+    // out again on load. Do the same here, so a session saved under an older
+    // rubric shows the dashboard the numbers the tool itself would show.
+    return {
+      ...data,
+      bullets: data.bullets.map((bullet) => {
+        const original = typeof bullet?.original === 'string' ? bullet.original : '';
+        const improved = typeof bullet?.improved === 'string' ? bullet.improved : '';
+        if (!original && !improved) return bullet;
+        return {
+          ...bullet,
+          baselineScore: scoreBullet(original || improved),
+          improvedScore: scoreBullet(improved || original),
+        };
+      }),
+    };
+  }
   if (typeof window === 'undefined') return null;
   try {
     // Match Resume Game's supported legacy fallback without migrating data.

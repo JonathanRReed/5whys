@@ -67,6 +67,7 @@ export {
   dismissRequirement,
   editRequirementText,
   removeRequirement,
+  requirementIdMap,
   requirementsFromBullets,
   requirementToBullet,
   restoreRequirement,

@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { remapQualifications } from '../../lib/application-desk';
 import { updateApplication } from '../../lib/applications';
 import { detectSkillsFromText } from '../../lib/glowup-banks';
 import {
@@ -21,6 +22,7 @@ import {
   type PostingRequirement,
   type PostingSection,
   parsePosting,
+  requirementIdMap,
   requirementsFromBullets,
   restoreRequirement,
   SAMPLE_POSTING,
@@ -118,7 +120,7 @@ function withSkills(bullets: DecodedBullet[]): DecodedBullet[] {
 }
 
 export default function PostingStation({ desk }: { desk: DeskState }) {
-  const { application, role, changeGlow, changeApplications } = desk;
+  const { application, role, changeGlow, changeApplications, changeDesks } = desk;
   const [draft, setDraft] = React.useState('');
   const [editing, setEditing] = React.useState(false);
   const [activeId, setActiveId] = React.useState<string | null>(null);
@@ -189,6 +191,13 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
       ? carryOverDecisions(requirements, parsed.requirements, sourceText, parsed.text)
       : parsed.requirements;
     const bullets = withSkills(bulletsFromRequirements(next, role?.bullets ?? []));
+    // Where you stand on each requirement follows the requirement, not its
+    // place in the text.
+    if (role && desk.desk.qualifications.length > 0) {
+      const moved = requirementIdMap(requirements, parsed.requirements, sourceText, parsed.text);
+      const parsedIds = new Set(requirements.filter((r) => r.origin === 'parsed').map((r) => r.id));
+      changeDesks((data) => remapQualifications(data, application.id, moved, parsedIds));
+    }
     pendingFocus.current = 'desk-posting-heading';
     announce(`Posting decoded. ${countLine(next)}`);
     const fields = {

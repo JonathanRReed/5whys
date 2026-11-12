@@ -8,6 +8,7 @@ import {
   saveApplicationDesks,
 } from '../../lib/application-desk';
 import {
+  APPLICATIONS_KEY,
   type ApplicationsData,
   createDefaultApplications,
   loadApplications,
@@ -18,6 +19,7 @@ import { readResumeText } from '../../lib/career-bridge';
 import {
   createDefaultData,
   type DecodedRole,
+  STORAGE_KEY as GLOW_STORAGE_KEY,
   type GlowUpData,
   loadData,
   saveData,
@@ -36,7 +38,18 @@ export type DeskState = {
   changeApplications: (change: (data: ApplicationsData) => ApplicationsData) => ApplicationsData;
   changeGlow: (change: (data: GlowUpData) => GlowUpData) => GlowUpData;
   changeDesks: (change: (data: ApplicationDeskData) => ApplicationDeskData) => void;
+  /** True when the last change could not be saved; the page still holds it. */
+  unsaved: boolean;
 };
+
+/** True when `next` is what the store now holds. */
+function stored(key: string, next: unknown): boolean {
+  try {
+    return window.localStorage.getItem(key) === JSON.stringify(next);
+  } catch {
+    return false;
+  }
+}
 
 /**
  * The desk's view of three stores: applications, the decoded roles in the
@@ -79,30 +92,53 @@ export function useDesk(): DeskState {
     window.history.replaceState(null, '', url);
   }, []);
 
+  // Each change builds on the store as it is now, so work saved in another
+  // tab is kept. If a save fails (storage full or blocked), the change is held
+  // here and the next one builds on it instead, so nothing typed in this visit
+  // is undone by the next keystroke.
+  const held = React.useRef<{
+    applications: ApplicationsData | null;
+    glow: GlowUpData | null;
+    desks: ApplicationDeskData | null;
+  }>({ applications: null, glow: null, desks: null });
+  const [unsaved, setUnsaved] = React.useState(false);
+  const settle = React.useCallback(() => {
+    const h = held.current;
+    setUnsaved(Boolean(h.applications || h.glow || h.desks));
+  }, []);
+
   const changeApplications = React.useCallback(
     (change: (data: ApplicationsData) => ApplicationsData) => {
-      const next = change(loadApplications());
+      const next = change(held.current.applications ?? loadApplications());
       saveApplications(next);
+      held.current.applications = stored(APPLICATIONS_KEY, next) ? null : next;
+      settle();
       setApplications(next);
       return next;
     },
-    []
+    [settle]
   );
 
-  const changeGlow = React.useCallback((change: (data: GlowUpData) => GlowUpData) => {
-    const next = change(loadData());
-    saveData(next);
-    setGlow(next);
-    return next;
-  }, []);
+  const changeGlow = React.useCallback(
+    (change: (data: GlowUpData) => GlowUpData) => {
+      const next = change(held.current.glow ?? loadData());
+      saveData(next);
+      held.current.glow = stored(GLOW_STORAGE_KEY, next) ? null : next;
+      settle();
+      setGlow(next);
+      return next;
+    },
+    [settle]
+  );
 
   const changeDesks = React.useCallback(
     (change: (data: ApplicationDeskData) => ApplicationDeskData) => {
-      const next = change(loadApplicationDesks());
-      saveApplicationDesks(next);
+      const next = change(held.current.desks ?? loadApplicationDesks());
+      held.current.desks = saveApplicationDesks(next) ? null : next;
+      settle();
       setDesks(next);
     },
-    []
+    [settle]
   );
 
   const application = applications.applications.find((a) => a.id === selectedId) ?? null;
@@ -124,5 +160,6 @@ export function useDesk(): DeskState {
     changeApplications,
     changeGlow,
     changeDesks,
+    unsaved,
   };
 }

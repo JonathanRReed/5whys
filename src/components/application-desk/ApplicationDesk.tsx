@@ -171,6 +171,13 @@ export default function ApplicationDesk() {
 
   return (
     <div className="space-y-8">
+      {desk.unsaved && (
+        <p role="alert" className="rounded-lg bg-gold/12 px-3 py-2 text-sm text-foreground">
+          This browser would not save your last change. It is still on this page, but it will be
+          gone when the page closes. Free some space in the storage panel on the dashboard, or copy
+          your work out first.
+        </p>
+      )}
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border/40 pb-5">
         <div className="min-w-0 space-y-1" data-guide="desk-current">
           <p className="text-sm text-muted-foreground">Working on</p>
