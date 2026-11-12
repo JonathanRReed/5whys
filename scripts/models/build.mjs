@@ -99,6 +99,8 @@ export function speechLibraries() {
       },
       'astro:build:setup': ({ updateConfig }) => {
         updateConfig({
+          // Lets the page skip the manifest request, and its 404, when no models are hosted.
+          define: { __HOSTED_MODELS__: JSON.stringify(process.env.HOSTED_MODELS === '1') },
           plugins: [
             {
               name: 'speech-library-entries',

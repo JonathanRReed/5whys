@@ -47,7 +47,11 @@ const BASE = '/models/';
 let manifestPromise: Promise<ModelManifest | null> | undefined;
 const downloads = new Map<ModelId, { controller: AbortController; done: Promise<void> }>();
 
+/** Set by the build. Undefined in tests and the dev server, where the request is still made. */
+declare const __HOSTED_MODELS__: boolean | undefined;
+
 async function manifest(): Promise<ModelManifest | null> {
+  if (typeof __HOSTED_MODELS__ !== 'undefined' && !__HOSTED_MODELS__) return null;
   if (!manifestPromise)
     manifestPromise = (async () => {
       try {

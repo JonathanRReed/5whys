@@ -178,8 +178,19 @@ function persistResumeSession(session: StoredResumeSession) {
 }
 
 export function useResumeSession() {
-  const [session, setSession] = React.useState<StoredResumeSession>(EMPTY_SESSION);
+  const [session, setLoaded] = React.useState<StoredResumeSession>(EMPTY_SESSION);
   const [mounted, setMounted] = React.useState(false);
+  // True once the visitor has changed something. Opening the page only reads:
+  // another tab, or an import on the dashboard, may have saved newer work, and
+  // writing back the snapshot this tab loaded would destroy it.
+  const changed = React.useRef(false);
+  const setSession = React.useCallback<React.Dispatch<React.SetStateAction<StoredResumeSession>>>(
+    (next) => {
+      changed.current = true;
+      setLoaded(next);
+    },
+    []
+  );
   const [storageNotice, setStorageNotice] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -189,13 +200,13 @@ export function useResumeSession() {
       const stored = window.localStorage.getItem(SESSION_STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored) as unknown;
-        setSession(normalizeStoredSession(parsed));
+        setLoaded(normalizeStoredSession(parsed));
         return;
       }
 
       const legacy = window.localStorage.getItem('resume-game-text');
       if (legacy) {
-        setSession(
+        setLoaded(
           normalizeStoredSession({
             resumeText: decodeEntities(legacy),
           })
@@ -208,7 +219,7 @@ export function useResumeSession() {
   }, []);
 
   React.useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || !changed.current) return;
     const success = persistResumeSession(session);
     if (!success) {
       setStorageNotice('Auto-save is paused because browser storage is unavailable.');
