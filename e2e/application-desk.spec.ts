@@ -77,7 +77,7 @@ test('a posting is pasted once and worked through the desk, and it survives a re
     /^\d+ of \d+ confirmed requirements? ha(s|ve) evidence in your resume\.$/
   );
   await expect(match).not.toContainText('%');
-  await expect(match.getByText('In your resume:').first()).toBeVisible();
+  await expect(match.getByText('Your line:').first()).toBeVisible();
 
   const origin = new URL(page.url()).origin;
   expect(requests.every((url) => new URL(url).origin === origin)).toBe(true);
