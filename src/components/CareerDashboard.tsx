@@ -154,7 +154,7 @@ export default function CareerDashboard() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-2">
-          <h2 className="text-3xl font-semibold tracking-tight">Career Dashboard</h2>
+          <h2 className="text-3xl font-semibold tracking-tight">Where things stand</h2>
           <p className="text-muted-foreground">
             Your progress across all tools. Everything stays on your device.
           </p>

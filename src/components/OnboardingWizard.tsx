@@ -570,14 +570,14 @@ export default function OnboardingWizard() {
         <div className="w-20" />
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
         {currentStep.options.map((option) => (
           <button
             key={option.value}
             type="button"
             onClick={() => handleSelect(option.value)}
             className={cn(
-              'flex flex-col items-center gap-3 rounded-2xl border border-border/35 bg-overlay/25 p-6 text-center transition-all duration-200 cursor-pointer',
+              'flex min-w-0 flex-col items-center gap-3 rounded-2xl border border-border/35 bg-overlay/25 p-6 text-center break-words transition-all duration-200 cursor-pointer',
               'hover:-translate-y-0.5 hover:border-foam/50 hover:shadow-lg hover:bg-overlay/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2'
             )}
           >

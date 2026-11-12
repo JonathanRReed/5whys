@@ -32,7 +32,7 @@ export default function WhySummary({
       <CardHeader>
         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Session summary</p>
         <CardTitle className="text-2xl font-semibold text-foreground">Why Statement</CardTitle>
-        <div className="text-sm text-muted-foreground">
+        <div className="text-sm text-muted-foreground" role="status">
           {isComplete
             ? 'Chain complete: all 5 layers answered'
             : `Depth progress: ${sequentialCount} of ${WHY_COUNT} layers answered`}

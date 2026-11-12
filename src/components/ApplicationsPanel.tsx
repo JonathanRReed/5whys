@@ -10,6 +10,7 @@ import {
 } from '../lib/applications';
 import type { ApplicationSummary } from '../lib/career-bridge';
 import { cn } from '../lib/utils';
+import Announcer, { useAnnouncer } from './shared/Announcer';
 import ConfirmButton from './shared/ConfirmButton';
 
 type Readiness = {
@@ -166,6 +167,7 @@ export function NewApplicationForm({
  */
 export default function ApplicationsPanel({ applications, readiness, onChanged }: Props) {
   const [formOpen, setFormOpen] = React.useState(false);
+  const [message, announce] = useAnnouncer();
   const showForm = formOpen || applications.length === 0;
 
   const patch = (id: string, updates: Parameters<typeof updateApplication>[2]) => {
@@ -173,8 +175,10 @@ export default function ApplicationsPanel({ applications, readiness, onChanged }
     onChanged();
   };
   const remove = (id: string) => {
+    const gone = applications.find((app) => app.id === id);
     deleteApplication(id);
     onChanged();
+    announce(gone ? `Removed ${gone.title}.` : 'Removed.');
   };
   const focus = (id: string) => {
     saveApplications(setActiveApplication(loadApplications(), id));
@@ -347,9 +351,11 @@ export default function ApplicationsPanel({ applications, readiness, onChanged }
           onCreated={() => {
             setFormOpen(false);
             onChanged();
+            announce('Application tracked.');
           }}
         />
       )}
+      <Announcer message={message} />
     </section>
   );
 }

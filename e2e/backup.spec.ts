@@ -89,7 +89,7 @@ for (const theme of ['night', 'dawn']) {
     });
     await page.getByRole('button', { name: 'Replace everything here' }).click();
     await expect(page.getByRole('alert')).toContainText('Your previous saved work was restored.');
-    await expect(page.getByRole('status')).not.toContainText('Brought in');
+    await expect(page.getByRole('status').filter({ hasText: 'Brought in' })).toHaveCount(0);
     for (const [key, value] of Object.entries(original)) {
       expect(await readStorage(page, key)).toBe(value);
     }
@@ -103,7 +103,7 @@ for (const theme of ['night', 'dawn']) {
     await page.evaluate(() => sessionStorage.setItem('allow-backup-import', 'yes'));
     await page.getByRole('button', { name: 'Replace everything here' }).click();
     await expect(page.getByRole('alert')).toHaveCount(0);
-    await expect(page.getByRole('status')).toContainText(
+    await expect(page.getByRole('status').filter({ hasText: 'Brought in' })).toContainText(
       'Brought in 1 reflection, your career profile.'
     );
     expect(await readStorage(page, 'career-why-history')).toContain('imported-reflection');
