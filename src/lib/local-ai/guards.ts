@@ -137,6 +137,39 @@ function currencyValue(match: string): number | null {
   return suffix && suffix in MULTIPLIERS ? base * MULTIPLIERS[suffix] : base;
 }
 
+const CURRENCY_UNITS: Record<string, string> = {
+  $: 'usd',
+  dollars: 'usd',
+  usd: 'usd',
+  '€': 'eur',
+  euros: 'eur',
+  eur: 'eur',
+  '£': 'gbp',
+  pounds: 'gbp',
+  gbp: 'gbp',
+  '¥': 'jpy',
+};
+
+/** Which money a match is in: "$400" and "400 dollars" are the same, "€400" is not. */
+function currencyUnit(match: string): string | null {
+  const sign = match.match(/[$€£¥]/)?.[0];
+  if (sign) return CURRENCY_UNITS[sign];
+  const word = match.toLowerCase().match(/dollars|usd|euros|eur|pounds|gbp/)?.[0];
+  return word ? CURRENCY_UNITS[word] : null;
+}
+
+/** For each amount the source gives with a currency, the currencies it is given in. */
+function collectCurrencies(text: string): Map<number, Set<string>> {
+  const found = new Map<number, Set<string>>();
+  for (const match of text.matchAll(CURRENCY_PATTERN)) {
+    const value = currencyValue(match[0]);
+    const unit = currencyUnit(match[0]);
+    if (value === null || !unit) continue;
+    found.set(value, (found.get(value) ?? new Set()).add(unit));
+  }
+  return found;
+}
+
 /** Every number value the inputs mention, as digits or as words, scaled and raw. */
 function collectValues(text: string): { values: Set<number>; percents: Set<number> } {
   const values = new Set<number>();
@@ -303,6 +336,7 @@ export function findInventedClaims(
   const source = (typeof original === 'string' ? [original] : [...original]).join('\n');
   const lowerSource = source.toLowerCase();
   const { values, percents } = collectValues(source);
+  const sourceCurrencies = collectCurrencies(source);
   const words = wordSet(source);
   const accepted: Span[] = [];
   const add = (span: Span) => {
@@ -320,7 +354,12 @@ export function findInventedClaims(
   for (const match of generated.matchAll(CURRENCY_PATTERN)) {
     const value = currencyValue(match[0]);
     const span = spanOf('currency', match);
-    consider(span, value === null || !values.has(value));
+    // The amount must be the visitor's, and so must the money it is in: a
+    // source that says $400 does not support €400.
+    const units = value === null ? undefined : sourceCurrencies.get(value);
+    const unit = currencyUnit(match[0]);
+    const otherMoney = Boolean(units && unit && !units.has(unit));
+    consider(span, value === null || !values.has(value) || otherMoney);
   }
   for (const match of generated.matchAll(PERCENT_PATTERN)) {
     const digits = match[0].match(/\d[\d,]*(?:\.\d+)?/);

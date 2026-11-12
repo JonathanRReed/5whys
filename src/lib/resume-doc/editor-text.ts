@@ -1,3 +1,4 @@
+import { joinParts } from './layout';
 import type { ResumeDoc, ResumeLine } from './types';
 
 const GLYPH_PREFIX = /^\s*[-–•*◦○●▪·]\s+/;
@@ -7,18 +8,6 @@ const GLYPH_PREFIX = /^\s*[-–•*◦○●▪·]\s+/;
  * line-end hyphen ("back-of-" then "house") is rejoined without the space,
  * keeping the hyphen, because a resume's compounds are written that way.
  */
-function joinParts(parts: string[]): string {
-  let text = '';
-  for (const raw of parts) {
-    const part = raw.trim();
-    if (!part) continue;
-    if (!text) text = part;
-    else if (/[A-Za-z]-$/.test(text) && /^[a-z]/.test(part)) text += part;
-    else text += ` ${part}`;
-  }
-  return text;
-}
-
 /** The right edge of the text column a line belongs to on its page. */
 function columnRight(doc: ResumeDoc, line: ResumeLine): number {
   const box = line.box;

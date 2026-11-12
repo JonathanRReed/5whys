@@ -8,6 +8,7 @@ import {
   requirementsFromBullets,
 } from '../../lib/posting';
 import type { ResumeDoc, ResumeLine } from '../../lib/resume-doc';
+import { joinParts } from '../../lib/resume-doc/layout';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
 import type { DeskState } from './useDesk';
@@ -28,10 +29,10 @@ function bulletsOf(doc: ResumeDoc): { id: string; text: string }[] {
     .map((line) => ({
       id: line.id,
       // A pasted resume keeps its typed dash or dot; the list draws its own.
-      text: [line, ...(tails.get(line.id) ?? [])]
-        .map((part) => part.text.trim())
-        .join(' ')
-        .replace(/^[-–•*◦○●▪·]\s+/, ''),
+      text: joinParts([line, ...(tails.get(line.id) ?? [])].map((part) => part.text)).replace(
+        /^[-–•*◦○●▪·]\s+/,
+        ''
+      ),
     }));
 }
 

@@ -40,3 +40,20 @@ describe('conditions of hiring', () => {
     }
   });
 });
+
+describe('review fixes: money and wrapped lines', () => {
+  it('does not accept the same amount in another currency', async () => {
+    const { findInventedClaims } = await import('../src/lib/local-ai');
+    const source = 'Raised $400 for the student club.';
+    expect(findInventedClaims(source, 'Raised €400 for the student club.')).toHaveLength(1);
+    expect(findInventedClaims(source, 'Raised 400 dollars for the student club.')).toEqual([]);
+    expect(findInventedClaims(source, 'Raised $400 for the club.')).toEqual([]);
+    expect(findInventedClaims('Raised 400 for the club.', 'Raised $400 for the club.')).toEqual([]);
+  });
+
+  it('joins a line that wraps after a hyphen the same way everywhere', async () => {
+    const { joinParts } = await import('../src/lib/resume-doc/layout');
+    expect(joinParts(['Led a cross-', 'functional team'])).toBe('Led a cross-functional team');
+    expect(joinParts(['Posted three times', 'a week'])).toBe('Posted three times a week');
+  });
+});

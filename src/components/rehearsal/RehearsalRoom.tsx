@@ -69,6 +69,8 @@ export default function RehearsalRoom() {
   const [announcement, announce] = useAnnouncer();
   const recorder = React.useRef<SpeechRecorder | null>(null);
   const startingRecorder = React.useRef(false);
+  /** Counts recording attempts, so a start that was called off can tell. */
+  const startRun = React.useRef(0);
   const startedAt = React.useRef(0);
   const speech = React.useRef<AbortController | null>(null);
 
@@ -167,6 +169,7 @@ export default function RehearsalRoom() {
   // Leaving the page must never leave a microphone open or a voice talking.
   React.useEffect(
     () => () => {
+      startRun.current += 1;
       recorder.current?.cancel();
       speech.current?.abort();
     },
@@ -272,14 +275,25 @@ export default function RehearsalRoom() {
     startingRecorder.current = true;
     speech.current?.abort();
     setNotice(null);
+    const run = ++startRun.current;
     try {
       const { createRecorder } = await loadFeature(import('../../lib/speech'));
-      recorder.current = createRecorder({ onLevel: setLevel });
-      await recorder.current.start();
+      // The visitor chose to type while this was loading: open no microphone.
+      if (run !== startRun.current) return;
+      const created = createRecorder({ onLevel: setLevel });
+      recorder.current = created;
+      await created.start();
+      if (run !== startRun.current) {
+        created.cancel();
+        if (recorder.current === created) recorder.current = null;
+        return;
+      }
       startedAt.current = performance.now();
       setElapsed(0);
       setRecording(true);
     } catch (error) {
+      // Cancelled on purpose by switching to typing: nothing went wrong.
+      if (run !== startRun.current) return;
       const reason = (error as { reason?: string } | null)?.reason;
       setNotice(
         reason === 'permission-denied'
@@ -293,6 +307,14 @@ export default function RehearsalRoom() {
     } finally {
       startingRecorder.current = false;
     }
+  };
+
+  /** Switch to typing, and call off a microphone that is still being opened. */
+  const typeInstead = () => {
+    startRun.current += 1;
+    recorder.current?.cancel();
+    recorder.current = null;
+    setMode('type');
   };
 
   const finishWith = async (audio: RecordedAudio | null, text: string, seconds: number) => {
@@ -734,7 +756,7 @@ export default function RehearsalRoom() {
               : 'Press record when you are ready. A structured answer commonly runs one to two minutes.'}
           </p>
           {!recording && (
-            <Button type="button" size="sm" variant="ghost" onClick={() => setMode('type')}>
+            <Button type="button" size="sm" variant="ghost" onClick={typeInstead}>
               Type this answer instead
             </Button>
           )}

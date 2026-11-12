@@ -59,6 +59,24 @@ export function geometricLineOrder(doc: ResumeDoc): string[] {
 }
 
 /** Collapse visual continuations for text consumers while leaving page records intact. */
+/**
+ * Wrapped lines of one paragraph as one line. A line-end hyphen ("back-of-"
+ * then "house") is rejoined without a space, keeping the hyphen, because a
+ * resume's compounds are written that way. Every reader of the resume joins
+ * lines here, so the editor, the exports and a saved rewrite all agree.
+ */
+export function joinParts(parts: string[]): string {
+  let text = '';
+  for (const raw of parts) {
+    const part = raw.trim();
+    if (!part) continue;
+    if (!text) text = part;
+    else if (/[A-Za-z]-$/.test(text) && /^[a-z]/.test(part)) text += part;
+    else text += ` ${part}`;
+  }
+  return text;
+}
+
 export function logicalLines(lines: ResumeLine[]): ResumeLine[] {
   const byId = new Map(lines.map((line) => [line.id, line]));
   const continuations = new Map<string, ResumeLine[]>();
@@ -71,8 +89,6 @@ export function logicalLines(lines: ResumeLine[]): ResumeLine[] {
   return lines.flatMap((line) => {
     if (line.continuationOf && byId.has(line.continuationOf)) return [];
     const group = continuations.get(line.id);
-    return [
-      group ? { ...line, text: [line, ...group].map((part) => part.text.trim()).join(' ') } : line,
-    ];
+    return [group ? { ...line, text: joinParts([line, ...group].map((part) => part.text)) } : line];
   });
 }
