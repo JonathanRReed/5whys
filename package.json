@@ -23,7 +23,8 @@
     "format:check": "biome format .",
     "audit:deps": "knip",
     "deploy": "astro build && wrangler deploy",
-    "deploy:dry-run": "astro build && wrangler deploy --dry-run"
+    "deploy:dry-run": "astro build && wrangler deploy --dry-run",
+    "pay:data": "bun scripts/pay-data/run.ts"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.4",
@@ -61,6 +62,7 @@
     "globals": "^17.12.0",
     "jsdom": "^30.0.1",
     "knip": "^6.34.0",
+    "read-excel-file": "^9.3.15",
     "satori": "^0.33.4",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.3",
