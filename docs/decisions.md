@@ -228,8 +228,8 @@ between a school laptop and a phone.
 
 **Not built, on purpose.** No analytics endpoint, no newsletter, no AI bullet
 enhancer, no blog. They contradict "nothing you write leaves your browser" or
-do not serve the student. If usage numbers are ever wanted, Cloudflare Web
-Analytics is already allowed by the CSP and needs no code.
+do not serve the student. Since the relaunch the CSP allows scripts and
+requests from the site's own origin only, so no analytics script can load.
 
 ## 2025-05-12 Megaplan (superseded)
 

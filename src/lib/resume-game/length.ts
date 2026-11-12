@@ -19,6 +19,9 @@ export function detectSections(text: string): string[] {
   return found;
 }
 
+/** Words on one full page of resume text. */
+export const WORDS_PER_PAGE = 500;
+
 export function analyzeResumeLength(text: string, extractedBulletCount = 0) {
   const words = text.split(/\s+/).filter(Boolean).length;
   const lines = text.split('\n').length;
@@ -29,24 +32,26 @@ export function analyzeResumeLength(text: string, extractedBulletCount = 0) {
   const glyphBullets = (text.match(/^[-•*◦○●]\s+/gm) || []).length;
   const bullets = glyphBullets > 0 ? glyphBullets : extractedBulletCount;
 
-  // Estimate pages at ~250 words per page (standard resume density)
-  const estimatedPages = Math.max(1, Math.round(words / 250));
+  // A full page of resume text at a normal size and margin holds about this
+  // many words. It is an estimate from the word count, not a measurement.
+  const estimatedPages = Math.max(1, Math.round(words / WORDS_PER_PAGE));
 
   const sections = detectSections(text);
 
   let recommendation: string;
   if (estimatedPages > 2) {
-    recommendation = 'Most resumes fit on one or two pages. Consider trimming.';
+    recommendation = 'Longer than two pages. Keep your strongest lines and cut the rest.';
   } else if (words < 200) {
     recommendation =
       'Short resume. Projects, coursework, campus jobs, and volunteering all count as experience worth listing.';
-  } else if (words > 800) {
-    recommendation = 'This is getting long. Keep your strongest lines.';
+  } else if (estimatedPages === 2) {
+    recommendation =
+      'About two pages. One page is the norm for a student or a first job. Two is common once you have many years of work to show.';
   } else {
-    recommendation = 'Good length for most roles.';
+    recommendation = 'About one page, the usual length when you are starting out.';
   }
 
-  const isOptimalLength = estimatedPages <= 2 && words >= 200 && words <= 800;
+  const isOptimalLength = estimatedPages <= 2 && words >= 200;
 
   return {
     wordCount: words,
