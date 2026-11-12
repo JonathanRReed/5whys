@@ -26,6 +26,21 @@ end of every working pass. Delete it in the final pull request.
 - 2026-11-12: Aa display menu (theme, three typefaces), on `relaunch`.
 - 2026-11-12: AGENTS.md and DESIGN.md updated with relaunch rules.
 
+- 2026-11-12: resume document engine merged (`t3/resume-document-engine`).
+- 2026-11-12: machine view in the Resume Game (import, findings, repairs,
+  clean DOCX with read-back check, print to PDF), with browser tests.
+
+## Engine follow-ups to hand back
+
+- Resume engine: a wrapped bullet's second line is kept as its own line, and
+  bullets from browser-printed PDFs (glyph in a separate text item) are not
+  marked as bullets, so the clean export loses them. Join continuation lines
+  and detect bullet glyph items.
+- Resume engine: two findings (columns, reading order) offer the same repair;
+  consider merging them into one finding.
+- Machine view: persist the structured resume once the storage library lands;
+  add the posting match and rewrite hooks.
+
 ## In flight (builders, started 2026-11-12)
 
 | Piece | Model | Paths |
@@ -33,7 +48,6 @@ end of every working pass. Delete it in the final pull request.
 | Posting engine | Opus 5.5 | `src/lib/posting/` |
 | Local AI layer | Opus 5.5 | `src/lib/local-ai/` |
 | Storage, desk state, backup | Opus 5.5 | `src/lib/local-db/`, `src/lib/application-desk.ts`, `studio-backup.ts` |
-| Resume document engine | GPT-6.1 Sol | `src/lib/resume-doc/` |
 | Pay data and lookup | GPT-6.1 Sol | `scripts/pay-data/`, `public/data/pay/`, `src/lib/pay/` |
 | Model hosting and speech spikes | GPT-6.1 Sol | `spikes/`, `scripts/models/` |
 
