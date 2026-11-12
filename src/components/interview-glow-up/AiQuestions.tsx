@@ -5,6 +5,7 @@ import {
   type InterviewPacket,
   updatePacket,
 } from '../../lib/glowup-store';
+import { loadFeature, runFeature } from '../../lib/lazy-feature';
 import { useClipboard } from '../networking/useClipboard';
 import { sourceLabel } from '../shared/AiText';
 
@@ -45,7 +46,7 @@ export default function AiQuestions({ data, setData, role, packet }: Props) {
   // the list lands in the same freeform box, which the tools never score.
   const writeHere = async () => {
     setBusy(true);
-    const { likelyQuestions } = await import('../../lib/local-ai');
+    const { likelyQuestions } = await loadFeature(import('../../lib/local-ai'));
     const result = await likelyQuestions({
       jobTitle: role.jobTitle || undefined,
       company: role.company || undefined,
@@ -88,7 +89,7 @@ export default function AiQuestions({ data, setData, role, packet }: Props) {
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
-          onClick={writeHere}
+          onClick={() => void runFeature(writeHere, () => setBusy(false))}
           disabled={busy}
           className="rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2 disabled:opacity-60"
         >

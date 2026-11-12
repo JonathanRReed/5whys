@@ -7,6 +7,7 @@ import {
   updateLetter,
 } from '../../lib/application-desk';
 import { isGenericOpener } from '../../lib/desk-checks';
+import { loadFeature, runFeature } from '../../lib/lazy-feature';
 import type { AiResult } from '../../lib/local-ai';
 import { requirementsFromBullets } from '../../lib/posting';
 import { sourceLabel } from '../shared/AiText';
@@ -76,7 +77,7 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
 
   const derive = async () => {
     setBusy(true);
-    const { messageVariants } = await import('../../lib/local-ai');
+    const { messageVariants } = await loadFeature(import('../../lib/local-ai'));
     const result = await messageVariants({
       opener: letter.hook,
       role: application.title,
@@ -230,7 +231,11 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
           </p>
         </div>
         <div className="flex flex-wrap items-end gap-2">
-          <Button type="button" onClick={derive} disabled={busy || !letter.hook.trim() || generic}>
+          <Button
+            type="button"
+            onClick={() => void runFeature(derive, () => setBusy(false))}
+            disabled={busy || !letter.hook.trim() || generic}
+          >
             {busy ? 'Writing' : hasMessages ? 'Write them again' : 'Write the three messages'}
           </Button>
         </div>

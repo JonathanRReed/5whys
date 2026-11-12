@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { loadFeature, reportFeatureFailure, runFeature } from '../lib/lazy-feature';
 import {
   applyTheme,
   isTheme,
@@ -62,10 +63,12 @@ export default function DisplayMenu() {
   React.useEffect(() => {
     if (!open || model !== 'unknown') return undefined;
     let cancelled = false;
-    void import('../lib/local-ai').then(async ({ getBrowserModelCapability }) => {
-      const capability = await getBrowserModelCapability();
-      if (!cancelled) setModel(capability.state);
-    });
+    void loadFeature(import('../lib/local-ai'))
+      .then(async ({ getBrowserModelCapability }) => {
+        const capability = await getBrowserModelCapability();
+        if (!cancelled) setModel(capability.state);
+      })
+      .catch(reportFeatureFailure);
     return () => {
       cancelled = true;
     };
@@ -74,7 +77,7 @@ export default function DisplayMenu() {
   const downloadModel = async () => {
     setModel('downloading');
     setProgress(0);
-    const { downloadBrowserModel } = await import('../lib/local-ai');
+    const { downloadBrowserModel } = await loadFeature(import('../lib/local-ai'));
     const capability = await downloadBrowserModel({ onProgress: setProgress });
     setProgress(null);
     setModel(capability.state);
@@ -237,7 +240,12 @@ export default function DisplayMenu() {
             {model === 'downloadable' && (
               <button
                 type="button"
-                onClick={downloadModel}
+                onClick={() =>
+                  void runFeature(downloadModel, () => {
+                    setProgress(null);
+                    setModel((state) => (state === 'downloading' ? 'unsupported' : state));
+                  })
+                }
                 className="mt-2 inline-flex min-h-9 items-center rounded-lg border border-border/60 px-3 text-sm transition-colors hover:bg-overlay/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Let my browser download its model

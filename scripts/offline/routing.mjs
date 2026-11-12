@@ -5,6 +5,11 @@ export function obsoleteShellCache(name, current) {
   return name.startsWith(SHELL_CACHE_PREFIX) && name !== current;
 }
 
+/** Vite's content hash is part of the filename, unlike unhashed public assets. */
+export function immutableAsset(path) {
+  return /^\/_astro\/[^/]+[.-][\w-]{8,}\.[\w]+$/.test(path);
+}
+
 /** Return null to leave the request entirely to the browser. */
 export function requestStrategy({ url, method, mode, range = false }, origin) {
   const target = new URL(url);
@@ -18,7 +23,7 @@ export function requestStrategy({ url, method, mode, range = false }, origin) {
   )
     return null;
   if (mode === 'navigate') return 'network-first';
-  if (target.pathname.startsWith('/_astro/')) return 'cache-first';
+  if (immutableAsset(target.pathname)) return 'cache-first';
   return 'stale-while-revalidate';
 }
 

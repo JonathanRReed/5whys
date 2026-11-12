@@ -1,7 +1,8 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import BackupControls from '../src/components/BackupControls';
-import { BACKUP_FORMAT } from '../src/lib/studio-backup';
+import * as backups from '../src/lib/studio-backup';
+import { BACKUP_FORMAT, BACKUP_SIZE_MESSAGE } from '../src/lib/studio-backup';
 
 beforeEach(() => {
   localStorage.clear();
@@ -216,7 +217,10 @@ it('keeps the previous selected backup available when another file cannot be rea
 });
 
 it('shows the recovery warning when restoring previous work also fails', async () => {
-  localStorage.setItem('career-tools-profile', '{"name":"Original profile"}');
+  localStorage.setItem(
+    'career-tools-profile',
+    '{"stage":"student","focus":"resume","name":"Original profile"}'
+  );
   const onRestored = vi.fn();
   render(<BackupControls onRestored={onRestored} />);
   const file = new File([], 'backup.json', { type: 'application/json' });
@@ -226,7 +230,7 @@ it('shows the recovery warning when restoring previous work also fails', async (
         format: BACKUP_FORMAT,
         version: 1,
         stores: {
-          'career-tools-profile': { name: 'Imported profile' },
+          'career-tools-profile': { stage: 'student', focus: 'resume', name: 'Imported profile' },
           'career-why-history': [{ id: 'imported-reflection' }],
         },
       }),
@@ -281,4 +285,69 @@ it('can cancel a failed import without changing preserved work', async () => {
 
   expect(screen.queryByRole('button', { name: 'Replace everything here' })).toBeNull();
   expect(localStorage.getItem('career-why-history')).toBe('[{"id":"saved-reflection"}]');
+});
+
+it('names the files and recordings left out of an export', async () => {
+  vi.spyOn(backups, 'backupExclusions').mockResolvedValue({
+    recordings: 2,
+    hasResumeFile: true,
+    hasModels: true,
+  });
+  render(<BackupControls />);
+  expect(
+    await screen.findByText(
+      'Not included: 2 recordings, the original resume file, downloaded models.'
+    )
+  ).toBeInTheDocument();
+});
+
+it('refuses a large file before reading its text', async () => {
+  render(<BackupControls />);
+  const file = new File([], 'large.json', { type: 'application/json' });
+  const read = vi.fn(async () => '');
+  Object.defineProperties(file, {
+    size: { value: backups.MAX_BACKUP_BYTES + 1 },
+    text: { value: read },
+  });
+  await act(async () => {
+    fireEvent.change(screen.getByLabelText('Import a 5 Whys Career Studio export file'), {
+      target: { files: [file] },
+    });
+  });
+  expect(screen.getByRole('alert')).toHaveTextContent(BACKUP_SIZE_MESSAGE);
+  expect(read).not.toHaveBeenCalled();
+});
+
+it('ignores a second submission while the first import is waiting for storage', async () => {
+  const file = new File([], 'backup.json', { type: 'application/json' });
+  Object.defineProperty(file, 'text', {
+    value: async () =>
+      JSON.stringify({ format: BACKUP_FORMAT, version: 1, stores: { 'career-why-history': [] } }),
+  });
+  const onRestored = vi.fn();
+  render(<BackupControls onRestored={onRestored} />);
+  await act(async () => {
+    fireEvent.change(screen.getByLabelText('Import a 5 Whys Career Studio export file'), {
+      target: { files: [file] },
+    });
+  });
+  let finish: ((value: Awaited<ReturnType<typeof backups.restoreBackup>>) => void) | undefined;
+  const restore = vi.spyOn(backups, 'restoreBackup').mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      })
+  );
+  await act(async () => {
+    const add = screen.getByRole('button', { name: 'Add to what is here' });
+    fireEvent.click(add);
+    fireEvent.click(add);
+    fireEvent.click(screen.getByRole('button', { name: 'Replace everything here' }));
+  });
+  expect(restore).toHaveBeenCalledOnce();
+  expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+  await act(async () => {
+    finish?.(['career-why-history']);
+  });
+  expect(onRestored).toHaveBeenCalledOnce();
 });
