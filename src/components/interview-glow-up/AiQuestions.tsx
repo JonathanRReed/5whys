@@ -1,4 +1,4 @@
-import type * as React from 'react';
+import * as React from 'react';
 import {
   type DecodedRole,
   type GlowUpData,
@@ -6,6 +6,7 @@ import {
   updatePacket,
 } from '../../lib/glowup-store';
 import { useClipboard } from '../networking/useClipboard';
+import { sourceLabel } from '../shared/AiText';
 
 type Props = {
   data: GlowUpData;
@@ -36,6 +37,37 @@ export function buildQuestionsPrompt(role: DecodedRole): string {
 export default function AiQuestions({ data, setData, role, packet }: Props) {
   const { copiedKey, handleCopy } = useClipboard();
   const prompt = buildQuestionsPrompt(role);
+  const [busy, setBusy] = React.useState(false);
+  const [written, setWritten] = React.useState<string | null>(null);
+
+  // Writes a list here, on the device: from the browser's own model when it
+  // has one, otherwise from the question bank. Nothing is sent anywhere, and
+  // the list lands in the same freeform box, which the tools never score.
+  const writeHere = async () => {
+    setBusy(true);
+    const { likelyQuestions } = await import('../../lib/local-ai');
+    const result = await likelyQuestions({
+      jobTitle: role.jobTitle || undefined,
+      company: role.company || undefined,
+      requirements: role.bullets.filter((b) => b.status === 'active').map((b) => b.text),
+    });
+    const list = result.value.questions
+      .map(
+        (q, index) =>
+          `${index + 1}. ${q.question}${q.requirement ? `\n   Tests: ${q.requirement}` : ''}`
+      )
+      .join('\n');
+    const existing = (packet.aiQuestions ?? '').trim();
+    setData(
+      updatePacket(data, packet.id, {
+        aiQuestions: existing ? `${existing}\n\n${list}` : list,
+      })
+    );
+    setWritten(
+      list ? sourceLabel(result.source) : 'No questions could be written from this posting.'
+    );
+    setBusy(false);
+  };
 
   return (
     <div className="space-y-3">
@@ -53,6 +85,19 @@ export default function AiQuestions({ data, setData, role, packet }: Props) {
       >
         {copiedKey === 'ai-questions-prompt' ? 'Copied' : 'Copy the prompt'}
       </button>
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={writeHere}
+          disabled={busy}
+          className="rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2 disabled:opacity-60"
+        >
+          {busy ? 'Writing' : 'Or write a list on this device'}
+        </button>
+        <span role="status" className="text-xs text-muted-foreground">
+          {written}
+        </span>
+      </div>
       <div>
         <div className="mb-1 flex items-center justify-between gap-2">
           <label htmlFor="ai-answer" className="block text-sm text-muted-foreground">

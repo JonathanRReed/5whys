@@ -72,4 +72,11 @@ test('the likely-questions prompt is built locally and the answer saves', async 
     '1. Tell me about a time you used SQL.'
   );
   await expect(page.getByText('From your AI')).toBeVisible();
+
+  // A list can also be written here, with no model, from the question bank.
+  await page.getByRole('button', { name: 'Or write a list on this device' }).click();
+  await expect(page.getByText('From the built-in rules')).toBeVisible();
+  await expect(page.getByLabel('The answer it gave you')).toHaveValue(
+    /^1\. Tell me about a time you used SQL\.\n\n1\. /
+  );
 });
