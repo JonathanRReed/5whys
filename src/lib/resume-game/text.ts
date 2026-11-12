@@ -42,7 +42,14 @@ export function capitalizeWord(value: string) {
   return value.slice(0, 1).toUpperCase() + value.slice(1).toLowerCase();
 }
 
+/**
+ * Fast-path optimization: Skip 5 sequential global regex replacements when no HTML special chars
+ * (`&`, `<`, `>`, `"`, `'`) are present. Drastically reduces regex overhead and string allocations
+ * when rendering/highlighting thousands of tokens during live resume scanning and editing.
+ */
 export function escapeHtml(value: string) {
+  if (!value) return '';
+  if (!/[&<>"']/.test(value)) return value;
   return value
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
