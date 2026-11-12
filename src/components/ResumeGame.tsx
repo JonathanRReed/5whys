@@ -93,6 +93,14 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
 
   const resumeText = session.resumeText;
   const bullets = session.bullets;
+  // What the visitor changed, for the clean copy of the uploaded resume.
+  const rewrites = React.useMemo(
+    () =>
+      bullets
+        .filter((bullet) => bullet.edited && bullet.improved.trim())
+        .map((bullet) => ({ original: bullet.original, improved: bullet.improved })),
+    [bullets]
+  );
   const selectedBulletId = session.selectedBulletId;
   const selectedBullet = bullets.find((bullet) => bullet.id === selectedBulletId) ?? null;
   const signalReport = session.signalReport ?? EMPTY_SIGNAL_REPORT;
@@ -363,7 +371,7 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
         }}
       />
 
-      {resumeDoc && <MachineView doc={resumeDoc} onChange={keepResumeDoc} />}
+      {resumeDoc && <MachineView doc={resumeDoc} onChange={keepResumeDoc} rewrites={rewrites} />}
 
       <PostingMatch resumeText={resumeText} />
 

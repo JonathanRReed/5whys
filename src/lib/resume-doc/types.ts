@@ -91,6 +91,11 @@ export type ExportOptions = {
   /** Omit to include every bullet. Non-bullet lines always remain. */
   bulletLineIds?: ReadonlySet<string>;
   /**
+   * Lines the visitor rewrote, as the original text and what replaces it. A
+   * line is matched on its words, ignoring its bullet mark, case and spacing.
+   */
+  rewrites?: readonly { original: string; improved: string }[];
+  /**
    * Bullets that are not in the resume, each placed after one of its lines.
    * One whose line is missing from the copy goes after the last bullet.
    */

@@ -17,7 +17,7 @@ export {
 } from './detectors';
 export { extractDocx } from './docx';
 export { toEditorText } from './editor-text';
-export { checkExport, fixList, toDocx, toPrintModel } from './export';
+export { checkExport, countRewrites, fixList, toDocx, toPrintModel } from './export';
 export { fromText, recomputeDoc } from './model';
 export { extractPdf } from './pdf';
 export {

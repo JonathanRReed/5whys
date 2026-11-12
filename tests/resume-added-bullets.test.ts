@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fromText, toPrintModel } from '../src/lib/resume-doc';
+import { countRewrites, fromText, toPrintModel } from '../src/lib/resume-doc';
 
 const RESUME = `Maya Torres
 maya@example.edu
@@ -56,5 +56,35 @@ describe('bullets added to a tailored copy', () => {
     expect(
       toPrintModel(doc, { addedBullets: [{ afterLineId: bullets[0].lineId, text: '  ' }] })
     ).toEqual(toPrintModel(doc));
+  });
+});
+
+describe('rewritten lines in the clean copy', () => {
+  const doc = fromText(RESUME);
+  const rewrites = [
+    {
+      original: 'Posted three times a week',
+      improved: 'Posted three times a week, which doubled replies from listeners',
+    },
+    { original: 'A line that is not in the resume', improved: 'Something else' },
+    { original: 'Grew the Instagram account from 400 to 2,100 followers', improved: '  ' },
+  ];
+
+  it('replaces a line with its new wording and leaves the rest alone', () => {
+    const texts = toPrintModel(doc, { rewrites }).paragraphs.map((p) => p.text);
+    expect(texts).toContain('Posted three times a week, which doubled replies from listeners');
+    expect(texts).not.toContain('Posted three times a week');
+    expect(texts).toContain('Grew the Instagram account from 400 to 2,100 followers');
+    expect(texts).not.toContain('Something else');
+  });
+
+  it('counts only rewrites that match a line and change it', () => {
+    expect(countRewrites(doc, rewrites)).toBe(1);
+    expect(countRewrites(doc, undefined)).toBe(0);
+    expect(
+      countRewrites(doc, [
+        { original: '- posted three times a week', improved: 'Posted three times a week' },
+      ])
+    ).toBe(0);
   });
 });

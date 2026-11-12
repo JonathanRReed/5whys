@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { setResumeSelection, updateBulletsFlow } from '../../lib/application-desk';
+import { readResumeRewrites } from '../../lib/career-bridge';
 import { loadFeature, reportFeatureFailure } from '../../lib/lazy-feature';
 import {
   extractRequirementTerms,
@@ -30,6 +31,15 @@ function bulletsOf(doc: ResumeDoc): { id: string; text: string }[] {
     }));
 }
 
+/** A line reduced to its words, to match a rewrite to the line it replaces. */
+function wordsOf(text: string): string {
+  return text
+    .replace(/^\s*[-–•*◦○●▪·o]\s+/, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
 /**
  * One master resume, tailored per application: choose which of its bullets
  * go into the copy for this role. Nothing here edits the resume itself; the
@@ -39,6 +49,9 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
   const { application, role, resumeText, changeDesks } = desk;
   const [doc, setDoc] = React.useState<ResumeDoc | null | undefined>(undefined);
   const [notice, setNotice] = React.useState<string | null>(null);
+  // Lines rewritten in the Resume Game replace their originals in this copy.
+  const [rewrites, setRewrites] = React.useState<{ original: string; improved: string }[]>([]);
+  React.useEffect(() => setRewrites(readResumeRewrites()), []);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -74,13 +87,15 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
   const bullets: Bullet[] = React.useMemo(() => {
     if (!doc) return [];
     const terms = confirmed.map((r) => ({ text: r.text, terms: extractRequirementTerms(r.text) }));
+    const reworded = new Map(rewrites.map((r) => [wordsOf(r.original), r.improved.trim()]));
     return bulletsOf(doc).map((bullet) => ({
       ...bullet,
+      text: reworded.get(wordsOf(bullet.text)) ?? bullet.text,
       requirements: terms
         .filter((entry) => findTermMatches(entry.terms, bullet.text).length > 0)
         .map((entry) => entry.text),
     }));
-  }, [doc, confirmed]);
+  }, [doc, confirmed, rewrites]);
 
   if (!application) return null;
   const appId = application.id;
@@ -138,7 +153,7 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
   const download = async () => {
     try {
       const { toDocx, checkExport } = await loadFeature(import('../../lib/resume-doc'));
-      const bytes = await toDocx(doc, { bulletLineIds: selected, addedBullets });
+      const bytes = await toDocx(doc, { bulletLineIds: selected, addedBullets, rewrites });
       const url = URL.createObjectURL(
         new Blob([bytes as BlobPart], {
           type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

@@ -4,6 +4,22 @@ import { logicalLines } from './layout';
 import { linearize, moveContactToTop, normalizeDates } from './repairs';
 import type { ExportCheck, ExportOptions, PrintModel, PrintParagraph, ResumeDoc } from './types';
 
+const MARKER = /^\s*[-–•*◦○●▪·o]\s+/;
+/** A line reduced to its words, for matching a rewrite to the line it replaces. */
+function lineKey(text: string): string {
+  return text.replace(MARKER, '').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+/** How many of the resume's lines the given rewrites would replace. */
+export function countRewrites(doc: ResumeDoc, rewrites: ExportOptions['rewrites']): number {
+  const keys = new Set(
+    (rewrites ?? [])
+      .filter(
+        (entry) => entry.improved.trim() && lineKey(entry.improved) !== lineKey(entry.original)
+      )
+      .map((entry) => lineKey(entry.original))
+  );
+  return logicalLines(doc.lines).filter((line) => keys.has(lineKey(line.text))).length;
+}
 function cleanCopy(doc: ResumeDoc, options: ExportOptions): ResumeDoc {
   const copy = moveContactToTop(linearize(doc));
   return options.dateStyle ? normalizeDates(copy, options.dateStyle) : copy;
@@ -16,6 +32,11 @@ export function toPrintModel(doc: ResumeDoc, options: ExportOptions = {}): Print
     ...copy.contact.links.map((field) => field.lineId),
   ]);
   const headings = new Set(copy.sections.map((section) => section.headingLineId));
+  const rewritten = new Map(
+    (options.rewrites ?? [])
+      .filter((entry) => entry.improved.trim())
+      .map((entry) => [lineKey(entry.original), entry.improved.replace(MARKER, '').trim()])
+  );
   const paragraphs: PrintParagraph[] = logicalLines(copy.lines)
     .filter((line) => !line.bullet || !options.bulletLineIds || options.bulletLineIds.has(line.id))
     .map((line, index) => ({
@@ -29,7 +50,9 @@ export function toPrintModel(doc: ResumeDoc, options: ExportOptions = {}): Print
             : index === 0
               ? 'name'
               : 'text',
-      text: line.bullet ? line.text.replace(/^\s*[-–•*◦○●▪·o]\s+/, '') : line.text,
+      text:
+        rewritten.get(lineKey(line.text)) ??
+        (line.bullet ? line.text.replace(MARKER, '') : line.text),
     }));
   (options.addedBullets ?? []).forEach((added, index) => {
     const text = added.text.replace(/^\s*[-–•*◦○●▪·]\s+/, '').trim();

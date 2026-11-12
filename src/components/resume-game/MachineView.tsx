@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import type { PrintModel, ResumeDoc, ResumeFinding, ResumeLine } from '../../lib/resume-doc';
 import {
   checkExport,
+  countRewrites,
   fixList,
   linearize,
   moveContactToTop,
@@ -18,6 +19,8 @@ type Props = {
   doc: ResumeDoc;
   /** Called with the repaired structured copy. The uploaded file is never changed. */
   onChange: (doc: ResumeDoc) => void;
+  /** Lines rewritten in the game below. They replace their originals in the clean copy. */
+  rewrites?: readonly { original: string; improved: string }[];
 };
 
 const REPAIRS: Partial<
@@ -81,7 +84,8 @@ const baseName = (name: string) => name.replace(/\.[^.]+$/, '') || 'resume';
  * this extractor saw. They are not a verdict about any employer's system, and
  * there is deliberately no score.
  */
-export default function MachineView({ doc, onChange }: Props) {
+export default function MachineView({ doc, onChange, rewrites }: Props) {
+  const rewriteCount = React.useMemo(() => countRewrites(doc, rewrites), [doc, rewrites]);
   const [activeFinding, setActiveFinding] = React.useState<string | null>(null);
   const [notice, setNotice] = React.useState<string | null>(null);
   const [exporting, setExporting] = React.useState(false);
@@ -130,7 +134,7 @@ export default function MachineView({ doc, onChange }: Props) {
   const exportDocx = async () => {
     setExporting(true);
     try {
-      const bytes = await toDocx(doc);
+      const bytes = await toDocx(doc, { rewrites });
       download(
         bytes,
         `${baseName(doc.file.name)}-clean.docx`,
@@ -151,7 +155,7 @@ export default function MachineView({ doc, onChange }: Props) {
     }
   };
 
-  const printPdf = () => setPrintModel(toPrintModel(doc));
+  const printPdf = () => setPrintModel(toPrintModel(doc, { rewrites }));
 
   // Print once the clean copy is in the document, then take it out again.
   React.useEffect(() => {
@@ -367,6 +371,11 @@ export default function MachineView({ doc, onChange }: Props) {
         <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
           The clean copy is one column with standard headings and real bullets, built from the text
           above. Your uploaded file is never changed.
+        </p>
+        <p className="text-sm text-foreground" data-testid="clean-copy-rewrites">
+          {rewriteCount > 0
+            ? `${rewriteCount} ${rewriteCount === 1 ? 'line you rewrote below is' : 'lines you rewrote below are'} in the clean copy in ${rewriteCount === 1 ? 'its' : 'their'} new wording.`
+            : 'Lines you rewrite below go into the clean copy in their new wording.'}
         </p>
         <div className="flex flex-wrap gap-2">
           <Button type="button" onClick={exportDocx} disabled={exporting || !ordered.length}>

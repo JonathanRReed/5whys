@@ -766,3 +766,30 @@ export function readResumeText(): string {
     return '';
   }
 }
+
+/**
+ * Resume lines the visitor rewrote in the Resume Game, as the original text
+ * and its new wording. Read only.
+ */
+export function readResumeRewrites(): { original: string; improved: string }[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(RESUME_SESSION_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as { bullets?: unknown };
+    if (!Array.isArray(parsed.bullets)) return [];
+    return parsed.bullets.flatMap((bullet: unknown) => {
+      if (!bullet || typeof bullet !== 'object') return [];
+      const { original, improved, edited } = bullet as Record<string, unknown>;
+      return edited === true &&
+        typeof original === 'string' &&
+        typeof improved === 'string' &&
+        improved.trim() &&
+        improved.trim() !== original.trim()
+        ? [{ original, improved }]
+        : [];
+    });
+  } catch {
+    return [];
+  }
+}
