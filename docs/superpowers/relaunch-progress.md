@@ -362,6 +362,34 @@ Left from that builder's notes:
 Suite after merge: 1401 unit, 88 browser, 2 skipped. All five walkthrough
 repair branches are merged.
 
+### Lead items done after the repair merges
+
+- /start: "I found a job I want to apply for" leads to the desk with the
+  guide on; all six tools listed; the resume step no longer assumes a
+  finished resume for students.
+- Dashboard: desk progress chips and "Next on the desk" per application; all
+  six tools; storage panel available in the empty state.
+- Five Whys: choose which answer is the real reason (`rootIndex` on the
+  session, optional).
+- Posting match redesigned (states in words, near-miss callout, requirement
+  carried into the bullets flow).
+
+Still open for the lead:
+- Eligibility and legally sensitive posting lines need their own treatment
+  on the desk (not "have it / not yet").
+- Bullets written on the desk are not added to the master resume.
+- Set-aside posting lines cannot be restored in the interface.
+- Examples and placeholders by profile on the desk (letter example, bullets
+  placeholders, new-application placeholders).
+- Letter: one page is called 400 words; LinkedIn note length; a thank-you
+  note variant; delivery counts cannot be switched off in the room.
+- "Write the Proof first..." advice on the Glow Up landing (check after the
+  interview repair).
+- Say plainly on the site that suggestions are rules unless the browser has
+  a model; `translateWording` still has no interface.
+- JSZip loads up front on two pages; `<ClientRouter />`; knip fails.
+- Subprocessors page (waiting on the owner's answer about analytics).
+
 ## In flight (builders, started 2026-11-12)
 
 | Piece | Model | Paths |
