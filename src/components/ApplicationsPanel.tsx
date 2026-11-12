@@ -1,9 +1,9 @@
 import * as React from 'react';
+import { deleteApplication } from '../lib/application-desk';
 import {
   addApplication,
   deadlineLabel,
   loadApplications,
-  removeApplication,
   saveApplications,
   setActiveApplication,
   updateApplication,
@@ -166,7 +166,7 @@ export default function ApplicationsPanel({ applications, readiness, onChanged }
     onChanged();
   };
   const remove = (id: string) => {
-    saveApplications(removeApplication(loadApplications(), id));
+    deleteApplication(id);
     onChanged();
   };
   const focus = (id: string) => {

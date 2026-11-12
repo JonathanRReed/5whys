@@ -14,7 +14,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-it('shows temporary export check feedback until the latest export timer expires', () => {
+it('shows temporary export check feedback until the latest export timer expires', async () => {
   vi.useFakeTimers();
   try {
     render(<BackupControls />);
@@ -22,7 +22,9 @@ it('shows temporary export check feedback until the latest export timer expires'
     const exportBtn = screen.getByRole('button', { name: 'Export my work' });
     expect(exportBtn).toBeInTheDocument();
 
-    fireEvent.click(exportBtn);
+    await act(async () => {
+      fireEvent.click(exportBtn);
+    });
 
     expect(exportBtn).toHaveTextContent(/^Export my work$/);
     const check = exportBtn.querySelector('svg');
@@ -36,7 +38,9 @@ it('shows temporary export check feedback until the latest export timer expires'
     act(() => {
       vi.advanceTimersByTime(1500);
     });
-    fireEvent.click(exportBtn);
+    await act(async () => {
+      fireEvent.click(exportBtn);
+    });
     act(() => {
       vi.advanceTimersByTime(500);
     });
@@ -56,13 +60,15 @@ it('shows temporary export check feedback until the latest export timer expires'
   }
 });
 
-it('keeps the focused export button accessible name stable during feedback and reset', () => {
+it('keeps the focused export button accessible name stable during feedback and reset', async () => {
   vi.useFakeTimers();
   render(<BackupControls />);
   const exportBtn = screen.getByRole('button', { name: 'Export my work' });
   exportBtn.focus();
 
-  fireEvent.click(exportBtn);
+  await act(async () => {
+    fireEvent.click(exportBtn);
+  });
   expect(exportBtn).toHaveTextContent(/^Export my work$/);
   expect(exportBtn).toHaveAccessibleName('Export my work');
   expect(exportBtn).toHaveFocus();
@@ -75,12 +81,14 @@ it('keeps the focused export button accessible name stable during feedback and r
   expect(exportBtn).toHaveFocus();
 });
 
-it('updates one pre-existing status region without a nested live-region ancestor', () => {
+it('updates one pre-existing status region without a nested live-region ancestor', async () => {
   render(<BackupControls />);
   const status = screen.getByRole('status');
   expect(status).toBeEmptyDOMElement();
 
-  fireEvent.click(screen.getByRole('button', { name: 'Export my work' }));
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Export my work' }));
+  });
 
   expect(screen.getAllByRole('status')).toEqual([status]);
   expect(status).toHaveAttribute('aria-atomic', 'true');
@@ -131,14 +139,18 @@ it('keeps a failed import available to retry and reports success only after savi
   const failure = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
     throw new DOMException('Storage is full', 'QuotaExceededError');
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Replace everything here' }));
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Replace everything here' }));
+  });
   expect(screen.getByRole('alert')).toHaveTextContent(/could not|couldn't/i);
   expect(screen.getByRole('status')).not.toHaveTextContent('Brought in');
   expect(onRestored).not.toHaveBeenCalled();
   expect(localStorage.getItem('career-why-history')).toBe('[{"id":"saved-reflection"}]');
 
   failure.mockRestore();
-  fireEvent.click(screen.getByRole('button', { name: 'Replace everything here' }));
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Replace everything here' }));
+  });
   expect(screen.queryByRole('alert')).toBeNull();
   expect(screen.getByRole('status')).toHaveTextContent('Brought in');
   expect(onRestored).toHaveBeenCalledOnce();
@@ -163,7 +175,9 @@ it('leaves saved work alone when replacing with an empty export', async () => {
       target: { files: [file] },
     });
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Replace everything here' }));
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Replace everything here' }));
+  });
 
   expect(localStorage.getItem('career-why-history')).toBe('[{"id":"saved-reflection"}]');
   expect(screen.getByRole('status')).toHaveTextContent('That file had nothing to bring in.');
@@ -194,7 +208,9 @@ it('keeps the previous selected backup available when another file cannot be rea
 
   expect(screen.getByRole('alert')).toHaveTextContent('That file is not JSON.');
   expect(screen.getByText(/This file holds 1 reflection/)).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: 'Add to what is here' }));
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Add to what is here' }));
+  });
   expect(screen.queryByRole('alert')).toBeNull();
   expect(localStorage.getItem('career-why-history')).toContain('selected-reflection');
 });
@@ -227,7 +243,9 @@ it('shows the recovery warning when restoring previous work also fails', async (
     }
     setItem.call(this, key, value);
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Add to what is here' }));
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Add to what is here' }));
+  });
 
   expect(screen.getByRole('alert')).toHaveTextContent('Some saved work may have changed.');
   expect(screen.getByRole('alert')).toHaveTextContent('Keep your backup file');
@@ -256,7 +274,9 @@ it('can cancel a failed import without changing preserved work', async () => {
   vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
     throw new DOMException('Storage is full', 'QuotaExceededError');
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Replace everything here' }));
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Replace everything here' }));
+  });
   fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
   expect(screen.queryByRole('button', { name: 'Replace everything here' })).toBeNull();

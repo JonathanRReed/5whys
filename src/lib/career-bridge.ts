@@ -18,6 +18,15 @@ import {
   type WhySnapshot,
 } from '../components/career-5whys/shared';
 import {
+  type ApplicationDeskData,
+  type DatedActionStep,
+  type DeskStationId,
+  datedActionSteps,
+  getDesk,
+  loadApplicationDesks,
+  stationsWithContent,
+} from './application-desk';
+import {
   type ApplicationsData,
   daysUntilDeadline,
   loadApplications,
@@ -265,12 +274,15 @@ export interface ApplicationSummary {
   decoded: boolean;
   /** Stories packed for the linked role's packet. */
   packetStories: number;
+  /** Which desk stations hold any of the student's work (career-application-desk). */
+  stations: Record<DeskStationId, boolean>;
   updatedAt: number;
 }
 
 function summarizeApplications(
   data: ApplicationsData,
-  glow: GlowUpRaw | null
+  glow: GlowUpRaw | null,
+  desks: ApplicationDeskData
 ): ApplicationSummary[] {
   const roles = glow?.roles ?? [];
   const packets = glow?.packets ?? [];
@@ -294,10 +306,37 @@ function summarizeApplications(
       roleId: app.roleId,
       decoded,
       packetStories,
+      stations: stationsWithContent(getDesk(desks, app.id)),
       updatedAt: app.updatedAt,
     };
   });
   return sortApplications(summaries, data.activeId);
+}
+
+// ============================================================================
+// Application desk — src/lib/application-desk.ts (key: career-application-desk)
+// ============================================================================
+
+/** A dated action-plan step with the application it belongs to, for the dashboard. */
+export interface DashboardActionStep extends DatedActionStep {
+  /** The application's display title (the linked role's title when it exists). */
+  applicationTitle: string;
+  company: string;
+}
+
+/**
+ * Open dated steps from every tracked application's action plan, soonest
+ * first. Desks left behind by a removed application are never read.
+ */
+function readActionSteps(
+  desks: ApplicationDeskData,
+  applications: ApplicationSummary[]
+): DashboardActionStep[] {
+  const byId = new Map(applications.map((app) => [app.id, app]));
+  return datedActionSteps(desks, byId.keys()).map((step) => {
+    const app = byId.get(step.applicationId);
+    return { ...step, applicationTitle: app?.title ?? '', company: app?.company ?? '' };
+  });
 }
 
 // ============================================================================
@@ -345,6 +384,8 @@ export interface CareerDashboardData {
   glowup: GlowUpSummary | null;
   networking: NetworkingSummary | null;
   applications: ApplicationSummary[];
+  /** Open dated action steps across applications, soonest first. */
+  actionSteps: DashboardActionStep[];
   /**
    * One quiet line when the loop is actually closed: reflection saved, resume
    * scored, reps run, and a packet holding a live story. Names the in-focus
@@ -363,7 +404,9 @@ export function readCareerDashboard(): CareerDashboardData {
   const glowRaw = readGlowUpRaw();
   const glowup = readGlowUp(glowRaw);
   const networking = readNetworking();
-  const applications = summarizeApplications(loadApplications(), glowRaw);
+  const desks = loadApplicationDesks();
+  const applications = summarizeApplications(loadApplications(), glowRaw, desks);
+  const actionSteps = readActionSteps(desks, applications);
 
   // A five whys session auto-saves without the user pressing anything, so a
   // finished chain counts as data even when no snapshot was taken.
@@ -694,6 +737,7 @@ export function readCareerDashboard(): CareerDashboardData {
     glowup,
     networking,
     applications,
+    actionSteps,
     arcLine,
     recentActivity: recentActivity.slice(0, 5),
     recommendations: recommendations.slice(0, 4),
