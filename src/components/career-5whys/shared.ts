@@ -132,8 +132,21 @@ export type Session = {
   track: Track;
   topic: string;
   responses: string[];
+  /**
+   * Which answer the visitor chose as the real reason (0 to 4). Absent means
+   * the last one, which is where the chain ends but not always where the
+   * insight is.
+   */
+  rootIndex?: number;
   updatedAt: string;
 };
+
+/** A saved root choice that points at one of the five answers, or undefined. */
+export function validRootIndex(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value < WHY_COUNT
+    ? value
+    : undefined;
+}
 
 export function createEmptySession(track: Track = 'career'): Session {
   return {
@@ -459,7 +472,12 @@ export type Synthesis = {
  * frequency, no invented confidence. Handles malformed input defensively
  * so old localStorage data can never crash the summary.
  */
-export function computeSynthesis(responses: unknown, topic: unknown, track: Track): Synthesis {
+export function computeSynthesis(
+  responses: unknown,
+  topic: unknown,
+  track: Track,
+  rootIndex?: number
+): Synthesis {
   const safe = ensureResponsesLength(responses);
   const topicText = typeof topic === 'string' ? topic.trim() : '';
   const firstEmpty = safe.findIndex((response) => response.trim().length === 0);
@@ -470,7 +488,12 @@ export function computeSynthesis(responses: unknown, topic: unknown, track: Trac
   const chain = safe.slice(0, sequentialCount).map((response) => condenseAnswer(response, 10));
   const surface = chain[0] ?? '';
   // The root is the user's full first sentence, never clipped mid-thought.
-  const root = isComplete ? firstSentence(safe[WHY_COUNT - 1]) : '';
+  const chosen = validRootIndex(rootIndex);
+  const picked = chosen !== undefined && chosen !== WHY_COUNT - 1 && safe[chosen].trim().length > 0;
+  const root = isComplete ? firstSentence(safe[picked ? (chosen as number) : WHY_COUNT - 1]) : '';
+  const rootSource = picked
+    ? 'The reason you picked as the real one'
+    : 'Working hypothesis from your final answer';
   // Quote the topic exactly as typed instead of splicing it into a sentence.
   const quoted = topicText ? `"${topicText}"` : track === 'career' ? 'this path' : 'this interest';
 
@@ -482,9 +505,9 @@ export function computeSynthesis(responses: unknown, topic: unknown, track: Trac
     const latest = chain[chain.length - 1];
     whyStatement = `Layer ${sequentialCount} of 5 answered. Latest reason: "${latest}". Keep asking why until the answer names a value or need.`;
   } else if (track === 'career') {
-    whyStatement = `You started with ${quoted}. On the surface it was about "${surface}". Working hypothesis from your final answer: ${root} Use the next step to test it against a real experience. Earlier answers may matter too.`;
+    whyStatement = `You started with ${quoted}. On the surface it was about "${surface}". ${rootSource}: ${root} Use the next step to test it against a real experience. Earlier answers may matter too.`;
   } else {
-    whyStatement = `You started with ${quoted}. What pulls you in: "${surface}". Working hypothesis from your final answer: ${root} Try a small activity to test whether that motivation holds up. You can revise it as you learn.`;
+    whyStatement = `You started with ${quoted}. What pulls you in: "${surface}". ${rootSource}: ${root} Try a small activity to test whether that motivation holds up. You can revise it as you learn.`;
   }
 
   const nextStep = isComplete ? suggestNextStep(track, topicText, safe.join(' ')) : '';
@@ -501,8 +524,16 @@ export function computeSynthesis(responses: unknown, topic: unknown, track: Trac
   };
 }
 
-export function useSynthesis(responses: string[], topic: string, track: Track): Synthesis {
-  return React.useMemo(() => computeSynthesis(responses, topic, track), [responses, topic, track]);
+export function useSynthesis(
+  responses: string[],
+  topic: string,
+  track: Track,
+  rootIndex?: number
+): Synthesis {
+  return React.useMemo(
+    () => computeSynthesis(responses, topic, track, rootIndex),
+    [responses, topic, track, rootIndex]
+  );
 }
 
 export function useStoredSession() {
@@ -531,6 +562,7 @@ export function useStoredSession() {
           track: data.track === 'interest' ? 'interest' : 'career',
           topic: typeof data.topic === 'string' ? data.topic : '',
           responses: ensureResponsesLength(data.responses),
+          rootIndex: validRootIndex(data.rootIndex),
           updatedAt: typeof data.updatedAt === 'string' ? data.updatedAt : fallback.updatedAt,
         });
       }

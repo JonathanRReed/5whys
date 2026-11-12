@@ -412,7 +412,12 @@ export function readCareerDashboard(): CareerDashboardData {
   // A five whys session auto-saves without the user pressing anything, so a
   // finished chain counts as data even when no snapshot was taken.
   const sessionSynthesis = why.session
-    ? computeSynthesis(why.session.responses, why.session.topic, why.session.track)
+    ? computeSynthesis(
+        why.session.responses,
+        why.session.topic,
+        why.session.track,
+        (why.session as { rootIndex?: number }).rootIndex
+      )
     : null;
   const latestSnapshot = why.snapshots[0] ?? null;
   const reflectionHasDraft = !!(

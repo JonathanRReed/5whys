@@ -63,7 +63,7 @@ export default function Career5Whys({
     isComplete,
     whyStatement,
     nextStep,
-  } = useSynthesis(session.responses, session.topic, session.track);
+  } = useSynthesis(session.responses, session.topic, session.track, session.rootIndex);
   const prompts = React.useMemo(
     () => buildPrompts(session.track, session.topic, session.responses),
     [session.track, session.topic, session.responses]
@@ -290,6 +290,15 @@ export default function Career5Whys({
               isComplete={isComplete}
               sequentialCount={sequentialCount}
               nextStep={nextStep}
+              answers={session.responses}
+              rootIndex={session.rootIndex}
+              onRootChange={(rootIndex) =>
+                setSession((previous) => ({
+                  ...previous,
+                  rootIndex,
+                  updatedAt: new Date().toISOString(),
+                }))
+              }
             >
               <ExportActions
                 onSaveSnapshot={handleSaveSnapshot}
