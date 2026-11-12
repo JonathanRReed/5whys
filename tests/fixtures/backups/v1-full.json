@@ -1,0 +1,123 @@
+{
+  "format": "5whys-career-studio",
+  "version": 1,
+  "exportedAt": "2026-10-02T15:04:11.000Z",
+  "stores": {
+    "career-tools-profile": {
+      "stage": "student",
+      "focus": "resume",
+      "updatedAt": "2026-09-20T18:00:00.000Z"
+    },
+    "career-why-session-v2": {
+      "id": "session-1",
+      "track": "interest",
+      "topic": "Marine biology",
+      "responses": ["I liked the field trip", "Being outside", "Seeing how things connect", "", ""],
+      "currentStep": 3,
+      "updatedAt": "2026-09-28T12:00:00.000Z"
+    },
+    "career-why-history": [
+      {
+        "id": "snap-1",
+        "timestamp": "2026-09-21T10:00:00.000Z",
+        "whyStatement": "I want work where I can see the effect of what I do.",
+        "rootReason": "I want to see the effect of what I do.",
+        "nextStep": "Shadow a lab tech for one afternoon.",
+        "track": "career",
+        "topic": "Lab work",
+        "responses": ["a", "b", "c", "d", "I want to see the effect of what I do."],
+        "updatedAt": "2026-09-21T10:00:00.000Z",
+        "version": 3
+      }
+    ],
+    "career-why-history-limit": 12,
+    "resume-game-session-v2": {
+      "resumeText": "Led a club fundraiser that raised money for the food bank.",
+      "needsRescan": false,
+      "bullets": [
+        {
+          "id": "b-1",
+          "original": "Led a club fundraiser that raised money for the food bank.",
+          "improved": "Led a club fundraiser that raised money for the food bank.",
+          "baselineScore": 48,
+          "improvedScore": 48
+        }
+      ],
+      "lastAnalyzedAt": "2026-09-22T09:30:00.000Z",
+      "signalReport": { "visible": 1, "hardSkills": ["Excel"] }
+    },
+    "networking-practice-versions": [
+      {
+        "id": "v-1",
+        "title": "Career fair intro",
+        "scenarioId": "career-fair",
+        "who": "A recruiter",
+        "where": "The spring career fair",
+        "what": "A summer internship",
+        "updatedAt": "2026-09-23T14:00:00.000Z"
+      }
+    ],
+    "networking-practice-sessions": [
+      {
+        "id": "s-1",
+        "versionId": "v-1",
+        "scenarioId": "career-fair",
+        "scenarioTitle": "Career fair",
+        "attempts": [
+          {
+            "id": "a-1",
+            "label": "First try",
+            "script": "Hi, I am a sophomore studying biology.",
+            "durationSeconds": 42,
+            "createdAt": "2026-09-23T14:05:00.000Z"
+          }
+        ],
+        "ratings": { "confidence": 3, "clarity": 4, "rapport": 3, "authenticity": 4 },
+        "reflection": { "humanNote": "", "nervesNote": "", "nextFocus": "Slow down", "wins": "" },
+        "createdAt": "2026-09-23T14:06:00.000Z"
+      }
+    ],
+    "networking-practice-draft": { "text": "Hi, I am a sophomore studying biology." },
+    "interview-glow-up-data": {
+      "version": 1,
+      "roles": [
+        {
+          "id": "role-1",
+          "jobTitle": "Lab Assistant",
+          "company": "County Water Lab",
+          "rawJdText": "Assist with sample collection.",
+          "bullets": [
+            {
+              "id": "rb-1",
+              "text": "Assist with sample collection.",
+              "status": "active",
+              "primarySkillId": null,
+              "secondarySkillIds": []
+            }
+          ],
+          "createdAt": 1758000000000,
+          "updatedAt": 1758000000000
+        }
+      ],
+      "stories": [],
+      "packets": [],
+      "currentRoleId": "role-1",
+      "currentPacketId": null
+    },
+    "career-applications": {
+      "version": 1,
+      "applications": [
+        {
+          "id": "app-1",
+          "title": "Lab Assistant",
+          "company": "County Water Lab",
+          "deadline": "2026-11-30",
+          "roleId": "role-1",
+          "createdAt": 1758000000000,
+          "updatedAt": 1758000000000
+        }
+      ],
+      "activeId": "app-1"
+    }
+  }
+}

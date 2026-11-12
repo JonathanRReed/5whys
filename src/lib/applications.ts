@@ -56,7 +56,8 @@ function parseDeadline(deadline: string | null | undefined): Date | null {
   return date;
 }
 
-const isDeadline = (value: unknown): value is string =>
+/** A real 'YYYY-MM-DD' calendar date. Shared with the desk's dated steps. */
+export const isDeadline = (value: unknown): value is string =>
   typeof value === 'string' && parseDeadline(value) !== null;
 
 function normalizeApplication(value: unknown): TrackedApplication | null {
@@ -156,7 +157,11 @@ export function updateApplication(
   };
 }
 
-/** Removing an application never touches the Glow Up role it pointed at. */
+/**
+ * Removing an application never touches the Glow Up role it pointed at. This
+ * is the pure list change; `deleteApplication` in application-desk.ts also
+ * drops the application's desk and persists both.
+ */
 export function removeApplication(data: ApplicationsData, id: string): ApplicationsData {
   return {
     ...data,

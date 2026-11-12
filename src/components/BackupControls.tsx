@@ -59,8 +59,8 @@ export default function BackupControls({ onRestored, className }: Props) {
     };
   }, []);
 
-  const handleExport = () => {
-    const backup = downloadBackup();
+  const handleExport = async () => {
+    const backup = await downloadBackup();
     setError(null);
     setStatus(`Exported ${describe(summarizeBackup(backup))}. Check your downloads.`);
     setExported(true);
@@ -84,13 +84,13 @@ export default function BackupControls({ onRestored, className }: Props) {
     }
   };
 
-  const finishImport = (replace: boolean) => {
+  const finishImport = async (replace: boolean) => {
     if (!pending) return;
     setError(null);
     setStatus(null);
-    let written: ReturnType<typeof restoreBackup>;
+    let written: Awaited<ReturnType<typeof restoreBackup>>;
     try {
-      written = restoreBackup(pending, replace);
+      written = await restoreBackup(pending, replace);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not save that file in this browser.');
       return;
