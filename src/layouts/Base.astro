@@ -1,7 +1,6 @@
 ---
 import { siteConfig, baseSchemas } from '../config/site';
 import Seo from '../components/Seo.astro';
-import { ClientRouter } from 'astro:transitions';
 import Navigation from '../components/Navigation';
 import UpdateNotice from '../components/UpdateNotice';
 import '@fontsource-variable/fraunces/full.css';
@@ -102,7 +101,6 @@ const noScriptParagraphs = [...defaultNoScriptContext, ...pageNoScriptContext].f
       <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       <script is:inline set:html={offlineRegistration} />
     </>}
-    <ClientRouter />
   </head>
   <body class="min-h-screen bg-background text-foreground transition-colors duration-300">
     <a
@@ -152,7 +150,7 @@ const noScriptParagraphs = [...defaultNoScriptContext, ...pageNoScriptContext].f
           </div>
         </section>
       </noscript>
-      <main id="main-content" class="relative z-10 flex-1" transition:name="page-content">
+      <main id="main-content" class="relative z-10 flex-1">
         <slot />
       </main>
       <footer

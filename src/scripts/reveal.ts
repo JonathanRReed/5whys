@@ -31,8 +31,6 @@ function revealOnScroll() {
   for (const target of targets) observer.observe(target);
 }
 
-// Run now: module scripts execute after the DOM is parsed, and the initial
-// astro:page-load may already have fired before this module was evaluated.
+// Module scripts execute after the DOM is parsed, and every navigation loads
+// a new document, so once is enough.
 revealOnScroll();
-// Then again after every ClientRouter navigation.
-document.addEventListener('astro:page-load', revealOnScroll);

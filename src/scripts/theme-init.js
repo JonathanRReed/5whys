@@ -41,10 +41,4 @@
   if (document.cookie.includes(KEY + '=')) {
     document.cookie = KEY + '=; max-age=0; path=/; SameSite=Lax';
   }
-
-  // Astro's ClientRouter swaps in a server-rendered <html data-theme="night">
-  // on every navigation; stamp the chosen theme on the incoming document first.
-  document.addEventListener('astro:before-swap', (event) => {
-    apply(event.newDocument, read());
-  });
 })();

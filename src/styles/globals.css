@@ -1161,6 +1161,12 @@ input[type="range"]::-moz-range-thumb {
   html {
     scroll-behavior: smooth;
   }
+
+  /* Moving between pages cross-fades in browsers that support it. The
+     browser does this itself; no router script is shipped. */
+  @view-transition {
+    navigation: auto;
+  }
 }
 
 /* Reduced motion means no movement at all, including the small things:
