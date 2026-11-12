@@ -51,6 +51,12 @@ end of every working pass. Delete it in the final pull request.
   percentile table (renders once wage files exist), offer worksheet saved per
   application. Not in the nav yet. LAUNCH BLOCKER: do not ship `/pay/`
   without the BLS wage files, or hide the lookup.
+- 2026-11-12: spikes finished (`t3/local-ai-relaunch-spikes`, NOT merged; read
+  `spikes/REPORT.md` there). Decisions: Whisper tiny.en ships opt-in on
+  desktop; Kokoro is too slow live (about 10 s to first audio on an M4 Pro),
+  so questions are synthesized ahead of a session; no hosted text model;
+  hosted models are off unless `HOSTED_MODELS=1` at build, because a real
+  deploy with 163 MB of model chunks is unproven.
 
 ## Engine follow-ups to hand back
 
@@ -61,7 +67,7 @@ end of every working pass. Delete it in the final pull request.
 
 | Piece | Model | Paths |
 | --- | --- | --- |
-| Model hosting and speech spikes | GPT-6.1 Sol | `spikes/`, `scripts/models/` |
+| Speech and hosted model libraries | GPT-6.1 Sol | `src/lib/models/`, `src/lib/speech/`, `scripts/models/`, `public/_headers` |
 
 ## Next for the lead
 
