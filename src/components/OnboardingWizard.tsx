@@ -58,6 +58,11 @@ const STEPS: Step[] = [
         icon: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 7m0 13V7',
       },
       {
+        label: 'I found a job I want to apply for',
+        value: 'applying',
+        icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
+      },
+      {
         label: 'Resume needs work',
         value: 'resume',
         icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
@@ -135,6 +140,30 @@ function getRecommendation(level: string, challenge: string): Recommendation {
       icon: 'M7 8h10M7 12h4',
     };
   }
+  if (challenge === 'applying') {
+    return {
+      title: 'Take the posting to the Application Desk',
+      description: exploring
+        ? 'You do not need a finished resume to start. Paste the posting and the desk shows what it asks for and where you stand.'
+        : level === 'transition'
+          ? 'Paste the posting and see which requirements your experience already answers, in your words or theirs.'
+          : 'Paste the posting once and work it through: what it asks for, where you stand, the resume, the letter.',
+      url: '/application/?guide=1',
+      accent: 'lichen',
+      steps: [
+        'Name the role and paste the whole posting.',
+        'Confirm what it really asks for and mark where you stand on each one.',
+        exploring
+          ? 'Turn one experience, a class project or a part-time job counts, into two bullets and a short letter.'
+          : 'Tailor your resume to it, write the letter, and run the check before you send.',
+      ],
+      stats: [
+        { label: 'You paste', value: 'The posting, once' },
+        { label: 'You leave with', value: 'Bullets, a letter, a plan' },
+      ],
+      icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2',
+    };
+  }
   if (challenge === 'resume') {
     return {
       title: 'Jump into the Resume Game',
@@ -146,7 +175,9 @@ function getRecommendation(level: string, challenge: string): Recommendation {
       url: '/resume-game/',
       accent: 'love',
       steps: [
-        'Paste or upload your current resume.',
+        exploring
+          ? 'Paste what you have, even a few lines about a class project, a campus job, or a club.'
+          : 'Paste or upload your current resume.',
         'Run the analysis to score each bullet for action, result, and measure.',
         exploring
           ? 'Rewrite the weakest lines so a project reads as evidence, not a task list.'
@@ -287,24 +318,28 @@ export default function OnboardingWizard() {
       love: 'border-love/40 bg-love/8 text-love',
       iris: 'border-iris/40 bg-iris/8 text-iris',
       gold: 'border-gold/40 bg-gold/8 text-gold',
+      lichen: 'border-lichen/40 bg-lichen/8 text-lichen',
     };
     const btnColor: Record<string, string> = {
       foam: 'bg-foam hover:bg-foam/90 text-background',
       love: 'bg-love hover:bg-love/90 text-background',
       iris: 'bg-iris hover:bg-iris/90 text-background',
       gold: 'bg-gold hover:bg-gold/90 text-background',
+      lichen: 'bg-lichen hover:bg-lichen/90 text-background',
     };
     const ringColors: Record<string, string> = {
       foam: 'text-foam',
       love: 'text-love',
       iris: 'text-iris',
       gold: 'text-gold',
+      lichen: 'text-lichen',
     };
     const iconBackgrounds: Record<string, string> = {
       foam: 'bg-foam/15',
       love: 'bg-love/15',
       iris: 'bg-iris/15',
       gold: 'bg-gold/15',
+      lichen: 'bg-lichen/15',
     };
 
     return (
@@ -454,8 +489,10 @@ export default function OnboardingWizard() {
               { name: 'Resume Game', url: '/resume-game/', desc: 'Polish bullets' },
               { name: 'Interview Glow Up', url: '/interview-glow-up/', desc: 'Prep stories' },
               { name: 'Networking', url: '/networking-practice/', desc: 'Rehearse pitch' },
+              { name: 'Application Desk', url: '/application/', desc: 'Work one posting' },
+              { name: 'Pay', url: '/pay/', desc: 'Weigh an offer' },
             ]
-              .filter((t) => t.url !== recommendation.url)
+              .filter((t) => !recommendation.url.startsWith(t.url))
               .map((tool) => (
                 <a
                   key={tool.name}

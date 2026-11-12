@@ -239,12 +239,54 @@ export default function ApplicationsPanel({ applications, readiness, onChanged }
                   <Chip on={readiness.resumeScored}>
                     {readiness.resumeScored ? 'Resume scored' : 'No resume scored'}
                   </Chip>
+                  {app.stations.qualifications && <Chip on>Qualifications marked</Chip>}
+                  {app.stations.bullets && <Chip on>Bullets drafted</Chip>}
+                  {app.stations.letter && <Chip on>Letter drafted</Chip>}
                   <Chip on={readiness.practiceRounds > 0}>
                     {readiness.practiceRounds === 0
                       ? 'No practice reps'
                       : `${readiness.practiceRounds} practice ${readiness.practiceRounds === 1 ? 'rep' : 'reps'}`}
                   </Chip>
                 </div>
+
+                {(() => {
+                  // The next station on this application's desk that is still empty.
+                  const next = !app.decoded
+                    ? { station: 'posting', text: 'Paste the posting on the desk' }
+                    : !app.stations.qualifications
+                      ? {
+                          station: 'qualifications',
+                          text: 'Mark where you stand on each requirement',
+                        }
+                      : !app.stations.bullets
+                        ? { station: 'bullets', text: 'Write two bullets for this role' }
+                        : !app.stations.letter
+                          ? { station: 'letter', text: 'Draft the letter' }
+                          : !app.stations['before-you-send']
+                            ? { station: 'send', text: 'Run the check before you send' }
+                            : null;
+                  return next ? (
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Next on the desk:{' '}
+                      <a
+                        className="text-foreground underline underline-offset-4 hover:text-foam"
+                        href={`/application/?id=${encodeURIComponent(app.id)}&station=${next.station}`}
+                      >
+                        {next.text}
+                      </a>
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      The desk is filled in.{' '}
+                      <a
+                        className="text-foreground underline underline-offset-4 hover:text-foam"
+                        href="/interview-glow-up/rehearse/"
+                      >
+                        Rehearse the interview
+                      </a>
+                    </p>
+                  );
+                })()}
 
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <a

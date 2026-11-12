@@ -4,7 +4,7 @@
  */
 
 export type CareerStage = 'student' | 'early' | 'mid' | 'senior' | 'transition';
-export type CareerFocus = 'direction' | 'resume' | 'interview' | 'networking';
+export type CareerFocus = 'direction' | 'applying' | 'resume' | 'interview' | 'networking';
 
 export interface CareerProfile {
   stage: CareerStage;
@@ -15,7 +15,7 @@ export interface CareerProfile {
 export const PROFILE_STORAGE_KEY = 'career-tools-profile';
 
 const STAGES: CareerStage[] = ['student', 'early', 'mid', 'senior', 'transition'];
-const FOCUSES: CareerFocus[] = ['direction', 'resume', 'interview', 'networking'];
+const FOCUSES: CareerFocus[] = ['direction', 'applying', 'resume', 'interview', 'networking'];
 
 export const isStage = (value: unknown): value is CareerStage =>
   typeof value === 'string' && (STAGES as string[]).includes(value);
@@ -66,6 +66,7 @@ export const STAGE_LABELS: Record<CareerStage, string> = {
 
 export const FOCUS_LABELS: Record<CareerFocus, string> = {
   direction: 'Unclear direction',
+  applying: 'Applying to a job',
   resume: 'Resume needs work',
   interview: 'Interview prep',
   networking: 'Networking anxiety',
