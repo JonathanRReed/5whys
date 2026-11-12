@@ -225,6 +225,37 @@ Still to do from the advisor (after the three fix builders merge):
 - Resume Game opened directly shows the professional sample, not a student
   one (student register first).
 
+### Developer report (in: `stories/dev.md`)
+
+Privacy claim verified by the reviewer: over 23,000 requests, none to another
+origin, no CSP violations under production headers.
+
+Fixed by the lead: guide bar is server-rendered (it popped in, layout shift
+0.22 on the desk); "thank you" no longer passes as an ask; "I'm writing to"
+is caught as a generic opener; the analytics host is gone from the CSP.
+
+With a builder (GPT): precache diet (12.5 MB on first visit), reuse of
+unchanged assets across deploys, readable failure when a lazy part is not
+downloaded, backup import validation, size cap, double-submit guard, and the
+"what the backup leaves out" sentence.
+
+Still to do after the fix builders merge:
+- DOCX upload scores nothing (old extractor flattens it): verify the Resume
+  Game builder's `toEditorText` path fixed it; remove the duplicate readers.
+- A visitor with only recordings gets the empty dashboard and no Storage
+  panel (`hasData` in `career-bridge.ts` ignores recordings and desk work).
+- On-device AI honesty: no component calls `recognizeOnDevice` or
+  `translateWording`; the invented-claim guard misses claims without digits
+  ("doubling weekly visitors"); say plainly on the site that suggestions are
+  rules unless the browser has a model.
+- JSZip loads up front on the desk and Resume Game: import it on demand.
+- `<ClientRouter />` is in the layout although the design says no client
+  router; knip (`bun run audit:deps`) fails; `RehearsalRoom` has 22 state
+  hooks (split it); the coach polls every 500 ms (acceptable, revisit).
+- Lighthouse mobile performance: 78 home, 86 Resume Game, 68 desk.
+- Subprocessors page still describes Cloudflare Web Analytics; the CSP now
+  blocks it. Owner to confirm analytics is off, then correct that page.
+
 ## In flight (builders, started 2026-11-12)
 
 | Piece | Model | Paths |

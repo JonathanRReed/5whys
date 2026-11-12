@@ -120,3 +120,12 @@ it('accepts a company named by its distinctive first word', () => {
   });
   expect(generic.find((check) => check.id === 'names')?.passed).toBe(false);
 });
+
+it('does not count thanks as an ask, and catches the contracted generic opener', async () => {
+  const { asks } = await import('../src/lib/desk-checks');
+  expect(asks('I would like to thank you for your time.')).toBe(false);
+  expect(asks('Thank you for considering my application.')).toBe(false);
+  expect(asks('Thank you for your time. Could we talk for 15 minutes next week?')).toBe(true);
+  expect(asks("I'd like to talk about how I could help with scheduling.")).toBe(true);
+  expect(isGenericOpener("I'm writing to apply for the internship.")).toBe(true);
+});

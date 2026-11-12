@@ -127,8 +127,11 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
     hadFocus.current = Boolean(coachRef.current?.contains(document.activeElement));
   };
 
-  if (!guide || !progress) return null;
+  if (!guide) return null;
 
+  // Before the saved choice is read, show the bar as a first-time visitor
+  // would see it, so the page does not jump when it arrives.
+  const view = progress ?? { mode: 'free' as const, done: [], finished: false };
   const total = guide.steps.length;
   const position = step ? guide.steps.findIndex((s) => s.id === step.id) + 1 : total;
 
@@ -170,8 +173,8 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
     setJustDone(null);
     // Someone who just asked for the guide wants to read the first step.
     if (mode === 'guided') setCollapsed(false);
-    if (mode === 'free') update({ ...progress, mode: 'free' });
-    else update(progress.finished ? restartGuide() : { ...progress, mode: 'guided' });
+    if (mode === 'free') update({ ...view, mode: 'free' });
+    else update(view.finished ? restartGuide() : { ...view, mode: 'guided' });
   };
 
   return (
@@ -200,7 +203,7 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
                 <input
                   type="radio"
                   name={`guide-mode-${tool}`}
-                  checked={progress.mode === mode}
+                  checked={view.mode === mode}
                   onChange={() => choose(mode)}
                   className="peer absolute inset-0 cursor-pointer opacity-0"
                 />
@@ -270,7 +273,7 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
             >
               <div
                 className="h-full origin-left rounded-full bg-foam transition-transform duration-300 motion-reduce:transition-none"
-                style={{ transform: `scaleX(${progress.done.length / total})` }}
+                style={{ transform: `scaleX(${view.done.length / total})` }}
               />
             </div>
 
@@ -314,7 +317,7 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
                       type="button"
                       onClick={() => {
                         setJustDone(null);
-                        update(markStepDone(guide, progress, step.id));
+                        update(markStepDone(guide, view, step.id));
                       }}
                       className="inline-flex min-h-9 items-center rounded-lg px-3 text-sm text-muted-foreground hover:bg-overlay/40 hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                     >

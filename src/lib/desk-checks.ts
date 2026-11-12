@@ -7,7 +7,7 @@ import type { PostingRequirement } from './posting';
 import { extractRequirementTerms, findTermMatches } from './posting';
 
 const GENERIC_OPENERS = [
-  /^i am writing to (apply|express)/i,
+  /^i('m| am) writing (to|because|in (regard|response))/i,
   /^i('m| am) (excited|thrilled|pleased|eager) to apply/i,
   /^i would like to apply/i,
   /^please accept (this|my)/i,
@@ -24,7 +24,24 @@ export function isGenericOpener(hook: string): boolean {
 }
 
 const ASK_PATTERN =
-  /\?|\b(i would (love|welcome|appreciate)|i('d| would) like to|could we|can we|let me know|happy to|available (to|for)|reach me|contact me|look forward to (speaking|talking|hearing|meeting))\b/i;
+  /\?|\b(i would (love|welcome) (to|the chance|a chance)|i('d| would) like to (talk|speak|meet|discuss|schedule|set up|hear|learn|show|share|walk)|could we|can we|let me know|happy to (talk|speak|meet|share|send)|available (to|for)|reach me|contact me|look forward to (speaking|talking|hearing|meeting))\b/i;
+
+/** Thanks alone is polite, but it does not ask for anything. */
+const THANKS_ONLY = /^(thank you|thanks)[^?]*$/i;
+
+/** True when a closing asks for a next step, not only says thanks. */
+export function asks(closing: string): boolean {
+  const sentences = closing
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+  return sentences.some(
+    (sentence) =>
+      ASK_PATTERN.test(sentence) &&
+      !THANKS_ONLY.test(sentence) &&
+      !/\blike to thank\b/i.test(sentence)
+  );
+}
 
 /** The four parts joined the way they would be sent. */
 export function letterText(letter: LetterDraft): string {
@@ -222,9 +239,9 @@ export function runSendChecks({
     {
       id: 'ends-with-ask',
       label: 'Ends with an ask',
-      passed: letter.closingAsk.trim() ? ASK_PATTERN.test(letter.closingAsk) : null,
+      passed: letter.closingAsk.trim() ? asks(letter.closingAsk) : null,
       detail: letter.closingAsk.trim()
-        ? ASK_PATTERN.test(letter.closingAsk)
+        ? asks(letter.closingAsk)
           ? 'The closing asks for a next step.'
           : 'The closing does not ask for anything. Name the next step you want.'
         : 'No closing written yet.',
