@@ -1,4 +1,4 @@
-import JSZip from 'jszip';
+import { loadFeature } from '../lazy-feature';
 
 const CONTENT_TYPES_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
@@ -36,6 +36,7 @@ function documentXml(content: string) {
 }
 
 export async function exportDocx(filename: string, content: string) {
+  const JSZip = (await loadFeature(import('jszip'))).default;
   const zip = new JSZip();
   zip.file('[Content_Types].xml', CONTENT_TYPES_XML);
   zip.folder('_rels')?.file('.rels', RELS_XML);

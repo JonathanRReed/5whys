@@ -1,4 +1,4 @@
-import JSZip from 'jszip';
+import { loadFeature } from '../lazy-feature';
 import { extractDocx } from './docx';
 import { logicalLines } from './layout';
 import { linearize, moveContactToTop, normalizeDates } from './repairs';
@@ -64,6 +64,8 @@ function escapeXml(text: string): string {
 }
 export async function toDocx(doc: ResumeDoc, options: ExportOptions = {}): Promise<Uint8Array> {
   const model = toPrintModel(doc, options);
+  // Loaded when a file is written, so pages that only show the resume do not carry it.
+  const JSZip = (await loadFeature(import('jszip'))).default;
   const zip = new JSZip();
   const word = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
   const rel = 'http://schemas.openxmlformats.org/package/2006/relationships';

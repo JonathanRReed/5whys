@@ -1,4 +1,5 @@
-import JSZip from 'jszip';
+import type JSZip from 'jszip';
+import { loadFeature } from '../lazy-feature';
 import { recomputeDoc } from './model';
 import type { LineOrigin, ResumeDoc, ResumeLine } from './types';
 
@@ -148,7 +149,8 @@ function paragraphText(element: Element): string {
 export async function extractDocx(bytes: Uint8Array, name = 'resume.docx'): Promise<ResumeDoc> {
   if (bytes.length > 5 * 1024 * 1024) throw new Error('This DOCX file is too large.');
   checkZip(bytes);
-  const zip = await JSZip.loadAsync(bytes);
+  const { default: Zip } = await loadFeature(import('jszip'));
+  const zip = await Zip.loadAsync(bytes);
   const documentEntry = zip.file('word/document.xml');
   if (!documentEntry) throw new Error('This DOCX has no document body.');
   const lines: ResumeLine[] = [];

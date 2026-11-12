@@ -1,4 +1,3 @@
-import JSZip from 'jszip';
 import { loadFeature } from '../lazy-feature';
 
 export async function extractTextFromFile(file: File): Promise<string> {
@@ -25,6 +24,7 @@ export async function extractTextFromFile(file: File): Promise<string> {
 async function extractDocx(file: File): Promise<string> {
   try {
     const arrayBuffer = await file.arrayBuffer();
+    const JSZip = (await loadFeature(import('jszip'))).default;
     const zip = await JSZip.loadAsync(arrayBuffer);
     const xml = await zip.file('word/document.xml')?.async('text');
     if (!xml) {
