@@ -8,6 +8,7 @@ import QuestionPrompts from './networking/QuestionPrompts';
 import RapportWarmups from './networking/RapportWarmups';
 import RatingsPanel from './networking/RatingsPanel';
 import ReflectionPanel from './networking/ReflectionPanel';
+import RepRecorder from './networking/RepRecorder';
 import SavedIntros from './networking/SavedIntros';
 import ScenarioBlueprint from './networking/ScenarioBlueprint';
 import ScenarioEditor from './networking/ScenarioEditor';
@@ -125,6 +126,8 @@ export default function NetworkingPractice({
             onLengthChange={state.setTimerLength}
           />
         </section>
+
+        <RepRecorder label={state.draft.trim().slice(0, 120) || 'Networking intro'} />
 
         {/* 3. Reference material, folded on phones */}
         <Disclosure

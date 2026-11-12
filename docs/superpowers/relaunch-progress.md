@@ -87,6 +87,8 @@ end of every working pass. Delete it in the final pull request.
 - 2026-11-12: homepage working specimen (`HomeSpecimen`); Glow Up story form
   says what is missing before Save; coach hides the "why" line on phones;
   desk Resume station (per-application bullet selection and tailored .docx).
+- 2026-11-12: Networking Practice can record a rep and play it back
+  (`networking/RepRecorder`). Full suite green: 895 unit, 64 browser.
 
 ## Tool-flow findings from writing the guides (to fix)
 
@@ -111,6 +113,7 @@ end of every working pass. Delete it in the final pull request.
 
 | Piece | Model | Paths |
 | --- | --- | --- |
+| Offline use and install | GPT-6.1 Sol | service worker, manifest, `src/lib/offline.ts` |
 
 ## Next for the lead
 
@@ -137,8 +140,8 @@ end of every working pass. Delete it in the final pull request.
   move the pure helpers into `src/lib` when touching Five Whys.
 - Still to build (lead): dashboard links into the desk and dated steps;
   worksheet print export for the bullets flow;
-  Networking rep loop with recording and playback (reuse `createRecorder`,
-  `TakeReview` ideas); a guide for the rehearsal room;
+  a guide for the rehearsal room; a printable worksheet for the bullets
+  flow; offline status banner once `src/lib/offline.ts` lands;
   Five Whys: start from an experience, identity statement from own phrases,
   send to a story or intro;
   homepage specimen hero (plates and nav are done);  offline and install;

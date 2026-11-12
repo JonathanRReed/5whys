@@ -104,3 +104,27 @@ test('an answer is recorded on the device, played back, and kept only when asked
   await expect(page.getByRole('button', { name: 'Recording kept on this device' })).toBeDisabled();
   expect(await stored()).toBe(1);
 });
+
+test('a networking rep can be recorded and played back', async ({ page }) => {
+  await page.route('**/networking-practice/', async (route) => {
+    const response = await route.fetch();
+    await route.fulfill({
+      response,
+      headers: {
+        ...response.headers(),
+        'permissions-policy': 'camera=(), microphone=(self), geolocation=(), payment=()',
+      },
+    });
+  });
+  await page.goto('/networking-practice/');
+  await waitForHydration(page);
+  const recorder = page.getByRole('region', { name: 'Hear how it sounds' });
+  await recorder.getByRole('button', { name: 'Record this rep' }).click();
+  await expect(recorder.getByRole('button', { name: 'Stop' })).toBeVisible();
+  await page.waitForTimeout(1200);
+  await recorder.getByRole('button', { name: 'Stop' }).click();
+  await expect(recorder.locator('audio')).toBeVisible();
+  await expect(recorder.getByRole('button', { name: 'Record again' })).toBeVisible();
+  await recorder.getByRole('button', { name: 'Keep this recording' }).click();
+  await expect(recorder.getByRole('button', { name: 'Kept on this device' })).toBeDisabled();
+});
