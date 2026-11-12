@@ -1125,3 +1125,20 @@ input[type="range"]::-moz-range-thumb {
     }
   }
 }
+
+/* Guided mode: the part of the page the current step is about. An outline,
+   not a spotlight, so the rest of the tool stays usable. */
+[data-guide-active] {
+  outline: 2px solid hsl(var(--gold));
+  outline-offset: 4px;
+  border-radius: 0.5rem;
+  scroll-margin-block: 7rem;
+}
+
+/* While the coach is docked to the bottom of a phone, leave room to scroll
+   the last controls clear of it. */
+@media (max-width: 639px) {
+  body:has(aside[aria-label="Guide"]) main {
+    padding-bottom: 16rem;
+  }
+}

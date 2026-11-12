@@ -2,6 +2,7 @@
 import ApplicationDesk from '../components/application-desk/ApplicationDesk';
 import PlateHeader from '../components/PlateHeader.astro';
 import ErrorBoundary from '../components/shared/ErrorBoundary';
+import GuideCoach from '../components/shared/GuideCoach';
 import Base from '../layouts/Base.astro';
 
 const noScript = [
@@ -29,6 +30,7 @@ const noScript = [
       description="Paste a posting once. Leave with what it asks for, where you stand, two bullets, a letter, and a last check before you send."
       accent="lichen"
     />
+    <GuideCoach client:load tool="application" />
     <section class="mx-auto w-full max-w-6xl">
       <ErrorBoundary client:load>
         <ApplicationDesk client:load />

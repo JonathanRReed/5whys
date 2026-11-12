@@ -58,3 +58,16 @@ it('says which name is missing and when the closing asks for nothing', () => {
   expect(byId.names.detail).toBe('Does not mention Acme.');
   expect(byId['ends-with-ask'].passed).toBe(false);
 });
+
+it('assembles the full letter with a greeting and a sign-off', async () => {
+  const { fullLetter, greeting } = await import('../src/lib/desk-checks');
+  expect(greeting('')).toBe('Dear Hiring Team,');
+  expect(greeting('Marketing Team')).toBe('Dear Marketing Team,');
+  expect(greeting('Dear Ms. Rivera,')).toBe('Dear Ms. Rivera,');
+  expect(fullLetter(letter({}))).toBe('');
+  expect(
+    fullLetter(
+      letter({ hook: 'I grew a club.', closingAsk: 'Could we talk?', sender: 'Sam Alvarez' })
+    )
+  ).toBe('Dear Hiring Team,\n\nI grew a club.\n\nCould we talk?\n\nSincerely,\nSam Alvarez');
+});

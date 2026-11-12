@@ -34,6 +34,23 @@ export function letterText(letter: LetterDraft): string {
     .join('\n\n');
 }
 
+/** A greeting for a name or a team, or a neutral one when neither is known. */
+export function greeting(recipient: string): string {
+  const name = recipient
+    .trim()
+    .replace(/^dear\s+/i, '')
+    .replace(/[,:]+$/, '');
+  return name ? `Dear ${name},` : 'Dear Hiring Team,';
+}
+
+/** The whole letter as it would be sent: greeting, the four parts, sign-off. */
+export function fullLetter(letter: LetterDraft): string {
+  const body = letterText(letter);
+  if (!body) return '';
+  const signOff = letter.sender.trim() ? `Sincerely,\n${letter.sender.trim()}` : 'Sincerely,';
+  return [greeting(letter.recipient), body, signOff].join('\n\n');
+}
+
 export function countWords(text: string): number {
   return text.trim() ? text.trim().split(/\s+/).length : 0;
 }

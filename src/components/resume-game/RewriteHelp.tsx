@@ -86,7 +86,7 @@ export default function RewriteHelp({ line }: Props) {
               </div>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground" data-guide="rewrite-none">
               No safer wording found without adding facts. The fields below are the way to
               strengthen this line.
             </p>

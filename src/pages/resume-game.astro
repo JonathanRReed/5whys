@@ -3,6 +3,7 @@ import Base from '../layouts/Base.astro';
 import PlateHeader from '../components/PlateHeader.astro';
 import ResumeGameApp from '../components/ResumeGame';
 import ErrorBoundary from '../components/shared/ErrorBoundary';
+import GuideCoach from '../components/shared/GuideCoach';
 
 const resumeSchemas = [
   {
@@ -63,6 +64,7 @@ const resumeNoScriptContext = [
       description="Paste a resume and every achievement line is scored for action, result, and measure. Rewrite the weak ones and watch the score move."
       accent="gold"
     />
+    <GuideCoach client:load tool="resume-game" />
     <section class="mx-auto w-full max-w-6xl">
       <ErrorBoundary client:load>
         <ResumeGameApp

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { setChecklistTick } from '../../lib/application-desk';
-import { letterText, runSendChecks } from '../../lib/desk-checks';
+import { fullLetter, runSendChecks } from '../../lib/desk-checks';
 import { requirementsFromBullets } from '../../lib/posting';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
@@ -26,7 +26,7 @@ export default function SendStation({ desk }: { desk: DeskState }) {
     company: application.company,
     requirements,
   });
-  const text = letterText(letter);
+  const text = fullLetter(letter);
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -37,7 +37,7 @@ export default function SendStation({ desk }: { desk: DeskState }) {
         </p>
       </div>
 
-      <ul className="space-y-2">
+      <ul className="space-y-2" data-guide="send-checks">
         {checks.map((check) => (
           <li
             key={check.id}

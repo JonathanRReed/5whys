@@ -65,9 +65,20 @@ end of every working pass. Delete it in the final pull request.
 - 2026-11-12: Glow Up can write likely questions on the device; share images
   for `/application/` and `/pay/`; privacy page states what stays on the
   device and how on-device AI works.
+- 2026-11-12: guided mode (owner request): `src/lib/guide.ts`, guides in
+  `src/lib/guides/`, `shared/GuideCoach` mounted on `/resume-game/` and
+  `/application/`. Steps complete by watching the page (`data-guide` hooks).
+  Guides still to write: career, networking-practice, interview-glow-up, pay.
+- 2026-11-12: Letter station gained recipient, sender, a worked example,
+  and "skill: proof" scaffolding from requirements marked "have it";
+  the full letter is assembled with greeting and sign-off.
 
 ## Engine follow-ups to hand back
 
+- 2026-11-12 12:40: the desk browser test timed out twice in the full suite
+  (waiting for the Letter tab to be stable) while machine load average was
+  over 200 from a parallel builder; it passes alone. RE-RUN THE FULL SUITE
+  when the builders are idle before trusting it.
 - One browser test failed once after the engine merge and passed on three
   reruns; the failing test was not captured. Watch for a flaky `toBe`.
 

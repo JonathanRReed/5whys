@@ -80,6 +80,7 @@ export default function ApplicationDesk() {
   const form = (
     <form
       onSubmit={create}
+      data-guide="desk-new"
       className="grid max-w-3xl gap-3 sm:grid-cols-[2fr_2fr_auto_auto] sm:items-end"
     >
       <label className="space-y-1">
@@ -145,7 +146,7 @@ export default function ApplicationDesk() {
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border/40 pb-5">
-        <div className="min-w-0 space-y-1">
+        <div className="min-w-0 space-y-1" data-guide="desk-current">
           <p className="text-sm text-muted-foreground">Working on</p>
           <p
             className="font-display text-2xl font-semibold text-foreground"
@@ -194,6 +195,7 @@ export default function ApplicationDesk() {
             <TabsTrigger
               key={item.id}
               value={item.id}
+              data-guide={`station-${item.id}`}
               className="h-10 flex-none rounded-lg border border-transparent px-3 text-muted-foreground data-[state=active]:border-lichen/60 data-[state=active]:bg-lichen/12 data-[state=active]:text-foreground"
             >
               <span className="num-index mr-1.5 text-xs text-muted-foreground">{index + 1}</span>

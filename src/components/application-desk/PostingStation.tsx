@@ -134,7 +134,7 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
 
   if (showEditor) {
     return (
-      <div className="max-w-3xl space-y-4">
+      <div className="max-w-3xl space-y-4" data-guide="posting-editor">
         <div className="space-y-2">
           <h2 className="text-2xl font-semibold">Paste the posting</h2>
           <p className="text-sm leading-relaxed text-muted-foreground">
@@ -227,7 +227,7 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
         </div>
       </div>
 
-      <div className="min-w-0 space-y-6">
+      <div className="min-w-0 space-y-6" data-guide="posting-requirements">
         <div className="space-y-2">
           <h3 className="text-lg font-semibold">What it asks for</h3>
           <p className="text-sm leading-relaxed text-muted-foreground" data-testid="posting-count">

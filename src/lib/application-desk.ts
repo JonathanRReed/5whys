@@ -102,10 +102,17 @@ export interface LetterDraft {
   whyYou: string;
   whyThem: string;
   closingAsk: string;
+  /** Who the letter is addressed to: a name or a team. Empty until written. */
+  recipient: string;
+  /** The student's name as it should appear under the letter. */
+  sender: string;
   messages: Record<MessageKind, MessageVariant | null>;
 }
 
 export type LetterPart = 'hook' | 'whyYou' | 'whyThem' | 'closingAsk';
+
+/** Every text field of the letter, including who it is to and from. */
+export type LetterField = LetterPart | 'recipient' | 'sender';
 
 export type PayPeriod = 'hour' | 'week' | 'month' | 'year';
 
@@ -173,6 +180,8 @@ export function createEmptyDesk(now = 0): ApplicationDesk {
       whyYou: '',
       whyThem: '',
       closingAsk: '',
+      recipient: '',
+      sender: '',
       messages: { linkedin: null, 'follow-up-email': null, 'intro-call': null },
     },
     checklist: {},
@@ -310,6 +319,8 @@ export function normalizeDesk(value: unknown, now = Date.now()): ApplicationDesk
       whyYou: text(l.whyYou),
       whyThem: text(l.whyThem),
       closingAsk: text(l.closingAsk),
+      recipient: text(l.recipient),
+      sender: text(l.sender),
       messages: {
         linkedin: normalizeVariant(messages.linkedin, now),
         'follow-up-email': normalizeVariant(messages['follow-up-email'], now),
@@ -549,11 +560,18 @@ export function updateBulletsFlow(
 export function updateLetter(
   data: ApplicationDeskData,
   applicationId: string,
-  changes: Partial<Record<LetterPart, string>>
+  changes: Partial<Record<LetterField, string>>
 ): ApplicationDeskData {
   return updateDesk(data, applicationId, (desk) => {
     const letter = { ...desk.letter };
-    for (const part of ['hook', 'whyYou', 'whyThem', 'closingAsk'] as const) {
+    for (const part of [
+      'hook',
+      'whyYou',
+      'whyThem',
+      'closingAsk',
+      'recipient',
+      'sender',
+    ] as const) {
       const value = changes[part];
       if (typeof value === 'string') letter[part] = value;
     }

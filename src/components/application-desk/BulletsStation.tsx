@@ -80,6 +80,7 @@ export default function BulletsStation({ desk }: { desk: DeskState }) {
                   </span>
                   <Textarea
                     rows={2}
+                    data-guide={`bullet-slot-${slot}`}
                     value={text}
                     placeholder="Grew the station's Instagram from 400 to 2,100 followers by posting three times a week"
                     onChange={(event) =>

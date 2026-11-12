@@ -86,6 +86,7 @@ export default function ResumeInput({
               type="button"
               variant="outline"
               className="w-full md:w-auto rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+              data-guide="resume-sample"
               onClick={onLoadSample}
             >
               Try sample
@@ -102,6 +103,7 @@ export default function ResumeInput({
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
           <Button
             type="button"
+            data-guide="resume-analyze"
             onClick={onScan}
             className="h-12 rounded-lg bg-foam px-6 text-sm font-semibold text-background transition-colors hover:bg-foam/90 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
             disabled={!resumeText.trim() || isScanning || isLoadingFile}
