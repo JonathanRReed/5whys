@@ -1,0 +1,23 @@
+{
+  "status": "titles-only",
+  "emittedFiles": 2,
+  "otherPublicFiles": 14,
+  "remainingBeforeBuiltAssets": 19984,
+  "previousBuildFiles": 271,
+  "files": [
+    {
+      "file": "onet-31.0-titles-v1.json",
+      "raw": 1969640,
+      "gzip": 366180,
+      "brotli": 295579,
+      "gzipBudget": 460800
+    },
+    {
+      "file": "provenance.json",
+      "raw": 3285,
+      "gzip": 1578,
+      "brotli": 1237,
+      "gzipBudget": null
+    }
+  ]
+}
