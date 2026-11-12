@@ -130,10 +130,24 @@ export function removeRequirement(
   return requirements.filter((r) => r.id !== id);
 }
 
-/** Confirms every suggested requirement that passes `filter` (all of them by default). */
+/**
+ * Whether "confirm" without a filter takes this requirement: required and
+ * preferred qualifications do; duties and lines the engine could not place
+ * wait for the student, because a description sentence swept in here
+ * becomes a false row on every other station.
+ */
+export function confirmsByDefault(requirement: PostingRequirement): boolean {
+  return requirement.section === 'required' || requirement.section === 'preferred';
+}
+
+/**
+ * Confirms every suggested requirement that passes `filter`. By default
+ * that is the required and preferred ones (`confirmsByDefault`); pass
+ * `() => true` to confirm everything.
+ */
 export function confirmAllSuggested(
   requirements: PostingRequirement[],
-  filter: (requirement: PostingRequirement) => boolean = () => true
+  filter: (requirement: PostingRequirement) => boolean = confirmsByDefault
 ): PostingRequirement[] {
   let changed = false;
   const next = requirements.map((r) => {

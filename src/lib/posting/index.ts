@@ -9,8 +9,22 @@ export {
   type CoverageState,
   type CoverageSummary,
   describeCoverage,
+  describeParts,
   summarizeCoverage,
 } from './coverage';
+export {
+  analyzeRequirement,
+  type EvidenceOptions,
+  type EvidenceState,
+  findRequirementEvidence,
+  parseYears,
+  type RequirementAnalysis,
+  type RequirementAsk,
+  type RequirementEvidence,
+  type RequirementKind,
+  type RequirementPart,
+  type YearsAsk,
+} from './evidence';
 export {
   extractRequirementLines,
   type JdExtractionResult,
@@ -19,15 +33,16 @@ export {
 export {
   type EvidenceExcerpt,
   extractRequirementTerms,
-  findRequirementEvidence,
   findTermMatches,
-  type RequirementEvidence,
   type RequirementTerm,
   type TermMatch,
   type TermOptions,
+  type TermShape,
   type TermSource,
 } from './match';
+export { findNearMisses, type NearMiss, type NearMissOptions } from './near-miss';
 export {
+  descriptionReason,
   type ParsedPosting,
   type ParseOptions,
   type PostingHeading,
@@ -45,6 +60,7 @@ export {
   confirmAllSuggested,
   confirmedRequirements,
   confirmRequirement,
+  confirmsByDefault,
   countBySection,
   decodePostingToBullets,
   dismissRequirement,
@@ -56,6 +72,11 @@ export {
   type SectionCounts,
   setRequirementSection,
 } from './requirements';
+export {
+  type DocumentLine,
+  type DocumentLineKind,
+  readDocument,
+} from './resume-lines';
 export { SAMPLE_POSTING, SAMPLE_POSTING_COMPANY, SAMPLE_POSTING_TITLE } from './sample';
 export {
   decideSection,
@@ -86,3 +107,4 @@ export {
   type VaguePhrase,
   type VaguePhraseHit,
 } from './vague-phrases';
+export { WORK_SYNONYM_GROUPS, type WorkSynonymGroup } from './work-synonyms';

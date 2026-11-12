@@ -14,6 +14,8 @@ import {
   type ScannedLine,
   scanPostingLines,
 } from './lines';
+import { extractRequirementTerms } from './match';
+import { startsWithAction } from './resume-lines';
 import {
   decideSection,
   findCues,
@@ -48,7 +50,17 @@ export type SetAsideReason =
   /** A bullet that introduces nested bullets ("Experience with one of the following:"). */
   | 'group-lead'
   /** Past the requirement limit. */
-  | 'over-limit';
+  | 'over-limit'
+  /** Deadlines, how to apply, and when applications are reviewed. */
+  | 'application-logistics'
+  /** What the company is or does: "Northgate is a growing logistics provider." */
+  | 'company-description'
+  /** A summary of the role rather than a duty: "As Project Coordinator you will support project managers ..." */
+  | 'role-summary'
+  /** Selling the job: "a great opportunity for a rockstar", "the glue between the floor and our carriers". */
+  | 'pitch'
+  /** A line with no heading or cue that reads as neither a requirement nor a duty. */
+  | 'description';
 
 export interface SetAsideLine extends SourceSpan {
   text: string;
@@ -118,7 +130,91 @@ const JOB_DETAIL_LINE =
 
 /** A sentence about pay, weekly hours, or how to apply, with no requirement cue of its own. */
 const JOB_DETAIL_SENTENCE =
-  /\$\s?\d|\b\d+\s*(?:(?:-|–|to)\s*\d+\s*)?hours\s+(?:per|a|each)\s+week\b|^apply\s+(?:by|before|online|through|via|at|now|today)\b|^to\s+apply\b/i;
+  /\$\s?\d|\b\d+\s*(?:(?:-|–|to)\s*\d+\s*)?hours\s+(?:per|a|each)\s+week\b|^apply\s+(?:by|before|online|through|via|at|now|today)\b|^to\s+apply\b|^salary\b|\bcommensurate\s+with\b/i;
+
+/** Deadlines, review timing, and how to apply. Set aside wherever they appear. */
+const APPLICATION_LOGISTICS =
+  /\bapplications?\s+(?:close|closes|closing|are\s+due|due|deadline|(?:are\s+|will\s+be\s+)?(?:reviewed|accepted|considered))\b|\brolling\s+basis\b|\b(?:application|posting|closing)\s+(?:deadline|date)\b|\bposting\s+(?:closes|will\s+close|expires)\b|^deadline\b|\b(?:apply|submit\s+(?:your\s+)?(?:resume|application|materials))\s+(?:by|before|no\s+later\s+than)\b|\b(?:only\s+)?(?:selected|shortlisted|qualified)\s+(?:candidates|applicants)\s+will\s+be\s+contacted\b|^(?:please\s+)?(?:send|email|submit)\s+(?:your\s+)?(?:resume|cv|cover\s+letter|application)\b|\binterviews?\s+(?:will\s+)?(?:begin|start)\b/i;
+
+const LOCATION_LINE =
+  /\b[A-Z][a-z]+,\s*[A-Z]{2}\b|\b(?:remote|hybrid|on[- ]site|in[- ]person)\b|\bup\s+to\s+\d+%\s+travel\b/;
+
+const JOB_TITLE_WORD =
+  /\b(?:intern|assistant|associate|analyst|coordinator|specialist|manager|supervisor|engineer|developer|designer|representative|clerk|technician|lead|director|officer|agent|attendant|guide|aide|cashier|barista|server|cook|tutor|fellow)s?\b/i;
+
+/** "As Project Coordinator you will ...", "The Operations Coordinator keeps ...", "In this role you will ...". */
+const ROLE_SUMMARY =
+  /^as\s+(?:an?\s+|the\s+|our\s+)?[A-Z][\w-]*(?:\s+[A-Z&][\w-]*){0,4},?\s+you\b|^in\s+this\s+(?:role|position|job|internship),?\s+you\b|^this\s+(?:role|position|job)\s+(?:is|will)\b/i;
+
+const NAMED_SUBJECT =
+  /^(?:the\s+)?[A-Z][\w&'.-]*(?:\s+(?:[A-Z&][\w&'.-]*|of|and|for))*\s+(?:is|are|was|has|have|operates|serves|provides|runs|offers|builds|makes|helps|keeps|delivers|specializes|plays|sits|supports|owns|works|will)\b/;
+
+const COMPANY_DESCRIPTION =
+  /^(?:we|we're|we\s+are|our)\b|^(?:this|it)\s+is\s+(?:a|an)\b|\bis\s+hiring\b|\bfounded\s+in\b|\bheadquartered\s+in\b/i;
+
+const PITCH =
+  /\b(?:great|exciting|amazing|unique|rare)\s+opportunity\b|\bthe\s+glue\b|^join\b|\bjoin\s+(?:us|our\s+team)\b|\bwe(?:'re|\s+are)\s+looking\s+for\b|\byou(?:'ll|\s+will)\s+love\b|\bperfect\s+fit\b|\bif\s+this\s+sounds\s+like\s+you\b/i;
+
+/** Phrasing that asks something of the applicant. */
+const REQUIREMENT_PHRASING =
+  /^(?:\d+\+?\s*(?:-\s*\d+\s*)?(?:years?|months?)|experience|knowledge|familiarity|proficien|ability|able\s+to|must|bachelor|master|degree|high\s+school|valid|currently\s+(?:enrolled|pursuing)|certifi|licens|strong|excellent|working\s+knowledge|comfort|fluen|availab|basic|advanced|demonstrated|proven|exposure)|\b(?:experience\s+(?:with|in|using|as)|knowledge\s+of|proficien(?:t|cy)\s+(?:in|with)|familiar(?:ity)?\s+with|ability\s+to|able\s+to|skills?\s+(?:in|with)|comfortable\s+(?:with|using)|certifi|licens|degree\b|years?\s+of|ideal\s+candidate|you\s+(?:have|bring|know|can)\b)/i;
+
+/** "You will check materials in and out": a duty. "You will be the glue ...": not one. */
+const YOU_WILL =
+  /^(?:you(?:'ll|\s+will|\s+would)|in\s+this\s+role,?\s+you(?:'ll|\s+will))\s+(?:also\s+)?([a-z]+)/i;
+const NOT_DUTY_VERBS = new Set([
+  'be',
+  'have',
+  'join',
+  'love',
+  'enjoy',
+  'thrive',
+  'get',
+  'wear',
+  'grow',
+  'learn',
+  'work',
+  'find',
+  'gain',
+  'become',
+  'see',
+  'feel',
+  'need',
+]);
+
+/**
+ * Why a line with no heading section and no cue is not a requirement, or
+ * null when it reads as one: a skill, tool, qualification, or a task the
+ * person will do.
+ */
+export function descriptionReason(text: string): SetAsideReason | null {
+  const trimmed = text.trim();
+  // "Northgate Logistics Partners, Columbus, OH (hybrid, 3 days on site)": where, not what.
+  if (!/[.!?]$/.test(trimmed) && wordCount(trimmed) <= 16 && LOCATION_LINE.test(trimmed)) {
+    return 'header-line';
+  }
+  if (ROLE_SUMMARY.test(trimmed)) return 'role-summary';
+  const youWill = trimmed.match(YOU_WILL);
+  if (youWill) {
+    return NOT_DUTY_VERBS.has(youWill[1].toLowerCase())
+      ? findVaguePhrases(trimmed).length > 0 || PITCH.test(trimmed) || /\bglue\b/i.test(trimmed)
+        ? 'pitch'
+        : 'description'
+      : null;
+  }
+  if (PITCH.test(trimmed) || findVaguePhrases(trimmed).length > 0) {
+    return REQUIREMENT_PHRASING.test(trimmed) ? null : 'pitch';
+  }
+  const subject = trimmed.match(NAMED_SUBJECT);
+  if (subject) return JOB_TITLE_WORD.test(subject[0]) ? 'role-summary' : 'company-description';
+  if (COMPANY_DESCRIPTION.test(trimmed)) return 'company-description';
+  if (REQUIREMENT_PHRASING.test(trimmed)) return null;
+  if (startsWithAction(trimmed)) return null;
+  // A tool or credential ("Excel and SQL", "CPR certified") reads as a requirement; a capitalized name does not.
+  if (extractRequirementTerms(trimmed).some((t) => t.shape === 'named' && t.source !== 'phrase'))
+    return null;
+  return 'description';
+}
 
 /** "Location: Austin, TX", "$17 to $19 per hour", "Apply by October 1": facts about the job, not requirements. */
 function isJobDetail(text: string): boolean {
@@ -141,6 +237,8 @@ class PostingParser {
   private readonly setAside: SetAsideLine[] = [];
   private overLimitCount = 0;
   private context: SectionContext | null = null;
+  /** True once a list item was read under the current heading. */
+  private listSeen = false;
 
   constructor(
     private readonly raw: string,
@@ -151,6 +249,16 @@ class PostingParser {
     const lines = scanPostingLines(this.raw);
     for (let i = 0; i < lines.length; i++) {
       const parent = lines[i];
+      // A section ends at a blank line followed by prose: "Application closes
+      // November 13." after the Preferred list is not a preferred qualification.
+      const previous = lines[i - 1];
+      const blankBefore =
+        previous !== undefined && /\n[^\S\n]*\n/.test(this.raw.slice(previous.end, parent.start));
+      if (blankBefore && parent.marker === null && this.listSeen) {
+        this.context = null;
+        this.listSeen = false;
+      }
+      if (parent.marker !== null && this.context !== null) this.listSeen = true;
       let j = i + 1;
       while (parent.marker && j < lines.length && isNestedUnder(lines[j], parent)) j++;
       if (j > i + 1) {
@@ -191,6 +299,7 @@ class PostingParser {
     const text = headingText(line.text);
     const resolved = meaning ?? 'neutral';
     this.context = { meaning: resolved, heading: text };
+    this.listSeen = false;
     this.headings.push({ start: line.start, end: line.end, text, meaning: resolved });
     this.skip(line, 'heading');
     return true;
@@ -263,13 +372,25 @@ class PostingParser {
       this.skip(span, 'job-details');
       return;
     }
+    if (APPLICATION_LOGISTICS.test(text)) {
+      this.skip(span, 'application-logistics');
+      return;
+    }
     const words = wordCount(text);
     const allowShort = shortAllowed && isClassifiedContext(this.context);
     if (words === 0 || (!allowShort && words < MIN_REQUIREMENT_WORDS)) {
       this.skip(span, 'too-short');
       return;
     }
-    this.push(span, cleanText(text), decideSection(this.context, findCues(text)));
+    const classification = decideSection(this.context, findCues(text));
+    if (classification.section === 'unclassified' && classification.basis === 'none') {
+      const reason = descriptionReason(cleanText(text));
+      if (reason) {
+        this.skip(span, reason);
+        return;
+      }
+    }
+    this.push(span, cleanText(text), classification);
   }
 
   private push(span: SourceSpan, text: string, classification: SectionClassification): void {

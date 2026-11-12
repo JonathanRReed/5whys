@@ -8,7 +8,12 @@ import {
 } from '../../lib/application-desk';
 import { loadApplications, type TrackedApplication } from '../../lib/applications';
 import { type DecodedRole, loadData } from '../../lib/glowup-store';
-import { describeCoverage, requirementsFromBullets, summarizeCoverage } from '../../lib/posting';
+import {
+  describeCoverage,
+  describeParts,
+  requirementsFromBullets,
+  summarizeCoverage,
+} from '../../lib/posting';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
 
@@ -156,12 +161,31 @@ export default function PostingMatch({ resumeText }: Props) {
                         This is in a skills list. A bullet showing you using it is stronger.
                       </span>
                     )}
+                    {row.note && <span className="block text-xs">{row.note}</span>}
                   </p>
-                ) : row.state === 'none' ? (
+                ) : row.state === 'none' || row.state === 'partial' ? (
                   <>
-                    <p className="text-muted-foreground">
-                      Nothing in your resume mentions this yet.
-                    </p>
+                    {row.state === 'partial' ? (
+                      <div className="space-y-1 text-muted-foreground">
+                        <p>Shown: {describeParts(row).shown.join('; ')}.</p>
+                        {excerpt && <p>In your resume: "{excerpt.text.trim()}"</p>}
+                        <p>Not shown yet: {describeParts(row).notShown.join('; ')}.</p>
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">
+                        Nothing in your resume mentions this yet.
+                      </p>
+                    )}
+                    {row.note && <p className="text-xs text-muted-foreground">{row.note}</p>}
+                    {row.nearMisses.map((miss) => (
+                      <div key={miss.start} className="space-y-1 text-muted-foreground">
+                        <p>This line may already say it, in other words: "{miss.text.trim()}"</p>
+                        <p>
+                          If it is the same work, say it with the posting's words:{' '}
+                          {miss.postingTerms.join(', ')}.
+                        </p>
+                      </div>
+                    ))}
                     <div className="flex flex-wrap items-center gap-2">
                       <Button asChild size="xs" variant="outline">
                         <a href={`/application/?id=${encodeURIComponent(appId)}&station=bullets`}>
@@ -189,8 +213,8 @@ export default function PostingMatch({ resumeText }: Props) {
                   </>
                 ) : (
                   <p className="text-muted-foreground">
-                    This one is not something a resume line can be checked against. Judge it
-                    yourself.
+                    {row.note ??
+                      'This one is not something a resume line can be checked against. Judge it yourself.'}
                   </p>
                 )}
               </div>
