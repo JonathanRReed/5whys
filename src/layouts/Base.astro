@@ -10,6 +10,7 @@ import '@fontsource-variable/jetbrains-mono';
 import '../styles/globals.css';
 import themeInit from '../scripts/theme-init.js?raw';
 import { ogImageFor } from '../config/og';
+import offlineRegistration from '../../scripts/offline/register.js?raw';
 
 const {
   title = siteConfig.siteName,
@@ -92,8 +93,14 @@ const noScriptParagraphs = [...defaultNoScriptContext, ...pageNoScriptContext].f
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="apple-touch-icon" sizes="180x180" href={import.meta.env.PROD ? '/icons/apple-touch-icon.png' : '/apple-touch-icon.png'} />
+    {import.meta.env.PROD && <>
+      <link rel="manifest" href="/site.webmanifest" />
+      <meta name="apple-mobile-web-app-capable" content="yes" />
+      <meta name="apple-mobile-web-app-title" content="5 Whys" />
+      <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+      <script is:inline set:html={offlineRegistration} />
+    </>}
     <ClientRouter />
   </head>
   <body class="min-h-screen bg-background text-foreground transition-colors duration-300">
