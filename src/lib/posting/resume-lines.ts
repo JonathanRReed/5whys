@@ -390,6 +390,15 @@ function readDocumentUncached(text: string, today: Date): ReadDocument {
     const kind = classifyLine(line.text, section, index, raw[index + 1]?.text);
     const listedOnly = kind === 'skills';
     if (kind === 'title') {
+      // A job with no bullets, followed straight away by another job: two
+      // headings with their own dates are two jobs. A title on one line and
+      // its dates on the next are still one.
+      if (
+        readDateRange(line.text, today) &&
+        readDateRange(block.map((l) => l.text).join(' '), today)
+      ) {
+        closeBlock();
+      }
       const entry: DocumentLine = { ...line, kind, listedOnly, role: null };
       block.push(entry);
       lines.push(entry);

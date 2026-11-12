@@ -211,6 +211,7 @@ export default function PayTool() {
           ...(options.percent ? { percentOf: yearlyBase } : {}),
         })
       }
+      percentOf={options.percent ? yearlyBase : undefined}
       onCommit={(value) => changeOffer({ [key]: value })}
     />
   );
@@ -628,6 +629,8 @@ type AmountFieldProps = {
   guide: string;
   value: number | null;
   parse: (text: string) => ParsedAmount;
+  /** What a typed percentage is a share of. When it changes, a percentage is worked out again. */
+  percentOf?: number | null;
   onCommit: (value: number | null) => void;
 };
 
@@ -635,7 +638,7 @@ type AmountFieldProps = {
  * A pay field that keeps what was typed. "62k" and "5%" are understood and
  * shown as understood; anything else is refused with a reason, never guessed.
  */
-function AmountField({ label, hint, guide, value, parse, onCommit }: AmountFieldProps) {
+function AmountField({ label, hint, guide, value, parse, percentOf, onCommit }: AmountFieldProps) {
   const [text, setText] = React.useState(value === null ? '' : String(value));
   const [error, setError] = React.useState<string | null>(null);
   const lastCommitted = React.useRef(value);
@@ -656,6 +659,15 @@ function AmountField({ label, hint, guide, value, parse, onCommit }: AmountField
     lastCommitted.current = parsed.value;
     onCommit(parsed.value);
   };
+
+  // "5%" of the base pay is a different amount once the base pay is corrected.
+  const seenBase = React.useRef(percentOf);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs only when the base changes; the field's text and parser are read as they are then
+  React.useEffect(() => {
+    if (seenBase.current === percentOf) return;
+    seenBase.current = percentOf;
+    if (text.includes('%')) change(text);
+  }, [percentOf]);
 
   const understood =
     !error && value !== null && text.trim() !== '' && String(value) !== text.trim();

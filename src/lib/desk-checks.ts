@@ -194,7 +194,8 @@ export function runSendChecks({
     (r) => findTermMatches(extractRequirementTerms(r.text), text).length > 0
   ).length;
 
-  const placeholders = findPlaceholders(text);
+  // What is copied and sent also carries the greeting and the signature.
+  const placeholders = findPlaceholders([letter.recipient, text, letter.sender].join('\n'));
 
   return [
     {

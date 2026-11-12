@@ -171,3 +171,36 @@ describe('a saved bullet choice and an edited resume', () => {
     expect(a.state).toBe(b.state);
   });
 });
+
+describe('sixth review round', () => {
+  it('counts two adjacent dated jobs as two jobs', async () => {
+    const { findRequirementEvidence } = await import('../src/lib/posting');
+    const today = new Date('2026-11-12');
+    const resume = `Sam Lee\nsam@example.edu\n\nEXPERIENCE\nLibrary Assistant | Jan 2022 - Jan 2023\nData Analyst | Jan 2023 - Jan 2025\n- Built weekly reports for the operations team`;
+    const single = `Sam Lee\nsam@example.edu\n\nEXPERIENCE\nData Analyst | Jan 2022 - Jan 2025\n- Built weekly reports for the operations team`;
+    expect(findRequirementEvidence('2 years of experience', resume, { today }).state).toBe(
+      findRequirementEvidence('2 years of experience', single, { today }).state
+    );
+  });
+
+  it('finds a placeholder left in the greeting or the signature', async () => {
+    const { runSendChecks } = await import('../src/lib/desk-checks');
+    const letter = {
+      hook: 'I ran the campus food pantry schedule for a year.',
+      whyYou: 'Scheduling: I moved 30 volunteers to a shared calendar.',
+      whyThem: 'Your mobile pantry reaches students who cannot travel.',
+      closingAsk: 'Could we talk for 15 minutes?',
+      recipient: '[Hiring Manager]',
+      sender: '[Your name]',
+      messages: { linkedin: null, 'follow-up-email': null, 'intro-call': null },
+    };
+    const check = runSendChecks({
+      letter,
+      title: 'Intern',
+      company: 'Food Bank',
+      requirements: [],
+    }).find((c) => c.id === 'no-placeholders');
+    expect(check?.passed).toBe(false);
+    expect(check?.detail).toContain('[Hiring Manager]');
+  });
+});

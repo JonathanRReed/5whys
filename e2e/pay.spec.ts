@@ -29,4 +29,14 @@ test('a job title is matched on the device and an offer is put into plain terms'
   await page.getByLabel('Weeks a year').fill('10');
   await expect(worksOutTo).toContainText('an hour');
   await expect(worksOutTo).not.toContainText('Needs more detail');
+
+  // A bonus typed as a percentage follows the base pay when the base pay is corrected.
+  await page.getByLabel('Paid').selectOption('year');
+  await page.getByLabel('Weeks a year').fill('52');
+  await page.getByLabel('Base pay').fill('62000');
+  await page.getByLabel('Guaranteed bonus, a year').fill('5%');
+  const withBonus = page.locator('dl > div').filter({ hasText: 'With the guaranteed bonus' });
+  await expect(withBonus).toContainText('65,100');
+  await page.getByLabel('Base pay').fill('100000');
+  await expect(withBonus).toContainText('105,000');
 });
