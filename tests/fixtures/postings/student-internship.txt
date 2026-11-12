@@ -1,0 +1,33 @@
+Data Analytics Intern (Summer 2027)
+Larkspur Transit Authority | Columbus, OH
+
+About Us
+Larkspur Transit Authority runs bus and paratransit service for more than 40 communities. Our mission is to make every trip on time and easy to plan.
+
+About the Internship
+This is a paid ten-week internship on the planning team. You will work with analysts who study ridership and schedules.
+
+What You'll Do
+• Clean and combine ridership data from fare systems and on-board counters
+• Build weekly dashboards in Tableau for the service planning team
+• Write SQL queries to answer questions from route planners
+• Present findings to stakeholders at the end of the summer
+• Other duties as assigned
+
+What We're Looking For
+• Currently enrolled in a bachelor's degree program in statistics, economics, computer science, or a related field
+• Experience with Excel, including pivot tables and lookups
+• Coursework or class projects using SQL
+• Strong written and verbal communication skills
+• Comfortable working in a fast-paced environment as a self-starter
+
+Nice to Have
+• Python or R for data analysis
+• Familiarity with GIS tools
+• An interest in public transportation
+
+Benefits
+• Paid internship at $20 per hour
+• Free transit pass for the summer
+
+Larkspur Transit Authority is an equal opportunity employer. We consider all applicants without regard to race, color, religion, sex, national origin, age, disability, or veteran status.

@@ -9,6 +9,14 @@
  * The data structure is already JSON-serializable for easy migration.
  */
 
+import {
+  isPostingSection,
+  isSourceSpan,
+  type PostingSection,
+  type RequirementOrigin,
+  type SourceSpan,
+} from './posting/types';
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -63,6 +71,20 @@ export interface DecodedBullet {
    * so consumers should guard for undefined.
    */
   suggestion?: { skillId: string; matchedKeywords?: string[] }[];
+  /**
+   * Posting section from the posting engine. Absent in saves made before the
+   * engine; loadData fills `unclassified`.
+   */
+  section?: PostingSection;
+  /**
+   * Offsets of the source sentence in the role's `parsedJdText`. Null when
+   * unknown (older saves) or when the student wrote the line.
+   */
+  sourceSpan?: SourceSpan | null;
+  /** The student confirmed this requirement. loadData fills false. */
+  confirmed?: boolean;
+  /** Who wrote the line. loadData fills `parsed`, which every older save is. */
+  origin?: RequirementOrigin;
 }
 
 export interface DecodedRole {
@@ -74,9 +96,19 @@ export interface DecodedRole {
   /** Exact source used for requirement analysis; absent in legacy saves. */
   parsedJdText?: string;
   bullets: DecodedBullet[];
+  /**
+   * Which posting parser produced the bullets: POSTING_ENGINE_VERSION for
+   * the section-aware engine, absent for the original line-based decode, so
+   * the interface can offer to re-sort an older role. loadData leaves it
+   * absent rather than filling it, so an older save exports unchanged.
+   */
+  postingEngineVersion?: number;
   createdAt: number;
   updatedAt: number;
 }
+
+/** Stamp for roles decoded by src/lib/posting. */
+export const POSTING_ENGINE_VERSION = 1;
 
 export interface Story {
   id: string;
@@ -249,8 +281,10 @@ function normalizeData(data: GlowUpData): GlowUpData {
   const asNumber = (value: unknown): number => (typeof value === 'number' ? value : 0);
   return {
     ...data,
-    roles: asArray<DecodedRole>(data.roles).map((role) => ({
+    roles: asArray<DecodedRole>(data.roles).map(({ postingEngineVersion, ...role }) => ({
       ...role,
+      // Absent means the original line-based decode; only a malformed value is dropped.
+      ...(typeof postingEngineVersion === 'number' ? { postingEngineVersion } : {}),
       jobTitle: asString(role.jobTitle),
       company: asString(role.company),
       rawJdText: asString(role.rawJdText),
@@ -268,6 +302,10 @@ function normalizeData(data: GlowUpData): GlowUpData {
             skillId: asString(s.skillId),
             matchedKeywords: asArray<string>(s.matchedKeywords),
           })),
+        section: isPostingSection(bullet.section) ? bullet.section : 'unclassified',
+        sourceSpan: isSourceSpan(bullet.sourceSpan) ? bullet.sourceSpan : null,
+        confirmed: bullet.confirmed === true,
+        origin: bullet.origin === 'student' ? 'student' : 'parsed',
       })),
     })),
     stories: asArray<Story>(data.stories).map((story) => ({

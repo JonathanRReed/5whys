@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { getSkillFrequencyMap, getTopGaps, loadData } from '../src/lib/glowup-store';
+import {
+  getSkillFrequencyMap,
+  getTopGaps,
+  loadData,
+  POSTING_ENGINE_VERSION,
+} from '../src/lib/glowup-store';
 
 describe('glowup store normalization', () => {
   beforeEach(() => {
@@ -62,5 +67,101 @@ describe('glowup store normalization', () => {
       })
     );
     expect(loadData().roles[0].bullets[0].status).toBe('ignored');
+  });
+
+  it('loads a role saved before the posting engine with defaults and nothing else changed', () => {
+    const oldRole = {
+      id: 'r1',
+      jobTitle: 'Data Analytics Intern',
+      company: 'Larkspur Transit',
+      rawJdText: 'Requirements\n- Experience with Excel',
+      parsedJdText: 'Requirements\n- Experience with Excel',
+      bullets: [
+        {
+          id: 'b1',
+          text: 'Experience with Excel',
+          status: 'active',
+          primarySkillId: 'data-analysis',
+          secondarySkillIds: [],
+          suggestion: [{ skillId: 'data-analysis', matchedKeywords: ['excel'] }],
+        },
+        {
+          id: 'b2',
+          text: 'Apply today',
+          status: 'ignored',
+          primarySkillId: null,
+          secondarySkillIds: [],
+        },
+      ],
+      createdAt: 1700000000000,
+      updatedAt: 1700000000001,
+    };
+    window.localStorage.setItem(
+      'interview-glow-up-data',
+      JSON.stringify({ version: 1, roles: [oldRole], stories: [], packets: [] })
+    );
+
+    const role = loadData().roles[0];
+    expect(role.postingEngineVersion).toBeUndefined();
+    expect(role.bullets[0]).toEqual({
+      ...oldRole.bullets[0],
+      section: 'unclassified',
+      sourceSpan: null,
+      confirmed: false,
+      origin: 'parsed',
+    });
+    expect(role.bullets[1]).toMatchObject({ status: 'ignored', confirmed: false });
+    const { bullets: _bullets, ...rest } = role;
+    const { bullets: _oldBullets, ...oldRest } = oldRole;
+    expect(rest).toEqual(oldRest);
+  });
+
+  it('keeps posting-engine fields and repairs malformed ones', () => {
+    window.localStorage.setItem(
+      'interview-glow-up-data',
+      JSON.stringify({
+        version: 1,
+        roles: [
+          {
+            id: 'r1',
+            postingEngineVersion: POSTING_ENGINE_VERSION,
+            bullets: [
+              {
+                id: 'p-13-34',
+                text: 'Experience with Excel',
+                section: 'preferred',
+                sourceSpan: { start: 13, end: 34 },
+                confirmed: true,
+                origin: 'student',
+              },
+              {
+                id: 'p-1-2',
+                text: 'x',
+                section: 'mandatory',
+                sourceSpan: { start: 9, end: 2 },
+                confirmed: 'yes',
+                origin: 'robot',
+              },
+            ],
+          },
+        ],
+        stories: [],
+        packets: [],
+      })
+    );
+    const [kept, repaired] = loadData().roles[0].bullets;
+    expect(loadData().roles[0].postingEngineVersion).toBe(POSTING_ENGINE_VERSION);
+    expect(kept).toMatchObject({
+      section: 'preferred',
+      sourceSpan: { start: 13, end: 34 },
+      confirmed: true,
+      origin: 'student',
+    });
+    expect(repaired).toMatchObject({
+      section: 'unclassified',
+      sourceSpan: null,
+      confirmed: false,
+      origin: 'parsed',
+    });
   });
 });
