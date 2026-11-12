@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
+import InterviewHUD from '../src/components/interview-glow-up/InterviewHUD';
 import PacketSection from '../src/components/interview-glow-up/PacketSection';
 import StoriesSection from '../src/components/interview-glow-up/StoriesSection';
 import VaultSection from '../src/components/interview-glow-up/VaultSection';
@@ -133,4 +134,20 @@ it('reports general question disclosure state across collapse, cancel and reopen
     'false'
   );
   expect(screen.queryByRole('button', { name: questionName })).toBeNull();
+});
+
+it('toggles HUD search with accessible button state and labeled search input', () => {
+  render(<InterviewHUD packet={packet} stories={[]} role={role} onClose={vi.fn()} />);
+  const searchButton = screen.getByRole('button', { name: 'Search stories' });
+  expect(searchButton).toHaveAttribute('aria-expanded', 'false');
+  expect(screen.queryByRole('textbox', { name: 'Search stories' })).toBeNull();
+
+  fireEvent.click(searchButton);
+  expect(searchButton).toHaveAttribute('aria-expanded', 'true');
+  const searchInput = screen.getByRole('textbox', { name: 'Search stories' });
+  expect(searchInput).toBeInTheDocument();
+
+  fireEvent.click(searchButton);
+  expect(searchButton).toHaveAttribute('aria-expanded', 'false');
+  expect(screen.queryByRole('textbox', { name: 'Search stories' })).toBeNull();
 });
