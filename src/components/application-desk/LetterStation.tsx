@@ -15,6 +15,7 @@ import { sourceLabel } from '../shared/AiText';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
+import { useDeskExamples } from './examples';
 import type { DeskState } from './useDesk';
 
 const PARTS: { key: LetterPart; title: string; help: string; rows: number }[] = [
@@ -62,6 +63,7 @@ const toMessageSource = (source: AiResult<unknown>['source']): MessageSource =>
 
 export default function LetterStation({ desk }: { desk: DeskState }) {
   const { application, role, changeDesks } = desk;
+  const examples = useDeskExamples();
   const [busy, setBusy] = React.useState(false);
   const [copied, setCopied] = React.useState<MessageKind | null>(null);
   if (!application) return null;
@@ -152,27 +154,9 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
         <details className="rounded-xl border border-border/40 p-4 text-sm">
           <summary className="cursor-pointer font-medium">See a finished example</summary>
           <div className="mt-3 space-y-3 leading-relaxed text-muted-foreground">
-            <p>Dear Ms. Okafor,</p>
-            <p>
-              Last spring I rebuilt my campus food pantry's sign-up sheet so that volunteers stopped
-              missing shifts, and I would like to bring that same care to the Program Assistant role
-              at Riverside Food Bank.
-            </p>
-            <p>
-              Scheduling: I moved 30 volunteers from a paper list to a shared calendar and sent a
-              reminder the night before each shift. Communication: I wrote the weekly update that
-              went to every volunteer. Reliability: I opened the pantry every Tuesday for two
-              semesters.
-            </p>
-            <p>
-              Your mobile pantry stood out to me because it reaches students who cannot get to a
-              fixed site, which was the problem I kept hearing about on my own campus.
-            </p>
-            <p>
-              Thank you for considering my application. Could we talk for 15 minutes about how I
-              could help with volunteer scheduling this fall?
-            </p>
-            <p>Sincerely, Sam Alvarez</p>
+            {examples.letter.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
           </div>
         </details>
 
@@ -214,8 +198,7 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
             {part.key === 'hook' && generic && (
               <p role="status" className="rounded-lg bg-gold/12 px-3 py-2 text-sm text-foreground">
                 This opens the way most letters do. Try starting with something you did, then name
-                the role. For example: "Over the last year I grew my club's Instagram into a real
-                community, and I would love to do that for your team."
+                the role. For example: "{examples.hook}"
               </p>
             )}
           </div>

@@ -6,25 +6,25 @@ import RewriteHelp from '../resume-game/RewriteHelp';
 import PrintSheet from '../shared/PrintSheet';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
+import { useDeskExamples } from './examples';
 import type { DeskState } from './useDesk';
 
 const STEPS = [
   {
     key: 'experience',
     title: 'Pick one experience',
-    help: 'It does not have to be a job. A class project, a part-time role, a club, volunteering, or something you built on your own all count. Say what it was, what you did, and how it connects to what this employer wants.',
-    placeholder: 'I ran social media for the campus radio station for a year...',
+    help: '',
   },
   {
     key: 'impact',
     title: 'Say what happened because of it',
     help: 'The result does not have to be a number. A finished project, a problem solved, a smoother process, good feedback, or something that got easier because of your work all count.',
-    placeholder: 'Because of the weekly schedule I set up, volunteers stopped missing shifts...',
   },
 ] as const;
 
 export default function BulletsStation({ desk }: { desk: DeskState }) {
   const { application, role, changeDesks } = desk;
+  const examples = useDeskExamples();
   const [printing, setPrinting] = React.useState(false);
   const donePrinting = React.useCallback(() => setPrinting(false), []);
   // Arriving from "I have this: write a bullet" carries the requirement, so
@@ -74,13 +74,19 @@ export default function BulletsStation({ desk }: { desk: DeskState }) {
               <span className="num-index mr-2 text-lichen">{index + 1}</span>
               {step.title}
             </h3>
-            <p className="text-sm leading-relaxed text-muted-foreground">{step.help}</p>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {step.key === 'experience' ? examples.experienceHelp : step.help}
+            </p>
             <label className="block">
               <span className="sr-only">{step.title}</span>
               <Textarea
                 rows={4}
                 value={flow[step.key]}
-                placeholder={step.placeholder}
+                placeholder={
+                  step.key === 'experience'
+                    ? examples.experiencePlaceholder
+                    : examples.impactPlaceholder
+                }
                 onChange={(event) =>
                   changeDesks((data) =>
                     updateBulletsFlow(data, appId, { [step.key]: event.target.value })
@@ -114,7 +120,7 @@ export default function BulletsStation({ desk }: { desk: DeskState }) {
                     rows={2}
                     data-guide={`bullet-slot-${slot}`}
                     value={text}
-                    placeholder="Grew the station's Instagram from 400 to 2,100 followers by posting three times a week"
+                    placeholder={examples.bulletPlaceholder}
                     onChange={(event) =>
                       changeDesks((data) =>
                         updateBulletsFlow(data, appId, {
