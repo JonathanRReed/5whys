@@ -47,6 +47,10 @@ end of every working pass. Delete it in the final pull request.
   wrapped lines, bullet detection, one repair offer, dates left as written.
 - 2026-11-12: posting match in the Resume Game (`PostingMatch`), linked from
   the desk with `?application=<id>`.
+- 2026-11-12: Pay page at `/pay/` (Plate VI, madder): on-device title search,
+  percentile table (renders once wage files exist), offer worksheet saved per
+  application. Not in the nav yet. LAUNCH BLOCKER: do not ship `/pay/`
+  without the BLS wage files, or hide the lookup.
 
 ## Engine follow-ups to hand back
 
@@ -84,8 +88,7 @@ end of every working pass. Delete it in the final pull request.
   move the pure helpers into `src/lib` when touching Five Whys.
 - Still to build (lead): dashboard links into the desk and dated steps;
   desk resume station (per-application bullet selection and export); worksheet print export for the bullets flow;
-  Storage panel; `/pay/` (worksheet and title search now, wages when data
-  arrives); rehearsal room (after spikes); Five Whys and Networking upgrades;
+  Storage panel; rehearsal room (after spikes); Five Whys and Networking upgrades;
   homepage with six plates and the specimen hero; offline and install;
   privacy copy; DESIGN.md specimen section.
 - Posting engine noise: plain description sentences can come through as
