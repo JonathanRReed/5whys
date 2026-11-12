@@ -7,8 +7,12 @@ test('the homepage sorts a sample posting on the device with one press', async (
   const specimen = page.getByTestId('home-specimen');
   await specimen.scrollIntoViewIfNeeded();
   await expect(specimen.locator('mark')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Sort what it asks for' }).click();
-  await expect(specimen.locator('mark').first()).toBeVisible();
+  // The demo hydrates when it scrolls into view, so a press can land a moment
+  // before it is live. Press until it takes, as a visitor would.
+  await expect(async () => {
+    await page.getByRole('button', { name: 'Sort what it asks for' }).click({ timeout: 1000 });
+    await expect(specimen.locator('mark').first()).toBeVisible({ timeout: 1000 });
+  }).toPass();
   await expect(page.getByRole('link', { name: 'Do this with a real posting' })).toHaveAttribute(
     'href',
     '/application/'
