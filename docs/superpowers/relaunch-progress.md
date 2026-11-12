@@ -62,6 +62,9 @@ end of every working pass. Delete it in the final pull request.
 - 2026-11-12: storage panel on the dashboard (`StoragePanel`).
 - 2026-11-12: Five Whys offers a model-written follow-up question when the
   browser's own model is ready (`SharperWhy`).
+- 2026-11-12: Glow Up can write likely questions on the device; share images
+  for `/application/` and `/pay/`; privacy page states what stays on the
+  device and how on-device AI works.
 
 ## Engine follow-ups to hand back
 
@@ -102,9 +105,9 @@ end of every working pass. Delete it in the final pull request.
   rehearsal room and Networking rep loop (after the speech library lands);
   Five Whys: start from an experience, identity statement from own phrases,
   send to a story or intro;
-  homepage specimen hero (plates and nav are done); OG images for
-  `/application/` and `/pay/`; offline and install;
-  privacy copy; DESIGN.md specimen section.
+  homepage specimen hero (plates and nav are done);  offline and install;
+  DESIGN.md specimen section; README and docs/decisions.md entries for the
+  relaunch; llms.txt and sitemap check for the new pages.
 - Posting engine noise: plain description sentences can come through as
   unclassified requirements; the student dismisses them.
 - The mobile glow-up browser test is slow (8 s) and can time out when

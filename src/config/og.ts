@@ -4,7 +4,7 @@
  * current path with ogImageFor(); pages can still pass an explicit `image`.
  */
 
-export type OgAccent = 'foam' | 'gold' | 'iris' | 'love';
+export type OgAccent = 'foam' | 'gold' | 'iris' | 'love' | 'lichen' | 'madder';
 
 export interface OgPage {
   /** Small uppercase line above the title. */
@@ -63,6 +63,22 @@ export const OG_PAGES: Record<string, OgPage> = {
       'Turn a job description into the skills it tests and a packet of stories that answer them.',
     accent: 'love',
   },
+  application: {
+    eyebrow: 'Plate V · Apply',
+    plate: 'V',
+    title: 'Paste the posting once. Work it through.',
+    description:
+      'What it asks for, where you stand, two bullets, a letter, and a last check before you send.',
+    accent: 'lichen',
+  },
+  pay: {
+    eyebrow: 'Plate VI · Weigh',
+    plate: 'VI',
+    title: 'What the job tends to pay, and what the offer comes to.',
+    description:
+      'Dated percentiles from public wage data, and an offer put into plain hourly and yearly terms.',
+    accent: 'madder',
+  },
   dashboard: {
     eyebrow: 'Your studio',
     title: 'Everything you saved, in one place.',
@@ -92,6 +108,8 @@ const PATH_TO_SLUG: Record<string, string> = {
   '/networking-practice/': 'networking-practice',
   '/interview-glow-up/': 'interview-glow-up',
   '/interview-glow-up/workspace/': 'interview-glow-up',
+  '/application/': 'application',
+  '/pay/': 'pay',
   '/dashboard/': 'dashboard',
   '/about/': 'about',
   '/privacy/': 'privacy',
