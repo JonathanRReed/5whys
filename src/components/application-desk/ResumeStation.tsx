@@ -27,7 +27,11 @@ function bulletsOf(doc: ResumeDoc): { id: string; text: string }[] {
     .filter((line): line is ResumeLine => Boolean(line?.bullet && !line.continuationOf))
     .map((line) => ({
       id: line.id,
-      text: [line, ...(tails.get(line.id) ?? [])].map((part) => part.text.trim()).join(' '),
+      // A pasted resume keeps its typed dash or dot; the list draws its own.
+      text: [line, ...(tails.get(line.id) ?? [])]
+        .map((part) => part.text.trim())
+        .join(' ')
+        .replace(/^[-–•*◦○●▪·]\s+/, ''),
     }));
 }
 

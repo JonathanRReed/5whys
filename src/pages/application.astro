@@ -31,7 +31,8 @@ const noScript = [
       accent="lichen"
     />
     <GuideCoach client:load tool="application" />
-    <section class="mx-auto w-full max-w-6xl">
+    {/* Room held for the tool, so the footer does not jump when it loads. */}
+    <section class="mx-auto min-h-[70svh] w-full max-w-6xl">
       <ErrorBoundary client:load>
         <ApplicationDesk client:load />
       </ErrorBoundary>
