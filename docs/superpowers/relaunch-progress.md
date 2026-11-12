@@ -234,10 +234,12 @@ Fixed by the lead: guide bar is server-rendered (it popped in, layout shift
 0.22 on the desk); "thank you" no longer passes as an ask; "I'm writing to"
 is caught as a generic opener; the analytics host is gone from the CSP.
 
-With a builder (GPT): precache diet (12.5 MB on first visit), reuse of
-unchanged assets across deploys, readable failure when a lazy part is not
-downloaded, backup import validation, size cap, double-submit guard, and the
-"what the backup leaves out" sentence.
+Merged (`t3/fix-offline-cache-backup-validation`): precache cut from 322
+files and 6.2 MB gzip to 83 files and 1.08 MB gzip; unchanged assets are
+reused across deploys; `src/lib/lazy-feature.ts` gives a readable message
+when a lazy part is not downloaded; backup import validates every store, has
+a 5 MiB cap and a double-submit guard, and the card says what it leaves out.
+Suite after merge: 958 unit, 88 browser, 2 skipped.
 
 Still to do after the fix builders merge:
 - DOCX upload scores nothing (old extractor flattens it): verify the Resume
