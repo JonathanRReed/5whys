@@ -340,6 +340,28 @@ Suite after merge and fix: 1014 unit, 88 browser.
 Twice a commit went out with failing browser tests because the commit was
 chained unconditionally. Run the suite, read the result, then commit.
 
+### Interview content repairs merged (`t3/repair-interview-questions-and-stories`)
+
+Questions come only from real requirements and read like an interviewer's;
+the bank is tagged by audience and chosen from the profile (career changers
+always get the change, the layoff and the gap); each question carries "what
+a strong answer shows" and "a common mistake"; the room offers the visitor's
+own story; ten operations and service skills added; multi-word phrases beat
+their parts; "What this job tests" shows counts with a denominator; Glow Up
+copy is in plain words by profile. `glowup-banks.ts` is now a folder.
+
+Left from that builder's notes:
+- Counts still include lines the workspace decode mis-sorts (pay line,
+  "other duties as assigned", eligibility lines).
+- Re-parsing in the workspace does not carry confirm or dismiss decisions.
+- Long task questions quote the posting verbatim and can assume a tool.
+- The Glow Up landing page is built once, so it shows student and work
+  examples side by side; the model prompt ignores `audience`.
+- "Another follow-up" returns the same follow-up.
+
+Suite after merge: 1401 unit, 88 browser, 2 skipped. All five walkthrough
+repair branches are merged.
+
 ## In flight (builders, started 2026-11-12)
 
 | Piece | Model | Paths |
