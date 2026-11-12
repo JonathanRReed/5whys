@@ -314,8 +314,10 @@ export default function RehearsalRoom() {
     try {
       const { transcribe } = await loadFeature(import('../../lib/speech'));
       const transcript = await transcribe(audio.blob);
+      // Only an untouched answer is filled in. If the visitor has started
+      // writing or correcting it while this ran, their words stay.
       setTake((existing) =>
-        existing && existing.audio === audio
+        existing && existing.audio === audio && !existing.text.trim()
           ? { ...existing, text: transcript.text, segments: transcript.segments }
           : existing
       );
@@ -329,13 +331,16 @@ export default function RehearsalRoom() {
     if (!recorder.current) return;
     setRecording(false);
     setLevel(0);
+    // Let go of this recorder before anything slow. A new recording can start
+    // while a transcript is still being written, and must not be dropped by it.
+    const stopped = recorder.current;
+    recorder.current = null;
     try {
-      const audio = await recorder.current.stop();
+      const audio = await stopped.stop();
       await finishWith(audio, '', audio.durationMs / 1000);
     } catch {
       setNotice('The recording could not be saved. Try again.');
     }
-    recorder.current = null;
   };
 
   const startTyping = () => {

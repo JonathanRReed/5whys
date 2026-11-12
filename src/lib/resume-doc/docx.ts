@@ -169,14 +169,20 @@ export async function extractDocx(bytes: Uint8Array, name = 'resume.docx'): Prom
           )?.value
         : undefined;
     const fontSize = Number(attr(size, 'val')) / 2;
+    // Shift+Enter inside a list item is still one bullet: later segments
+    // continue the first instead of becoming bullets of their own.
+    let first: string | null = null;
     paragraphText(paragraph)
       .split('\n')
       .forEach((text, segment) => {
         if (!text.trim()) return;
+        const id = `docx:${origin.part}:${index}:${segment}`;
+        const continues = bullet && first !== null ? first : undefined;
+        first ??= id;
         textLength += text.length;
         if (textLength > 200_000) throw new Error('This DOCX contains too much text.');
         lines.push({
-          id: `docx:${origin.part}:${index}:${segment}`,
+          id,
           text: text.trimEnd(),
           pageIndex: 0,
           box: null,
@@ -184,6 +190,7 @@ export async function extractDocx(bytes: Uint8Array, name = 'resume.docx'): Prom
           fontSize: fontSize > 0 ? fontSize : null,
           origin,
           bullet: bullet || /^\s*[-•*◦○●▪]\s+/.test(text),
+          ...(continues ? { continuationOf: continues } : {}),
           items: [],
         });
       });

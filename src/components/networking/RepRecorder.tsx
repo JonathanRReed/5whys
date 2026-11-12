@@ -87,12 +87,13 @@ export default function RepRecorder({ label }: Props) {
     if (!recorder.current) return;
     setRecording(false);
     setLevel(0);
+    const stopped = recorder.current;
+    recorder.current = null;
     try {
-      setTake(await recorder.current.stop());
+      setTake(await stopped.stop());
     } catch {
       setNotice('The recording could not be saved. Try again.');
     }
-    recorder.current = null;
   };
 
   const keep = async () => {
