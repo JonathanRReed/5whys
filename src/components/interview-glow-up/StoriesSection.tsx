@@ -567,6 +567,15 @@ export default function StoriesSection({
               {editingId === 'new' && currentPacket ? 'Save and add to packet' : 'Save story'}
             </button>
           </div>
+          {(!formData.primarySkillId || !formData.play) && (
+            <p role="status" className="text-xs text-muted-foreground">
+              {!formData.primarySkillId && !formData.play
+                ? 'To save, choose the skill this story proves and write what you did.'
+                : !formData.primarySkillId
+                  ? 'To save, choose the skill this story proves.'
+                  : 'To save, write what you did.'}
+            </p>
+          )}
         </div>
       )}
 

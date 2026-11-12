@@ -209,7 +209,9 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
                 <h2 className="font-display text-lg font-semibold leading-snug">{step.title}</h2>
                 <p className="text-sm leading-relaxed">{step.body}</p>
                 {step.why && (
-                  <p className="text-xs leading-relaxed text-muted-foreground">{step.why}</p>
+                  <p className="hidden text-xs leading-relaxed text-muted-foreground sm:block">
+                    {step.why}
+                  </p>
                 )}
                 <div className="flex flex-wrap gap-2 pt-1">
                   {step.target && (

@@ -13,15 +13,17 @@ import BulletsStation from './BulletsStation';
 import LetterStation from './LetterStation';
 import PostingStation from './PostingStation';
 import QualificationsStation from './QualificationsStation';
+import ResumeStation from './ResumeStation';
 import SendStation from './SendStation';
 import { useDesk } from './useDesk';
 
-type Station = 'posting' | 'qualifications' | 'bullets' | 'letter' | 'send';
+type Station = 'posting' | 'qualifications' | 'bullets' | 'resume' | 'letter' | 'send';
 
 const STATIONS: { id: Station; label: string }[] = [
   { id: 'posting', label: 'Posting' },
   { id: 'qualifications', label: 'Qualifications' },
   { id: 'bullets', label: 'Bullets' },
+  { id: 'resume', label: 'Resume' },
   { id: 'letter', label: 'Letter' },
   { id: 'send', label: 'Before you send' },
 ];
@@ -139,6 +141,7 @@ export default function ApplicationDesk() {
     posting: Boolean(role?.bullets.length),
     qualifications: filled.qualifications,
     bullets: filled.bullets,
+    resume: filled.resume,
     letter: filled.letter,
     send: filled['before-you-send'],
   };
@@ -216,6 +219,9 @@ export default function ApplicationDesk() {
           </TabsContent>
           <TabsContent value="bullets">
             <BulletsStation desk={desk} />
+          </TabsContent>
+          <TabsContent value="resume">
+            <ResumeStation desk={desk} />
           </TabsContent>
           <TabsContent value="letter">
             <LetterStation desk={desk} />

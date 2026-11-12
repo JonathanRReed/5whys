@@ -84,13 +84,15 @@ end of every working pass. Delete it in the final pull request.
 - 2026-11-12: guides for all six tools merged
   (`t3/add-four-tool-guided-walkthroughs`); sample posting button on the desk
   and in Glow Up (`src/lib/posting/sample.ts`).
+- 2026-11-12: homepage working specimen (`HomeSpecimen`); Glow Up story form
+  says what is missing before Save; coach hides the "why" line on phones;
+  desk Resume station (per-application bullet selection and tailored .docx).
 
 ## Tool-flow findings from writing the guides (to fix)
 
 - Networking: a scenario is preselected, so choosing one cannot be detected;
   there is no sample intro; ratings are only detectable through a hint.
-- Glow Up: "+ New story" leaves the primary skill empty and Save stays
-  disabled with no explanation; the HUD modal covers the coach.
+- Glow Up: the HUD modal covers the coach.
 - Pay: the worksheet is not saved without an application.
 - Coach on a phone in OpenDyslexic covers up to about 45% of the screen on
   the longest step. Consider starting collapsed on phones.
@@ -134,7 +136,7 @@ end of every working pass. Delete it in the final pull request.
 - `rules.ts` in local-ai imports from `components/career-5whys/shared.ts`;
   move the pure helpers into `src/lib` when touching Five Whys.
 - Still to build (lead): dashboard links into the desk and dated steps;
-  desk resume station (per-application bullet selection and export); worksheet print export for the bullets flow;
+  worksheet print export for the bullets flow;
   Networking rep loop with recording and playback (reuse `createRecorder`,
   `TakeReview` ideas); a guide for the rehearsal room;
   Five Whys: start from an experience, identity statement from own phrases,
