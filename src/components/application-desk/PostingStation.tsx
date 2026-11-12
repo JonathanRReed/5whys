@@ -16,6 +16,7 @@ import {
   confirmsByDefault,
   dismissRequirement,
   findVaguePhrases,
+  hiringCondition,
   isSourceSpan,
   type PostingRequirement,
   type PostingSection,
@@ -23,6 +24,7 @@ import {
   requirementsFromBullets,
   restoreRequirement,
   SAMPLE_POSTING,
+  type SetAsideReason,
   setRequirementSection,
 } from '../../lib/posting';
 import { cn } from '../../lib/utils';
@@ -73,6 +75,34 @@ function shortText(text: string): string {
   return text.length > 60 ? `${text.slice(0, 57).trimEnd()}...` : text;
 }
 
+/** Says so when a line is about who may be hired rather than what they can do. */
+function ConditionNote({ text }: { text: string }) {
+  const condition = hiringCondition(text);
+  if (!condition) return null;
+  return (
+    <p className="text-xs leading-relaxed text-muted-foreground">
+      <span className="font-medium text-foreground">{condition.label}. </span>
+      {condition.note}
+    </p>
+  );
+}
+
+/** Why the sorter left a line out, in a few plain words. */
+const SET_ASIDE_LABEL: Record<Exclude<SetAsideReason, 'heading'>, string> = {
+  'too-short': 'Too short to be a requirement',
+  boilerplate: 'Legal or benefits text',
+  'header-line': 'Title or location',
+  'job-details': 'A detail of the job',
+  'outside-requirements': 'Under a heading that is not about requirements',
+  'group-lead': 'Introduces the lines under it',
+  'over-limit': 'Past the limit for one posting',
+  'application-logistics': 'How or when to apply',
+  'company-description': 'About the employer',
+  'role-summary': 'A summary of the role',
+  pitch: 'Selling the job',
+  description: 'Reads as description',
+};
+
 /** Glow Up expects skill suggestions on each requirement; add them where missing. */
 function withSkills(bullets: DecodedBullet[]): DecodedBullet[] {
   return bullets.map((bullet) => {
@@ -111,6 +141,14 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
     [role?.bullets]
   );
   const vague = React.useMemo(() => findVaguePhrases(sourceText), [sourceText]);
+  // Lines the sorter left out, minus headings and any the visitor has since added.
+  const setAside = React.useMemo(() => {
+    if (!sourceText.trim()) return [];
+    const kept = new Set(requirements.map((r) => r.text.trim()));
+    return parsePosting(sourceText).setAside.filter(
+      (line) => line.reason !== 'heading' && line.text.trim() && !kept.has(line.text.trim())
+    );
+  }, [sourceText, requirements]);
 
   React.useEffect(() => {
     setDraft(role?.rawJdText ?? '');
@@ -406,6 +444,7 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
                     )}
                   >
                     <p className="text-sm leading-relaxed text-foreground">{requirement.text}</p>
+                    <ConditionNote text={requirement.text} />
                     <div className="flex flex-wrap items-center gap-2">
                       {/* A toggle, so focus stays here and a second press undoes it. */}
                       <Button
@@ -516,6 +555,47 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
                     }
                   >
                     Restore<span className="sr-only">: {shortText(requirement.text)}</span>
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
+
+        {setAside.length > 0 && (
+          <details className="text-sm" data-testid="set-aside">
+            <summary className="cursor-pointer text-muted-foreground">
+              {setAside.length} {setAside.length === 1 ? 'line' : 'lines'} set aside as not a
+              requirement
+            </summary>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+              If one of these is something the job asks of you, add it and it joins the list above.
+            </p>
+            <ul className="mt-2 space-y-2">
+              {setAside.map((line) => (
+                <li key={line.start} className="flex items-start justify-between gap-3">
+                  <span className="min-w-0">
+                    <span className="text-muted-foreground">{line.text.trim()}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {SET_ASIDE_LABEL[line.reason as Exclude<SetAsideReason, 'heading'>]}
+                    </span>
+                  </span>
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="ghost"
+                    onClick={() =>
+                      act(
+                        addRequirement(requirements, line.text, {
+                          section: 'unclassified',
+                          status: 'suggested',
+                        }),
+                        'Added to the list.',
+                        'desk-asks-heading'
+                      )
+                    }
+                  >
+                    Add<span className="sr-only">: {shortText(line.text.trim())}</span>
                   </Button>
                 </li>
               ))}

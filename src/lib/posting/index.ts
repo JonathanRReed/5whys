@@ -4,6 +4,7 @@
  * counts, and vague-phrase questions. Pure functions, no network, no DOM.
  */
 
+export { type ConditionKind, type HiringCondition, hiringCondition } from './conditions';
 export {
   type CoverageRow,
   type CoverageState,

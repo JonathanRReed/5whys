@@ -10,6 +10,7 @@ import {
   type CoverageRow,
   describeCoverage,
   describeParts,
+  hiringCondition,
   type PostingRequirement,
   type PostingSection,
   requirementsFromBullets,
@@ -25,6 +26,13 @@ const STATUS: { value: QualificationStatus; label: string }[] = [
   { value: 'have', label: 'Have it' },
   { value: 'maybe', label: 'Maybe' },
   { value: 'not-yet', label: 'Not yet' },
+];
+
+/** A condition of hiring is met or not; there is nothing to plan or to earn. */
+const CONDITION_STATUS: { value: QualificationStatus; label: string }[] = [
+  { value: 'have', label: 'I meet it' },
+  { value: 'maybe', label: 'Not sure' },
+  { value: 'not-yet', label: 'I do not' },
 ];
 
 /** Rows are grouped the way the posting groups them. */
@@ -80,9 +88,19 @@ export default function QualificationsStation({ desk }: { desk: DeskState }) {
   const [step, setStep] = React.useState('');
   const [due, setDue] = React.useState('');
 
-  const requirements = React.useMemo(
+  const confirmed = React.useMemo(
     () => requirementsFromBullets(role?.bullets ?? []).filter((r) => r.status === 'confirmed'),
     [role?.bullets]
+  );
+  // Work authorization, a minimum age, a background check: kept apart, because
+  // they are not skills to show or to get.
+  const conditions = React.useMemo(
+    () => confirmed.filter((r) => hiringCondition(r.text) !== null),
+    [confirmed]
+  );
+  const requirements = React.useMemo(
+    () => confirmed.filter((r) => hiringCondition(r.text) === null),
+    [confirmed]
   );
   const coverage = React.useMemo(
     () => (resumeText.trim() ? summarizeCoverage(requirements, resumeText) : null),
@@ -95,7 +113,7 @@ export default function QualificationsStation({ desk }: { desk: DeskState }) {
   const tally = { have: 0, maybe: 0, 'not-yet': 0, unset: 0 };
   for (const requirement of requirements) tally[rows.get(requirement.id)?.status ?? 'unset'] += 1;
 
-  if (!requirements.length) {
+  if (!confirmed.length) {
     return (
       <p className="max-w-[60ch] text-sm leading-relaxed text-muted-foreground">
         Confirm some requirements on the Posting station first. Each one becomes a row here, where
@@ -172,6 +190,56 @@ export default function QualificationsStation({ desk }: { desk: DeskState }) {
     );
   };
 
+  const renderCondition = (requirement: PostingRequirement) => {
+    const status = rows.get(requirement.id)?.status ?? 'unset';
+    const condition = hiringCondition(requirement.text);
+    return (
+      <li
+        key={requirement.id}
+        className="grid gap-3 rounded-xl border border-border/40 p-4 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]"
+      >
+        <div className="min-w-0 space-y-2">
+          <p className="text-sm leading-relaxed text-foreground">{requirement.text}</p>
+          <fieldset className="m-0 min-w-0 border-0 p-0">
+            <legend className="sr-only">Whether you meet: {requirement.text}</legend>
+            <div className="flex flex-wrap gap-1.5">
+              {CONDITION_STATUS.map((option) => (
+                <label key={option.value} className="relative">
+                  <input
+                    type="radio"
+                    name={`status-${requirement.id}`}
+                    checked={status === option.value}
+                    onChange={() =>
+                      changeDesks((data) =>
+                        setQualification(data, appId, requirement.id, { status: option.value })
+                      )
+                    }
+                    className="peer absolute inset-0 cursor-pointer opacity-0"
+                  />
+                  <span
+                    className={cn(
+                      'inline-flex min-h-9 items-center rounded-lg border border-border/50 px-3 text-sm text-muted-foreground transition-colors',
+                      'peer-hover:text-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring',
+                      'peer-checked:border-lichen peer-checked:bg-lichen/15 peer-checked:text-foreground'
+                    )}
+                  >
+                    {option.label}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        </div>
+        {condition && (
+          <div className="min-w-0 space-y-1 text-sm leading-relaxed">
+            <p className="font-medium text-foreground">{condition.label}</p>
+            <p className="text-muted-foreground">{condition.note}</p>
+          </div>
+        )}
+      </li>
+    );
+  };
+
   return (
     <div className="space-y-10">
       <div className="space-y-2">
@@ -181,12 +249,15 @@ export default function QualificationsStation({ desk }: { desk: DeskState }) {
           will show it or how you could get it.
         </p>
         <p className="text-sm font-medium text-foreground" data-testid="standing-line">
-          {tally.unset === requirements.length
-            ? `${requirements.length} to mark.`
-            : `${tally.have} have it, ${tally.maybe} maybe, ${tally['not-yet']} not yet${
-                tally.unset ? `, ${tally.unset} still to mark` : ''
-              }.`}{' '}
-          {tally.unset === 0 &&
+          {requirements.length === 0
+            ? 'Every confirmed line is a condition of the job, listed below.'
+            : tally.unset === requirements.length
+              ? `${requirements.length} to mark.`
+              : `${tally.have} have it, ${tally.maybe} maybe, ${tally['not-yet']} not yet${
+                  tally.unset ? `, ${tally.unset} still to mark` : ''
+                }.`}{' '}
+          {requirements.length > 0 &&
+            tally.unset === 0 &&
             (tally['not-yet'] + tally.maybe === 0
               ? 'You can show every one of these. Apply.'
               : tally.have >= tally['not-yet']
@@ -221,6 +292,20 @@ export default function QualificationsStation({ desk }: { desk: DeskState }) {
             </section>
           );
         })}
+        {conditions.length > 0 && (
+          <section aria-labelledby="qual-group-conditions" className="space-y-3">
+            <div className="space-y-1">
+              <h3 id="qual-group-conditions" className="text-lg font-semibold">
+                Conditions of the job
+              </h3>
+              <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
+                These are about who can be hired, not what you can do. They are not counted above,
+                and they do not belong on a resume.
+              </p>
+            </div>
+            <ul className="space-y-3">{conditions.map(renderCondition)}</ul>
+          </section>
+        )}
       </div>
 
       <section className="max-w-3xl space-y-4 border-t border-border/40 pt-6">
