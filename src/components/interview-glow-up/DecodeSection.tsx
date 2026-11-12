@@ -1,9 +1,9 @@
 import * as React from 'react';
 import {
-  detectSkillsFromText,
-  extractRequirementLines,
-  getRepeatedTerms,
+  type Audience,
   getSkillName,
+  postingRepeatedTerms,
+  usesStudentExamples,
 } from '../../lib/glowup-banks';
 import {
   createRole,
@@ -11,15 +11,13 @@ import {
   type DecodedRole,
   ensurePacketForRole,
   type GlowUpData,
-  generateId,
-  getSkillFrequencyMap,
-  getTaggedBulletCount,
   getTopGaps,
+  POSTING_ENGINE_VERSION,
+  skillCounts,
   switchRole,
   updateRole,
 } from '../../lib/glowup-store';
-import { SAMPLE_POSTING } from '../../lib/posting';
-import { isStudentLike, readProfile } from '../../lib/profile';
+import { decodePostingToBullets, type PostingSection, SAMPLE_POSTING } from '../../lib/posting';
 import { cn } from '../../lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { PartyIcon, SearchIcon } from './icons';
@@ -29,14 +27,23 @@ type Props = {
   data: GlowUpData;
   setData: React.Dispatch<React.SetStateAction<GlowUpData>>;
   currentRole: DecodedRole | undefined;
+  audience?: Audience;
 };
 
 type RoleFields = Pick<
   DecodedRole,
-  'jobTitle' | 'company' | 'jdUrl' | 'rawJdText' | 'parsedJdText'
+  'jobTitle' | 'company' | 'jdUrl' | 'rawJdText' | 'parsedJdText' | 'postingEngineVersion'
 >;
 
-/** A title for the role when none was typed: the first short line of the JD. */
+/** How each posting section is named beside a line. */
+const SECTION_LABELS: Record<PostingSection, string> = {
+  required: 'Required',
+  preferred: 'Nice to have',
+  responsibility: 'Duty',
+  unclassified: 'Not sorted, so not counted',
+};
+
+/** A title for the role when none was typed: the first short line of the posting. */
 function deriveTitle(rawJdText: string): string {
   const first = rawJdText
     .split('\n')
@@ -52,8 +59,8 @@ function deriveTitle(rawJdText: string): string {
 
 const EMPTY_FIELDS: RoleFields = { jobTitle: '', company: '', jdUrl: '', rawJdText: '' };
 
-export default function DecodeSection({ data, setData, currentRole }: Props) {
-  const student = isStudentLike(readProfile());
+export default function DecodeSection({ data, setData, currentRole, audience = 'student' }: Props) {
+  const student = usesStudentExamples(audience);
   // Before a role exists, edits live here; the first keystroke creates the
   // role and from then on every field is read from and written to the store.
   const [pending, setPending] = React.useState<RoleFields>(EMPTY_FIELDS);
@@ -92,6 +99,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
       jdUrl: merged.jdUrl || undefined,
       rawJdText: merged.rawJdText,
       parsedJdText: merged.parsedJdText,
+      ...(merged.postingEngineVersion ? { postingEngineVersion: merged.postingEngineVersion } : {}),
       bullets: nextBullets ?? [],
     });
     setData(ensurePacketForRole(created, created.currentRoleId as string));
@@ -100,23 +108,18 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
 
   const setBullets = (next: DecodedBullet[]) => commit({}, next);
 
-  const parseJD = () => {
+  // The same posting engine as the Application Desk, so every line carries
+  // its section (required, nice to have, duty) and the rehearsal room can
+  // tell a requirement from the employer's address.
+  const parsePosting = () => {
     if (!fields.rawJdText.trim()) return;
-    const { requirements, skippedCount: skipped } = extractRequirementLines(fields.rawJdText);
-    const parsed: DecodedBullet[] = requirements.map((line) => {
-      const suggestions = detectSkillsFromText(line);
-      return {
-        id: generateId(),
-        text: line,
-        status: 'active' as const,
-        primarySkillId: suggestions[0]?.skillId ?? null,
-        secondarySkillIds: suggestions.slice(1).map((s) => s.skillId),
-        suggestion: suggestions,
-      };
-    });
-    setSkippedCount(skipped);
+    const { parsed, bullets: parsedBullets } = decodePostingToBullets(fields.rawJdText);
+    setSkippedCount(parsed.setAside.filter((line) => line.reason !== 'heading').length);
     const title = fields.jobTitle.trim() ? {} : { jobTitle: deriveTitle(fields.rawJdText) };
-    commit({ ...title, parsedJdText: fields.rawJdText }, parsed);
+    commit(
+      { ...title, parsedJdText: parsed.text, postingEngineVersion: POSTING_ENGINE_VERSION },
+      parsedBullets
+    );
   };
 
   const startNewRole = () => {
@@ -125,14 +128,20 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
     setData({ ...data, currentRoleId: null, currentPacketId: null });
   };
 
-  // Frequency, totals, and gaps all read the same saved bullets.
-  const skillFreq = getSkillFrequencyMap(bullets);
-  const taggedBullets = getTaggedBulletCount(bullets);
+  // Counts, totals, and gaps all read the same requirement lines.
+  const { counts: tested, total: requirementTotal } = skillCounts(bullets);
+  const postingSkillIds = tested.map((entry) => entry.skillId);
   const topGaps = getTopGaps(data, bullets);
 
   const repeatedTerms = React.useMemo(
-    () => (fields.rawJdText.trim() ? getRepeatedTerms(fields.rawJdText) : []),
-    [fields.rawJdText]
+    () =>
+      fields.rawJdText.trim()
+        ? postingRepeatedTerms(fields.rawJdText, {
+            company: fields.company,
+            jobTitle: fields.jobTitle,
+          })
+        : [],
+    [fields.rawJdText, fields.company, fields.jobTitle]
   );
 
   // Legacy saved roles may still contain very short lines; flag them.
@@ -207,7 +216,9 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
             type="text"
             value={fields.jobTitle}
             onChange={(e) => commit({ jobTitle: e.target.value })}
-            placeholder={student ? 'e.g., Marketing Intern' : 'e.g., Product Analyst'}
+            placeholder={
+              student ? 'For example, Marketing intern' : 'For example, Operations coordinator'
+            }
             className={inputClass}
           />
           <p className="mt-1 text-xs text-muted-foreground">
@@ -223,7 +234,9 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
             type="text"
             value={fields.company}
             onChange={(e) => commit({ company: e.target.value })}
-            placeholder={student ? 'e.g., City Parks Department' : 'e.g., Acme Corp'}
+            placeholder={
+              student ? 'For example, City Parks Department' : 'For example, Riverside Supply'
+            }
             className={inputClass}
           />
         </div>
@@ -246,21 +259,21 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
           Paste the job posting
         </label>
         <p className="mb-1 text-xs text-muted-foreground">
-          Paste the whole thing. The requirement lines are pulled out, headings and boilerplate are
-          skipped, and each line gets a suggested skill tag.
+          Paste the whole thing. Each line is sorted into required, nice to have, or a duty, the
+          address, pay, and legal text are set aside, and each line gets a suggested skill.
         </p>
         <textarea
           id="jd-text"
           value={fields.rawJdText}
           onChange={(e) => commit({ rawJdText: e.target.value })}
-          placeholder="Paste the entire posting here: responsibilities, requirements, nice-to-haves..."
+          placeholder="Paste the whole posting here: what you would do, what they ask for, what is nice to have..."
           rows={8}
           className={inputClass}
         />
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={parseJD}
+            onClick={parsePosting}
             data-guide="decode-parse"
             disabled={!fields.rawJdText.trim()}
             className="rounded-lg bg-foam px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-foam/90 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
@@ -292,8 +305,8 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
           </div>
           <p className="text-sm font-medium text-foreground">No posting decoded yet</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Paste a job posting above and parse it. The skills it tests become the list your stories
-            need to cover.
+            Paste a job posting above and press "Parse the requirements". The skills it asks for
+            become the list your stories need to cover.
           </p>
         </div>
       )}
@@ -304,8 +317,8 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
             Repeated phrases
           </h4>
           <p className="mb-3 text-xs text-muted-foreground">
-            Phrases that keep showing up in the posting. If a phrase repeats, expect a question
-            about it: prepare a story that covers it.
+            Phrases the posting keeps using, leaving out the employer's name and the job title. If a
+            phrase repeats, expect a question about it and have a story ready.
           </p>
           <div className="flex flex-wrap gap-2">
             {repeatedTerms.map(({ term, count }) => (
@@ -326,8 +339,8 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
               </h3>
               {skippedCount !== null && skippedCount > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  Skipped {skippedCount} {skippedCount === 1 ? 'line' : 'lines'} of headings,
-                  benefits, and boilerplate.
+                  Set aside {skippedCount} {skippedCount === 1 ? 'line' : 'lines'} that are not
+                  requirements, such as pay, benefits, and legal text.
                 </p>
               )}
             </div>
@@ -379,7 +392,12 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                   }}
                   className="mt-1 h-4 w-4 rounded border-border accent-foam"
                 />
-                <div className="flex-1 space-y-2">
+                <div className="min-w-0 flex-1 space-y-2">
+                  {bullet.section && (
+                    <p className="text-xs text-muted-foreground">
+                      {SECTION_LABELS[bullet.section]}
+                    </p>
+                  )}
                   <p
                     className={cn(
                       'text-sm',
@@ -408,6 +426,7 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
                       placeholder="Pick a skill..."
                       aria-label="Skill this requirement tests"
                       className="h-8 text-xs"
+                      first={postingSkillIds}
                     />
                     {bullet.suggestion && bullet.suggestion.length > 0 && (
                       <div className="flex items-center gap-1">
@@ -466,37 +485,36 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
         </div>
       )}
 
-      {skillFreq.size > 0 && (
+      {bullets.length > 0 && (
         <div className="grid gap-4 md:grid-cols-2">
           <div className="rounded-xl border border-border/30 bg-overlay/15 p-4">
             <h4 className="mb-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               What this job tests
             </h4>
-            <p className="mb-3 text-xs text-muted-foreground">
-              Share of tagged requirements that mention each skill.
+            <p className="mb-3 text-xs text-muted-foreground" data-testid="tests-denominator">
+              {requirementTotal > 0
+                ? `Counted over the ${requirementTotal} ${requirementTotal === 1 ? 'line' : 'lines'} sorted as required, nice to have, or a duty. One line can test several skills, so the counts do not add up to ${requirementTotal}.`
+                : 'None of these lines is sorted as a requirement yet. Parse the posting again to sort them.'}
             </p>
-            <div className="space-y-2">
-              {Array.from(skillFreq.entries())
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 8)
-                .map(([skillId, count]) => {
-                  const pct = taggedBullets > 0 ? Math.round((count / taggedBullets) * 100) : 0;
-                  return (
-                    <div key={skillId} className="flex items-center gap-2">
-                      <span className="w-24 truncate text-sm text-foreground">
-                        {getSkillName(skillId)}
-                      </span>
-                      <div className="flex-1 h-2 rounded-full bg-overlay/40">
-                        <div
-                          className="h-full rounded-full bg-foam"
-                          style={{ width: `${Math.min(100, pct)}%` }}
-                        />
-                      </div>
-                      <span className="w-10 text-right text-xs text-muted-foreground">{pct}%</span>
-                    </div>
-                  );
-                })}
-            </div>
+            <ul className="space-y-2">
+              {tested.slice(0, 8).map(({ skillId, count }) => (
+                <li key={skillId} className="space-y-1">
+                  <p className="flex justify-between gap-2 text-sm text-foreground">
+                    <span className="min-w-0">{getSkillName(skillId)}</span>
+                    <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                      {count} of {requirementTotal}{' '}
+                      {requirementTotal === 1 ? 'requirement' : 'requirements'}
+                    </span>
+                  </p>
+                  <div className="h-2 rounded-full bg-overlay/40" aria-hidden="true">
+                    <div
+                      className="h-full rounded-full bg-foam"
+                      style={{ width: `${(count / Math.max(1, requirementTotal)) * 100}%` }}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
           <div className="rounded-xl border border-destructive/25 bg-destructive/5 p-4">
             <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-destructive">

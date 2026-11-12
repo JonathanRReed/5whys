@@ -199,7 +199,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
             <kbd className="rounded bg-overlay/25 px-2 py-0.5">Space</kbd> Search
             <kbd className="rounded bg-overlay/25 px-2 py-0.5">↑↓</kbd> Navigate
             <kbd className="rounded bg-overlay/25 px-2 py-0.5">Enter</kbd> Expand
-            <kbd className="rounded bg-overlay/25 px-2 py-0.5">P</kbd> Panic
+            <kbd className="rounded bg-overlay/25 px-2 py-0.5">P</kbd> Fallback story
             <kbd className="rounded bg-overlay/25 px-2 py-0.5">Esc</kbd> Close
           </div>
         </header>
@@ -227,7 +227,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
               <div className="mb-6 rounded-xl border-2 border-destructive/50 bg-destructive/10 p-4 md:p-6">
                 <div className="mb-2 flex flex-wrap items-center gap-2">
                   <WarningIcon className="h-6 w-6 text-destructive" />
-                  <span className="text-lg font-bold text-destructive">PANIC ANSWER</span>
+                  <span className="text-lg font-bold text-destructive">Fallback story</span>
                 </div>
                 <p className="text-lg leading-relaxed text-foreground">{packet.panicAnswer}</p>
               </div>
@@ -362,7 +362,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
           {/* Right Column - Questions to Ask */}
           <div className="w-full md:w-80 shrink-0 border-l border-border/40 bg-overlay/20 p-6 print:bg-gray-50 print:border-gray-300">
             <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground print:text-gray-600">
-              Questions to Ask
+              Questions to ask them
             </h2>
             <ul className="space-y-3">
               {packet.customQuestions.filter(Boolean).map((q, i) => (
@@ -404,8 +404,8 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
             >
               <WarningIcon className="h-4 w-4" />
               <span>
-                Press <kbd className="rounded bg-overlay/25 px-1.5 py-0.5 text-xs">P</kbd> for panic
-                answer
+                Press <kbd className="rounded bg-overlay/25 px-1.5 py-0.5 text-xs">P</kbd> for your
+                fallback story
               </span>
             </button>
           </footer>

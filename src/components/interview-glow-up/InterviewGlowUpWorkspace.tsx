@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { type Audience, audienceForProfile } from '../../lib/glowup-banks';
 import {
   createDefaultData,
   ensurePacketForRole,
@@ -6,6 +7,7 @@ import {
   loadData,
   saveData,
 } from '../../lib/glowup-store';
+import { readProfile } from '../../lib/profile';
 import { Button } from '../ui/button';
 import { Tabs, TabsContent } from '../ui/tabs';
 import DecodeSection from './DecodeSection';
@@ -33,6 +35,8 @@ export default function InterviewGlowUpWorkspace() {
   const [hydrated, setHydrated] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<Tab>('decode');
   const [showHUD, setShowHUD] = React.useState(false);
+  // Who is preparing, from the career review. Read after mount, like the data.
+  const [audience, setAudience] = React.useState<Audience>('student');
   // The HUD opens from two different buttons, so Radix cannot restore focus on
   // its own. Remember what was focused and hand it back when the HUD closes.
   const hudOpenerRef = React.useRef<HTMLElement | null>(null);
@@ -59,6 +63,7 @@ export default function InterviewGlowUpWorkspace() {
     if (loaded.currentRoleId) loaded = ensurePacketForRole(loaded, loaded.currentRoleId);
     loadedJsonRef.current = JSON.stringify(loaded);
     setData(loaded);
+    setAudience(audienceForProfile(readProfile()));
     setHydrated(true);
     const fromUrl = readTabFromUrl();
     if (fromUrl) setActiveTab(fromUrl);
@@ -145,7 +150,7 @@ export default function InterviewGlowUpWorkspace() {
           />
         </svg>
         <span>
-          <strong>No data leaves your browser.</strong> Everything saves here as you type.
+          <strong>Nothing you write leaves this browser.</strong> Everything saves here as you type.
         </span>
       </div>
 
@@ -197,7 +202,12 @@ export default function InterviewGlowUpWorkspace() {
 
         <div className="rounded-2xl border border-border/35 bg-overlay/20 p-4 sm:p-6">
           <TabsContent value="decode">
-            <DecodeSection data={data} setData={setData} currentRole={currentRole} />
+            <DecodeSection
+              data={data}
+              setData={setData}
+              currentRole={currentRole}
+              audience={audience}
+            />
           </TabsContent>
           <TabsContent value="stories">
             <StoriesSection
@@ -206,6 +216,7 @@ export default function InterviewGlowUpWorkspace() {
               currentRole={currentRole}
               currentPacket={currentPacket}
               onGoToDecode={() => setActiveTab('decode')}
+              audience={audience}
             />
           </TabsContent>
           <TabsContent value="vault">
@@ -220,6 +231,7 @@ export default function InterviewGlowUpWorkspace() {
               onLaunchHUD={openHUD}
               onGoToStories={() => setActiveTab('stories')}
               onGoToDecode={() => setActiveTab('decode')}
+              audience={audience}
             />
           </TabsContent>
         </div>

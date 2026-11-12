@@ -466,6 +466,32 @@ export function updatePacket(
 // Query Helpers
 // ============================================================================
 
+/** Sections that hold requirements, in the order the room asks about them. */
+const REQUIREMENT_SECTIONS: readonly PostingSection[] = ['required', 'responsibility', 'preferred'];
+
+/**
+ * The lines of a posting that count as requirements. When the visitor has
+ * confirmed any, only those; otherwise the lines sorted as required, a duty,
+ * or preferred. Never a dismissed or ignored line, and never an unsorted one
+ * (a header, an address, a description of the employer). Ordered required,
+ * duties, preferred, then anything confirmed from another section, keeping
+ * posting order within each.
+ */
+export function requirementBullets(bullets: readonly DecodedBullet[]): DecodedBullet[] {
+  const live = bullets.filter((b) => b.status !== 'ignored');
+  const confirmed = live.filter((b) => b.confirmed === true);
+  const pool = confirmed.length > 0 ? confirmed : live;
+  const rank = (b: DecodedBullet) => {
+    const index = REQUIREMENT_SECTIONS.indexOf(b.section ?? 'unclassified');
+    return index === -1 ? REQUIREMENT_SECTIONS.length : index;
+  };
+  return pool
+    .filter((b) => confirmed.length > 0 || rank(b) < REQUIREMENT_SECTIONS.length)
+    .map((b, order) => ({ b, order }))
+    .sort((x, y) => rank(x.b) - rank(y.b) || x.order - y.order)
+    .map(({ b }) => b);
+}
+
 /**
  * Skill frequency across a set of bullets. Takes the bullet array directly so
  * callers can pass either a saved role's bullets or the unsaved editor state;
@@ -476,23 +502,39 @@ export function getSkillFrequencyMap(bullets: DecodedBullet[]): Map<string, numb
 
   for (const bullet of bullets) {
     if (bullet.status === 'ignored') continue;
-
-    if (bullet.primarySkillId) {
-      freq.set(bullet.primarySkillId, (freq.get(bullet.primarySkillId) || 0) + 1);
-    }
-    for (const skillId of bullet.secondarySkillIds) {
-      freq.set(skillId, (freq.get(skillId) || 0) + 1);
-    }
+    // One line counts once per skill, however it is tagged.
+    const skills = new Set(
+      [bullet.primarySkillId, ...(bullet.secondarySkillIds ?? [])].filter((id): id is string =>
+        Boolean(id)
+      )
+    );
+    for (const skillId of skills) freq.set(skillId, (freq.get(skillId) || 0) + 1);
   }
 
   return freq;
 }
 
-/** Count of active bullets that carry at least one skill tag. */
-export function getTaggedBulletCount(bullets: DecodedBullet[]): number {
-  return bullets.filter(
-    (b) => b.status === 'active' && (b.primarySkillId || b.secondarySkillIds.length > 0)
-  ).length;
+export interface SkillCount {
+  skillId: string;
+  /** Requirement lines that test this skill. */
+  count: number;
+}
+
+/**
+ * What a posting tests, as counts over its requirement lines: "Scheduling,
+ * 4 of 15 requirements". One line can test several skills, so the counts
+ * are not shares and do not add up to the total.
+ */
+export function skillCounts(bullets: readonly DecodedBullet[]): {
+  counts: SkillCount[];
+  total: number;
+} {
+  const requirements = requirementBullets(bullets);
+  const freq = getSkillFrequencyMap(requirements);
+  const counts = [...freq.entries()]
+    .map(([skillId, count]) => ({ skillId, count }))
+    .sort((a, b) => b.count - a.count);
+  return { counts, total: requirements.length };
 }
 
 export function getTopGaps(
@@ -500,7 +542,7 @@ export function getTopGaps(
   bullets: DecodedBullet[],
   count: number = 3
 ): string[] {
-  const freq = getSkillFrequencyMap(bullets);
+  const freq = getSkillFrequencyMap(requirementBullets(bullets));
   const storySkills = new Set<string>();
 
   for (const story of data.stories) {

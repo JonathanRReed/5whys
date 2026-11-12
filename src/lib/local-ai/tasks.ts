@@ -2,6 +2,7 @@
  * The six tasks. Each takes plain input, returns typed output with the tier
  * that produced it, and never throws.
  */
+import { AUDIENCES, type Audience } from '../glowup-banks/audience';
 import { normalizeLine } from '../resume-game/text';
 import { cleanModelText, firstLine, QUESTION_CLAIM_KINDS } from './guards';
 import {
@@ -147,6 +148,7 @@ export function likelyQuestions(
     jobTitle: str(input?.jobTitle),
     company: str(input?.company),
     requirements: strList(input?.requirements).map((line) => line.replace(/\s+/g, ' ').trim()),
+    audience: AUDIENCES.includes(input?.audience as Audience) ? input.audience : undefined,
   };
   return runTask<LikelyQuestionsOutput>(
     {

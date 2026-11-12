@@ -171,7 +171,9 @@ describe('Glow Up bullets', () => {
     const [excel] = parsePosting(POSTING).requirements;
     const bullet = requirementToBullet(excel);
     expect(bullet.primarySkillId).toBe('data-analysis');
-    expect(bullet.suggestion?.[0].matchedKeywords).toEqual(['excel']);
+    // "pivot tables" is a spreadsheet feature, so it is tagged with Excel
+    // rather than as adaptability ("pivot").
+    expect(bullet.suggestion?.[0].matchedKeywords).toEqual(['excel', 'pivot tables']);
 
     const retagged = { ...bullet, primarySkillId: 'attention-to-detail' };
     expect(requirementToBullet(excel, retagged).primarySkillId).toBe('attention-to-detail');

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { getSkillName, SKILL_BANK } from '../../lib/glowup-banks';
+import { getSkillName } from '../../lib/glowup-banks';
 import {
   deleteStory,
   type GlowUpData,
