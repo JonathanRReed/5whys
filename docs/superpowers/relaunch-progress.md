@@ -29,6 +29,11 @@ end of every working pass. Delete it in the final pull request.
 - 2026-11-12: resume document engine merged (`t3/resume-document-engine`).
 - 2026-11-12: machine view in the Resume Game (import, findings, repairs,
   clean DOCX with read-back check, print to PDF), with browser tests.
+- 2026-11-12: local AI layer merged (`t3/local-ai-layer`); storage, desk state
+  and async backup merged (`t3/relaunch-local-storage-application-desk`).
+- 2026-11-12: structured resume persists in IndexedDB; rewrite help in the
+  bullet editor (`RewriteHelp`, `shared/AiText`); on-device AI status in the
+  Aa menu.
 
 ## Engine follow-ups to hand back
 
@@ -46,8 +51,7 @@ end of every working pass. Delete it in the final pull request.
 | Piece | Model | Paths |
 | --- | --- | --- |
 | Posting engine | Opus 5.5 | `src/lib/posting/` |
-| Local AI layer | Opus 5.5 | `src/lib/local-ai/` |
-| Storage, desk state, backup | Opus 5.5 | `src/lib/local-db/`, `src/lib/application-desk.ts`, `studio-backup.ts` |
+| Resume engine follow-up (bullets, wrapped lines) | GPT-6.1 Sol | `src/lib/resume-doc/` |
 | Pay data and lookup | GPT-6.1 Sol | `scripts/pay-data/`, `public/data/pay/`, `src/lib/pay/` |
 | Model hosting and speech spikes | GPT-6.1 Sol | `spikes/`, `scripts/models/` |
 
@@ -63,6 +67,22 @@ end of every working pass. Delete it in the final pull request.
 3. Five Whys and Networking upgrades, dashboard, homepage specimen hero,
    motion pass, offline and install, privacy copy.
 4. Hardening pass and the final pull request.
+
+## Notes for the lead
+
+- Desk APIs: `src/lib/application-desk.ts` (state per application, pay
+  equivalents, `deleteApplication`), `src/lib/local-db` (recordings, resume
+  file and doc, `storageReport`), `src/lib/local-ai` (six tasks, each returns
+  `AiResult` with `source` and `inventedClaims`).
+- `ApplicationsPanel` remove text should also say desk work is deleted.
+- Backup import has no double-click guard.
+- `rules.ts` in local-ai imports from `components/career-5whys/shared.ts`;
+  move the pure helpers into `src/lib` when touching Five Whys.
+- Next interface: `/application/` desk (Plate V, lichen) once the posting
+  engine lands: posting, qualifications, bullets, letter and messages,
+  before you send; then a Storage panel, `/pay/`, the rehearsal room.
+- The mobile glow-up browser test is slow (8 s) and can time out when
+  builders are running in parallel; rerun before treating it as a failure.
 
 ## Open questions for the owner
 
