@@ -75,7 +75,7 @@ exports[`messageVariants prompt > matches its retry snapshot 1`] = `
 {
   "system": "You help a student with their own career writing. Use only facts that are in the input. Do not add numbers, dates, names, employers, tools, or results. Never rate, score, or grade the student or their writing. Write in plain sentence case. Do not use em dashes or exclamation marks.
 
-From the cover letter opener, write three short messages in the student's own voice: a LinkedIn connection note under 300 characters, a follow-up email with a subject line, and what to say in the first minute of an intro call. Reply as JSON: {"linkedInMessage":"...","followUpEmail":{"subject":"...","body":"..."},"introCallOpener":"..."}
+From the cover letter opener, write three short messages in the student's own voice: a LinkedIn connection note under 200 characters, a follow-up email with a subject line, and what to say in the first minute of an intro call. Reply as JSON: {"linkedInMessage":"...","followUpEmail":{"subject":"...","body":"..."},"introCallOpener":"..."}
 
 Your last answer broke these rules. It added things that are not in the input: Monday. Leave them out. Use only words and facts from the input, and follow the reply format exactly.",
   "user": "Cover letter opener: Last spring I ran the campus radio Instagram.
@@ -89,7 +89,7 @@ exports[`messageVariants prompt > matches its snapshot 1`] = `
 {
   "system": "You help a student with their own career writing. Use only facts that are in the input. Do not add numbers, dates, names, employers, tools, or results. Never rate, score, or grade the student or their writing. Write in plain sentence case. Do not use em dashes or exclamation marks.
 
-From the cover letter opener, write three short messages in the student's own voice: a LinkedIn connection note under 300 characters, a follow-up email with a subject line, and what to say in the first minute of an intro call. Reply as JSON: {"linkedInMessage":"...","followUpEmail":{"subject":"...","body":"..."},"introCallOpener":"..."}",
+From the cover letter opener, write three short messages in the student's own voice: a LinkedIn connection note under 200 characters, a follow-up email with a subject line, and what to say in the first minute of an intro call. Reply as JSON: {"linkedInMessage":"...","followUpEmail":{"subject":"...","body":"..."},"introCallOpener":"..."}",
   "user": "Cover letter opener: Last spring I ran the campus radio Instagram.
 Role: Marketing intern
 Company: Northwind

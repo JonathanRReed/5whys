@@ -74,6 +74,13 @@ export function countWords(text: string): number {
 
 /** A page of body text at a normal size holds roughly this many words. */
 export const ONE_PAGE_WORDS = 400;
+/**
+ * A connection note on a free LinkedIn account. Paid accounts allow more;
+ * most students are on free ones, so the note is written to fit those.
+ */
+export const LINKEDIN_NOTE_LIMIT = 200;
+/** What to aim for: three or four short paragraphs that get read. */
+export const LETTER_TARGET_WORDS = { min: 250, max: 350 } as const;
 
 export type SendCheckId =
   | 'names'
@@ -222,7 +229,7 @@ export function runSendChecks({
       label: 'Fits on one page',
       passed: written ? words <= ONE_PAGE_WORDS : null,
       detail: written
-        ? `${words} ${words === 1 ? 'word' : 'words'}. About ${ONE_PAGE_WORDS} fit on a page.`
+        ? `${words} ${words === 1 ? 'word' : 'words'}. Aim for ${LETTER_TARGET_WORDS.min} to ${LETTER_TARGET_WORDS.max}. Past ${ONE_PAGE_WORDS} it will not fit on one page.`
         : 'Nothing written yet.',
     },
     {
@@ -233,7 +240,11 @@ export function runSendChecks({
         confirmed.length === 0
           ? 'Confirm some requirements on the posting first.'
           : written
-            ? `Touches ${used} of ${confirmed.length} confirmed requirements.`
+            ? `Touches ${used} of ${confirmed.length} confirmed requirements.${
+                used > 0 && used < 2 && confirmed.length > 2
+                  ? ' Two or three, each with proof, make a stronger letter.'
+                  : ''
+              }`
             : 'Nothing written yet.',
     },
     {

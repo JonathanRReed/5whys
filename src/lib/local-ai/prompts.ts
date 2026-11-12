@@ -158,7 +158,7 @@ export function buildMessageVariantsPrompt(
   );
   return {
     system: system(
-      'From the cover letter opener, write three short messages in the student\'s own voice: a LinkedIn connection note under 300 characters, a follow-up email with a subject line, and what to say in the first minute of an intro call. Reply as JSON: {"linkedInMessage":"...","followUpEmail":{"subject":"...","body":"..."},"introCallOpener":"..."}',
+      'From the cover letter opener, write three short messages in the student\'s own voice: a LinkedIn connection note under 200 characters, a follow-up email with a subject line, and what to say in the first minute of an intro call. Reply as JSON: {"linkedInMessage":"...","followUpEmail":{"subject":"...","body":"..."},"introCallOpener":"..."}',
       retry
     ),
     user: lines.join('\n'),

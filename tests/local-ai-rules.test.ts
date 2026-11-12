@@ -159,7 +159,7 @@ describe('messageVariants rules', () => {
     const result = await messageVariants(input, rules);
     expect(result.value.linkedInMessage).toContain('Hi Priya');
     expect(result.value.linkedInMessage).toContain('240 to 610');
-    expect(result.value.linkedInMessage.length).toBeLessThanOrEqual(300);
+    expect(result.value.linkedInMessage.length).toBeLessThanOrEqual(200);
     expect(result.value.followUpEmail.subject).toBe(
       'Following up on my Marketing intern application'
     );

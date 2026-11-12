@@ -3,6 +3,7 @@
  * deterministic, and held to the same invented-claim check as model output.
  */
 import { buildPrompts, ensureResponsesLength } from '../../components/career-5whys/shared';
+import { LINKEDIN_NOTE_LIMIT } from '../desk-checks';
 import {
   type Audience,
   detectSkillsFromText,
@@ -298,8 +299,6 @@ function openerSentence(opener: string): string {
   return /[.?]$/.test(best) ? best.replace(/!+$/, '.') : `${best.replace(/!+$/, '')}.`;
 }
 
-const LINKEDIN_LIMIT = 300;
-
 export function messageVariantsRules(input: MessageVariantsInput): MessageVariantsOutput {
   const role = input.role.replace(/\s+/g, ' ').trim() || 'open';
   const company = input.company.replace(/\s+/g, ' ').trim();
@@ -308,10 +307,16 @@ export function messageVariantsRules(input: MessageVariantsInput): MessageVarian
   const line = openerSentence(input.opener);
   const withLine = (text: string) => (line ? `${text} ${line}` : text);
 
-  let linkedInMessage = `${withLine(`Hi ${name}, I am applying for the ${role} role${at}.`)} Would you be open to a short conversation about the team?`;
-  if (linkedInMessage.length > LINKEDIN_LIMIT) {
-    linkedInMessage = `Hi ${name}, I am applying for the ${role} role${at}. Would you be open to a short conversation about the team?`;
-  }
+  // The first form that fits the note: keep the visitor's own line as long as
+  // a shorter ask makes room for it, and drop it only when nothing else fits.
+  const hello = `Hi ${name}, I am applying for the ${role} role${at}.`;
+  const fullAsk = 'Would you be open to a short conversation about the team?';
+  const linkedInMessage =
+    [
+      `${withLine(hello)} ${fullAsk}`,
+      `${withLine(hello)} Would you be open to a short conversation?`,
+      `${withLine(hello)} Could we talk for a few minutes?`,
+    ].find((text) => text.length <= LINKEDIN_NOTE_LIMIT) ?? `${hello} ${fullAsk}`;
 
   const body = [
     `Hi ${name},`,

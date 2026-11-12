@@ -6,10 +6,11 @@ import {
   saveMessageVariant,
   updateLetter,
 } from '../../lib/application-desk';
-import { isGenericOpener } from '../../lib/desk-checks';
+import { isGenericOpener, LINKEDIN_NOTE_LIMIT } from '../../lib/desk-checks';
 import { loadFeature, runFeature } from '../../lib/lazy-feature';
 import type { AiResult } from '../../lib/local-ai';
 import { requirementsFromBullets } from '../../lib/posting';
+import { cn } from '../../lib/utils';
 import { sourceLabel } from '../shared/AiText';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -285,6 +286,27 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
                 </Button>
                 <span className="text-xs text-muted-foreground">{SOURCE_TEXT[variant.source]}</span>
               </div>
+              {kind === 'linkedin' && (
+                <p
+                  className={cn(
+                    'text-xs',
+                    variant.text.length > LINKEDIN_NOTE_LIMIT
+                      ? 'text-foreground'
+                      : 'text-muted-foreground'
+                  )}
+                >
+                  {variant.text.length} characters. A connection note on a free LinkedIn account
+                  holds {LINKEDIN_NOTE_LIMIT}
+                  {variant.text.length > LINKEDIN_NOTE_LIMIT
+                    ? ', so this one would be cut off.'
+                    : '.'}
+                </p>
+              )}
+              {kind === 'follow-up-email' && (
+                <p className="text-xs text-muted-foreground">
+                  Send it once, a week or two after you apply, or after the date they gave you.
+                </p>
+              )}
             </div>
           );
         })}
