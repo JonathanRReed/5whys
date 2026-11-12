@@ -111,7 +111,12 @@ export default function BulletsStation({ desk }: { desk: DeskState }) {
                     and measure.
                   </p>
                 )}
-                {text.trim().length > 12 && <RewriteHelp line={text} />}
+                {text.trim().length > 12 && (
+                  <RewriteHelp
+                    line={text}
+                    noneFollowUp="Add what happened because of the work, or a number you know is true, in your own words above."
+                  />
+                )}
               </div>
             );
           })}

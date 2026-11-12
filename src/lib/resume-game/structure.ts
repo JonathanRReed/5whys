@@ -1,5 +1,5 @@
-import { BULLET_START_PATTERN } from './constants';
 import { normalizeLine } from './text';
+import { startsWithVerb } from './verbs';
 
 /**
  * Resume structure detection.
@@ -52,7 +52,7 @@ function classify(line: string, index: number, wordsInLine: number): SkippedKind
     wordsInLine <= 4 &&
     !SECTION_WORDS.test(line.replace(/[:\s]+$/, '')) &&
     !/\d/.test(line) &&
-    !BULLET_START_PATTERN.test(line)
+    !startsWithVerb(line)
   ) {
     return 'contact';
   }
@@ -64,8 +64,7 @@ function classify(line: string, index: number, wordsInLine: number): SkippedKind
   // "Member, Marketing Club, 2024 - 2025" is a title line, not an achievement,
   // even though it opens with an involvement verb.
   if (DATE_RANGE.test(line) && wordsInLine <= 10 && /[|,•·]/.test(line)) return 'dates';
-  const startsWithVerb = BULLET_START_PATTERN.test(line);
-  if (!startsWithVerb) {
+  if (!startsWithVerb(line)) {
     if (EDUCATION.test(line) && wordsInLine <= 14) return 'education';
     if (DATE_RANGE.test(line) && wordsInLine <= 14) return 'dates';
     if (
@@ -112,7 +111,9 @@ export function detectResumeStructure(text: string): ResumeStructure {
         // PDF extraction can put the result on its own line. Join only a
         // plausible continuation; headings and contact/title lines end it.
         const previous = bullets[bullets.length - 1];
-        const startsAchievement = kind === 'bullet' && BULLET_START_PATTERN.test(line);
+        // With markers in use, an unmarked line that starts in lowercase is a
+        // wrapped continuation, never a new achievement.
+        const startsAchievement = kind === 'bullet' && startsWithVerb(line) && !/^[a-z]/.test(line);
         const isContinuation =
           continuingBullet &&
           !startsAchievement &&

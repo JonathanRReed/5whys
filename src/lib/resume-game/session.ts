@@ -7,12 +7,9 @@ import type { BulletFields, BulletRecord, SignalReport, StoredResumeSession } fr
 
 const SESSION_STORAGE_KEY = 'resume-game-session-v2';
 
-// Deep metrics (health score, weak words, impact coverage, etc.) are
-// intentionally absent here: they only exist once a real analysis has
-// produced them. Backfilling them with zeros would show fake results.
+// Optional details (hedging words, repetition, etc.) are intentionally
+// absent here: they only exist once a real analysis has produced them.
 const EMPTY_SIGNAL_REPORT: SignalReport = {
-  visible: 0,
-  hidden: 100,
   numbers: 0,
   verbs: 0,
   wordCount: 0,
@@ -83,13 +80,11 @@ function normalizeSignalReport(value: unknown): SignalReport {
       }))
       .filter((item) => item.word && item.count > 0);
   };
-  const visible = clamp(data.visible, 0, 100, 0);
   const numbers = clamp(data.numbers, 0, 999, 0);
   const verbs = clamp(data.verbs, 0, 999, 0);
-  const hidden = clamp(data.hidden, 0, 100, 100 - visible);
+  // Retired composite numbers from older sessions ("visible", "hidden",
+  // "benchmarkScore", "impactCoverage", and the percentages) are dropped here.
   return {
-    visible,
-    hidden,
     numbers,
     verbs,
     wordCount: clamp(data.wordCount, 0, 10000, 0),
@@ -105,13 +100,7 @@ function normalizeSignalReport(value: unknown): SignalReport {
     skippedLines: clampOptional(data.skippedLines, 0, 999),
     weakWordCount: clampOptional(data.weakWordCount, 0, 999),
     repetitiveVerbs: toRepetitiveVerbArray(data.repetitiveVerbs),
-    impactCoverage: clampOptional(data.impactCoverage, 0, 100),
     keywordDensity: toKeywordDensityArray(data.keywordDensity),
-    benchmarkScore: clampOptional(data.benchmarkScore, 0, 100),
-    uniqueVerbCount: clampOptional(data.uniqueVerbCount, 0, 999),
-    quantifiedBulletPercent: clampOptional(data.quantifiedBulletPercent, 0, 100),
-    avgBulletLength: clampOptional(data.avgBulletLength, 0, 200),
-    passiveVoicePercent: clampOptional(data.passiveVoicePercent, 0, 100),
   };
 }
 
@@ -128,12 +117,11 @@ function normalizeStoredBullet(entry: unknown, index: number): BulletRecord | nu
   const original = sanitizeString(data.original, '');
   const fallbackBullet = buildBullet(fields);
   const improved = sanitizeString(data.improved, fallbackBullet || original || fallbackBullet);
-  const baselineScore = clampScore(
-    typeof data.baselineScore === 'number' ? data.baselineScore : scoreBullet(original || improved)
-  );
-  const improvedScore = clampScore(
-    typeof data.improvedScore === 'number' ? data.improvedScore : scoreBullet(improved)
-  );
+  // Scores are a pure function of the text, so they are recomputed on load:
+  // a session saved under an older rubric shows the same numbers as a fresh
+  // analysis of the same lines.
+  const baselineScore = clampScore(scoreBullet(original || improved));
+  const improvedScore = clampScore(scoreBullet(improved));
   const id = typeof data.id === 'string' ? data.id : uniqueId('stored-bullet', index);
   const toStrArray = (v: unknown): string[] => {
     if (Array.isArray(v)) return v.filter((s): s is string => typeof s === 'string');

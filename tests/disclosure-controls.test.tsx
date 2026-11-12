@@ -58,18 +58,18 @@ it('uses distinct worked-example targets across form instances and depths', () =
 
 const scanProps = {
   resumeText: '',
-  signalReport: { ...EMPTY_SIGNAL_REPORT, benchmarkScore: 0 },
+  signalReport: { ...EMPTY_SIGNAL_REPORT, keywordDensity: [{ word: 'inventory', count: 2 }] },
   resumeOutOfDate: false,
 };
 
-it('keeps deep-analysis targets valid through repeated toggles and distinct across instances', () => {
+it('keeps more-detail targets valid through repeated toggles and distinct across instances', () => {
   render(
     <>
       <ScanResults {...scanProps} />
       <ScanResults {...scanProps} />
     </>
   );
-  const buttons = screen.getAllByRole('button', { name: /Deep Analysis/ });
+  const buttons = screen.getAllByRole('button', { name: /More detail/ });
   const panels = buttons.map(controlledPanel);
   expect(panels[0].id).not.toBe(panels[1].id);
   for (const button of buttons) {

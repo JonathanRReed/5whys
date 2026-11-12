@@ -5,7 +5,6 @@ import {
   applyFieldChange,
   buildBullet,
   buildDeepSignalReport,
-  computeBenchmarkScore,
   countPowerVerbs,
   createBulletRecord,
   decodeEntities,
@@ -16,14 +15,14 @@ import {
   extractSkills,
   findQuantifiers,
   generateBulletSuggestions,
-  getVerbStrength,
   hasOutcomeLink,
   hasQuantifier,
-  POWER_VERBS_STRONG,
+  isVerbWord,
   STUDENT_SAMPLE_RESUME,
   scoreBullet,
   scoreLabel,
   seedFields,
+  summarizeLines,
   WEAK_WORDS,
 } from '../src/lib/resume-game';
 
@@ -62,10 +61,15 @@ describe('extractBullets', () => {
 
 describe('buildBullet', () => {
   it('builds a formatted bullet from fields', () => {
-    const fields = { verb: 'Led', quantifier: '5', task: 'a team', impact: 'to success' };
+    const fields = {
+      verb: 'Led',
+      quantifier: '5 volunteers',
+      task: 'a team',
+      impact: 'to success',
+    };
     const result = buildBullet(fields);
     expect(result).toContain('Led');
-    expect(result).toContain('5');
+    expect(result).toContain('5 volunteers');
   });
 });
 
@@ -86,12 +90,13 @@ describe('honest scoring', () => {
     );
     expect(edited.edited).toBe(true);
     expect(edited.improvedScore).toBeGreaterThan(record.baselineScore);
-    expect(edited.improved).toMatch(/^• Wrote/);
+    expect(edited.improved).toMatch(/^Wrote/);
   });
 
   it('extracts involvement verbs so the weak-verb rewrite can fire', () => {
-    expect(seedFields('Worked on the newsletter with two other students').verb).toBe('Worked');
-    expect(seedFields('Responsible for social media').verb).toBe('Responsible');
+    // The whole involvement phrase is the verb field, so a new verb replaces it.
+    expect(seedFields('Worked on the newsletter with two other students').verb).toBe('Worked on');
+    expect(seedFields('Responsible for social media').verb).toBe('Responsible for');
     const types = generateBulletSuggestions(
       createBulletRecord('Worked on the newsletter with two other students', 0)
     ).map((s) => s.type);
@@ -125,7 +130,8 @@ describe('outcome link', () => {
     expect(hasOutcomeLink('Led to the store to buy 5 things and to return')).toBe(false);
     expect(hasOutcomeLink('Batched approvals to cut invoice time by 3 days')).toBe(true);
     expect(hasOutcomeLink('Rebuilt the form, resulting in 2x sign-ups')).toBe(true);
-    expect(hasOutcomeLink('Automated reporting by scripting the export')).toBe(true);
+    // "By scripting the export" says how the work was done, not what happened.
+    expect(hasOutcomeLink('Automated reporting by scripting the export')).toBe(false);
   });
 
   it('no longer awards outcome points for a bare "to"', () => {
@@ -213,34 +219,34 @@ describe('score clamping', () => {
     expect(record.baselineScore).toBeLessThanOrEqual(100);
     expect(record.improvedScore).toBeGreaterThanOrEqual(0);
   });
+});
 
-  it('keeps the benchmark score within 0-100', () => {
-    const { score } = computeBenchmarkScore(recordsFrom(SAMPLE_TEXT));
-    expect(score).toBeGreaterThanOrEqual(0);
-    expect(score).toBeLessThanOrEqual(100);
+describe('resume-level counts', () => {
+  it('describes the resume in counts, with no composite score in the report', () => {
+    const records = recordsFrom(SAMPLE_TEXT);
+    const report = buildDeepSignalReport(records, SAMPLE_TEXT) as Record<string, unknown>;
+    for (const retired of ['visible', 'hidden', 'benchmarkScore', 'impactCoverage']) {
+      expect(report).not.toHaveProperty(retired);
+    }
+    const summary = summarizeLines(records.map((record) => record.improved));
+    expect(summary.total).toBe(3);
+    expect(summary.action).toBe(3);
   });
 });
 
-describe('signal strength leading-verb credit', () => {
-  it('credits bullets whose improved text starts with an action verb', () => {
-    // The improved text starts with a bullet glyph; the leading-verb check
-    // must still recognize "Led" as the first word.
-    const text = '• Led a team of 12 to cut costs by 30%.';
-    const report = buildDeepSignalReport(recordsFrom(text), text);
-    expect(report.visible).toBeGreaterThanOrEqual(80);
+describe('verb detection', () => {
+  it('treats ordinary past-tense and base-form verbs as verbs', () => {
+    for (const verb of ['Posted', 'Owned', 'Ran', 'Covered', 'Worked', 'Kept', 'Hired', 'Cut']) {
+      expect(isVerbWord(verb)).toBe(true);
+    }
+    expect(isVerbWord('Stock')).toBe(true);
+    expect(isVerbWord('Manages')).toBe(true);
   });
 
-  it('scores the full sample resume as high signal', () => {
-    const report = buildDeepSignalReport(recordsFrom(SAMPLE_TEXT), SAMPLE_TEXT);
-    expect(report.visible).toBeGreaterThanOrEqual(80);
-    expect(report.benchmarkScore).toBeGreaterThan(80);
-  });
-});
-
-describe('verb classification', () => {
-  it('treats managed as a normal medium verb, not weak', () => {
-    expect(getVerbStrength('managed')).toBe('medium');
-    expect(getVerbStrength('Managed')).toBe('medium');
+  it('does not read adjectives, roles, or headings as verbs', () => {
+    for (const word of ['Experienced', 'Member', 'Point', 'Summary', 'Variance', 'Need']) {
+      expect(isVerbWord(word)).toBe(false);
+    }
   });
 
   it('does not flag managed as a weak word', () => {
@@ -252,17 +258,13 @@ describe('verb classification', () => {
     expect(detectWeakWords('Responsible for helping with events')).toContain('responsible for');
   });
 
-  it('classifies tiers correctly', () => {
-    expect(getVerbStrength('spearheaded')).toBe('strong');
-    expect(getVerbStrength('helped')).toBe('weak');
-    expect(getVerbStrength('built')).toBe('medium');
-  });
-
-  it('makes every strong verb extractable from a bullet', () => {
-    for (const verb of POWER_VERBS_STRONG) {
-      expect(ACTION_VERBS).toContain(verb);
-      const fields = seedFields(`${verb} the project workflow`);
-      expect(fields.verb.toLowerCase()).toBe(verb);
+  it('extracts every listed action verb as the verb field', () => {
+    for (const verb of ACTION_VERBS) {
+      // Involvement verbs seed as phrases; "Advanced" usually opens "Advanced Excel".
+      if (['helped', 'supported', 'participated', 'contributed', 'advanced'].includes(verb)) {
+        continue;
+      }
+      expect(seedFields(`${verb} the project workflow`).verb.toLowerCase()).toBe(verb);
     }
   });
 });
@@ -299,7 +301,7 @@ describe('generateBulletSuggestions', () => {
     for (const suggestion of suggestions) {
       if (suggestion.type === 'missing-number') {
         expect(suggestion.studentExample).toBeTruthy();
-        expect(suggestion.professionalExample).toBeTruthy();
+        expect(suggestion.workExample).toBeTruthy();
       }
     }
   });
@@ -328,25 +330,19 @@ describe('generateBulletSuggestions', () => {
     expect(generateBulletSuggestions(record)).toHaveLength(0);
   });
 
-  it('references the actual word count when a bullet is too short', () => {
+  it('asks for more about the work when a line names it only briefly', () => {
     const record = createBulletRecord('Built a website', 0);
-    const suggestion = generateBulletSuggestions(record).find((s) => s.type === 'too-short');
-    expect(suggestion).toBeTruthy();
-    expect(suggestion?.message).toMatch(/\d+ words/);
+    const suggestion = generateBulletSuggestions(record).find((s) => s.type === 'thin-task');
+    expect(suggestion?.fix).toMatch(/\?$/);
   });
 });
 
 describe('scoreLabel', () => {
-  it('returns high signal for strong scores', () => {
-    expect(scoreLabel(90).label).toBe('High signal');
-  });
-
-  it('returns moderate for medium scores', () => {
-    expect(scoreLabel(60).label).toBe('Moderate');
-  });
-
-  it('returns hidden value for weak scores', () => {
-    expect(scoreLabel(20).label).toBe('Hidden value');
+  it('uses plain words a student would understand', () => {
+    expect(scoreLabel(90).label).toBe('Strong');
+    expect(scoreLabel(80).label).toBe('Strong');
+    expect(scoreLabel(60).label).toBe('Getting there');
+    expect(scoreLabel(20).label).toBe('Needs more');
   });
 });
 
