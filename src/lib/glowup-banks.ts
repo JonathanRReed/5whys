@@ -5,6 +5,8 @@
  * Add/rename skills here without refactoring the rest of the app.
  */
 
+import { escapeRegExp } from './posting/text';
+
 // ============================================================================
 // Skill Bank
 // ============================================================================
@@ -271,10 +273,6 @@ export interface SkillSuggestion {
   matchedKeywords: string[];
 }
 
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 const keywordRegexCache = new Map<string, RegExp>();
 
 /**
@@ -333,278 +331,14 @@ export function detectSkillsFromText(text: string): SkillSuggestion[] {
 }
 
 // ============================================================================
-// JD Line Extraction (drops headings, boilerplate, and noise)
+// JD Line Extraction and Repeated Phrase Counting
 // ============================================================================
 
-const SECTION_HEADER_PATTERNS: RegExp[] = [
-  /^about\s+(us|you|me|the\s+(role|job|team|company|position))\b/i,
-  /^who\s+(we\s+are|you\s+are)\b/i,
-  /^what\s+(you.ll\s+(do|bring|own|need)|we\s+(do|offer|value))\b/i,
-  /^(responsibilities|requirements|qualifications|duties|benefits|perks|compensation|overview|summary|our\s+(mission|values|story|culture|benefits)|the\s+(role|team|company)|nice\s+to\s+haves?|bonus\s+points?|preferred\s+qualifications|minimum\s+qualifications|basic\s+qualifications|why\s+join(\s+us)?|why\s+you.ll\s+love\s+it|how\s+to\s+apply|application\s+process|salary(\s+range)?|pay\s+range|location|job\s+(type|description|summary)|key\s+responsibilities|your\s+(role|impact|profile)|in\s+this\s+role)\b.{0,40}$/i,
-];
-
-const BOILERPLATE_PATTERNS: RegExp[] = [
-  // Equal-opportunity / legal boilerplate
-  /equal\s+(employment\s+)?opportunit/i,
-  /without\s+regard\s+to/i,
-  /\beeo\b/i,
-  /affirmative\s+action/i,
-  /reasonable\s+accommodat/i,
-  /e-?verify/i,
-  /background\s+check/i,
-  /protected\s+(veteran|class|characteristic|status)/i,
-  /regardless\s+of\s+(race|gender|age)/i,
-  /drug[-\s]free\s+workplace/i,
-  // Benefits and compensation boilerplate
-  /401\s?\(?k\)?/i,
-  /\b(dental|vision)\s+(insurance|coverage|plan)/i,
-  /health\s+(insurance|benefits|coverage)/i,
-  /\bpaid\s+time\s+off\b|\bpto\b/i,
-  /parental\s+leave/i,
-  /stock\s+options|equity\s+(package|grant)/i,
-  /tuition\s+(reimbursement|assistance)/i,
-  /commuter\s+benefits/i,
-  /(salary|pay|compensation)\s+range/i,
-  /base\s+salary/i,
-  /wellness\s+(stipend|program)/i,
-  // About-us marketing boilerplate
-  /founded\s+in\s+\d{4}/i,
-  /our\s+mission\s+is/i,
-  /\bmillions?\s+of\s+(users|customers|people)\b/i,
-  /venture[-\s]backed|series\s+[a-e]\b/i,
-  /fortune\s+\d+/i,
-  /apply\s+(now|today)\b/i,
-  /learn\s+more\s+at/i,
-  /visit\s+(our\s+website|us\s+at)/i,
-];
-
-// Pre-compile multi-pattern arrays into single combined RegExp objects to avoid iterating
-// through up to 27 individual regexes on every line during job description requirement extraction.
-const COMBINED_SECTION_HEADER_PATTERN = new RegExp(
-  SECTION_HEADER_PATTERNS.map((p) => p.source).join('|'),
-  'i'
-);
-
-const COMBINED_BOILERPLATE_PATTERN = new RegExp(
-  BOILERPLATE_PATTERNS.map((p) => p.source).join('|'),
-  'i'
-);
-
-function isSectionHeader(line: string): boolean {
-  const wordCount = line.split(/\s+/).length;
-  // Short line ending in a colon reads as a heading.
-  if (wordCount <= 6 && /:\s*$/.test(line)) return true;
-  // ALL CAPS short lines are headings.
-  if (wordCount <= 6 && line.length >= 3 && line === line.toUpperCase() && /[A-Z]/.test(line)) {
-    return true;
-  }
-  if (wordCount <= 10 && COMBINED_SECTION_HEADER_PATTERN.test(line)) return true;
-  return false;
-}
-
-function isBoilerplate(line: string): boolean {
-  return COMBINED_BOILERPLATE_PATTERN.test(line);
-}
-
-export interface JdExtractionResult {
-  /** Lines that plausibly describe skills or responsibilities. */
-  requirements: string[];
-  /** Non-empty lines dropped as headings, boilerplate, or noise. */
-  skippedCount: number;
-}
-
-/**
- * "Brightline Health - Remote (US)" or "Software Engineer II | New York" is a
- * header, not a requirement: short, mostly capitalized, no verb-shaped words.
- */
-function looksLikeHeaderLine(line: string): boolean {
-  const words = line.split(/\s+/).filter((w) => /[a-zA-Z]/.test(w));
-  if (words.length === 0 || words.length > 8) return false;
-  const capitalized = words.filter((w) => /^[A-Z(]/.test(w)).length;
-  const hasSeparator = /[|\-–—]/.test(line) || /\((?:US|USA|UK|EU|CA|Remote)\)/i.test(line);
-  return capitalized / words.length >= 0.7 && (hasSeparator || words.length <= 4);
-}
-
-const MAX_REQUIREMENT_LINES = 40;
-
-export function extractRequirementLines(rawText: string): JdExtractionResult {
-  const lines = rawText
-    .split(/\n/)
-    .map((line) =>
-      line
-        .trim()
-        .replace(/^[•\-*◦○●‣⁃]\s*/, '')
-        .replace(/^\d+[.)]\s*/, '')
-        .trim()
-    )
-    .filter((line) => line.length > 0);
-
-  const requirements: string[] = [];
-  let skippedCount = 0;
-
-  for (const line of lines) {
-    const tooShort = line.split(/\s+/).length < 4;
-    if (tooShort || isSectionHeader(line) || isBoilerplate(line) || looksLikeHeaderLine(line)) {
-      skippedCount++;
-      continue;
-    }
-    if (requirements.length < MAX_REQUIREMENT_LINES) {
-      requirements.push(line);
-    } else {
-      skippedCount++;
-    }
-  }
-
-  return { requirements, skippedCount };
-}
-
-// ============================================================================
-// Repeated Phrase Counting
-// ============================================================================
-
-const PHRASE_STOPWORDS = new Set([
-  'a',
-  'an',
-  'and',
-  'are',
-  'as',
-  'at',
-  'be',
-  'been',
-  'both',
-  'but',
-  'by',
-  'can',
-  'do',
-  'for',
-  'from',
-  'has',
-  'have',
-  'if',
-  'in',
-  'including',
-  'into',
-  'is',
-  'it',
-  'its',
-  'more',
-  'most',
-  'not',
-  'of',
-  'on',
-  'or',
-  'other',
-  'our',
-  'out',
-  'over',
-  'per',
-  'plus',
-  'such',
-  'than',
-  'that',
-  'the',
-  'their',
-  'them',
-  'they',
-  'this',
-  'through',
-  'to',
-  'up',
-  'us',
-  'we',
-  'well',
-  'while',
-  'who',
-  'will',
-  'with',
-  'within',
-  'you',
-  'your',
-  // JD filler that repeats in every posting and carries no signal
-  'ability',
-  'able',
-  'across',
-  'candidate',
-  'candidates',
-  'company',
-  'demonstrated',
-  'excellent',
-  'experience',
-  'help',
-  'job',
-  'join',
-  'knowledge',
-  'new',
-  'position',
-  'preferred',
-  'proven',
-  'related',
-  'required',
-  'role',
-  'skill',
-  'skills',
-  'strong',
-  'team',
-  'teams',
-  'understanding',
-  'use',
-  'using',
-  'work',
-  'working',
-  'years',
-]);
-
-export interface RepeatedTerm {
-  term: string;
-  count: number;
-}
-
-/**
- * Counts meaningful words and two-word phrases that repeat across the JD.
- * A phrase that shows up three times is a signal about what the interviewer
- * will probe, so surface it.
- */
-export function getRepeatedTerms(text: string, limit = 8): RepeatedTerm[] {
-  const lines = text.toLowerCase().split(/\n/);
-  const wordCounts = new Map<string, number>();
-  const bigramCounts = new Map<string, number>();
-
-  for (const line of lines) {
-    const tokens = (line.match(/[a-z][a-z+#./-]*/g) ?? []).map((t) => t.replace(/[./-]+$/, ''));
-    for (let i = 0; i < tokens.length; i++) {
-      const token = tokens[i];
-      if (token.length >= 3 && !PHRASE_STOPWORDS.has(token)) {
-        wordCounts.set(token, (wordCounts.get(token) ?? 0) + 1);
-      }
-      if (i + 1 < tokens.length) {
-        const next = tokens[i + 1];
-        if (
-          token.length >= 3 &&
-          next.length >= 3 &&
-          !PHRASE_STOPWORDS.has(token) &&
-          !PHRASE_STOPWORDS.has(next)
-        ) {
-          const bigram = `${token} ${next}`;
-          bigramCounts.set(bigram, (bigramCounts.get(bigram) ?? 0) + 1);
-        }
-      }
-    }
-  }
-
-  const terms: RepeatedTerm[] = [];
-  for (const [term, count] of bigramCounts) {
-    if (count >= 2) terms.push({ term, count });
-  }
-  const bigramTerms = terms.map((t) => t.term);
-  for (const [term, count] of wordCounts) {
-    if (count >= 3 && !bigramTerms.some((b) => b.includes(term))) {
-      terms.push({ term, count });
-    }
-  }
-
-  terms.sort((a, b) => b.count - a.count || a.term.localeCompare(b.term));
-  return terms.slice(0, limit);
-}
+// Both moved to the posting engine (src/lib/posting/), which builds sections,
+// spans, and term matching on top of them. Re-exported so existing imports
+// keep working.
+export { extractRequirementLines, type JdExtractionResult } from './posting/lines';
+export { getRepeatedTerms, type RepeatedTerm } from './posting/terms';
 
 // ============================================================================
 // Question Bank

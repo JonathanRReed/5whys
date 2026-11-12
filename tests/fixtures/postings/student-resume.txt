@@ -1,0 +1,23 @@
+Jordan Rivera
+jordan.rivera@example.edu | Columbus, OH
+
+EDUCATION
+Ohio Valley University, B.S. in Economics, expected May 2028
+Currently enrolled in the honors program. GPA: 3.6
+
+EXPERIENCE
+Cashier, Fresh Basket Market
+• Handled cash and card payments for about 200 customers per shift
+• Greeted customers and answered questions about weekly specials
+• Trained three new cashiers on the point-of-sale system
+
+Research Assistant, Department of Economics
+• Cleaned survey data in Excel and built pivot tables for a faculty study
+• Presented findings to a class of 40 students
+• Wrote SQL queries against the department's enrollment database
+
+Volunteer, Riverside After-School Program
+• Planned weekly activities for 15 middle school students
+
+SKILLS
+Excel, SQL, Tableau, Spanish (conversational)
