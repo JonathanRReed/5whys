@@ -43,23 +43,20 @@ end of every working pass. Delete it in the final pull request.
   evidence and an action plan, the two-bullet flow, letter with the three
   message variants, before-you-send checks (`src/lib/desk-checks.ts`). Nav
   link "Apply". Shared `src/lib/view-transition.ts`. Browser test added.
+- 2026-11-12: resume engine fixes merged (`t3/fix-resume-document-engine`):
+  wrapped lines, bullet detection, one repair offer, dates left as written.
+- 2026-11-12: posting match in the Resume Game (`PostingMatch`), linked from
+  the desk with `?application=<id>`.
 
 ## Engine follow-ups to hand back
 
-- Resume engine: a wrapped bullet's second line is kept as its own line, and
-  bullets from browser-printed PDFs (glyph in a separate text item) are not
-  marked as bullets, so the clean export loses them. Join continuation lines
-  and detect bullet glyph items.
-- Resume engine: two findings (columns, reading order) offer the same repair;
-  consider merging them into one finding.
-- Machine view: persist the structured resume once the storage library lands;
-  add the posting match and rewrite hooks.
+- One browser test failed once after the engine merge and passed on three
+  reruns; the failing test was not captured. Watch for a flaky `toBe`.
 
 ## In flight (builders, started 2026-11-12)
 
 | Piece | Model | Paths |
 | --- | --- | --- |
-| Resume engine follow-up (bullets, wrapped lines) | GPT-6.1 Sol | `src/lib/resume-doc/` |
 | Model hosting and speech spikes | GPT-6.1 Sol | `spikes/`, `scripts/models/` |
 
 ## Next for the lead
@@ -86,8 +83,7 @@ end of every working pass. Delete it in the final pull request.
 - `rules.ts` in local-ai imports from `components/career-5whys/shared.ts`;
   move the pure helpers into `src/lib` when touching Five Whys.
 - Still to build (lead): dashboard links into the desk and dated steps;
-  desk resume station (per-application bullet selection and export); posting
-  match inside the Resume Game; worksheet print export for the bullets flow;
+  desk resume station (per-application bullet selection and export); worksheet print export for the bullets flow;
   Storage panel; `/pay/` (worksheet and title search now, wages when data
   arrives); rehearsal room (after spikes); Five Whys and Networking upgrades;
   homepage with six plates and the specimen hero; offline and install;

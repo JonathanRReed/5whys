@@ -24,6 +24,7 @@ import BeforeAfter from './resume-game/BeforeAfter';
 import BulletEditor from './resume-game/BulletEditor';
 import BulletList from './resume-game/BulletList';
 import MachineView from './resume-game/MachineView';
+import PostingMatch from './resume-game/PostingMatch';
 import ResumeHeader from './resume-game/ResumeHeader';
 import ResumeInput from './resume-game/ResumeInput';
 import ReviewLines from './resume-game/ReviewLines';
@@ -391,6 +392,8 @@ ${improved.join('\n')}
       />
 
       {resumeDoc && <MachineView doc={resumeDoc} onChange={keepResumeDoc} />}
+
+      <PostingMatch resumeText={resumeText} />
 
       {!scanComplete && resumeText.trim() && (
         <div className="rounded-2xl border border-dashed border-border/35 bg-overlay/15 p-8 text-center">

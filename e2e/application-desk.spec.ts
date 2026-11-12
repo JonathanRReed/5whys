@@ -2,6 +2,10 @@ import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { useStudentProfile, waitForHydration } from './helpers';
 
+const resume = readFileSync(
+  new URL('../tests/fixtures/postings/student-resume.txt', import.meta.url),
+  'utf8'
+);
 const posting = readFileSync(
   new URL('../tests/fixtures/postings/student-internship.txt', import.meta.url),
   'utf8'
@@ -63,6 +67,17 @@ test('a posting is pasted once and worked through the desk, and it survives a re
   await expect(page.getByText('Data Analytics Intern at Larkspur Transit Authority')).toBeVisible();
   await page.getByRole('tab', { name: /Qualifications/ }).click();
   await expect(page.getByRole('radio', { name: 'Have it' }).first()).toBeChecked();
+
+  // The Resume Game compares the resume with this posting: a count, no percentage.
+  await page.goto('/resume-game/');
+  await waitForHydration(page);
+  await page.getByLabel('Paste resume text').fill(resume);
+  const match = page.getByRole('region', { name: 'Match it to a posting' });
+  await expect(match.getByTestId('match-summary')).toHaveText(
+    /^\d+ of \d+ confirmed requirements? ha(s|ve) evidence in your resume\.$/
+  );
+  await expect(match).not.toContainText('%');
+  await expect(match.getByText('In your resume:').first()).toBeVisible();
 
   const origin = new URL(page.url()).origin;
   expect(requests.every((url) => new URL(url).origin === origin)).toBe(true);

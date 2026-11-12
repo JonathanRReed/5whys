@@ -229,7 +229,10 @@ export default function ApplicationDesk() {
         className="flex flex-wrap gap-x-6 gap-y-2 border-t border-border/40 pt-5 text-sm"
       >
         <span className="text-muted-foreground">Also for this role:</span>
-        <a className="underline underline-offset-4 hover:text-foam" href="/resume-game/">
+        <a
+          className="underline underline-offset-4 hover:text-foam"
+          href={`/resume-game/?application=${encodeURIComponent(application.id)}`}
+        >
           Check your resume
         </a>
         <a
