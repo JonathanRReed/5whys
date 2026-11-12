@@ -363,14 +363,39 @@ function validateResumeDocument(value: unknown): void {
     !isNumber(value.file.sizeBytes) ||
     !(value.file.pageCount === null || isNumber(value.file.pageCount)) ||
     !objectArray(value.pages) ||
+    !value.pages.every((page) => isNumber(page.index)) ||
     !objectArray(value.lines) ||
+    // The fields the resume tools read on every line without checking.
+    !value.lines.every(
+      (line) =>
+        isText(line.id) &&
+        isText(line.text) &&
+        isNumber(line.pageIndex) &&
+        isBoolean(line.bullet) &&
+        isObject(line.origin) &&
+        isText(line.origin.kind) &&
+        isText(line.origin.part) &&
+        (line.box === null || isObject(line.box)) &&
+        objectArray(line.items) &&
+        (line.continuationOf === undefined || isText(line.continuationOf))
+    ) ||
     !textArray(value.extractionOrder) ||
     !textArray(value.geometricOrder) ||
     !objectArray(value.sections) ||
+    !value.sections.every(
+      (section) =>
+        isText(section.id) &&
+        isText(section.kind) &&
+        isText(section.headingLineId) &&
+        textArray(section.lineIds)
+    ) ||
     !isObject(value.contact) ||
     !objectArray(value.contact.links) ||
     !isText(value.plainText) ||
-    !objectArray(value.findings)
+    !objectArray(value.findings) ||
+    !value.findings.every(
+      (finding) => isText(finding.id) && isText(finding.claim) && textArray(finding.lineIds)
+    )
   ) {
     throw new Error(
       `That file contains invalid data for "${RESUME_DOCUMENT_RECORD}". Your saved work was not changed.`

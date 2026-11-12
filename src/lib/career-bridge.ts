@@ -13,6 +13,7 @@ import {
   ensureResponsesLength,
   normalizeSnapshot,
   type Track,
+  validRootIndex,
   HISTORY_KEY as WHY_HISTORY_KEY,
   SESSION_KEY as WHY_SESSION_KEY,
   type WhySnapshot,
@@ -113,6 +114,7 @@ interface WhySession {
   track: Track;
   topic: string;
   responses: string[];
+  rootIndex?: number;
 }
 
 function readCareer5Whys(): { session: WhySession | null; snapshots: WhySnapshot[] } {
@@ -124,6 +126,8 @@ function readCareer5Whys(): { session: WhySession | null; snapshots: WhySnapshot
           track: sessionRaw.track === 'interest' ? 'interest' : 'career',
           topic: typeof sessionRaw.topic === 'string' ? sessionRaw.topic : '',
           responses: ensureResponsesLength(sessionRaw.responses),
+          // Which answer the visitor chose as the real reason, when they chose one.
+          rootIndex: validRootIndex((sessionRaw as { rootIndex?: unknown }).rootIndex),
         }
       : null;
   const snapshots = Array.isArray(historyRaw)
@@ -416,7 +420,7 @@ export function readCareerDashboard(): CareerDashboardData {
         why.session.responses,
         why.session.topic,
         why.session.track,
-        (why.session as { rootIndex?: number }).rootIndex
+        why.session.rootIndex
       )
     : null;
   const latestSnapshot = why.snapshots[0] ?? null;

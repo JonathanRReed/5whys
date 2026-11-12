@@ -15,6 +15,7 @@ import type { RecordedAudio, SpeechRecorder } from '../../lib/speech';
 import { cn, focusWhenReady } from '../../lib/utils';
 import { formatBytes } from '../StoragePanel';
 import Announcer, { useAnnouncer } from '../shared/Announcer';
+import SavedRecordings from '../shared/SavedRecordings';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import TakeReview, { type Take } from './TakeReview';
@@ -561,6 +562,7 @@ export default function RehearsalRoom() {
         >
           Start with the first question
         </Button>
+        <SavedRecordings tool="interview-glow-up" />
         <Announcer message={announcement} />
       </div>
     );

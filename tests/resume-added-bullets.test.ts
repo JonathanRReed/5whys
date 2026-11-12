@@ -41,12 +41,21 @@ describe('bullets added to a tailored copy', () => {
     );
   });
 
-  it('puts a bullet whose line was left out after the last bullet, never at the top', () => {
+  it('keeps a bullet in place when the line it follows is left out, and never at the top', () => {
     const model = toPrintModel(doc, {
       bulletLineIds: new Set([bullets[1].lineId]),
       addedBullets: [{ afterLineId: bullets[0].lineId, text: 'Added anyway' }],
     });
     const texts = model.paragraphs.map((p) => p.text);
+    expect(texts.indexOf('Added anyway')).toBe(
+      texts.findIndex((t) => t.includes('Grew the Instagram')) - 1
+    );
+  });
+
+  it('puts a bullet whose line is not in the resume after the last bullet', () => {
+    const texts = toPrintModel(doc, {
+      addedBullets: [{ afterLineId: 'gone', text: 'Added anyway' }],
+    }).paragraphs.map((p) => p.text);
     expect(texts.indexOf('Added anyway')).toBe(
       texts.findIndex((t) => t.includes('Grew the Instagram')) + 1
     );
@@ -101,5 +110,32 @@ describe('a saved resume document and the text beside it', () => {
         'Jordan Lee\n\nExperience\nWarehouse lead\n- Ran the evening shift for six years\n- Cut late orders from 40 a week to 6'
       )
     ).toBe(false);
+  });
+});
+
+describe('review fixes', () => {
+  const TWO_JOBS = `Maya Torres\nmaya@example.edu\n\nExperience\nCampus Radio, Social Media Lead\n- Posted three times a week\n\nCity Library, Desk Assistant\n- Shelved returns every morning\n- Helped 40 visitors a day find books`;
+
+  it('keeps an added bullet under its own job when the line it follows is left out', () => {
+    const doc = fromText(TWO_JOBS);
+    const bullets = toPrintModel(doc).paragraphs.filter((p) => p.kind === 'bullet');
+    const model = toPrintModel(doc, {
+      bulletLineIds: new Set(bullets.slice(1).map((b) => b.lineId)),
+      addedBullets: [{ afterLineId: bullets[0].lineId, text: 'Ran the station Instagram' }],
+    });
+    const texts = model.paragraphs.map((p) => p.text);
+    expect(texts).not.toContain('Posted three times a week');
+    expect(texts.indexOf('Ran the station Instagram')).toBe(
+      texts.indexOf('Campus Radio, Social Media Lead') + 1
+    );
+    expect(texts.indexOf('Ran the station Instagram')).toBeLessThan(
+      texts.indexOf('City Library, Desk Assistant')
+    );
+  });
+
+  it('does not read the day and year of a full date as a month and year', async () => {
+    const { datesIn } = await import('../src/lib/resume-doc/dates');
+    expect(datesIn('Graduated 05/12/2024')).toEqual([]);
+    expect(datesIn('Intern 05/2024 to 08/2024').map((d) => d.text)).toEqual(['05/2024', '08/2024']);
   });
 });

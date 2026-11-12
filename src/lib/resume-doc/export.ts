@@ -37,33 +37,50 @@ export function toPrintModel(doc: ResumeDoc, options: ExportOptions = {}): Print
       .filter((entry) => entry.improved.trim())
       .map((entry) => [lineKey(entry.original), entry.improved.replace(MARKER, '').trim()])
   );
-  const paragraphs: PrintParagraph[] = logicalLines(copy.lines)
-    .filter((line) => !line.bullet || !options.bulletLineIds || options.bulletLineIds.has(line.id))
-    .map((line, index) => ({
-      lineId: line.id,
-      kind: headings.has(line.id)
-        ? 'heading'
-        : contactIds.has(line.id)
-          ? 'contact'
-          : line.bullet
-            ? 'bullet'
-            : index === 0
-              ? 'name'
-              : 'text',
-      text:
-        rewritten.get(lineKey(line.text)) ??
-        (line.bullet ? line.text.replace(MARKER, '') : line.text),
-    }));
+  const kept = (line: { id: string; bullet: boolean }) =>
+    !line.bullet || !options.bulletLineIds || options.bulletLineIds.has(line.id);
+  const ordered = logicalLines(copy.lines);
+  // Each addition follows its line. If that line is left out of this copy the
+  // addition stays in its place, under the same job, and never moves to another.
+  const additions = new Map<string, PrintParagraph[]>();
+  const loose: PrintParagraph[] = [];
   (options.addedBullets ?? []).forEach((added, index) => {
-    const text = added.text.replace(/^\s*[-–•*◦○●▪·]\s+/, '').trim();
+    const text = added.text.replace(MARKER, '').trim();
     if (!text) return;
-    let at = paragraphs.findIndex((paragraph) => paragraph.lineId === added.afterLineId);
-    if (at === -1) at = paragraphs.findLastIndex((paragraph) => paragraph.kind === 'bullet');
-    // Keep earlier additions placed after the same line in the order given.
-    while (paragraphs[at + 1]?.lineId.startsWith('added-')) at++;
     const paragraph: PrintParagraph = { lineId: `added-${index}`, kind: 'bullet', text };
-    paragraphs.splice(at === -1 ? paragraphs.length : at + 1, 0, paragraph);
+    if (ordered.some((line) => line.id === added.afterLineId)) {
+      additions.set(added.afterLineId, [...(additions.get(added.afterLineId) ?? []), paragraph]);
+    } else {
+      loose.push(paragraph);
+    }
   });
+  const paragraphs: PrintParagraph[] = ordered.flatMap((line, index) => [
+    ...(kept(line)
+      ? [
+          {
+            lineId: line.id,
+            kind: headings.has(line.id)
+              ? 'heading'
+              : contactIds.has(line.id)
+                ? 'contact'
+                : line.bullet
+                  ? 'bullet'
+                  : index === 0
+                    ? 'name'
+                    : 'text',
+            text:
+              rewritten.get(lineKey(line.text)) ??
+              (line.bullet ? line.text.replace(MARKER, '') : line.text),
+          } satisfies PrintParagraph,
+        ]
+      : []),
+    ...(additions.get(line.id) ?? []),
+  ]);
+  // A line that no longer exists in the resume at all: after the last bullet.
+  if (loose.length > 0) {
+    const at = paragraphs.findLastIndex((paragraph) => paragraph.kind === 'bullet');
+    paragraphs.splice(at === -1 ? paragraphs.length : at + 1, 0, ...loose);
+  }
   return {
     fontFamily: 'Arial',
     fontSizePt: 11,

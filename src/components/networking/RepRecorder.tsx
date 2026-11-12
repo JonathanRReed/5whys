@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { loadFeature, runFeature } from '../../lib/lazy-feature';
 import type { RecordedAudio, SpeechRecorder } from '../../lib/speech';
+import SavedRecordings from '../shared/SavedRecordings';
 import { Button } from '../ui/button';
 
 const clock = (seconds: number) =>
@@ -172,6 +173,7 @@ export default function RepRecorder({ label }: Props) {
       <p role="status" className="min-h-5 text-sm text-foreground">
         {notice}
       </p>
+      <SavedRecordings tool="networking-practice" refresh={kept} />
     </section>
   );
 }

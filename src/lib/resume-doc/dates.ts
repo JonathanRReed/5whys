@@ -17,7 +17,9 @@ const MONTHS = [
 const MONTH_PATTERN =
   'January|February|March|April|May|June|July|August|September|October|November|December|Jan\\.?|Feb\\.?|Mar\\.?|Apr\\.?|Jun\\.?|Jul\\.?|Aug\\.?|Sept?\\.?|Oct\\.?|Nov\\.?|Dec\\.?';
 const DATE = new RegExp(
-  `\\b(?:(${MONTH_PATTERN})\\s+((?:19|20)\\d{2})|(0?[1-9]|1[0-2])[/.-]((?:19|20)\\d{2}))\\b`,
+  // "05/12/2024" is a day, not December 2024: a numeric month may not follow
+  // another number and a separator.
+  `\\b(?:(${MONTH_PATTERN})\\s+((?:19|20)\\d{2})|(?<!\\d[/.-])(0?[1-9]|1[0-2])[/.-]((?:19|20)\\d{2}))\\b`,
   'gi'
 );
 

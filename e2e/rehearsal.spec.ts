@@ -135,4 +135,16 @@ test('a networking rep can be recorded and played back', async ({ page }) => {
   await expect(recorder.getByRole('button', { name: 'Record again' })).toBeVisible();
   await recorder.getByRole('button', { name: 'Keep this recording' }).click();
   await expect(recorder.getByRole('button', { name: 'Kept on this device' })).toBeDisabled();
+
+  // A kept recording can be heard again after the page is reopened, and deleted on its own.
+  await page.reload();
+  await waitForHydration(page);
+  const saved = page.getByRole('region', { name: 'Recordings you kept' });
+  await expect(saved.getByRole('listitem')).toHaveCount(1);
+  await saved.getByRole('button', { name: /^Play/ }).click();
+  await expect(saved.locator('audio')).toBeVisible();
+  const remove = saved.getByRole('button', { name: /Delete/ });
+  await remove.click();
+  await remove.click();
+  await expect(saved).toHaveCount(0);
 });
