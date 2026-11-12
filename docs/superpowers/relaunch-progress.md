@@ -57,6 +57,8 @@ end of every working pass. Delete it in the final pull request.
   so questions are synthesized ahead of a session; no hosted text model;
   hosted models are off unless `HOSTED_MODELS=1` at build, because a real
   deploy with 163 MB of model chunks is unproven.
+- 2026-11-12: navigation now keeps the six tools behind one Tools menu at
+  every width; homepage shows six plates and says six tools.
 
 ## Engine follow-ups to hand back
 
@@ -95,7 +97,8 @@ end of every working pass. Delete it in the final pull request.
 - Still to build (lead): dashboard links into the desk and dated steps;
   desk resume station (per-application bullet selection and export); worksheet print export for the bullets flow;
   Storage panel; rehearsal room (after spikes); Five Whys and Networking upgrades;
-  homepage with six plates and the specimen hero; offline and install;
+  homepage specimen hero (plates and nav are done); OG images for
+  `/application/` and `/pay/`; offline and install;
   privacy copy; DESIGN.md specimen section.
 - Posting engine noise: plain description sentences can come through as
   unclassified requirements; the student dismisses them.

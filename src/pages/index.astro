@@ -46,6 +46,26 @@ const plates = [
     desc: 'Find likely interview themes in a job description, then connect them to stories you can support.',
     caption: 'Example · a theme to prepare',
   },
+  {
+    roman: 'V',
+    tag: 'Plate V · Apply',
+    accent: 'lichen',
+    name: 'The Application Desk',
+    href: '/application/',
+    cta: 'Open the plate',
+    desc: 'Paste a posting once. Sort what it asks for, mark where you stand, write two bullets and a letter, and check it before you send.',
+    caption: 'Example · a requirement, sorted',
+  },
+  {
+    roman: 'VI',
+    tag: 'Plate VI · Weigh',
+    accent: 'madder',
+    name: 'Pay',
+    href: '/pay/',
+    cta: 'Open the plate',
+    desc: 'See what an occupation tends to pay, as dated percentiles from public wage data, and put an offer into terms you can compare.',
+    caption: 'Example · an offer, in plain terms',
+  },
 ];
 
 const fieldNotes = [
@@ -139,7 +159,7 @@ const homeStructuredData = [
           class="fg-rise max-w-xl text-pretty text-lg leading-relaxed text-muted-foreground"
           style="animation-delay:0.28s"
         >
-          A private studio of four career tools, kept like a field guide. Dig past the obvious
+          A private studio of six career tools, kept like a field guide. Dig past the obvious
           answer to the motivation underneath it, then turn that clarity into resumes, intros, and
           interview stories you can actually use.
         </p>
@@ -165,7 +185,7 @@ const homeStructuredData = [
             href="#plates"
             class="inline-flex items-center gap-2 rounded-lg border border-border/60 px-5 py-3 text-sm font-semibold text-foreground transition-colors duration-200 hover:border-gold/50 hover:text-gold"
           >
-            Tour the four plates
+            Tour the six plates
           </a>
         </div>
 
@@ -425,14 +445,14 @@ const homeStructuredData = [
     <section id="plates" class="reveal mx-auto w-full max-w-6xl scroll-mt-24 space-y-10">
       <div class="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div class="max-w-xl space-y-3">
-          <span class="eyebrow" style="color:hsl(var(--gold))">The instruments · Plates I–IV</span>
+          <span class="eyebrow" style="color:hsl(var(--gold))">The instruments · Plates I–VI</span>
           <h2 class="text-3xl text-foreground sm:text-[2.6rem] sm:leading-[1.05]">
-            Four plates, <span class="display-italic text-foam">one throughline</span
+            Six plates, <span class="display-italic text-foam">one throughline</span
             >.
           </h2>
           <p class="text-pretty text-base text-muted-foreground">
             Each tool works on its own. Run them in order and they cover the whole arc: understand
-            the why, prove it, rehearse it, then walk in prepared.
+            the why, prove it, rehearse it, prepare for the interview, apply, and weigh the offer.
           </p>
         </div>
         <div class="eyebrow flex shrink-0 flex-wrap items-center gap-2 text-muted-foreground">
@@ -443,6 +463,10 @@ const homeStructuredData = [
           <span class="text-iris">Rehearse</span>
           <span aria-hidden="true">→</span>
           <span class="text-love">Prepare</span>
+          <span aria-hidden="true">→</span>
+          <span class="text-lichen">Apply</span>
+          <span aria-hidden="true">→</span>
+          <span class="text-madder">Weigh</span>
         </div>
       </div>
 
@@ -527,6 +551,29 @@ const homeStructuredData = [
                     </p>
                     <p class="pl-3 text-foreground">
                       ↳ Prepare a story about working across teams
+                    </p>
+                  </div>
+                )}
+
+                {p.roman === 'V' && (
+                  <div class="space-y-1.5 text-xs">
+                    <p class="text-muted-foreground">
+                      <mark class="rounded-[3px] bg-lichen/25 px-0.5 text-foreground"
+                        >Experience with Excel, including pivot tables</mark
+                      >
+                    </p>
+                    <p class="pl-3 text-foreground">
+                      <span class="num-index mr-1 text-lichen">Required</span> Have it: the survey
+                      project
+                    </p>
+                  </div>
+                )}
+
+                {p.roman === 'VI' && (
+                  <div class="space-y-1.5 font-mono text-xs text-muted-foreground">
+                    <p>$20 an hour, 30 hours, 10 weeks</p>
+                    <p class="pl-3 text-foreground">
+                      <span class="text-madder">↳</span> $6,000 for the summer
                     </p>
                   </div>
                 )}

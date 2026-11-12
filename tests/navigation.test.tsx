@@ -64,7 +64,8 @@ it('closes open compact tools menu when Escape key is pressed', () => {
   // Open compact tools menu
   fireEvent.click(compactToolsBtn);
   expect(compactToolsBtn).toHaveAttribute('aria-expanded', 'true');
-  expect(screen.getAllByRole('link', { name: 'Resume Game' }).length).toBeGreaterThan(1);
+  // The tools live only in this menu now, so opening it is what shows the link.
+  expect(screen.getAllByRole('link', { name: 'Resume Game' }).length).toBeGreaterThan(0);
 
   // Press Escape
   fireEvent.keyDown(window, { key: 'Escape' });
@@ -174,7 +175,7 @@ it('dismisses compact tools when focus leaves the last link for the display sett
   fireEvent.click(trigger);
   const menu = container.querySelector('#compact-tools-menu');
   if (!menu) throw new Error('Expected compact tools menu');
-  const lastLink = within(menu as HTMLElement).getByRole('link', { name: 'Apply' });
+  const lastLink = within(menu as HTMLElement).getByRole('link', { name: 'Pay' });
   act(() => lastLink.focus());
   expect(trigger).toHaveAttribute('aria-expanded', 'true');
 

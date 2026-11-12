@@ -3,7 +3,7 @@ import Base from '../layouts/Base.astro';
 import CareerDashboard from '../components/CareerDashboard';
 
 const noScriptContext = [
-  'The dashboard on this page requires JavaScript. It reads the work you have saved in this browser across the four tools and summarizes it in one place: resume bullet scores and detected skills, saved five whys reflections, interview stories, and networking practice rounds, with a suggested next step drawn from that saved work. Nothing is loaded from a server and there is no account or profile behind it.',
+  'The dashboard on this page requires JavaScript. It reads the work you have saved in this browser across the tools and summarizes it in one place: resume bullet scores and detected skills, saved five whys reflections, interview stories, and networking practice rounds, with a suggested next step drawn from that saved work. Nothing is loaded from a server and there is no account or profile behind it.',
   'If you have not used the tools yet, the dashboard is empty. Start with any tool directly, or use the career review page to pick a starting point.',
 ];
 ---
@@ -16,7 +16,7 @@ const noScriptContext = [
   <div class="reveal relative mx-auto w-full max-w-6xl px-4 py-8 sm:py-12">
     <h1 class="sr-only">Career dashboard</h1>
     <p class="sr-only">
-      A private summary of the work you have saved in this browser across the four career tools,
+      A private summary of the work you have saved in this browser across the career tools,
       with recent activity and a suggested next step. Nothing is loaded from a server.
     </p>
     <CareerDashboard client:load />

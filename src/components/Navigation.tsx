@@ -14,7 +14,8 @@ const navLinks = [
   { href: '/resume-game/', label: 'Resume Game' },
   { href: '/networking-practice/', label: 'Networking' },
   { href: '/interview-glow-up/', label: 'Interview' },
-  { href: '/application/', label: 'Apply' },
+  { href: '/application/', label: 'Application Desk' },
+  { href: '/pay/', label: 'Pay' },
 ];
 
 export default function Navigation({ currentPath = '/' }: NavigationProps) {
@@ -200,8 +201,9 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
           </span>
         </a>
 
-        {/* Compact tablet nav */}
-        <div className="relative hidden md:flex xl:hidden">
+        {/* Main links, with the six tools behind one menu so the bar stays
+            the same width however many plates there are. */}
+        <div className="relative hidden md:flex">
           <div className="flex items-center gap-1 rounded-full border border-border/38 bg-overlay/42 px-2 py-1">
             {mainLinks.map(({ href, label }) => {
               const active = isActive(href);
@@ -291,34 +293,6 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
               })}
             </div>
           )}
-        </div>
-
-        {/* Desktop nav */}
-        <div className="hidden items-center gap-1 rounded-full border border-border/38 bg-overlay/42 px-2 py-1 xl:flex">
-          {navLinks.map(({ href, label }) => {
-            const active = isActive(href);
-            return (
-              <a
-                key={href}
-                href={href}
-                aria-current={active ? 'page' : undefined}
-                className={cn(
-                  'relative rounded-full px-3.5 py-2 text-sm font-medium transition-colors duration-200',
-                  active
-                    ? 'bg-background/54 text-foreground shadow-[inset_0_0_0_1px_hsl(var(--border)/0.26)]'
-                    : 'text-foreground/78 hover:bg-background/34 hover:text-foreground'
-                )}
-              >
-                {label}
-                {active && (
-                  <span
-                    className="absolute bottom-1 left-4 right-4 h-[2px] rounded-full bg-foam"
-                    aria-hidden="true"
-                  />
-                )}
-              </a>
-            );
-          })}
         </div>
 
         {/* Right side: display settings + mobile menu */}

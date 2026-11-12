@@ -431,8 +431,8 @@ function EmptyState({ onRestored }: { onRestored: () => void }) {
       <div className="space-y-3">
         <h2 className="text-3xl font-semibold tracking-tight">Nothing saved yet</h2>
         <p className="text-muted-foreground">
-          This page summarizes work you save in the four tools, and it all stays in this browser.
-          Take the short career review to pick a starting point.
+          This page summarizes work you save in the tools, and it all stays in this browser. Take
+          the short career review to pick a starting point.
         </p>
       </div>
 

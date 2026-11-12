@@ -14,7 +14,7 @@ export interface OgPage {
   /** One supporting sentence. */
   description: string;
   accent: OgAccent;
-  /** Roman numeral for the four tool plates; omitted on other pages. */
+  /** Roman numeral for the tool plates; omitted on other pages. */
   plate?: string;
 }
 
@@ -23,7 +23,7 @@ export const OG_PAGES: Record<string, OgPage> = {
     eyebrow: 'A field guide to professional life',
     title: 'Find the real reason. Then build the proof.',
     description:
-      'Four career tools that stay in your browser: reflect, score a resume, rehearse an intro, prepare interview stories.',
+      'Six career tools that stay in your browser: reflect, score a resume, rehearse an intro, prepare interview stories, work an application, weigh the pay.',
     accent: 'foam',
   },
   start: {
