@@ -18,6 +18,7 @@ import {
   switchRole,
   updateRole,
 } from '../../lib/glowup-store';
+import { SAMPLE_POSTING } from '../../lib/posting';
 import { isStudentLike, readProfile } from '../../lib/profile';
 import { cn } from '../../lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -266,6 +267,16 @@ export default function DecodeSection({ data, setData, currentRole }: Props) {
           >
             {bullets.length > 0 ? 'Parse again' : 'Parse the requirements'}
           </button>
+          {!fields.rawJdText.trim() && (
+            <button
+              type="button"
+              data-guide="decode-sample"
+              onClick={() => commit({ rawJdText: SAMPLE_POSTING })}
+              className="rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+            >
+              Use a sample posting
+            </button>
+          )}
           {bullets.length > 0 && (
             <span className="text-xs text-muted-foreground">
               Parsing again replaces the tags below.

@@ -19,6 +19,7 @@ export const applicationGuide: Guide = {
       why: 'Every other station works from this, so you never paste it again.',
       target: '[data-guide="posting-editor"]',
       done: { kind: 'exists', selector: '[data-testid="posting-specimen"]' },
+      example: { label: 'Use a sample posting', click: '[data-guide="posting-sample"]' },
     },
     {
       id: 'confirm',

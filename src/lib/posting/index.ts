@@ -56,6 +56,7 @@ export {
   type SectionCounts,
   setRequirementSection,
 } from './requirements';
+export { SAMPLE_POSTING, SAMPLE_POSTING_COMPANY, SAMPLE_POSTING_TITLE } from './sample';
 export {
   decideSection,
   findCues,

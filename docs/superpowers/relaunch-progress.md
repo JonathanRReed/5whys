@@ -68,7 +68,6 @@ end of every working pass. Delete it in the final pull request.
 - 2026-11-12: guided mode (owner request): `src/lib/guide.ts`, guides in
   `src/lib/guides/`, `shared/GuideCoach` mounted on `/resume-game/` and
   `/application/`. Steps complete by watching the page (`data-guide` hooks).
-  Guides still to write: career, networking-practice, interview-glow-up, pay.
 - 2026-11-12: Letter station gained recipient, sender, a worked example,
   and "skill: proof" scaffolding from requirements marked "have it";
   the full letter is assembled with greeting and sign-off.
@@ -82,6 +81,20 @@ end of every working pass. Delete it in the final pull request.
   unless asked: `SpeechRecognition.available()` crashed headless Chromium.
 - 2026-11-12 12:55: full suite green with builders idle (891 unit, 50 browser,
   2 skipped opt-in model tests). The earlier desk timeout was load.
+- 2026-11-12: guides for all six tools merged
+  (`t3/add-four-tool-guided-walkthroughs`); sample posting button on the desk
+  and in Glow Up (`src/lib/posting/sample.ts`).
+
+## Tool-flow findings from writing the guides (to fix)
+
+- Networking: a scenario is preselected, so choosing one cannot be detected;
+  there is no sample intro; ratings are only detectable through a hint.
+- Glow Up: "+ New story" leaves the primary skill empty and Save stays
+  disabled with no explanation; the HUD modal covers the coach.
+- Pay: the worksheet is not saved without an application.
+- Coach on a phone in OpenDyslexic covers up to about 45% of the screen on
+  the longest step. Consider starting collapsed on phones.
+- No guide yet for the Rehearsal Room.
 
 ## Engine follow-ups to hand back
 
@@ -96,7 +109,6 @@ end of every working pass. Delete it in the final pull request.
 
 | Piece | Model | Paths |
 | --- | --- | --- |
-| Guides for career, networking, glow-up, pay | Opus 5.5 | `src/lib/guides/`, `data-guide` hooks, `e2e/guided-mode.spec.ts` |
 
 ## Next for the lead
 

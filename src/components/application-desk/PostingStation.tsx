@@ -21,6 +21,7 @@ import {
   parsePosting,
   requirementsFromBullets,
   restoreRequirement,
+  SAMPLE_POSTING,
   setRequirementSection,
 } from '../../lib/posting';
 import { cn } from '../../lib/utils';
@@ -156,6 +157,16 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
           <Button type="button" onClick={decode} disabled={!draft.trim()}>
             Decode the posting
           </Button>
+          {!draft.trim() && (
+            <Button
+              type="button"
+              variant="outline"
+              data-guide="posting-sample"
+              onClick={() => setDraft(SAMPLE_POSTING)}
+            >
+              Use a sample posting
+            </Button>
+          )}
           {role && sourceText.trim() && (
             <Button type="button" variant="outline" onClick={() => setEditing(false)}>
               Keep the current one

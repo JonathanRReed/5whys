@@ -12,6 +12,7 @@ export const interviewGlowUpGuide: Guide = {
       why: 'The job title is optional. Leave it blank and the first line of the posting is used.',
       target: '#jd-text',
       done: { kind: 'filled', selector: '#jd-text', minLength: 80 },
+      example: { label: 'Use a sample posting', click: '[data-guide="decode-sample"]' },
     },
     {
       id: 'parse',
