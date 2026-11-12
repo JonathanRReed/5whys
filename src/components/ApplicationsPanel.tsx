@@ -272,8 +272,14 @@ export default function ApplicationsPanel({ applications, readiness, onChanged }
                       className="rounded-lg border border-border/50 bg-overlay/30 px-2 py-1 text-xs text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam"
                     />
                   </label>
+                  <a
+                    href={`/application/?id=${encodeURIComponent(app.id)}`}
+                    className="rounded-lg border border-border/50 px-3 py-1.5 text-xs text-foreground transition-colors hover:bg-overlay/40 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam"
+                  >
+                    Open the desk
+                  </a>
                   <ConfirmButton
-                    confirmLabel="Remove it? The role and stories stay saved."
+                    confirmLabel="Remove it? Its desk work is deleted. The role and stories stay saved."
                     onConfirm={() => remove(app.id)}
                     className="px-3 py-1.5 text-xs"
                   >

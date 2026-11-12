@@ -223,6 +223,42 @@ export default function CareerDashboard() {
         </div>
       )}
 
+      {/* Dated steps from each application's action plan, soonest first. */}
+      {data.actionSteps.length > 0 && (
+        <section aria-labelledby="dated-steps-title" className="space-y-3">
+          <h2 id="dated-steps-title" className="text-xl font-semibold">
+            Steps you gave a date
+          </h2>
+          <ul className="divide-y divide-border/30 rounded-xl border border-border/40">
+            {data.actionSteps.slice(0, 6).map((step) => (
+              <li key={`${step.applicationId}-${step.stepId}`}>
+                <a
+                  href={`/application/?id=${encodeURIComponent(step.applicationId)}&station=qualifications`}
+                  className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-4 py-3 text-sm transition-colors hover:bg-overlay/30 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam"
+                >
+                  <span className="min-w-0 text-foreground">
+                    {step.text}
+                    <span className="ml-2 text-muted-foreground">
+                      for {step.applicationTitle}
+                      {step.company ? ` at ${step.company}` : ''}
+                    </span>
+                  </span>
+                  <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                    {step.daysUntil < 0
+                      ? `${-step.daysUntil} ${step.daysUntil === -1 ? 'day' : 'days'} overdue`
+                      : step.daysUntil === 0
+                        ? 'today'
+                        : step.daysUntil === 1
+                          ? 'tomorrow'
+                          : `in ${step.daysUntil} days`}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {/* What is on file. A sentence, not a wall of rings: three of the four
           values here are counts, and a progress ring around a count reads as a
           proportion it does not have. The resume score is the one real 0-100
