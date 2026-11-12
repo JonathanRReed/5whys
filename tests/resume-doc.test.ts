@@ -1,4 +1,5 @@
 import { File as NodeFile } from 'node:buffer';
+import { readFileSync } from 'node:fs';
 import JSZip from 'jszip';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { ResumeDoc } from '../src/lib/resume-doc';
@@ -33,6 +34,7 @@ import {
   toDocx,
   toPrintModel,
 } from '../src/lib/resume-doc';
+import { normalizePdfLines } from '../src/lib/resume-doc/pdf-lines';
 import { readPdfText } from '../src/lib/resume-game/pdf-extractor';
 import {
   columnPdf,
@@ -40,13 +42,16 @@ import {
   headerContactPdf,
   headerDocx,
   imagePagePdf,
+  indentedBulletPdf,
   positionedText,
+  separateBulletPdf,
   singleColumnPdf,
   studentLines,
   studentText,
   tableDocx,
   textBoxDocx,
   wordNamespace,
+  wrappedResumePdf,
   xmlParagraph,
 } from './fixtures/resume-doc';
 import { japanesePdfFile, pdfFile } from './fixtures/resume-pdfs';
@@ -119,6 +124,12 @@ describe('document-reading detector matrix', () => {
       expectedDetectors[name]
     );
     expect(documentDetectors.flatMap((detector) => detector(doc))).toEqual(doc.findings);
+    if (name === 'equalColumns' || name === 'sidebar') {
+      expect(doc.findings.filter((f) => f.repairId === 'linearize')).toHaveLength(1);
+      const order = detectReadingOrder(doc)[0];
+      expect(order.repairId).toBeUndefined();
+      expect(order.explanation).toContain('columns');
+    }
     expect(new Set(codes(doc)).size).toBe(doc.findings.length);
     expect(JSON.parse(JSON.stringify(doc))).toEqual(doc);
     expect(doc.findings.every((finding) => finding.group === 'document-reading')).toBe(true);
@@ -139,7 +150,7 @@ describe('PDF geometry and local reading', () => {
     });
     expect(doc.lines[0].fontName).toBeTruthy();
     expect(doc.lines[0].items).toHaveLength(1);
-    expect(doc.plainText).toBe(await readPdfText(file));
+    expect(doc.plainText).toBe((await readPdfText(file)).replace(/^- /gm, ''));
     expect((await extractPdf(file)).lines.map((line) => line.id)).toEqual(
       doc.lines.map((line) => line.id)
     );
@@ -157,6 +168,147 @@ describe('PDF geometry and local reading', () => {
     expect(doc.lines.map((line) => line.text)).toEqual(['Jordan Lee', 'Right column']);
     expect(doc.lines[0].items.filter((item) => item.text.trim())).toHaveLength(2);
   });
+  it('groups wrapped bullets and prose without losing their visual boxes', async () => {
+    const doc = await extractPdf(wrappedResumePdf());
+    const model = toPrintModel(doc);
+    expect(model.paragraphs.map((p) => p.text)).toContain(
+      'Grew the station Instagram from 400 to 2,100 followers by posting three times a week'
+    );
+    expect(model.paragraphs.map((p) => p.text)).toContain(
+      'Communications student building accessible campus events with classmates at university.'
+    );
+    expect(model.paragraphs.slice(0, 3).map((p) => p.text)).toEqual([
+      'Jordan Lee',
+      'jordan.lee@example.edu',
+      '(555) 201-4477',
+    ]);
+    expect(doc.lines.filter((line) => line.continuationOf)).toHaveLength(3);
+    expect(doc.lines.every((line) => line.box && line.items.length)).toBe(true);
+    expect(doc.plainText).toContain('posting three times a week');
+    expect(doc.plainText).toContain('Jordan Lee\njordan.lee@example.edu\n(555) 201-4477');
+    expect(toPrintModel(linearize(doc))).toEqual(model);
+    const root = doc.lines.find((line) => line.text.startsWith('Grew'));
+    if (!root) throw new Error('Fixture bullet missing');
+    expect(
+      toPrintModel(doc, { bulletLineIds: new Set([root.id]) })
+        .paragraphs.filter((p) => p.kind === 'bullet')
+        .map((p) => p.text)
+    ).toEqual([
+      'Grew the station Instagram from 400 to 2,100 followers by posting three times a week',
+    ]);
+    const withoutBullets = toPrintModel(doc, { bulletLineIds: new Set() });
+    expect(withoutBullets.paragraphs.some((p) => p.text.includes('three times'))).toBe(false);
+    expect((await extractDocx(await toDocx(doc))).lines.filter((line) => line.bullet)).toHaveLength(
+      3
+    );
+  });
+  it.each([separateBulletPdf, indentedBulletPdf])(
+    'detects PDF bullets and writes real DOCX lists',
+    async (fixture) => {
+      const doc = await extractPdf(fixture());
+      const bullets = doc.lines.filter((line) => line.bullet);
+      expect(bullets.map((line) => line.text)).toEqual(
+        fixture === separateBulletPdf
+          ? ['Built accessible event guides.', 'Trained classmates.']
+          : [
+              'Built accessible event guides.',
+              'Trained classmates.',
+              'Edited stories for the student paper.',
+              'Published weekly campus updates.',
+            ]
+      );
+      const model = toPrintModel(doc);
+      expect(model.paragraphs.filter((p) => p.kind === 'bullet')).toHaveLength(bullets.length);
+      const bytes = await toDocx(doc);
+      const zip = await JSZip.loadAsync(bytes);
+      expect(
+        (await zip.file('word/document.xml')?.async('text'))?.match(/<w:numPr>/g)
+      ).toHaveLength(bullets.length);
+      expect(
+        (await extractDocx(bytes)).lines.filter((line) => line.bullet).map((line) => line.text)
+      ).toEqual(bullets.map((line) => line.text));
+    }
+  );
+  it('round trips a real browser-printed Letter resume with CSS columns and vector bullets', async () => {
+    const file = new File(
+      [new Uint8Array(readFileSync('tests/fixtures/browser-resume.pdf'))],
+      'browser-resume.pdf',
+      { type: 'application/pdf' }
+    );
+    const doc = await extractPdf(file);
+    expect(doc.pages[0]).toMatchObject({ width: 612, height: 792 });
+    const model = toPrintModel(doc);
+    expect(model.paragraphs.filter((p) => p.kind === 'bullet').map((p) => p.text)).toEqual([
+      'Grew the station Instagram from 400 to 2,100 followers by posting three times a week',
+      'Built accessible event guides.',
+      'Edited stories for the student paper.',
+      'Published weekly campus updates.',
+    ]);
+    expect(model.paragraphs.map((p) => p.text)).toContain(
+      'Communications student building accessible campus events with classmates across the university.'
+    );
+    const checked = await checkExport(await toDocx(doc));
+    expect(checked.ok).toBe(true);
+    expect(checked.exportFindings).toEqual([]);
+    expect(checked.doc.lines.filter((line) => line.bullet)).toHaveLength(4);
+  });
+  it.each([
+    [
+      'sentence ending',
+      'Organized campus events with classmates.',
+      'and shared the results',
+      60,
+      14,
+    ],
+    ['short line', 'Campus radio assistant with friends', 'and student volunteers', 60, 14],
+    ['new bullet', 'Organized campus events with classmates', '- and shared the results', 60, 14],
+    ['heading', 'Organized campus events with classmates', 'Education', 60, 14],
+    ['date', 'Organized campus events with classmates', 'Sep 2025 - Present', 60, 14],
+    ['email', 'Organized campus events with classmates', 'jordan.lee@example.edu', 60, 14],
+    ['phone', 'Organized campus events with classmates', '(555) 201-4477', 60, 14],
+    ['new entry', 'Organized campus events with classmates', 'Campus newsletter editor', 60, 14],
+    ['large gap', 'Organized campus events with classmates', 'and shared the results', 60, 28],
+    [
+      'different indent',
+      'Organized campus events with classmates',
+      'and shared the results',
+      100,
+      14,
+    ],
+  ] as const)('does not join an ambiguous %s', async (_label, first, second, x, gap) => {
+    const doc = await extractPdf(
+      pdfFile(
+        [
+          positionedText('Summary', 60, 720),
+          positionedText(first, 60, 700),
+          positionedText(second, x, 700 - gap),
+          ...(_label === 'short line'
+            ? [positionedText('Communications student building accessible campus events', 60, 640)]
+            : []),
+        ].join('\n')
+      )
+    );
+    expect(doc.lines.every((line) => !line.continuationOf)).toBe(true);
+  });
+  it.each(['•', '◦', '▪', '-', '–', '*', '·', 'o'])(
+    'detects and strips the leading %s glyph',
+    async (glyph) => {
+      const doc = await extractPdf(singleColumnPdf());
+      const bullet = doc.lines.find((line) => line.bullet);
+      if (!bullet) throw new Error('Fixture bullet missing');
+      const text = bullet.text;
+      bullet.text = `${glyph} ${text}`;
+      bullet.bullet = false;
+      const normalized = normalizePdfLines(doc);
+      expect(normalized.lines.find((line) => line.id === bullet.id)).toMatchObject({
+        text,
+        bullet: true,
+      });
+      expect(
+        toPrintModel(recomputeDoc(normalized)).paragraphs.find((p) => p.lineId === bullet.id)
+      ).toMatchObject({ text, kind: 'bullet' });
+    }
+  );
   it('keeps Japanese text with the same bundled CMap data as the existing reader', async () => {
     const file = japanesePdfFile();
     expect((await extractPdf(file)).plainText.split('\n').filter(Boolean)).toEqual(
@@ -391,8 +543,6 @@ describe('clean export and round trip', () => {
     'imagePage',
     'headerContact',
     'docxHeader',
-    'spacedLetters',
-    'mixedDates',
     'cleanStudent',
     'textBox',
     'largeFile',
@@ -416,7 +566,7 @@ describe('clean export and round trip', () => {
       );
     }
   );
-  it.each(['garbage', 'missingContact', 'missingHeadings', 'imageOnly'])(
+  it.each(['garbage', 'spacedLetters', 'imageOnly'])(
     'reports unrecoverable %s content rather than inventing it',
     async (fixture) => {
       const doc = await fixtureLoaders[fixture]();
@@ -425,6 +575,36 @@ describe('clean export and round trip', () => {
       expect(checked.findings.length).toBeGreaterThan(0);
     }
   );
+  it('keeps text and dates as written unless date formatting is requested', async () => {
+    const doc = fromText(
+      studentText.replace('Education', 'Academic background').replace('May 2027', '05/2027')
+    );
+    const model = toPrintModel(doc);
+    expect(model.paragraphs.map((p) => p.text)).toContain('Academic background');
+    expect(model.paragraphs.map((p) => p.text)).toContain(
+      'State University, B.A. Communications, 05/2027'
+    );
+    const checked = await checkExport(await toDocx(doc));
+    expect(checked.doc.lines.map((line) => line.text)).toEqual(model.paragraphs.map((p) => p.text));
+    expect(checked.contentFindings.map((f) => f.detector)).toContain('dates');
+    expect(checked.ok).toBe(true);
+    expect(toPrintModel(doc, { dateStyle: 'short-month' }).paragraphs.map((p) => p.text)).toContain(
+      'State University, B.A. Communications, May 2027'
+    );
+    expect((await checkExport(await toDocx(doc, { dateStyle: 'short-month' }))).findings).toEqual(
+      []
+    );
+  });
+  it('separates missing content from export failures without hiding findings', async () => {
+    const checked = await checkExport(await toDocx(fromText('Jordan Lee')));
+    expect(checked.ok).toBe(true);
+    expect(checked.findings.length).toBeGreaterThan(0);
+    expect(checked.contentFindings).toEqual(checked.findings);
+    expect(checked.exportFindings).toEqual([]);
+    const damaged = await checkExport(await toDocx(fromText(studentText + '\nUnreadable \uFFFD')));
+    expect(damaged.ok).toBe(false);
+    expect(damaged.exportFindings.map((f) => f.detector)).toContain('characters');
+  });
   it('exports real list paragraphs, selected bullets, escaped Unicode and the same print content', async () => {
     const doc = fromText(studentText.replace('Jordan Lee', 'José & <Lee>'));
     const bullet = doc.lines.find((line) => line.bullet);

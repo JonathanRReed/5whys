@@ -21,6 +21,8 @@ export type ResumeLine = {
   fontSize: number | null;
   origin: LineOrigin;
   bullet: boolean;
+  /** First visual line of this paragraph. Geometry and ids stay on every visual line. */
+  continuationOf?: string;
   items: ResumeTextItem[];
 };
 export type ResumePage = {
@@ -88,6 +90,7 @@ export type DateStyle = 'short-month' | 'long-month' | 'numeric';
 export type ExportOptions = {
   /** Omit to include every bullet. Non-bullet lines always remain. */
   bulletLineIds?: ReadonlySet<string>;
+  /** Omit to preserve dates exactly as written. */
   dateStyle?: DateStyle;
 };
 export type PrintParagraph = {
@@ -101,4 +104,14 @@ export type PrintModel = {
   page: { widthPt: number; heightPt: number; marginPt: number };
   paragraphs: PrintParagraph[];
 };
-export type ExportCheck = { doc: ResumeDoc; findings: ResumeFinding[]; ok: boolean };
+export type ExportCheck = {
+  doc: ResumeDoc;
+  /** All read-back findings, including optional content checks. */
+  findings: ResumeFinding[];
+  /** Remaining document-reading problems. */
+  exportFindings: ResumeFinding[];
+  /** Missing content and date consistency, which require a visitor edit or an explicit repair. */
+  contentFindings: ResumeFinding[];
+  /** True when exportFindings is empty. Content checks remain available above. */
+  ok: boolean;
+};

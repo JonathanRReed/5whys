@@ -1,5 +1,5 @@
 import { detectFindings } from './detectors';
-import { geometricLineOrder } from './layout';
+import { geometricLineOrder, logicalLines } from './layout';
 import type { ResumeContact, ResumeDoc, ResumeLine, ResumeSection, SectionKind } from './types';
 
 const HEADINGS: Array<[SectionKind, RegExp]> = [
@@ -43,7 +43,9 @@ export function recomputeDoc(doc: ResumeDoc): ResumeDoc {
   const next = structuredClone(doc);
   next.extractionOrder = next.lines.map((line) => line.id);
   next.geometricOrder = geometricLineOrder(next);
-  next.plainText = next.lines.map((line) => line.text).join('\n');
+  next.plainText = logicalLines(next.lines)
+    .map((line) => line.text)
+    .join('\n');
   next.contact = parseContact(next.lines);
   const byId = new Map(next.lines.map((line) => [line.id, line]));
   const sections: ResumeSection[] = [];

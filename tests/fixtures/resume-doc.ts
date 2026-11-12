@@ -47,6 +47,77 @@ export function columnPdf(sidebar = false): File {
     ].join('\n')
   );
 }
+/** Browser-like line spacing, hanging indents, and interleaved CSS-grid columns. */
+export function wrappedResumePdf(): File {
+  const left = [
+    ['Summary', 60, 648],
+    ['Communications student building accessible', 60, 628],
+    ['campus events with classmates at university.', 60, 614],
+    ['Education', 60, 580],
+    ['State University', 60, 560],
+    ['May 2027', 60, 546],
+    ['Skills', 60, 520],
+    ['Writing, Excel, Spanish', 60, 500],
+  ] as const;
+  const right = [
+    ['Experience', 360, 648],
+    ['Campus radio assistant', 360, 628],
+    ['Sep 2025 - Present', 360, 614],
+    ['- Grew the station Instagram from 400 to', 360, 590],
+    ['2,100 followers by posting three times', 368, 576],
+    ['a week', 368, 562],
+    ['- Built accessible event guides.', 360, 538],
+    ['- Trained classmates.', 360, 514],
+  ] as const;
+  return pdfFile(
+    [
+      positionedText('Jordan Lee', 60, 740),
+      positionedText('jordan.lee@example.edu', 60, 726),
+      positionedText('(555) 201-4477', 60, 712),
+      ...left.flatMap(([text, x, y], index) => [
+        positionedText(text, x, y),
+        positionedText(right[index][0], right[index][1], right[index][2]),
+      ]),
+    ].join('\n')
+  );
+}
+
+export function separateBulletPdf(): File {
+  return pdfFile(
+    [
+      positionedText('Jordan Lee', 60, 720),
+      positionedText('Experience', 60, 690),
+      positionedText('Campus radio assistant', 60, 670),
+      // Standard-encoding bullet, with its own text object and font size.
+      'BT /F1 8 Tf 66 650 Td (\\267) Tj ET',
+      positionedText('Built accessible event guides.', 80, 650),
+      // A glyph emitted after the text must still attach to its line.
+      positionedText('Trained classmates.', 80, 630),
+      positionedText('o', 66, 630),
+    ].join('\n')
+  );
+}
+
+export function indentedBulletPdf(): File {
+  return pdfFile(
+    [
+      positionedText('Jordan Lee', 60, 720),
+      positionedText('Experience', 60, 690),
+      positionedText('Campus radio assistant, Sep 2025 - Present', 60, 670),
+      positionedText('Built accessible event guides.', 78, 650),
+      positionedText('Trained classmates.', 78, 630),
+      positionedText('Projects', 60, 600),
+      positionedText('Campus newsletter', 60, 580),
+      positionedText('Edited stories for the student paper.', 78, 560),
+      positionedText('Published weekly campus updates.', 78, 540),
+      positionedText('Education', 60, 510),
+      positionedText('State University', 60, 490),
+      positionedText('B.A. Communications', 78, 470),
+      positionedText('May 2027', 78, 450),
+    ].join('\n')
+  );
+}
+
 export function headerContactPdf(): File {
   return pdfFile(
     studentLines

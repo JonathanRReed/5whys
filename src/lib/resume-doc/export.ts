@@ -1,21 +1,12 @@
 import JSZip from 'jszip';
 import { extractDocx } from './docx';
-import { headingKind, recomputeDoc } from './model';
+import { logicalLines } from './layout';
 import { linearize, moveContactToTop, normalizeDates } from './repairs';
 import type { ExportCheck, ExportOptions, PrintModel, PrintParagraph, ResumeDoc } from './types';
 
 function cleanCopy(doc: ResumeDoc, options: ExportOptions): ResumeDoc {
-  const copy = normalizeDates(moveContactToTop(linearize(doc)), options.dateStyle ?? 'short-month');
-  return recomputeDoc({
-    ...copy,
-    lines: copy.lines.map((line) => {
-      const compact = line.text.replace(/\s/g, '');
-      const kind =
-        headingKind(line.text) ??
-        (/^(?:[A-Za-z]\s+){3,}[A-Za-z]$/.test(line.text) ? headingKind(compact) : null);
-      return kind ? { ...line, text: kind[0].toUpperCase() + kind.slice(1), bullet: false } : line;
-    }),
-  });
+  const copy = moveContactToTop(linearize(doc));
+  return options.dateStyle ? normalizeDates(copy, options.dateStyle) : copy;
 }
 export function toPrintModel(doc: ResumeDoc, options: ExportOptions = {}): PrintModel {
   const copy = cleanCopy(doc, options);
@@ -25,7 +16,7 @@ export function toPrintModel(doc: ResumeDoc, options: ExportOptions = {}): Print
     ...copy.contact.links.map((field) => field.lineId),
   ]);
   const headings = new Set(copy.sections.map((section) => section.headingLineId));
-  const paragraphs: PrintParagraph[] = copy.lines
+  const paragraphs: PrintParagraph[] = logicalLines(copy.lines)
     .filter((line) => !line.bullet || !options.bulletLineIds || options.bulletLineIds.has(line.id))
     .map((line, index) => ({
       lineId: line.id,
@@ -38,7 +29,7 @@ export function toPrintModel(doc: ResumeDoc, options: ExportOptions = {}): Print
             : index === 0
               ? 'name'
               : 'text',
-      text: line.bullet ? line.text.replace(/^\s*[-•*◦○●▪]\s+/, '') : line.text,
+      text: line.bullet ? line.text.replace(/^\s*[-–•*◦○●▪·o]\s+/, '') : line.text,
     }));
   return {
     fontFamily: 'Arial',
@@ -108,7 +99,16 @@ export async function toDocx(doc: ResumeDoc, options: ExportOptions = {}): Promi
 }
 export async function checkExport(bytes: Uint8Array): Promise<ExportCheck> {
   const doc = await extractDocx(bytes);
-  return { doc, findings: doc.findings, ok: doc.findings.length === 0 };
+  const contentChecks = new Set(['contact-missing', 'heading', 'dates']);
+  const contentFindings = doc.findings.filter((finding) => contentChecks.has(finding.detector));
+  const exportFindings = doc.findings.filter((finding) => !contentChecks.has(finding.detector));
+  return {
+    doc,
+    findings: doc.findings,
+    exportFindings,
+    contentFindings,
+    ok: exportFindings.length === 0,
+  };
 }
 export function fixList(doc: ResumeDoc): { text: string; markdown: string } {
   const text = doc.findings.map(

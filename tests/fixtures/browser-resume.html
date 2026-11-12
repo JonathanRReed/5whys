@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" />
+  <title>Browser-printed resume fixture</title>
+  <style>
+    @page { size: letter; margin: 54pt; }
+    body { margin: 0; font: 10pt/1.4 Arial, sans-serif; }
+    h1 { margin: 0; font-size: 20pt; }
+    h2 { font-size: 12pt; margin: 16pt 0 6pt; }
+    p { margin: 0 0 6pt; }
+    .columns { display: grid; grid-template-columns: 1fr 1fr; gap: 32pt; }
+    ul { padding-left: 14pt; margin: 4pt 0 12pt; }
+    li { margin-bottom: 6pt; }
+    .vector { list-style: none; }
+    .vector li { position: relative; }
+    .vector li::before { content: ""; position: absolute; left: -9pt; top: 5pt; width: 3pt; height: 3pt; background: black; border-radius: 50%; }
+  </style>
+  <h1>Jordan Lee</h1>
+  <p>jordan.lee@example.edu</p>
+  <p>(555) 201-4477</p>
+  <div class="columns">
+    <div>
+      <h2>Summary</h2>
+      <p>Communications student building accessible campus events with classmates across the university.</p>
+      <h2>Education</h2>
+      <p>State University</p>
+      <p>B.A. Communications, May 2027</p>
+      <h2>Skills</h2>
+      <p>Writing, Excel, Spanish</p>
+    </div>
+    <div>
+      <h2>Experience</h2>
+      <p>Campus radio assistant, Sep 2025 - Present</p>
+      <ul>
+        <li>Grew the station Instagram from 400 to 2,100 followers by posting three times a week</li>
+        <li>Built accessible event guides.</li>
+      </ul>
+      <h2>Projects</h2>
+      <p>Campus newsletter</p>
+      <ul class="vector">
+        <li>Edited stories for the student paper.</li>
+        <li>Published weekly campus updates.</li>
+      </ul>
+    </div>
+  </div>
+</html>
