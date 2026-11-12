@@ -99,6 +99,21 @@ a shadow on floating ones.
 - Focus: ring-[hsl(var(--foam)/0.3)]
 - Font-size: 16px minimum (prevent zoom on mobile)
 
+### The specimen
+
+The signature pattern of the relaunch. A posting or a resume is shown the way a
+field guide shows a leaf: the thing itself, with labels attached to its parts.
+
+- The source text is always visible, unaltered, beside what was read from it.
+- Every finding or requirement points at the exact line or sentence it came
+  from: a `<mark>` in the posting, a numbered bar on the resume page.
+- One color per category, shared by the specimen and its list, with a key.
+- Findings say what was seen and where. They never give a score.
+- Hovering or focusing an item highlights its place in the specimen.
+
+Used in the Application Desk (`PostingStation`) and the Resume Game
+(`MachineView`). Spend the boldness there and keep everything around it quiet.
+
 ## Layout
 
 - Max content width: max-w-6xl (72rem)

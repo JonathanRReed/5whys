@@ -3,6 +3,35 @@
 Short, dated records of choices that are not obvious from the code. Newest
 first. The May 2025 "megaplan" this file replaces is summarized at the bottom.
 
+## 2026-11-12 Relaunch: the application desk and on-device AI
+
+The full design is `docs/superpowers/specs/2026-11-12-relaunch-design.md`.
+The decisions that change earlier ones:
+
+- **AI is allowed when it runs on the device.** The earlier "no AI bullet
+  enhancer" rule was about sending writing to a server. Suggestions now come
+  from built-in rules or from a model in the visitor's browser. A model never
+  produces a score, a rewrite that adds a fact the visitor did not write is
+  flagged, and every AI feature has a rule-based version.
+- **No ATS score.** Vendor documentation supports no universal pass mark. The
+  machine view shows what our extractor read and counts findings; the posting
+  match counts confirmed requirements with evidence, with its denominator.
+- **Six plates.** The Application Desk (V) and Pay (VI) join the four tools.
+  The top bar keeps the tools behind one menu so it does not grow.
+- **Larger local data moves to IndexedDB.** Recordings, the resume file and
+  its structured copy, and model caches. Small data stays in `localStorage`.
+  The backup is version 2 and asynchronous; version 1 files still import.
+- **One master resume.** Applications keep a selection of bullets, not their
+  own resume, so the 2026-09-11 decision stands.
+- **Hosted models are off by default.** Whisper and Kokoro are fetched only
+  when a build sets `HOSTED_MODELS=1`, because hosting 163 MB of model chunks
+  on the free plan is unproven. Kokoro is too slow to speak live, so questions
+  are synthesized before a session. There is no hosted text model.
+- **Wage data comes from BLS, by hand.** BLS refuses automated downloads, so
+  a maintainer downloads three files and runs the pipeline offline.
+- **Typefaces.** The Aa menu adds Nebula Sans and OpenDyslexic. Layouts must
+  hold in OpenDyslexic at phone width.
+
 ## 2026-09-11 Bring-your-own AI and the closed loop
 
 Two additions that make the prep loop legible without breaking the privacy

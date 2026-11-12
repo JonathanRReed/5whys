@@ -113,6 +113,23 @@ end of every working pass. Delete it in the final pull request.
 - The mobile glow-up browser test is slow (8 s) and can time out when
   builders are running in parallel; rerun before treating it as a failure.
 
+## When the build is done (owner's instruction, 2026-11-12)
+
+Run user-story walkthroughs of the finished site for five groups, each led by
+an Opus 5.5 agent that may launch Sonnet 5.5 sub-agents (in poteto mode, see
+`~/.claude/skills/poteto-mode`) for sub-stories:
+
+1. An opinionated senior web developer and tech reviewer, in the style of
+   Theo Browne: judges speed, polish, privacy claims, and engineering taste.
+2. A student.
+3. Three more chosen by the lead: a career changer after a layoff, a career
+   services advisor who would recommend it to students, and a visitor who
+   relies on a screen reader and the OpenDyslexic typeface on a phone.
+
+Each walks the built site in a real browser and reports what broke, what
+confused them, and what they would change. Fix what they find before the
+final pull request.
+
 ## Open questions for the owner
 
 - BLS wage files must be downloaded by hand in a browser into
