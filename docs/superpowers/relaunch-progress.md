@@ -162,6 +162,33 @@ Resume station accepts a pasted resume.
    Hidden value, Signal, OCR, HUD, Packet, percentile, Subprocessors.
 7. Pay cannot ship without wage data (owner).
 
+### Career changer report (in)
+
+Fixed by the lead: Pay worksheet (parsing, validation, overtime, side by
+side), company short name in the send check, wrapping export button.
+
+Handed to builders (running, branch names in their reports):
+- Posting match and sorter (Opus): false and missed evidence, alternatives,
+  years of experience, `findNearMisses` for "same work, wrong words",
+  non-requirement lines, Confirm all, partial state.
+- Resume Game honesty (Opus): one score with parts, fair scoring, verbs,
+  sentence builder, PDF text into the editor, examples by profile, exports.
+- Interview content (Opus): questions from real requirements, questions by
+  audience (layoff, career change), own stories offered, skill tagging,
+  counts instead of percentages, plain register.
+
+Still for the lead after those merge:
+- Restyle the near-miss and partial rows; wire "I have this: write a bullet"
+  to carry the requirement, and add desk bullets to the master resume.
+- Dashboard: show each application's next station from desk state; list all
+  six tools. /start: an "I found a posting" answer and all six tools.
+- Examples and placeholders by profile on the desk (letter example, bullets
+  placeholders, new-application placeholders).
+- Five Whys: choose which answer is the real reason; start from an
+  experience.
+- Pay: save the wage source with the offer once wage data exists; title
+  search ranks badly for coordinator titles (check after data lands).
+
 ## In flight (builders, started 2026-11-12)
 
 | Piece | Model | Paths |
