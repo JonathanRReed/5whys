@@ -116,6 +116,12 @@ export interface InterviewPacket {
   notes: string; // mission/fit/why-us combined
   panicAnswer?: string; // Generic safe story if stumped
   companyIntel?: CompanyIntel;
+  /**
+   * Freeform paste-back from the visitor's own AI (the BYO flow builds the
+   * prompt locally; nothing is sent anywhere by this site). Stored verbatim
+   * and never parsed, merged, or scored.
+   */
+  aiQuestions?: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -167,13 +173,16 @@ export function loadData(): GlowUpData {
     }
 
     const parsed = JSON.parse(raw) as GlowUpData;
+    if (!parsed || typeof parsed !== 'object') {
+      return createDefaultData();
+    }
 
     // Version migration (future-proofing)
     if (parsed.version !== CURRENT_VERSION) {
-      return migrateData(parsed);
+      return normalizeData(migrateData(parsed));
     }
 
-    return parsed;
+    return normalizeData(parsed);
   } catch (error) {
     console.error('[GlowUp] Failed to load data:', error);
     return createDefaultData();
@@ -224,6 +233,79 @@ function migrateData(oldData: GlowUpData): GlowUpData {
   return {
     ...oldData,
     version: CURRENT_VERSION,
+  };
+}
+
+/**
+ * Hand-edited backups and older saves can arrive with whole collections,
+ * per-record arrays, or string fields missing, and the sections iterate and
+ * call string methods on those fields blind. One missing `otherSkillIds`
+ * used to take the whole workspace down. Fill in the shape; leave the
+ * content alone.
+ */
+function normalizeData(data: GlowUpData): GlowUpData {
+  const asArray = <T>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : []);
+  const asString = (value: unknown): string => (typeof value === 'string' ? value : '');
+  const asNumber = (value: unknown): number => (typeof value === 'number' ? value : 0);
+  return {
+    ...data,
+    roles: asArray<DecodedRole>(data.roles).map((role) => ({
+      ...role,
+      jobTitle: asString(role.jobTitle),
+      company: asString(role.company),
+      rawJdText: asString(role.rawJdText),
+      createdAt: asNumber(role.createdAt),
+      updatedAt: asNumber(role.updatedAt),
+      bullets: asArray<DecodedBullet>(role.bullets).map((bullet) => ({
+        ...bullet,
+        text: asString(bullet.text),
+        status: bullet.status === 'ignored' ? 'ignored' : 'active',
+        primarySkillId: typeof bullet.primarySkillId === 'string' ? bullet.primarySkillId : null,
+        secondarySkillIds: asArray<string>(bullet.secondarySkillIds),
+        suggestion: asArray<{ skillId?: unknown; matchedKeywords?: unknown }>(bullet.suggestion)
+          .filter((s) => s && typeof s === 'object')
+          .map((s) => ({
+            skillId: asString(s.skillId),
+            matchedKeywords: asArray<string>(s.matchedKeywords),
+          })),
+      })),
+    })),
+    stories: asArray<Story>(data.stories).map((story) => ({
+      ...story,
+      primarySkillId: asString(story.primarySkillId),
+      otherSkillIds: asArray<string>(story.otherSkillIds),
+      trigger: asString(story.trigger),
+      hook: asString(story.hook),
+      proofSnippet: asString(story.proofSnippet),
+      play: asString(story.play),
+      proof: asString(story.proof),
+      confidence: asNumber(story.confidence) || 60,
+      questionPrompts: asArray<string>(story.questionPrompts),
+      tags: asArray<string>(story.tags),
+      createdAt: asNumber(story.createdAt),
+      updatedAt: asNumber(story.updatedAt),
+    })),
+    packets: asArray<InterviewPacket>(data.packets).map((packet) => ({
+      ...packet,
+      roleId: asString(packet.roleId),
+      mode: packet.mode === 'review' || packet.mode === 'hud' ? packet.mode : 'prep',
+      topStoryIds: asArray<string>(packet.topStoryIds),
+      customQuestions: asArray<string>(packet.customQuestions),
+      notes: asString(packet.notes),
+      ...(packet.companyIntel && typeof packet.companyIntel === 'object'
+        ? {
+            companyIntel: {
+              keywords: asArray<string>(packet.companyIntel.keywords),
+              notes: asString(packet.companyIntel.notes),
+              links: asArray<string>(packet.companyIntel.links),
+            },
+          }
+        : {}),
+      createdAt: asNumber(packet.createdAt),
+      updatedAt: asNumber(packet.updatedAt),
+    })),
+    currentRoleId: typeof data.currentRoleId === 'string' ? data.currentRoleId : null,
+    currentPacketId: typeof data.currentPacketId === 'string' ? data.currentPacketId : null,
   };
 }
 

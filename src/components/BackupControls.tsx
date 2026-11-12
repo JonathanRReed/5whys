@@ -32,6 +32,10 @@ function describe(summary: BackupSummary): string {
     );
   if (summary.stories)
     parts.push(`${summary.stories} interview ${summary.stories === 1 ? 'story' : 'stories'}`);
+  if (summary.applications)
+    parts.push(
+      `${summary.applications} tracked ${summary.applications === 1 ? 'application' : 'applications'}`
+    );
   if (parts.length === 0) return summary.hasProfile ? 'only your career profile' : 'nothing yet';
   return parts.join(', ');
 }

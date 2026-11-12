@@ -2,6 +2,7 @@ import * as React from 'react';
 import { type CareerDashboardData, readCareerDashboard } from '../lib/career-bridge';
 import { FOCUS_LABELS, STAGE_LABELS } from '../lib/profile';
 import { cn } from '../lib/utils';
+import ApplicationsPanel, { NewApplicationForm } from './ApplicationsPanel';
 import BackupControls from './BackupControls';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
@@ -147,6 +148,20 @@ export default function CareerDashboard() {
           </a>
         )}
       </div>
+
+      {/* One quiet line when the whole loop is actually closed. */}
+      {data.arcLine && <p className="text-sm text-foam">{data.arcLine}</p>}
+
+      {/* Applications first: they are the deadlines the other work serves. */}
+      <ApplicationsPanel
+        applications={data.applications}
+        readiness={{
+          resumeScored: (data.resume?.bulletCount ?? 0) > 0,
+          practiceRounds: data.networking?.sessionCount ?? 0,
+          storyCount: data.glowup?.storyCount ?? 0,
+        }}
+        onChanged={() => setData(readCareerDashboard())}
+      />
 
       {/* Next actions: the steps the tools themselves produced */}
       {data.nextActions.length > 0 && (
@@ -300,9 +315,9 @@ export default function CareerDashboard() {
             <CardTitle className="text-lg">Recent activity</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {data.recentActivity.map((activity, i) => (
+            {data.recentActivity.map((activity) => (
               <a
-                key={i}
+                key={`${activity.tool}-${activity.action}-${activity.date}`}
                 href={activity.url}
                 className="flex items-center justify-between rounded-xl border border-border/30 bg-overlay/20 px-4 py-3 transition hover:border-border/50 hover:bg-overlay/30"
               >
@@ -402,6 +417,14 @@ function EmptyState({ onRestored }: { onRestored: () => void }) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
         </a>
+      </div>
+
+      <div className="rounded-2xl border border-border/40 bg-overlay/15 p-6 text-left">
+        <p className="eyebrow text-muted-foreground">Have a deadline already?</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Track the application here and the tools fill in the prep.
+        </p>
+        <NewApplicationForm idPrefix="empty-app" onCreated={onRestored} />
       </div>
 
       <BackupControls onRestored={onRestored} className="text-left" />

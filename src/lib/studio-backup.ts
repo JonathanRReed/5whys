@@ -18,6 +18,7 @@ export const STUDIO_STORAGE_KEYS = [
   'networking-practice-sessions', // src/utils/storage.ts
   'networking-practice-draft', // src/components/networking/useNetworkingPractice.ts
   'interview-glow-up-data', // src/lib/glowup-store.ts
+  'career-applications', // src/lib/applications.ts
 ] as const;
 
 export type StudioStorageKey = (typeof STUDIO_STORAGE_KEYS)[number];
@@ -38,6 +39,7 @@ export interface BackupSummary {
   resumeBullets: number;
   practiceRounds: number;
   stories: number;
+  applications: number;
   hasProfile: boolean;
 }
 
@@ -69,11 +71,13 @@ export function summarizeBackup(backup: StudioBackup): BackupSummary {
   const count = (value: unknown) => (Array.isArray(value) ? value.length : 0);
   const glow = s['interview-glow-up-data'] as { stories?: unknown[] } | undefined;
   const resume = s['resume-game-session-v2'] as { bullets?: unknown[] } | undefined;
+  const apps = s['career-applications'] as { applications?: unknown[] } | undefined;
   return {
     reflections: count(s['career-why-history']),
     resumeBullets: count(resume?.bullets),
     practiceRounds: count(s['networking-practice-sessions']),
     stories: count(glow?.stories),
+    applications: count(apps?.applications),
     hasProfile: !!s['career-tools-profile'],
   };
 }

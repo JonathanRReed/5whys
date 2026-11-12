@@ -17,6 +17,12 @@ import {
   SESSION_KEY as WHY_SESSION_KEY,
   type WhySnapshot,
 } from '../components/career-5whys/shared';
+import {
+  type ApplicationsData,
+  daysUntilDeadline,
+  loadApplications,
+  sortApplications,
+} from './applications';
 import { averageRating, computeNextStep, type Ratings } from './networking-advice';
 import { type CareerProfile, readProfile } from './profile';
 
@@ -123,9 +129,15 @@ function readCareer5Whys(): { session: WhySession | null; snapshots: WhySnapshot
 const GLOWUP_KEY = 'interview-glow-up-data';
 
 interface GlowUpRaw {
-  roles?: Array<{ id: string; jobTitle?: string; company?: string; updatedAt?: number }>;
-  stories?: Array<{ updatedAt?: number }>;
-  packets?: Array<{ updatedAt?: number }>;
+  roles?: Array<{
+    id: string;
+    jobTitle?: string;
+    company?: string;
+    updatedAt?: number;
+    bullets?: Array<{ status?: string }>;
+  }>;
+  stories?: Array<{ id?: string; updatedAt?: number }>;
+  packets?: Array<{ roleId?: string; topStoryIds?: unknown[]; updatedAt?: number }>;
   currentRoleId?: string | null;
 }
 
@@ -138,8 +150,11 @@ export interface GlowUpSummary {
   lastUpdated: number | null;
 }
 
-function readGlowUp(): GlowUpSummary | null {
-  const data = readJson<GlowUpRaw>(GLOWUP_KEY);
+function readGlowUpRaw(): GlowUpRaw | null {
+  return readJson<GlowUpRaw>(GLOWUP_KEY);
+}
+
+function readGlowUp(data: GlowUpRaw | null): GlowUpSummary | null {
   if (!data) return null;
   const roles = data.roles ?? [];
   const stories = data.stories ?? [];
@@ -227,6 +242,65 @@ function readNetworking(): NetworkingSummary | null {
 }
 
 // ============================================================================
+// Applications — src/lib/applications.ts
+// ============================================================================
+
+/**
+ * What the dashboard needs per tracked application. Prep state is derived,
+ * never stored on the record: role-scoped facts (decoded posting, packed
+ * packet) come from the Glow Up store the application points at; resume and
+ * practice readiness stay global, because a resume and an intro are the same
+ * across applications.
+ */
+export interface ApplicationSummary {
+  id: string;
+  /** The linked role's title when it exists, else what was typed. */
+  title: string;
+  company: string;
+  deadline: string | null;
+  daysUntil: number | null;
+  isActive: boolean;
+  roleId: string | null;
+  /** The linked role exists and its posting was actually parsed. */
+  decoded: boolean;
+  /** Stories packed for the linked role's packet. */
+  packetStories: number;
+  updatedAt: number;
+}
+
+function summarizeApplications(
+  data: ApplicationsData,
+  glow: GlowUpRaw | null
+): ApplicationSummary[] {
+  const roles = glow?.roles ?? [];
+  const packets = glow?.packets ?? [];
+  const storyIds = new Set(
+    (glow?.stories ?? []).map((s) => s.id).filter((id): id is string => typeof id === 'string')
+  );
+  const summaries = data.applications.map((app) => {
+    const role = app.roleId ? roles.find((r) => r.id === app.roleId) : undefined;
+    const decoded = !!role?.bullets?.some((b) => b.status !== 'ignored');
+    const packet = app.roleId ? packets.find((p) => p.roleId === app.roleId) : undefined;
+    const packetStories = (packet?.topStoryIds ?? []).filter(
+      (id): id is string => typeof id === 'string' && storyIds.has(id)
+    ).length;
+    return {
+      id: app.id,
+      title: role?.jobTitle?.trim() || app.title,
+      company: role?.company?.trim() || app.company,
+      deadline: app.deadline,
+      daysUntil: daysUntilDeadline(app.deadline),
+      isActive: app.id === data.activeId,
+      roleId: app.roleId,
+      decoded,
+      packetStories,
+      updatedAt: app.updatedAt,
+    };
+  });
+  return sortApplications(summaries, data.activeId);
+}
+
+// ============================================================================
 // Unified dashboard data
 // ============================================================================
 
@@ -270,6 +344,13 @@ export interface CareerDashboardData {
   } | null;
   glowup: GlowUpSummary | null;
   networking: NetworkingSummary | null;
+  applications: ApplicationSummary[];
+  /**
+   * One quiet line when the loop is actually closed: reflection saved, resume
+   * scored, reps run, and a packet holding a live story. Names the in-focus
+   * deadline when there is one. Null while any stage is still open.
+   */
+  arcLine: string | null;
   recentActivity: Array<{ tool: ToolName; action: string; date: string | null; url: string }>;
   recommendations: Recommendation[];
   nextActions: NextAction[];
@@ -279,8 +360,10 @@ export function readCareerDashboard(): CareerDashboardData {
   const profile = readProfile();
   const resume = readResumeGame();
   const why = readCareer5Whys();
-  const glowup = readGlowUp();
+  const glowRaw = readGlowUpRaw();
+  const glowup = readGlowUp(glowRaw);
   const networking = readNetworking();
+  const applications = summarizeApplications(loadApplications(), glowRaw);
 
   // A five whys session auto-saves without the user pressing anything, so a
   // finished chain counts as data even when no snapshot was taken.
@@ -301,6 +384,35 @@ export function readCareerDashboard(): CareerDashboardData {
     )
   );
 
+  // The whole loop, honestly: a reflection, a scored resume, at least one
+  // practice rep, and a packet holding a story that still exists.
+  const storyIds = new Set(
+    (glowRaw?.stories ?? []).map((s) => s.id).filter((id): id is string => typeof id === 'string')
+  );
+  const hasPackedPacket = (glowRaw?.packets ?? []).some((p) =>
+    (p.topStoryIds ?? []).some((id) => typeof id === 'string' && storyIds.has(id))
+  );
+  const arcComplete = !!(
+    (why.snapshots.length || sessionSynthesis?.isComplete) &&
+    resume?.bullets.length &&
+    networking?.sessionCount &&
+    hasPackedPacket
+  );
+  const focusedApp = applications.find((a) => a.isActive);
+  const focusedDue =
+    focusedApp && focusedApp.daysUntil !== null
+      ? focusedApp.daysUntil < 0
+        ? ` ${focusedApp.title} is past its deadline.`
+        : focusedApp.daysUntil === 0
+          ? ` ${focusedApp.title} is due today.`
+          : focusedApp.daysUntil === 1
+            ? ` ${focusedApp.title} is due tomorrow.`
+            : ` ${focusedApp.title} is due in ${focusedApp.daysUntil} days.`
+      : '';
+  const arcLine = arcComplete
+    ? `You have done the whole loop: reflection, resume, reps, and a packed packet.${focusedDue}`
+    : null;
+
   const hasData = !!(
     resume?.bullets.length ||
     resume?.resumeText?.trim() ||
@@ -312,7 +424,8 @@ export function readCareerDashboard(): CareerDashboardData {
     glowup?.roleCount ||
     networking?.sessionCount ||
     networking?.versionCount ||
-    networking?.draftedButUnpracticed
+    networking?.draftedButUnpracticed ||
+    applications.length
   );
 
   const avgScore = resume?.bullets.length
@@ -388,6 +501,41 @@ export function readCareerDashboard(): CareerDashboardData {
 
   // ---- Recommendations built from what was actually saved -----------------
   const recommendations: Recommendation[] = [];
+
+  // Deadlines outrank everything else. Each tracked application (already
+  // sorted: focused first, then soonest) surfaces its first gap only, capped
+  // so a busy season cannot crowd out the tool pointers below.
+  for (const app of applications.slice(0, 2)) {
+    const name = `"${app.title}${app.company ? ` at ${app.company}` : ''}"`;
+    const when =
+      app.daysUntil === null
+        ? ''
+        : app.daysUntil < 0
+          ? ' The deadline has passed.'
+          : app.daysUntil === 0
+            ? ' It is due today.'
+            : app.daysUntil === 1
+              ? ' It is due tomorrow.'
+              : ` It is due in ${app.daysUntil} days.`;
+    if (!app.decoded) {
+      recommendations.push({
+        tool: 'Interview Glow Up',
+        text: `${name} has no decoded posting.${when}`,
+        href: `${TOOL_URLS['Interview Glow Up']}?tab=decode`,
+        cta: 'Decode it',
+      });
+    } else if (app.packetStories === 0) {
+      const hasStories = (glowup?.storyCount ?? 0) > 0;
+      recommendations.push({
+        tool: 'Interview Glow Up',
+        text: hasStories
+          ? `${name} has nothing packed for the call.${when}`
+          : `${name} is decoded but no story backs it yet.${when}`,
+        href: `${TOOL_URLS['Interview Glow Up']}?tab=${hasStories ? 'packet' : 'stories'}`,
+        cta: hasStories ? 'Pack the packet' : 'Build a story',
+      });
+    }
+  }
 
   const hasResumeAnalysis = !!(
     resume?.lastAnalyzedAt ||
@@ -545,6 +693,8 @@ export function readCareerDashboard(): CareerDashboardData {
         : null,
     glowup,
     networking,
+    applications,
+    arcLine,
     recentActivity: recentActivity.slice(0, 5),
     recommendations: recommendations.slice(0, 4),
     nextActions,

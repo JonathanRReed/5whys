@@ -4,7 +4,6 @@ import {
   extractRequirementLines,
   getRepeatedTerms,
   getSkillName,
-  SKILL_BANK,
 } from '../../lib/glowup-banks';
 import {
   createRole,

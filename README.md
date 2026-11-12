@@ -11,9 +11,9 @@ Your work stays in browser `localStorage`. The site has no accounts and sets no 
 | Career 5 Whys, `/career/` | Work through five questions on a Career Path or Interest Path. Save the root reason and a next step. |
 | The Resume Game, `/resume-game/` | Score achievement lines for action, result, and measurement. Rewrite weak lines in a structured editor. Headings, contact details, and education do not affect the score. |
 | Networking Practice, `/networking-practice/` | Choose from twelve scenarios, draft an introduction, practice with a two-minute timer, and save a self-rating. Drafts save as you type. |
-| Interview Glow Up, `/interview-glow-up/` | Identify skills in a job posting, prepare supporting stories, and keep a full-screen reference open during the interview. Stories have three readiness states, not a score. |
+| Interview Glow Up, `/interview-glow-up/` | Identify skills in a job posting, prepare supporting stories, and keep a full-screen reference open during the interview. Stories have three readiness states, not a score. The packet composes a prompt for whatever AI you already use and keeps the pasted answer under a "From your AI" label; the site sends nothing. |
 
-Start at `/start/` to save a career profile for tool defaults. `/dashboard/` links saved work to next steps and provides the export.
+Start at `/start/` to save a career profile for tool defaults. `/dashboard/` tracks applications against their deadlines, links saved work to next steps, and provides the export.
 
 ## Develop
 

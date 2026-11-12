@@ -3,6 +3,53 @@
 Short, dated records of choices that are not obvious from the code. Newest
 first. The May 2025 "megaplan" this file replaces is summarized at the bottom.
 
+## 2026-09-11 Bring-your-own AI and the closed loop
+
+Two additions that make the prep loop legible without breaking the privacy
+promise.
+
+- **BYO-AI for likely questions.** In the packet prep view, Glow Up composes
+  a prompt from the decoded posting (title, company, requirements) and copies
+  it to the clipboard. The student pastes it into whatever AI they already
+  use and pastes the answer back. The site sends nothing anywhere; the
+  student makes the trade themselves. The answer saves on the packet as
+  `aiQuestions`, freeform, under an explicit "From your AI" label. It is
+  never scored, never read by the tools, and never merged into structured
+  packet state. Structured ingest stays deferred unless the freeform version
+  proves out.
+- **The dashboard knows when the loop is closed.** One quiet line appears
+  when a reflection, a scored resume, a practice rep, and a packed packet all
+  exist, naming the in-focus application's deadline when there is one. No
+  confetti, no badges, no streaks.
+- **Load-time normalization hardened.** Backups are user-editable JSON in
+  practice, and a record missing an array field (a hand-edited story without
+  `otherSkillIds`) used to crash the workspace island at render. `loadData`
+  now fills missing arrays and optionals on roles, bullets, stories, and
+  packets while preserving everything valid.
+
+## 2026-09-11 Applications spine
+
+The four tools answered "am I ready" but not "ready for what, by when."
+Students carry several deadlines at once, so the dashboard now tracks
+**applications**: a title, a company, and a deadline, optionally linked to a
+decoded Glow Up role.
+
+- **Thin records, derived status.** `career-applications` stores only what
+  the tools cannot know: the target and its date. Decode and packet state are
+  read live from the linked role; resume and practice readiness stay global,
+  because a resume and an intro are the same across applications. Nothing is
+  copied, so nothing goes stale.
+- **"Application" is the word.** It is what students call the thing; the
+  field-guide naming stays on the tools.
+- **Deadlines drive the dashboard.** Each application surfaces its first gap
+  in the recommendations row, ahead of the tool pointers, and the applications
+  list is sorted focus-first, then soonest.
+- **Creation lives where the context does.** The dashboard offers the form in
+  both its empty and populated states; inside Glow Up a "Track this
+  application" button links the decoded role the student is looking at.
+- **Removing an application removes only the tracking.** The decoded role and
+  the stories stay, and the ConfirmButton says so.
+
 ## 2026-09-05 Print and motion after the component swap
 
 Adopting Radix brought two regressions that only appear off the happy path,

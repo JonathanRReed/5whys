@@ -15,6 +15,7 @@ import {
   updatePacket,
 } from '../../lib/glowup-store';
 import { cn } from '../../lib/utils';
+import AiQuestions from './AiQuestions';
 import { ClipboardIcon, PrinterIcon, TargetIcon } from './icons';
 
 type Props = {
@@ -376,6 +377,8 @@ export default function PacketSection({
               </div>
             )}
           </div>
+
+          <AiQuestions data={data} setData={setData} role={currentRole} packet={currentPacket} />
 
           <div className="rounded-xl border border-foam/30 bg-foam/5 p-5">
             <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">

@@ -12,6 +12,7 @@ import DecodeSection from './DecodeSection';
 import InterviewHUD from './InterviewHUD';
 import PacketSection from './PacketSection';
 import StoriesSection from './StoriesSection';
+import TrackApplication from './TrackApplication';
 import VaultSection from './VaultSection';
 import WorkspaceHeader from './WorkspaceHeader';
 import WorkspaceTabs, { type Tab } from './WorkspaceTabs';
@@ -157,6 +158,20 @@ export default function InterviewGlowUpWorkspace() {
           <Button type="button" variant="outline" onClick={() => setActiveTab('decode')}>
             Review job posting
           </Button>
+        </div>
+      )}
+
+      {/* Which role the workspace is pointed at, on every tab. */}
+      {currentRole && (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-border/30 bg-overlay/15 px-4 py-2 text-sm print:hidden">
+          <span className="text-muted-foreground">Prepping for</span>
+          <span className="font-medium text-foreground">
+            {currentRole.jobTitle || 'Untitled role'}
+            {currentRole.company ? ` at ${currentRole.company}` : ''}
+          </span>
+          <span className="ml-auto">
+            <TrackApplication role={currentRole} />
+          </span>
         </div>
       )}
 

@@ -17,12 +17,17 @@ describe('studio backup', () => {
 
   it('collects every tool store and nothing else', () => {
     window.localStorage.setItem('career-why-history', JSON.stringify([{ id: 'a' }]));
+    window.localStorage.setItem(
+      'career-applications',
+      JSON.stringify({ version: 1, applications: [{ id: 'x' }, { id: 'y' }], activeId: 'x' })
+    );
     window.localStorage.setItem('career-tools-theme', 'dawn');
     window.localStorage.setItem('unrelated', '1');
     const backup = collectBackup();
     expect(backup.format).toBe(BACKUP_FORMAT);
-    expect(Object.keys(backup.stores)).toEqual(['career-why-history']);
+    expect(Object.keys(backup.stores)).toEqual(['career-why-history', 'career-applications']);
     expect(summarizeBackup(backup).reflections).toBe(1);
+    expect(summarizeBackup(backup).applications).toBe(2);
   });
 
   it('rejects files that are not studio exports with a readable reason', () => {
