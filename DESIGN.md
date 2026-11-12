@@ -58,6 +58,9 @@ Self-hosted via `@fontsource-variable/*` (no CDN, on-brand for privacy-first).
   (Fraunces italic with opsz/SOFT/WONK axes) to emphasize one word in a heading.
 - **Body / UI**: Inter Variable
 - **Mono (labels, indices, data)**: JetBrains Mono Variable
+- **Visitor typefaces**: the Aa menu swaps all three roles for Nebula Sans
+  (readability) or OpenDyslexic. Both are self-hosted in `public/fonts`. Layouts
+  must hold in OpenDyslexic, which is far wider than Inter.
 - **Scale**: confident jumps for display; tight ratio for body
 - **Body line length**: max ~70ch
 - **Hierarchy**: typeface + scale + weight, not color
@@ -105,7 +108,12 @@ a shadow on floating ones.
 - Easing: ease-out with exponential curves
 - No layout property animations (no width/height/top/left)
 - Respect prefers-reduced-motion
-- Motion conveys state only: hover feedback, focus rings, loading skeletons
+- Motion conveys state or answers an action: hover feedback, focus rings,
+  loading, and a change the visitor just caused (a posting lifting into
+  requirement tags, a row filling, a rewrite replacing a line). Nothing moves
+  on its own except one orchestrated moment on the homepage.
+- Prefer CSS and the View Transitions API, with plain rendering as the
+  fallback. No client router.
 
 ## Absolute Bans
 
