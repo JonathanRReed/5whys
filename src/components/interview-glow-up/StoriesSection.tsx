@@ -1,11 +1,13 @@
 import * as React from 'react';
 import {
+  type Audience,
   getGeneralQuestions,
-  getQuestionsForSkill,
   getSkillName,
   type QuestionPrompt,
+  questionFits,
+  questionsFor,
   resolveQuestionText,
-  SKILL_BANK,
+  usesStudentExamples,
 } from '../../lib/glowup-banks';
 import {
   createStory,
@@ -17,6 +19,7 @@ import {
   readinessLabel,
   readinessOf,
   type Story,
+  skillCounts,
   toggleStoryInPacket,
   updateStory,
 } from '../../lib/glowup-store';
@@ -30,9 +33,30 @@ type Props = {
   currentRole: DecodedRole | undefined;
   currentPacket: InterviewPacket | undefined;
   onGoToDecode: () => void;
+  audience?: Audience;
 };
 
 const MAX_SKILL_SUGGESTIONS = 8;
+
+/** Placeholders and prompts in the visitor's register. */
+const EXAMPLES = {
+  student: {
+    trigger: 'Club sign-up fix, campus job rush',
+    hook: 'The club sign-up sheet kept losing people halfway through...',
+    proofSnippet: 'Finished on time, or: the club still uses it',
+    proof: 'A grade, a before and after, what an instructor or manager said...',
+    proofHint:
+      'Numbers you can stand behind, feedback, or a before and after. No business numbers? A grade, the size of the job, or what an instructor said counts too.',
+  },
+  work: {
+    trigger: 'Holiday schedule, freight backlog',
+    hook: 'Trucks were sitting half unloaded at the end of every shift...',
+    proofSnippet: 'Trucks worked the same day, or: fewer last-minute schedule changes',
+    proof: 'Hours saved, errors caught, a schedule that held, what a manager or customer said...',
+    proofHint:
+      'Numbers you can stand behind, feedback, or a before and after: hours saved, counts that matched, a schedule that held.',
+  },
+} as const;
 
 export default function StoriesSection({
   data,
@@ -40,7 +64,10 @@ export default function StoriesSection({
   currentRole,
   currentPacket,
   onGoToDecode,
+  audience = 'student',
 }: Props) {
+  const student = usesStudentExamples(audience);
+  const examples = student ? EXAMPLES.student : EXAMPLES.work;
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [formData, setFormData] = React.useState<Partial<Story>>({});
   const [customQuestion, setCustomQuestion] = React.useState('');
@@ -105,9 +132,17 @@ export default function StoriesSection({
   const coveredSkillIds = [formData.primarySkillId, ...(formData.otherSkillIds ?? [])].filter(
     (id): id is string => Boolean(id)
   );
+  // Skills this posting names lead the skill list. A technical question is
+  // offered only when the posting asks for that technology, or the story is
+  // itself tagged with it: a Python question never turns up under "Attention
+  // to detail" for an operations job.
+  const postingSkillIds = currentRole
+    ? skillCounts(currentRole.bullets).counts.map((entry) => entry.skillId)
+    : [];
+  const filter = { audience, postingSkillIds: [...postingSkillIds, ...coveredSkillIds] };
   const skillQuestionSuggestions: QuestionPrompt[] = [];
   for (const skillId of coveredSkillIds) {
-    for (const q of getQuestionsForSkill(skillId)) {
+    for (const q of questionsFor(skillId, filter)) {
       if (!attachedPromptsSet.has(q.id) && !skillQuestionSuggestions.some((x) => x.id === q.id)) {
         skillQuestionSuggestions.push(q);
       }
@@ -115,7 +150,7 @@ export default function StoriesSection({
   }
   const visibleSkillSuggestions = skillQuestionSuggestions.slice(0, MAX_SKILL_SUGGESTIONS);
   const generalSuggestions = showGeneralQuestions
-    ? getGeneralQuestions().filter((q) => !attachedPromptsSet.has(q.id))
+    ? getGeneralQuestions().filter((q) => !attachedPromptsSet.has(q.id) && questionFits(q, filter))
     : [];
 
   const attachQuestion = (idOrText: string) => {
@@ -185,42 +220,98 @@ export default function StoriesSection({
             </button>
           </div>
 
-          <p className="text-xs text-muted-foreground">
-            Know STAR? It maps cleanly: Situation and Task become your Trigger and Hook, Action is
-            your Play, Result is your Proof.
-          </p>
+          <div className="space-y-1 text-xs leading-relaxed text-muted-foreground">
+            <p>A story has four parts:</p>
+            <ul className="list-inside list-disc space-y-0.5 pl-2">
+              <li>
+                <strong className="text-foreground">Trigger</strong>: a short name that brings the
+                story back to mind.
+              </li>
+              <li>
+                <strong className="text-foreground">Hook</strong>: the situation, in a sentence.
+              </li>
+              <li>
+                <strong className="text-foreground">Play</strong>: what you did.
+              </li>
+              <li>
+                <strong className="text-foreground">Proof</strong>: what came of it.
+              </li>
+            </ul>
+            <p>
+              If you know STAR: Situation and Task are the Hook, Action is the Play, and Result is
+              the Proof.
+            </p>
+          </div>
 
-          <details className="rounded-lg border border-gold/30 bg-gold/5 px-4 py-3">
-            <summary className="cursor-pointer text-sm font-medium text-foreground">
-              No work experience yet? Build from what you have.
-            </summary>
-            <div className="mt-3 space-y-2 text-xs leading-relaxed text-muted-foreground">
-              <p>Stories do not need a job title behind them. These all count:</p>
-              <ul className="list-inside list-disc space-y-1 pl-2">
-                <li>
-                  <strong>Class projects:</strong> what you built, the part you owned, the decision
-                  you made when the plan broke.
-                </li>
-                <li>
-                  <strong>Group work:</strong> the time you coordinated four schedules, split the
-                  work, or salvaged a project a week before the deadline.
-                </li>
-                <li>
-                  <strong>Part-time jobs:</strong> handling a rush, an angry customer, training the
-                  new hire.
-                </li>
-                <li>
-                  <strong>Clubs and volunteering:</strong> the event you organized, the budget you
-                  managed, the members you recruited.
-                </li>
-              </ul>
-              <p>
-                Proof without business metrics: a grade, the scope (people, hours, budget), a before
-                and after state, classmates adopting your work, or instructor feedback. "Professor
-                used our project as next semester's example" is a receipt.
-              </p>
-            </div>
-          </details>
+          {student ? (
+            <details className="rounded-lg border border-gold/30 bg-gold/5 px-4 py-3">
+              <summary className="cursor-pointer text-sm font-medium text-foreground">
+                No work experience yet? Build from what you have.
+              </summary>
+              <div className="mt-3 space-y-2 text-xs leading-relaxed text-muted-foreground">
+                <p>Stories do not need a job title behind them. These all count:</p>
+                <ul className="list-inside list-disc space-y-1 pl-2">
+                  <li>
+                    <strong>Class projects:</strong> what you made, the part you owned, the decision
+                    you made when the plan broke.
+                  </li>
+                  <li>
+                    <strong>Group work:</strong> the time you lined up everyone's schedules, split
+                    the work, or rescued a project a week before it was due.
+                  </li>
+                  <li>
+                    <strong>Campus and part-time jobs:</strong> handling a rush, an unhappy
+                    customer, training the new hire.
+                  </li>
+                  <li>
+                    <strong>Clubs and volunteering:</strong> the event you organized, the budget you
+                    kept, the members you recruited.
+                  </li>
+                </ul>
+                <p>
+                  Proof without business numbers: a grade, the size of the job (people, hours,
+                  budget), a before and after, classmates using what you made, or what an instructor
+                  said.
+                </p>
+              </div>
+            </details>
+          ) : (
+            <details className="rounded-lg border border-gold/30 bg-gold/5 px-4 py-3">
+              <summary className="cursor-pointer text-sm font-medium text-foreground">
+                Where to find stories from your work
+              </summary>
+              <div className="mt-3 space-y-2 text-xs leading-relaxed text-muted-foreground">
+                <p>The everyday parts of a job make good stories. Look at:</p>
+                <ul className="list-inside list-disc space-y-1 pl-2">
+                  <li>
+                    <strong>A shift that went wrong:</strong> a no-show, a late truck, a register
+                    down at the rush, and what you did.
+                  </li>
+                  <li>
+                    <strong>A schedule:</strong> one you built, fixed, or kept together when people
+                    called out.
+                  </li>
+                  <li>
+                    <strong>Customers:</strong> a complaint you turned around, or a regular you
+                    kept.
+                  </li>
+                  <li>
+                    <strong>Inventory and counts:</strong> a count that would not match until you
+                    found why.
+                  </li>
+                  <li>
+                    <strong>A process you fixed:</strong> how it worked before, what you changed,
+                    and who uses it now.
+                  </li>
+                  <li>
+                    <strong>People:</strong> someone you trained, coached, or had a hard
+                    conversation with.
+                  </li>
+                </ul>
+                <p>Say it in the words this posting uses, but only for work you really did.</p>
+              </div>
+            </details>
+          )}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
@@ -228,7 +319,7 @@ export default function StoriesSection({
                 htmlFor="story-primary-skill"
                 className="mb-1 block text-sm font-medium text-foreground"
               >
-                Primary Skill *
+                Primary skill *
               </label>
               <SkillSelect
                 id="story-primary-skill"
@@ -236,6 +327,7 @@ export default function StoriesSection({
                 onChange={(skillId) => setFormData({ ...formData, primarySkillId: skillId ?? '' })}
                 placeholder="Select skill..."
                 className="w-full"
+                first={postingSkillIds}
               />
             </div>
             <fieldset>
@@ -285,7 +377,7 @@ export default function StoriesSection({
               Other skills this story shows
             </p>
             <p className="mb-1 text-xs text-muted-foreground">
-              One story usually proves 2-3 skills. Tag them so the story surfaces for more
+              One story often shows more than one skill. Tag each one so the story comes up for more
               questions.
             </p>
             <div className="flex flex-wrap items-center gap-2">
@@ -320,6 +412,7 @@ export default function StoriesSection({
                 className="h-8 text-xs"
                 exclude={[formData.primarySkillId ?? '', ...(formData.otherSkillIds ?? [])]}
                 resetAfterSelect
+                first={postingSkillIds}
               />
             </div>
           </div>
@@ -330,17 +423,17 @@ export default function StoriesSection({
                 htmlFor="story-trigger"
                 className="mb-1 block text-sm font-medium text-foreground"
               >
-                Trigger (1-3 words)
+                Trigger
               </label>
               <p className="mb-1 text-xs text-muted-foreground">
-                A short label you use to recall this story quickly.
+                A short name, a few words, that brings this story back to mind.
               </p>
               <input
                 id="story-trigger"
                 type="text"
                 value={formData.trigger ?? ''}
                 onChange={(e) => setFormData({ ...formData, trigger: e.target.value })}
-                placeholder="API redesign, capstone demo"
+                placeholder={examples.trigger}
                 className={inputClass}
               />
             </div>
@@ -349,17 +442,17 @@ export default function StoriesSection({
                 htmlFor="story-hook"
                 className="mb-1 block text-sm font-medium text-foreground"
               >
-                Hook (~25 words)
+                Hook
               </label>
               <p className="mb-1 text-xs text-muted-foreground">
-                The setup: what was the situation or problem?
+                The situation in a sentence: what was going on, or what was wrong?
               </p>
               <input
                 id="story-hook"
                 type="text"
                 value={formData.hook ?? ''}
                 onChange={(e) => setFormData({ ...formData, hook: e.target.value })}
-                placeholder="Our legacy API kept failing, or: our group project was a week behind..."
+                placeholder={examples.hook}
                 className={inputClass}
               />
             </div>
@@ -368,17 +461,17 @@ export default function StoriesSection({
                 htmlFor="story-proof-snippet"
                 className="mb-1 block text-sm font-medium text-foreground"
               >
-                Proof Snippet (~10 words)
+                Proof in one line
               </label>
               <p className="mb-1 text-xs text-muted-foreground">
-                The result in one line: a number, a grade, a before and after.
+                What came of it, short enough to glance at during the call.
               </p>
               <input
                 id="story-proof-snippet"
                 type="text"
                 value={formData.proofSnippet ?? ''}
                 onChange={(e) => setFormData({ ...formData, proofSnippet: e.target.value })}
-                placeholder="40% faster, or: shipped on time, top grade in section"
+                placeholder={examples.proofSnippet}
                 className={inputClass}
               />
             </div>
@@ -389,7 +482,7 @@ export default function StoriesSection({
               htmlFor="story-play"
               className="mb-1 flex items-center justify-between text-sm font-medium text-foreground"
             >
-              <span>Play (What You Did) *</span>
+              <span>Play: what you did *</span>
               {playSentences > 4 && (
                 <span className="flex items-center gap-1 text-xs text-gold">
                   <WarningIcon className="h-3 w-3" />
@@ -398,7 +491,7 @@ export default function StoriesSection({
               )}
             </label>
             <p className="mb-1 text-xs text-muted-foreground">
-              The core of your story: your actions, decisions, and approach. "I", not "we".
+              The heart of the story: what you did and decided. Say "I", not "we".
             </p>
             <textarea
               id="story-play"
@@ -418,23 +511,20 @@ export default function StoriesSection({
               htmlFor="story-proof"
               className="mb-1 flex items-center justify-between text-sm font-medium text-foreground"
             >
-              <span>Proof (The Receipt)</span>
+              <span>Proof: what came of it</span>
               {!hasNumbers && formData.proof && formData.proof.length > 10 && (
                 <span className="flex items-center gap-1 text-xs text-gold">
                   <LightbulbIcon className="h-3 w-3" />
-                  Can you quantify this?
+                  Is there a number you can stand behind?
                 </span>
               )}
             </label>
-            <p className="mb-1 text-xs text-muted-foreground">
-              Numbers, feedback quotes, or concrete evidence. No business metrics? Grades, scope,
-              before and after states, and instructor feedback count too.
-            </p>
+            <p className="mb-1 text-xs text-muted-foreground">{examples.proofHint}</p>
             <textarea
               id="story-proof"
               value={formData.proof ?? ''}
               onChange={(e) => setFormData({ ...formData, proof: e.target.value })}
-              placeholder="Time saved, revenue, a grade, adoption by classmates, specific praise..."
+              placeholder={examples.proof}
               rows={3}
               className={inputClass}
             />
@@ -444,7 +534,8 @@ export default function StoriesSection({
             <h4 className="text-sm font-medium text-foreground">Questions this story answers</h4>
             <p className="text-xs text-muted-foreground">
               Attach the interview questions you would answer with this story. They show up in the
-              HUD and the packet so you rehearse question-first.
+              packet and on the HUD, the one-screen cheat sheet for the call, so you practice from
+              the question.
             </p>
 
             {attachedPrompts.length > 0 && (
@@ -664,8 +755,8 @@ export default function StoriesSection({
           <p className="text-sm font-medium text-foreground">No stories yet</p>
           <p className="mt-1 text-sm text-muted-foreground">
             {currentRole
-              ? 'Start with a gap above, or click "+ New story". Know STAR? Situation and Task map to the Trigger and Hook, Action is the Play, Result is the Proof.'
-              : 'Stories work best against a real posting, so the skills it tests become your list.'}
+              ? 'Start with a gap above, or press "+ New story".'
+              : 'Stories work best against a real posting, so the skills it asks for become your list.'}
           </p>
           {!currentRole && (
             <button
@@ -677,8 +768,9 @@ export default function StoriesSection({
             </button>
           )}
           <p className="mt-2 text-xs text-muted-foreground">
-            No work experience yet? Class projects, internships, club events, part-time jobs, and
-            volunteering all produce stories.
+            {student
+              ? 'No work experience yet? Class projects, internships, club events, part-time jobs, and volunteering all produce stories.'
+              : 'Any job produces stories: a hard shift, a schedule you fixed, a customer you kept, a count that finally matched.'}
           </p>
         </div>
       )}

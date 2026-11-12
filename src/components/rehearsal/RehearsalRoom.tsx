@@ -1,6 +1,14 @@
 import * as React from 'react';
-import type { DecodedRole } from '../../lib/glowup-store';
-import { loadData } from '../../lib/glowup-store';
+import {
+  type Audience,
+  audienceForProfile,
+  detectSkillsFromText,
+  planRehearsal,
+  type RehearsalQuestion,
+  storiesForQuestion,
+} from '../../lib/glowup-banks';
+import type { DecodedRole, Story } from '../../lib/glowup-store';
+import { loadData, requirementBullets } from '../../lib/glowup-store';
 import type { HostedModel, ModelState } from '../../lib/models';
 import type { RecordedAudio, SpeechRecorder } from '../../lib/speech';
 import { cn } from '../../lib/utils';
@@ -9,20 +17,8 @@ import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import TakeReview, { type Take } from './TakeReview';
 
-type Question = { question: string; requirement: string | null };
 type Phase = 'setup' | 'asking' | 'review' | 'done';
 type AnswerMode = 'speak' | 'type';
-
-const MIN_QUESTIONS = 5;
-
-const FALLBACK_QUESTIONS: Question[] = [
-  { question: 'Tell me about yourself.', requirement: null },
-  { question: 'Why are you interested in this role?', requirement: null },
-  { question: 'Tell me about a time you worked on a team.', requirement: null },
-  { question: 'Tell me about a time something went wrong and what you did.', requirement: null },
-  { question: 'Tell me about something you taught yourself.', requirement: null },
-  { question: 'What questions do you have for us?', requirement: null },
-];
 
 const clock = (seconds: number) =>
   `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
@@ -35,7 +31,12 @@ const clock = (seconds: number) =>
  */
 export default function RehearsalRoom() {
   const [role, setRole] = React.useState<DecodedRole | null>(null);
-  const [questions, setQuestions] = React.useState<Question[]>([]);
+  const [questions, setQuestions] = React.useState<RehearsalQuestion[]>([]);
+  const [audience, setAudience] = React.useState<Audience>('student');
+  const [requirementCount, setRequirementCount] = React.useState(0);
+  // The visitor's saved stories, read once. The room never writes them.
+  const [stories, setStories] = React.useState<Story[]>([]);
+  const [showStory, setShowStory] = React.useState(false);
   const [phase, setPhase] = React.useState<Phase>('setup');
   const [index, setIndex] = React.useState(0);
   const [mode, setMode] = React.useState<AnswerMode>('speak');
@@ -67,35 +68,50 @@ export default function RehearsalRoom() {
   const whisperReady = models.some((m) => m.id === 'whisper-tiny-en' && m.state === 'ready');
   const kokoroReady = models.some((m) => m.id === 'kokoro' && m.state === 'ready');
 
-  // Read the role being prepared for and build its questions. Reading only.
+  // Read the role being prepared for and build its questions. Reading only:
+  // nothing here writes to storage.
   // biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount
   React.useEffect(() => {
     let cancelled = false;
     const data = loadData();
     const current = data.roles.find((r) => r.id === data.currentRoleId) ?? data.roles[0] ?? null;
     setRole(current);
+    setStories(data.stories);
     void (async () => {
-      const { likelyQuestions } = await import('../../lib/local-ai');
+      const [{ likelyQuestions }, { readProfile }] = await Promise.all([
+        import('../../lib/local-ai'),
+        import('../../lib/profile'),
+      ]);
+      const who = audienceForProfile(readProfile());
+      // Only real requirements: confirmed lines, or lines sorted as required,
+      // preferred, or a duty. Never the header, the address, or the pitch.
+      const requirements = requirementBullets(current?.bullets ?? []).map((b) => b.text);
       const result = await likelyQuestions(
         {
           jobTitle: current?.jobTitle || undefined,
           company: current?.company || undefined,
-          requirements: (current?.bullets ?? [])
-            .filter((b) => b.status === 'active')
-            .map((b) => b.text),
+          requirements,
+          audience: who,
         },
         { rulesOnly: true }
       );
       if (cancelled) return;
-      // A posting with few requirements, or none, still gets a full session.
-      const fromPosting = result.value.questions;
-      const asked = new Set(fromPosting.map((q) => q.question.toLowerCase()));
-      const extra = FALLBACK_QUESTIONS.filter((q) => !asked.has(q.question.toLowerCase()));
-      setQuestions(
-        fromPosting.length >= MIN_QUESTIONS
-          ? fromPosting
-          : [...fromPosting, ...extra].slice(0, Math.max(MIN_QUESTIONS, fromPosting.length))
+      const fromPosting: RehearsalQuestion[] = result.value.questions
+        .filter((q) => q.requirement)
+        .map((q) => ({
+          question: q.question,
+          requirement: q.requirement,
+          skillIds: q.skillIds ?? [],
+          questionId: q.questionId,
+          strongAnswer: q.strongAnswer,
+          commonMistake: q.commonMistake,
+        }));
+      const postingSkillIds = new Set(
+        requirements.flatMap((line) => detectSkillsFromText(line).map((s) => s.skillId))
       );
+      setAudience(who);
+      setRequirementCount(requirements.length);
+      setQuestions(planRehearsal({ audience: who, fromPosting, postingSkillIds }));
     })();
     void (async () => {
       const { speechCapabilities, rankVoices, loadVoiceChoice } = await import('../../lib/speech');
@@ -146,6 +162,10 @@ export default function RehearsalRoom() {
   }, [recording]);
 
   const current = questions[index] ?? null;
+  const storyMatch = React.useMemo(
+    () => (current ? (storiesForQuestion(current, stories, 1)[0] ?? null) : null),
+    [current, stories]
+  );
 
   const speak = React.useCallback(
     async (text: string) => {
@@ -176,6 +196,7 @@ export default function RehearsalRoom() {
       setKept(false);
       setElapsed(0);
       setNotice(null);
+      setShowStory(false);
       setPhase('asking');
       const text = questions[next]?.question;
       if (text && readAloud && (hasVoice || prepared?.has(text))) void speak(text);
@@ -318,10 +339,18 @@ export default function RehearsalRoom() {
               : ''}
           </h2>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            {role
-              ? 'These come from what the posting asks for. Each one shows which requirement it is testing.'
-              : 'These are common first-interview questions. Decode a posting on the Application Desk and the room will ask about that job instead.'}
+            {!role
+              ? 'These are common first-interview questions. Decode a posting on the Application Desk and the room will ask about that job instead.'
+              : requirementCount > 0
+                ? 'Most of these come from what the posting asks for, and each of those shows the requirement it is testing.'
+                : 'None of the lines in this posting is sorted as a requirement yet, so these are common questions. Parse the posting again in the workspace and the room will ask about its requirements.'}
           </p>
+          {audience === 'career-changer' && (
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              You said you are changing careers, so the room also asks why you are changing fields,
+              about leaving your last job, and about the time since.
+            </p>
+          )}
         </div>
 
         <fieldset className="mx-0 min-w-0 space-y-2 border-0 p-0">
@@ -541,6 +570,11 @@ export default function RehearsalRoom() {
           onTextChange={(text) => setTake({ ...take, text })}
           onKeep={take.audio ? keep : null}
           kept={kept}
+          notes={
+            current?.strongAnswer || current?.commonMistake
+              ? { strongAnswer: current.strongAnswer, commonMistake: current.commonMistake }
+              : undefined
+          }
           onRetry={() => ask(index)}
           onNext={() => (index + 1 < questions.length ? ask(index + 1) : setPhase('done'))}
           isLast={index + 1 >= questions.length}
@@ -571,6 +605,30 @@ export default function RehearsalRoom() {
               {current.requirement}
             </mark>
           </p>
+        )}
+        {storyMatch && (
+          <div className="space-y-1 text-sm" data-testid="rehearsal-story">
+            <p className="text-muted-foreground">
+              You have a story that fits:{' '}
+              <span className="font-medium text-foreground">
+                {storyMatch.story.trigger || 'Untitled story'}
+              </span>
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              aria-expanded={showStory}
+              onClick={() => setShowStory((open) => !open)}
+            >
+              {showStory ? 'Hide my story' : 'Show my story'}
+            </Button>
+            {showStory && (
+              <p className="leading-relaxed text-foreground">
+                {storyMatch.story.hook || storyMatch.story.play}
+              </p>
+            )}
+          </div>
         )}
         {(hasVoice || prepared) && current && (
           <Button type="button" size="sm" variant="ghost" onClick={() => speak(current.question)}>

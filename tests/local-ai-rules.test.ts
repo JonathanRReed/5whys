@@ -12,6 +12,7 @@ import {
   WORDING_DICTIONARY,
 } from '../src/lib/local-ai';
 import { mentionsKnownTool } from '../src/lib/local-ai/guards';
+import { isQuestionableRequirement } from '../src/lib/local-ai/requirement-questions';
 import { extractBullets } from '../src/lib/resume-game/analysis';
 import { STUDENT_SAMPLE_RESUME } from '../src/lib/resume-game/samples';
 
@@ -362,5 +363,166 @@ describe('fail closed on bad input', () => {
     await expect(messageVariants(broken)).resolves.toMatchObject({ source: 'rules' });
     await expect(translateWording(broken)).resolves.toMatchObject({ source: 'rules' });
     await expect(interviewFollowUp(broken)).resolves.toMatchObject({ source: 'rules' });
+  });
+});
+
+describe('likelyQuestions rules: questions from real requirements', () => {
+  it('never turns an address, an employer description, or pay into a question', async () => {
+    // The rehearsal room asked "Tell me about a time you showed this:" about these.
+    const { value } = await likelyQuestions(
+      {
+        company: 'Northgate Logistics Partners',
+        requirements: [
+          'Northgate Logistics Partners, Columbus, OH (hybrid, 3 days on site)',
+          'Harbor Freight Logistics is a mid-size logistics company',
+          'Northgate is a growing third-party logistics provider serving retail and consumer goods brands.',
+          'Larkfield Brands, Inc. (remote within Ohio, up to 25% travel)',
+          "We're looking for a self-starter who thrives in a fast-paced environment and can wear many hats.",
+          'Compensation: $58,000 - $66,000 per year, plus annual bonus up to 5%. Full benefits.',
+          'Other duties as assigned',
+        ],
+      },
+      rules
+    );
+    expect(value.questions.filter((q) => q.requirement !== null)).toEqual([]);
+    for (const q of value.questions) expect(q.question).not.toMatch(/showed this/);
+  });
+
+  it('skips eligibility lines: degrees, certificates, lifting', async () => {
+    const { value } = await likelyQuestions(
+      {
+        requirements: [
+          "Bachelor's degree in business, supply chain, or related field, or equivalent experience",
+          'Lean or Six Sigma Yellow Belt',
+          'Must be able to lift 25 pounds and work Saturday mornings',
+          'Currently enrolled in a college or university program',
+        ],
+      },
+      rules
+    );
+    expect(value.questions.filter((q) => q.requirement !== null)).toEqual([]);
+  });
+
+  it('asks how a tool was used', async () => {
+    const { value } = await likelyQuestions(
+      {
+        requirements: [
+          'Advanced Excel skills (pivot tables, VLOOKUP/XLOOKUP)',
+          'Experience with a warehouse management system (WMS) such as Manhattan, Blue Yonder, or similar',
+          'Proficiency with Smartsheet, MS Project, or similar project management tools',
+        ],
+      },
+      rules
+    );
+    expect(value.questions.map((q) => q.question)).toEqual(
+      expect.arrayContaining([
+        'How have you used Excel, and for what?',
+        'How have you used a warehouse management system, and for what?',
+        'How have you used Smartsheet or MS Project, and for what?',
+      ])
+    );
+  });
+
+  it('asks a student to walk through a duty and anyone else for a time they did it', async () => {
+    const duty =
+      'Coordinate daily inbound and outbound shipment schedules with carriers and warehouse leads';
+    const student = await likelyQuestions({ requirements: [duty], audience: 'student' }, rules);
+    expect(student.value.questions[0].question).toBe(
+      'Walk me through how you would coordinate daily inbound and outbound shipment schedules with carriers and warehouse leads.'
+    );
+    const changer = await likelyQuestions(
+      { requirements: [duty], audience: 'career-changer' },
+      rules
+    );
+    expect(changer.value.questions[0].question).toBe(
+      'Tell me about a time you had to coordinate daily inbound and outbound shipment schedules with carriers and warehouse leads.'
+    );
+  });
+
+  it('asks a behavioural bank question for a quality, with its notes', async () => {
+    const { value } = await likelyQuestions(
+      {
+        requirements: ['Ability to manage multiple priorities in a fast-paced environment'],
+        audience: 'career-changer',
+      },
+      rules
+    );
+    const [first] = value.questions;
+    expect(first.questionId).toBe('q-time-priority');
+    expect(first.strongAnswer).toBeTruthy();
+    expect(first.commonMistake).toBeTruthy();
+  });
+
+  it('asks about years of experience in the posting’s own field words', async () => {
+    const { value } = await likelyQuestions(
+      {
+        requirements: [
+          '2+ years of experience in operations, logistics, supply chain, or a related field',
+        ],
+      },
+      rules
+    );
+    expect(value.questions[0].question).toBe(
+      'Tell me about your experience in operations, logistics, or supply chain.'
+    );
+  });
+
+  it('asks a career changer why they are changing fields among the general questions', async () => {
+    const { value } = await likelyQuestions(
+      { requirements: [], audience: 'career-changer' },
+      rules
+    );
+    expect(value.questions.map((q) => q.question)).toEqual([
+      'Tell me about yourself.',
+      'Why are you moving from your last field into this one?',
+    ]);
+  });
+});
+
+describe('interviewFollowUp rules for questions about the person', () => {
+  it('does not ask "what was your part" about a layoff', async () => {
+    const { value } = await interviewFollowUp(
+      {
+        question: 'Tell me about leaving your last job.',
+        answer: 'We were all laid off when the store closed.',
+      },
+      rules
+    );
+    expect(value.followUp).not.toBe(GENERIC_PROBES.ownership);
+    expect(value.followUp).toBe('What did you learn there that you would bring here?');
+  });
+
+  it('asks for an example after a short answer to a question with no story', async () => {
+    const { value } = await interviewFollowUp(
+      { question: 'Why do you think you would be good at this?', answer: 'I am organized.' },
+      rules
+    );
+    expect(value.followUp).toBe(GENERIC_PROBES.example);
+  });
+});
+
+describe('isQuestionableRequirement', () => {
+  it.each([
+    'Northgate Logistics Partners, Columbus, OH (hybrid, 3 days on site)',
+    'Harbor Freight Logistics is a mid-size logistics company',
+    'You will be the glue between the floor, our carriers, and our account managers.',
+    'This is a great opportunity for a rockstar who is passionate about retail.',
+    'Pay: $24.00 - $28.00 per hour, non-exempt, overtime eligible.',
+    "Bachelor's degree in business, supply chain, or related field",
+    'Part time, paid',
+  ])('rejects "%s"', (line) => {
+    expect(isQuestionableRequirement(line, { company: 'Northgate Logistics Partners' })).toBe(
+      false
+    );
+  });
+
+  it.each([
+    'Coordinate daily inbound and outbound shipment schedules with carriers and warehouse leads',
+    'Advanced Excel skills (pivot tables, VLOOKUP/XLOOKUP)',
+    'Strong communication skills and attention to detail',
+    '2+ years of experience in operations, logistics, supply chain, or a related field',
+    'Proficiency with Smartsheet, MS Project, or similar project management tools',
+  ])('accepts "%s"', (line) => {
+    expect(isQuestionableRequirement(line)).toBe(true);
   });
 });

@@ -1,10 +1,13 @@
 import * as React from 'react';
+import { audienceForProfile } from '../../lib/glowup-banks';
 import {
   type DecodedRole,
   type GlowUpData,
   type InterviewPacket,
+  requirementBullets,
   updatePacket,
 } from '../../lib/glowup-store';
+import { readProfile } from '../../lib/profile';
 import { useClipboard } from '../networking/useClipboard';
 import { sourceLabel } from '../shared/AiText';
 
@@ -49,7 +52,9 @@ export default function AiQuestions({ data, setData, role, packet }: Props) {
     const result = await likelyQuestions({
       jobTitle: role.jobTitle || undefined,
       company: role.company || undefined,
-      requirements: role.bullets.filter((b) => b.status === 'active').map((b) => b.text),
+      // Only real requirements, never the address or the pitch.
+      requirements: requirementBullets(role.bullets).map((b) => b.text),
+      audience: audienceForProfile(readProfile()),
     });
     const list = result.value.questions
       .map(

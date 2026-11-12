@@ -38,6 +38,8 @@ type Props = {
   onRetry: () => void;
   onNext: () => void;
   isLast: boolean;
+  /** What a strong answer to this question shows, and one common mistake. */
+  notes?: { strongAnswer?: string; commonMistake?: string };
 };
 
 /**
@@ -55,6 +57,7 @@ export default function TakeReview({
   onRetry,
   onNext,
   isLast,
+  notes,
 }: Props) {
   const [facts, setFacts] = React.useState<DeliveryFacts | null>(null);
   const [ticks, setTicks] = React.useState<Record<string, boolean>>({});
@@ -190,6 +193,28 @@ export default function TakeReview({
               common guide is that a structured answer runs one to two minutes.
             </p>
           </section>
+
+          {notes && (
+            <section aria-labelledby="notes-title" className="space-y-2" data-testid="take-notes">
+              <h3 id="notes-title" className="text-lg font-semibold">
+                What interviewers listen for
+              </h3>
+              <dl className="space-y-2 text-sm leading-relaxed">
+                {notes.strongAnswer && (
+                  <div>
+                    <dt className="text-muted-foreground">A strong answer shows</dt>
+                    <dd className="text-foreground">{notes.strongAnswer}</dd>
+                  </div>
+                )}
+                {notes.commonMistake && (
+                  <div>
+                    <dt className="text-muted-foreground">A common mistake</dt>
+                    <dd className="text-foreground">{notes.commonMistake}</dd>
+                  </div>
+                )}
+              </dl>
+            </section>
+          )}
 
           <fieldset className="mx-0 min-w-0 space-y-2 border-0 p-0" data-guide="self-check">
             <legend className="font-display text-lg font-semibold">Check it yourself</legend>
