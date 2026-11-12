@@ -536,29 +536,39 @@ export default function OnboardingWizard() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        {currentStep.options.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => handleSelect(option.value)}
-            className={cn(
-              'flex flex-col items-center gap-3 rounded-2xl border border-border/35 bg-overlay/25 p-6 text-center transition-all duration-200 cursor-pointer',
-              'hover:-translate-y-0.5 hover:border-foam/50 hover:shadow-lg hover:bg-overlay/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2'
-            )}
-          >
-            <svg
-              aria-hidden="true"
-              className="h-8 w-8 text-foam"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
+        {currentStep.options.map((option) => {
+          const isSelected = answers[step] === option.value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              aria-pressed={isSelected}
+              onClick={() => handleSelect(option.value)}
+              className={cn(
+                'flex flex-col items-center gap-3 rounded-2xl border p-6 text-center transition-all duration-200 cursor-pointer',
+                isSelected
+                  ? 'border-foam/60 bg-overlay/45 text-foreground shadow-sm'
+                  : 'border-border/35 bg-overlay/25 text-foreground/80 hover:-translate-y-0.5 hover:border-foam/50 hover:shadow-lg hover:bg-overlay/40 hover:text-foreground',
+                'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2'
+              )}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d={option.icon} />
-            </svg>
-            <span className="font-medium">{option.label}</span>
-          </button>
-        ))}
+              <svg
+                aria-hidden="true"
+                className={cn(
+                  'h-8 w-8 transition-colors',
+                  isSelected ? 'text-foam' : 'text-foam/70'
+                )}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.5}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d={option.icon} />
+              </svg>
+              <span className="font-medium">{option.label}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
