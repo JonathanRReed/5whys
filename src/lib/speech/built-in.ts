@@ -1,5 +1,6 @@
 import { localVoices, onDeviceRecognitionState, recognitionConstructor } from './capabilities';
 import { checkSignal, SpeechError } from './errors';
+import { bestVoice } from './voices';
 export interface SpeakOptions {
   signal?: AbortSignal;
   voiceURI?: string;
@@ -12,7 +13,7 @@ export async function speakBuiltIn(text: string, options: SpeakOptions = {}): Pr
   checkSignal(options.signal);
   const voice = options.voiceURI
     ? voices.find((v) => v.voiceURI === options.voiceURI)
-    : (voices.find((v) => v.lang.startsWith('en')) ?? voices[0]);
+    : bestVoice(voices, typeof navigator !== 'undefined' ? navigator.language : 'en-US');
   if (!voice)
     throw new SpeechError(
       options.voiceURI && voices.length ? 'voice-unavailable' : 'no-local-voice',
@@ -23,6 +24,9 @@ export async function speakBuiltIn(text: string, options: SpeakOptions = {}): Pr
   await new Promise<void>((resolve, reject) => {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.voice = voice;
+    utterance.lang = voice.lang;
+    // A touch under normal speed reads as a person asking, not an announcement.
+    utterance.rate = 0.95;
     const finish = (error?: SpeechError) => {
       speaking = false;
       options.signal?.removeEventListener('abort', cancel);

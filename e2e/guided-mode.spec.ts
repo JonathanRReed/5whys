@@ -3,6 +3,18 @@ import type { GuideCheck, GuideTool } from '../src/lib/guide';
 import { GUIDES } from '../src/lib/guides';
 import { useStudentProfile, waitForHydration } from './helpers';
 
+/** On a phone the coach is a one-line bar; open it before pressing anything inside. */
+async function openCoach(page: import('@playwright/test').Page) {
+  const coach = page.getByRole('complementary', { name: 'Guide' });
+  // Wait for the bar's own toggle: a closing menu can hide the page from the
+  // accessibility tree for a moment, and a one-off check would miss it.
+  await expect(coach.getByRole('button', { name: /^(Show|Hide)$/ })).toBeVisible();
+  // Exact: "Show me where" is a different button.
+  const show = coach.getByRole('button', { name: 'Show', exact: true });
+  if (await show.isVisible()) await show.click();
+  return coach;
+}
+
 test('guided mode walks a first-timer through the Resume Game by watching what they do', async ({
   page,
 }) => {
@@ -20,7 +32,7 @@ test('guided mode walks a first-timer through the Resume Game by watching what t
   await expect(page.getByLabel('Paste resume text')).toHaveAttribute('data-guide-active', '');
 
   // The example shortcut does the step, and the coach notices on its own.
-  await coach.getByRole('button', { name: 'Use a sample resume' }).click();
+  await (await openCoach(page)).getByRole('button', { name: 'Use a sample resume' }).click();
   await expect(coach).toContainText('Step 2 of 5');
   await expect(coach).toContainText('Score it');
 
@@ -30,7 +42,7 @@ test('guided mode walks a first-timer through the Resume Game by watching what t
 
   // Some steps only the visitor can confirm.
   await page.locator('[data-bullet-list] button').first().click();
-  await coach.getByRole('button', { name: 'I did this' }).click();
+  await (await openCoach(page)).getByRole('button', { name: 'I did this' }).click();
   await expect(coach).toContainText('Step 4 of 5');
 
   // Progress survives a reload, and the guide can be ended.
@@ -94,7 +106,7 @@ async function walkGuide(
 
   for (const [index, step] of guide.steps.entries()) {
     await expect(coach).toContainText(`Step ${index + 1} of ${total}`);
-    await expect(coach.getByRole('heading', { name: step.title })).toBeVisible();
+    await expect(coach).toContainText(step.title);
     expect(await checkHolds(page, step.done), `${step.id} was done by an earlier step`).toBe(false);
     if (step.target) {
       await expect(page.locator(step.target).first()).toHaveAttribute('data-guide-active', '');
@@ -111,8 +123,9 @@ async function walkGuide(
   await expect(coach).toContainText('Guide finished');
   await beforeFinish?.();
   const finished = page.getByRole('complementary', { name: 'Guide' });
-  await expect(finished.getByRole('heading', { name: guide.finish.title })).toBeVisible();
+  await expect(finished).toContainText(guide.finish.title);
   if (guide.finish.link) {
+    await openCoach(page);
     await expect(finished.getByRole('link', { name: guide.finish.link.label })).toHaveAttribute(
       'href',
       guide.finish.link.href
@@ -132,7 +145,7 @@ test('guided mode walks a first-timer through the Five Whys', async ({ page }) =
     },
     'depth-1': async (coach) => {
       // The worked example opens from the coach.
-      await coach.getByRole('button', { name: 'Show a worked example' }).click();
+      await (await openCoach(page)).getByRole('button', { name: 'Show a worked example' }).click();
       await expect(page.locator('[data-guide="why-example-0"]')).toHaveAttribute(
         'aria-expanded',
         'true'
@@ -169,7 +182,7 @@ test('guided mode walks a first-timer through one networking rep', async ({ page
       await page.locator('#scenario').click();
       await page.getByRole('option').nth(1).click();
       // A scenario is chosen by default, so only the visitor can say they picked.
-      await coach.getByRole('button', { name: 'I did this' }).click();
+      await (await openCoach(page)).getByRole('button', { name: 'I did this' }).click();
     },
     draft: async () => {
       await page
@@ -278,4 +291,29 @@ test('guided mode walks a first-timer through a title search and the offer works
       await page.getByLabel('Weeks a year').fill('10');
     },
   });
+});
+
+test('the rehearsal guide follows one written answer from start to review', async ({ page }) => {
+  await page.goto('/interview-glow-up/rehearse/');
+  await waitForHydration(page);
+  await page.getByRole('radio', { name: 'Guided' }).check();
+  const coach = page.getByRole('complementary', { name: 'Guide' });
+  await expect(coach).toContainText('Step 1 of 6');
+
+  await page.getByRole('radio', { name: /In writing/ }).check();
+  await page.getByRole('button', { name: 'Start with the first question' }).click();
+  await expect(coach).toContainText('Step 2 of 6');
+
+  await page.getByLabel('Your answer').fill('I ran the volunteer schedule for my campus pantry.');
+  await page.getByRole('button', { name: 'Review my answer' }).click();
+  await expect(coach).toContainText('Step 3 of 6');
+  await (await openCoach(page)).getByRole('button', { name: 'I did this' }).click();
+  await expect(coach).toContainText('Step 4 of 6');
+
+  await page.getByLabel('I answered the question that was asked').check();
+  await expect(coach).toContainText('Step 5 of 6');
+  await page.getByRole('button', { name: 'What might they ask next?' }).click();
+  await expect(coach).toContainText('Step 6 of 6');
+  await page.getByRole('button', { name: 'Next question' }).click();
+  await expect(coach).toContainText('That is one full rep');
 });

@@ -2,6 +2,7 @@
 import PlateHeader from '../../components/PlateHeader.astro';
 import RehearsalRoom from '../../components/rehearsal/RehearsalRoom';
 import ErrorBoundary from '../../components/shared/ErrorBoundary';
+import GuideCoach from '../../components/shared/GuideCoach';
 import Base from '../../layouts/Base.astro';
 
 const noScript = [
@@ -30,6 +31,7 @@ const noScript = [
       description="One question at a time, answered out loud or in writing. Listen back, see what can be counted, and try again."
       accent="love"
     />
+    <GuideCoach client:load tool="rehearsal" />
     <section class="mx-auto w-full max-w-6xl">
       <ErrorBoundary client:load>
         <RehearsalRoom client:load />

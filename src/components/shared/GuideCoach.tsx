@@ -30,6 +30,15 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
   const [collapsed, setCollapsed] = React.useState(false);
   const [justDone, setJustDone] = React.useState<string | null>(null);
 
+  // On a phone the coach is a one-line bar, so it never sits on top of the
+  // control a step is asking for. It opens on demand and folds away again
+  // each time a step changes.
+  const stepId = guide && progress ? (currentStep(guide, progress)?.id ?? 'finished') : null;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fold when the step changes
+  React.useEffect(() => {
+    if (window.matchMedia?.('(max-width: 639px)').matches) setCollapsed(true);
+  }, [stepId]);
+
   // Hydrate from empty state, then read the saved choice.
   React.useEffect(() => {
     const saved = loadGuideProgress(tool);
@@ -111,7 +120,6 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
 
   const choose = (mode: 'guided' | 'free') => {
     setJustDone(null);
-    setCollapsed(false);
     if (mode === 'free') update({ ...progress, mode: 'free' });
     else update(progress.finished ? restartGuide() : { ...progress, mode: 'guided' });
   };
@@ -170,8 +178,15 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
           )}
         >
           <div className="flex items-center justify-between gap-3 px-4 pt-3">
-            <p className="font-mono text-xs tabular-nums text-muted-foreground">
-              {step ? `Step ${position} of ${total}` : 'Guide finished'}
+            <p className="min-w-0 text-xs text-muted-foreground" aria-live="polite">
+              <span className="font-mono tabular-nums">
+                {step ? `Step ${position} of ${total}` : 'Guide finished'}
+              </span>
+              {collapsed && (
+                <span className="mt-0.5 block truncate text-sm font-medium text-foreground">
+                  {step ? step.title : guide.finish.title}
+                </span>
+              )}
             </p>
             <div className="flex items-center gap-1">
               <button
@@ -193,7 +208,10 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
           </div>
 
           <div
-            className="h-1 mx-4 mt-2 overflow-hidden rounded-full bg-foreground/10"
+            className={cn(
+              'mx-4 mt-2 h-1 overflow-hidden rounded-full bg-foreground/10',
+              collapsed && 'mb-3'
+            )}
             aria-hidden="true"
           >
             <div
@@ -202,7 +220,7 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
             />
           </div>
 
-          <div aria-live="polite" className={cn('px-4 pb-4 pt-3', collapsed && 'sr-only')}>
+          <div className={cn('px-4 pb-4 pt-3', collapsed && 'hidden')}>
             {step ? (
               <div className="space-y-2">
                 {justDone && <p className="text-xs text-foam">Done: {justDone}.</p>}

@@ -40,8 +40,11 @@ export default function RehearsalRoom() {
   const [index, setIndex] = React.useState(0);
   const [mode, setMode] = React.useState<AnswerMode>('speak');
   const [canRecord, setCanRecord] = React.useState(false);
-  const [hasVoice, setHasVoice] = React.useState(false);
-  const [readAloud, setReadAloud] = React.useState(true);
+  const [voices, setVoices] = React.useState<SpeechSynthesisVoice[]>([]);
+  const [voiceURI, setVoiceURI] = React.useState<string | null>(null);
+  // Off until the visitor asks: built-in voices vary a lot from device to device.
+  const [readAloud, setReadAloud] = React.useState(false);
+  const hasVoice = voices.length > 0;
   const [models, setModels] = React.useState<(HostedModel & { state: ModelState })[]>([]);
   const [downloading, setDownloading] = React.useState<{ id: string; fraction: number } | null>(
     null
@@ -95,11 +98,17 @@ export default function RehearsalRoom() {
       );
     })();
     void (async () => {
-      const { speechCapabilities } = await import('../../lib/speech');
+      const { speechCapabilities, rankVoices, loadVoiceChoice } = await import('../../lib/speech');
       const capabilities = await speechCapabilities();
       if (cancelled) return;
       setCanRecord(capabilities.mediaRecorder.supported);
-      setHasVoice(capabilities.localVoices.length > 0);
+      // Best voices first, joke voices left out. The visitor's saved choice wins.
+      const ranked = rankVoices(capabilities.localVoices, navigator.language).slice(0, 8);
+      setVoices(ranked);
+      const savedVoice = loadVoiceChoice();
+      setVoiceURI(
+        ranked.find((v) => v.voiceURI === savedVoice)?.voiceURI ?? ranked[0]?.voiceURI ?? null
+      );
       if (!capabilities.mediaRecorder.supported) setMode('type');
     })();
     void refreshModels(() => cancelled);
@@ -147,12 +156,16 @@ export default function RehearsalRoom() {
         const lib = await import('../../lib/speech');
         const clip = prepared?.get(text);
         if (clip) await lib.playAudio(clip, { signal: controller.signal });
-        else await lib.speakBuiltIn(text, { signal: controller.signal });
+        else
+          await lib.speakBuiltIn(text, {
+            signal: controller.signal,
+            voiceURI: voiceURI ?? undefined,
+          });
       } catch {
         /* no local voice, or stopped: the question is on screen either way */
       }
     },
-    [prepared]
+    [prepared, voiceURI]
   );
 
   const ask = React.useCallback(
@@ -296,7 +309,7 @@ export default function RehearsalRoom() {
 
   if (phase === 'setup') {
     return (
-      <div className="max-w-3xl space-y-8">
+      <div className="max-w-3xl space-y-8" data-guide="rehearsal-setup">
         <div className="space-y-2">
           <h2 className="text-2xl font-semibold">
             {questions.length} questions
@@ -356,20 +369,54 @@ export default function RehearsalRoom() {
         </fieldset>
 
         {hasVoice && (
-          <label className="flex cursor-pointer items-start gap-3 text-sm">
-            <input
-              type="checkbox"
-              checked={readAloud}
-              onChange={(event) => setReadAloud(event.target.checked)}
-              className="mt-0.5 h-4 w-4 accent-[hsl(var(--love))]"
-            />
-            <span>
-              Read each question aloud
-              <span className="block text-xs text-muted-foreground">
-                Uses a voice already on this device.
+          <div className="space-y-3">
+            <label className="flex cursor-pointer items-start gap-3 text-sm">
+              <input
+                type="checkbox"
+                checked={readAloud}
+                onChange={(event) => setReadAloud(event.target.checked)}
+                className="mt-0.5 h-4 w-4 accent-[hsl(var(--love))]"
+              />
+              <span>
+                Read each question aloud
+                <span className="block text-xs text-muted-foreground">
+                  Uses a voice already on this device. Some sound better than others, so try it
+                  first.
+                </span>
               </span>
-            </span>
-          </label>
+            </label>
+            {readAloud && (
+              <div className="flex flex-wrap items-end gap-2">
+                <label className="min-w-0 space-y-1">
+                  <span className="block text-sm text-muted-foreground">Voice</span>
+                  <select
+                    value={voiceURI ?? ''}
+                    onChange={(event) => {
+                      setVoiceURI(event.target.value);
+                      void import('../../lib/speech').then(({ saveVoiceChoice }) =>
+                        saveVoiceChoice(event.target.value)
+                      );
+                    }}
+                    className="h-9 max-w-full rounded-md border border-border/50 bg-transparent px-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {voices.map((voice) => (
+                      <option key={voice.voiceURI} value={voice.voiceURI}>
+                        {voice.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => speak('Tell me about a time you solved a problem.')}
+                >
+                  Hear a sample
+                </Button>
+              </div>
+            )}
+          </div>
         )}
 
         {models.length > 0 && (

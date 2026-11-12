@@ -32,3 +32,13 @@ export {
   type RecorderOptions,
   type SpeechRecorder,
 } from './recorder';
+export {
+  bestVoice,
+  isNoveltyVoice,
+  loadVoiceChoice,
+  rankVoices,
+  saveVoiceChoice,
+  scoreVoice,
+  VOICE_STORAGE_KEY,
+  type VoiceLike,
+} from './voices';

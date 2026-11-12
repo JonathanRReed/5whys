@@ -94,6 +94,14 @@ end of every working pass. Delete it in the final pull request.
   hand-written service worker (precache 314 files, 12.4 MB), `src/lib/offline.ts`,
   and `UpdateNotice` in the layout. Installed-app behavior on real phones and
   deployed headers are unverified.
+- 2026-11-12: built-in voice choice fixed after the owner heard a novelty
+  voice during tests: `src/lib/speech/voices.ts` ranks local voices and never
+  auto-picks joke voices; read-aloud is off by default with a voice picker
+  and a sample; Playwright runs with `--mute-audio`.
+- 2026-11-12: bullets worksheet print (`shared/PrintSheet`); Rehearsal Room
+  guide; coach is a one-line bar on phones and folds after each step; the
+  scroll-to-top button hides while the coach is open on a phone.
+- Suite: 916 unit, 72 browser, 2 skipped.
 
 ## Tool-flow findings from writing the guides (to fix)
 
@@ -101,9 +109,6 @@ end of every working pass. Delete it in the final pull request.
   there is no sample intro; ratings are only detectable through a hint.
 - Glow Up: the HUD modal covers the coach.
 - Pay: the worksheet is not saved without an application.
-- Coach on a phone in OpenDyslexic covers up to about 45% of the screen on
-  the longest step. Consider starting collapsed on phones.
-- No guide yet for the Rehearsal Room.
 
 ## Engine follow-ups to hand back
 
@@ -144,8 +149,7 @@ end of every working pass. Delete it in the final pull request.
   move the pure helpers into `src/lib` when touching Five Whys.
 - Still to build (lead): dashboard links into the desk and dated steps;
   worksheet print export for the bullets flow;
-  a guide for the rehearsal room; a printable worksheet for the bullets
-  flow;
+  
   Five Whys: start from an experience, identity statement from own phrases,
   send to a story or intro;
   homepage specimen hero (plates and nav are done);

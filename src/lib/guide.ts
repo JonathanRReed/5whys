@@ -50,6 +50,7 @@ export const GUIDE_TOOLS = [
   'interview-glow-up',
   'application',
   'pay',
+  'rehearsal',
 ] as const;
 export type GuideTool = (typeof GUIDE_TOOLS)[number];
 

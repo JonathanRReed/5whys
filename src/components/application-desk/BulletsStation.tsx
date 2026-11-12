@@ -1,6 +1,10 @@
+import * as React from 'react';
 import { updateBulletsFlow } from '../../lib/application-desk';
+import { requirementsFromBullets } from '../../lib/posting';
 import { scoreBullet } from '../../lib/resume-game';
 import RewriteHelp from '../resume-game/RewriteHelp';
+import PrintSheet from '../shared/PrintSheet';
+import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import type { DeskState } from './useDesk';
 
@@ -20,10 +24,18 @@ const STEPS = [
 ] as const;
 
 export default function BulletsStation({ desk }: { desk: DeskState }) {
-  const { application, changeDesks } = desk;
+  const { application, role, changeDesks } = desk;
+  const [printing, setPrinting] = React.useState(false);
+  const donePrinting = React.useCallback(() => setPrinting(false), []);
   if (!application) return null;
   const flow = desk.desk.bullets;
   const appId = application.id;
+  const confirmed = requirementsFromBullets(role?.bullets ?? []).filter(
+    (r) => r.status === 'confirmed'
+  );
+  const hasWork = Boolean(
+    flow.experience.trim() || flow.impact.trim() || flow.bullets.some((b) => b.text.trim())
+  );
 
   return (
     <div className="max-w-3xl space-y-8">
@@ -129,6 +141,54 @@ export default function BulletsStation({ desk }: { desk: DeskState }) {
           </label>
         </li>
       </ol>
+
+      <div className="space-y-2 border-t border-border/40 pt-5">
+        <Button
+          type="button"
+          variant="outline"
+          disabled={!hasWork}
+          onClick={() => setPrinting(true)}
+        >
+          Print or save this as a worksheet
+        </Button>
+        <p className="text-xs text-muted-foreground">
+          One page with the role, what it asks for, your experience, and your two bullets. Choose
+          "Save as PDF" in the print dialog to keep a copy.
+        </p>
+      </div>
+
+      {printing && (
+        <PrintSheet onDone={donePrinting}>
+          <h1>
+            {application.title}
+            {application.company ? `, ${application.company}` : ''}
+          </h1>
+          <p>Application worksheet</p>
+          {confirmed.length > 0 && (
+            <>
+              <h2>What the posting asks for</h2>
+              <ul>
+                {confirmed.slice(0, 8).map((requirement) => (
+                  <li key={requirement.id}>{requirement.text}</li>
+                ))}
+              </ul>
+            </>
+          )}
+          <h2>The experience I chose</h2>
+          <p>{flow.experience.trim() || 'Not written yet.'}</p>
+          <h2>What happened because of it</h2>
+          <p>{flow.impact.trim() || 'Not written yet.'}</p>
+          <h2>My two bullets</h2>
+          <ul>
+            {flow.bullets.map((bullet, index) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: two fixed slots
+              <li key={index}>{bullet.text.trim() || 'Not written yet.'}</li>
+            ))}
+          </ul>
+          <h2>Why these bullets fit this role</h2>
+          <p>{flow.reflection.trim() || 'Not written yet.'}</p>
+        </PrintSheet>
+      )}
     </div>
   );
 }

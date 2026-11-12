@@ -191,7 +191,7 @@ export default function TakeReview({
             </p>
           </section>
 
-          <fieldset className="mx-0 min-w-0 space-y-2 border-0 p-0">
+          <fieldset className="mx-0 min-w-0 space-y-2 border-0 p-0" data-guide="self-check">
             <legend className="font-display text-lg font-semibold">Check it yourself</legend>
             {SELF_CHECK.map((item) => (
               <label key={item.id} className="flex cursor-pointer items-start gap-3 text-sm">
@@ -215,7 +215,7 @@ export default function TakeReview({
               </Button>
               <div aria-live="polite">
                 {followUp && (
-                  <p className="text-sm leading-relaxed">
+                  <p className="text-sm leading-relaxed" data-guide="follow-up">
                     {followUp.value.followUp}
                     <span className="mt-1 block text-xs text-muted-foreground">
                       {sourceLabel(followUp.source)}

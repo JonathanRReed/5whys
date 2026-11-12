@@ -5,7 +5,7 @@ import { waitForHydration } from './helpers';
 test.use({
   permissions: ['microphone'],
   launchOptions: {
-    args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'],
+    args: ['--mute-audio', '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'],
   },
 });
 

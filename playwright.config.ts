@@ -13,9 +13,13 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${port}`,
     trace: 'retain-on-failure',
-    launchOptions: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
-      ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE }
-      : undefined,
+    // Tests must never make a sound on the machine that runs them.
+    launchOptions: {
+      args: ['--mute-audio'],
+      ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
+        ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE }
+        : {}),
+    },
   },
   projects: [
     {

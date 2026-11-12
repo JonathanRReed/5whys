@@ -1139,6 +1139,12 @@ input[type="range"]::-moz-range-thumb {
    the last controls clear of it. */
 @media (max-width: 639px) {
   body:has(aside[aria-label="Guide"]) main {
-    padding-bottom: 16rem;
+    padding-bottom: 7rem;
+  }
+
+  /* The coach owns the bottom edge of a phone while it is open; the
+     scroll-to-top button would sit on top of its controls. */
+  body:has(aside[aria-label="Guide"]) button[aria-label="Scroll to top"] {
+    display: none;
   }
 }
