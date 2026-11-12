@@ -3,10 +3,11 @@ import PayTool from '../components/pay/PayTool';
 import PlateHeader from '../components/PlateHeader.astro';
 import ErrorBoundary from '../components/shared/ErrorBoundary';
 import GuideCoach from '../components/shared/GuideCoach';
+import { hasWages } from '../config/pay';
 import Base from '../layouts/Base.astro';
 
 const noScript = [
-  'Pay shows what an occupation tends to pay in the United States, using public wage data from the Bureau of Labor Statistics. Figures are shown as percentiles: the 10th, 25th, 50th (the median), 75th, and 90th. A percentile describes everyone in the occupation at every level of experience. The survey does not measure starting pay, so a lower percentile is not an entry-level salary.',
+  ...(hasWages ? ['Pay shows what an occupation tends to pay in the United States, using public wage data from the Bureau of Labor Statistics. Figures are shown as percentiles: the 10th, 25th, 50th (the median), 75th, and 90th. A percentile describes everyone in the occupation at every level of experience. The survey does not measure starting pay, so a lower percentile is not an entry-level salary.'] : []),
   'The offer worksheet puts an offer or a posted rate into one set of terms: an hourly equivalent and a yearly one, with any guaranteed bonus kept separate from pay that is not promised. It never assumes a 40-hour week or a 52-week year; if hours or weeks are blank, the figure that needs them stays blank.',
   'Job titles are matched against the O*NET database on your own device. What you type is not sent anywhere.',
 ];
@@ -14,7 +15,9 @@ const noScript = [
 
 <Base
   title="Pay"
-  description="See what an occupation tends to pay, as dated percentiles from public wage data, and put an offer into plain hourly and yearly terms."
+  description={hasWages
+    ? 'See what an occupation tends to pay, as dated percentiles from public wage data, and put an offer into plain hourly and yearly terms.'
+    : 'Put an offer into plain hourly and yearly terms, with overtime and bonus counted, and match a job title to its occupation.'}
   breadcrumbs={[
     { label: 'Home', href: '/' },
     { label: 'Pay', href: '/pay/' },
@@ -26,7 +29,9 @@ const noScript = [
       tag="Plate VI · Weigh"
       roman="VI"
       title="Pay"
-      description="Look up what a job tends to pay, with the source and year beside every figure, and put an offer into terms you can compare."
+      description={hasWages
+        ? 'Look up what a job tends to pay, with the source and year beside every figure, and put an offer into terms you can compare.'
+        : 'Put an offer into terms you can compare: by the hour, the week and the year.'}
       accent="madder"
     />
     <GuideCoach client:load tool="pay" />

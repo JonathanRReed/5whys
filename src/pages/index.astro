@@ -1,6 +1,7 @@
 ---
 import HomeSpecimen from '../components/HomeSpecimen';
 import Base from '../layouts/Base.astro';
+import { hasWages } from '../config/pay';
 import { siteConfig } from '../config/site';
 
 const privacyChips = ['No account', 'Local-only', 'Open source', 'Free'];
@@ -64,7 +65,10 @@ const plates = [
     name: 'Pay',
     href: '/pay/',
     cta: 'Open the plate',
-    desc: 'See what an occupation tends to pay, as dated percentiles from public wage data, and put an offer into terms you can compare.',
+    // Wage figures ship only once the public wage files have been built in.
+    desc: hasWages
+      ? 'See what an occupation tends to pay, as dated percentiles from public wage data, and put an offer into terms you can compare.'
+      : 'Put an offer into terms you can compare: by the hour, the week and the year, with overtime and bonus counted.',
     caption: 'Example · an offer, in plain terms',
   },
 ];
@@ -602,6 +606,29 @@ const homeStructuredData = [
             </a>
           ))
         }
+      </div>
+
+      <div class="mt-10 border-t border-border/40 pt-6">
+        <h3 class="text-lg text-foreground">First time? Take the guided version.</h3>
+        <p class="mt-1 max-w-[62ch] text-sm leading-relaxed text-muted-foreground">
+          Each tool can walk you through itself one step at a time, with an example at every step.
+          You can leave the guide whenever you like and carry on by yourself.
+        </p>
+        <ul class="mt-4 flex flex-wrap gap-2">
+          {
+            plates.map((p) => (
+              <li>
+                <a
+                  href={`${p.href}?guide=1`}
+                  class="inline-flex min-h-11 items-center rounded-lg border border-border/50 px-3 text-sm text-foreground transition-colors hover:bg-overlay/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {p.name}
+                  <span class="sr-only">, guided</span>
+                </a>
+              </li>
+            ))
+          }
+        </ul>
       </div>
     </section>
 

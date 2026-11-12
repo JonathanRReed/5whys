@@ -1,3 +1,4 @@
+import { hasWages } from './pay';
 /**
  * Open Graph image definitions. Each entry becomes /og/<slug>.png at build
  * time (see src/pages/og/[slug].png.ts). Base.astro picks the image for the
@@ -74,9 +75,12 @@ export const OG_PAGES: Record<string, OgPage> = {
   pay: {
     eyebrow: 'Plate VI · Weigh',
     plate: 'VI',
-    title: 'What the job tends to pay, and what the offer comes to.',
-    description:
-      'Dated percentiles from public wage data, and an offer put into plain hourly and yearly terms.',
+    title: hasWages
+      ? 'What the job tends to pay, and what the offer comes to.'
+      : 'What the offer comes to.',
+    description: hasWages
+      ? 'Dated percentiles from public wage data, and an offer put into plain hourly and yearly terms.'
+      : 'An offer put into plain hourly, weekly and yearly terms.',
     accent: 'madder',
   },
   dashboard: {
