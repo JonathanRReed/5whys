@@ -23,6 +23,14 @@ const MARK: Record<PostingSection, string> = {
   unclassified: 'bg-foreground/10',
 };
 
+/** Each section's own underline, so the key does not depend on color alone. */
+const LINE: Record<PostingSection, string> = {
+  required: 'decoration-foam decoration-solid',
+  preferred: 'decoration-gold decoration-dashed',
+  responsibility: 'decoration-iris decoration-dotted',
+  unclassified: 'decoration-muted-foreground decoration-double',
+};
+
 const DOT: Record<PostingSection, string> = {
   required: 'bg-foam',
   preferred: 'bg-gold',
@@ -71,8 +79,13 @@ export default function HomeSpecimen() {
     pieces.push(
       <mark
         key={requirement.id}
-        className={cn('rounded-[3px] px-0.5 text-foreground', MARK[requirement.section])}
+        className={cn(
+          'rounded-[3px] px-0.5 text-foreground underline underline-offset-4',
+          MARK[requirement.section],
+          LINE[requirement.section]
+        )}
       >
+        <span className="sr-only">{LABEL[requirement.section]}: </span>
         {text.slice(span.start, span.end)}
       </mark>
     );
@@ -133,21 +146,28 @@ export default function HomeSpecimen() {
           {requirements &&
             counts.map(({ section, count }) => (
               <li key={section} className="flex items-center gap-2 text-muted-foreground">
-                <span className={cn('h-2 w-2 rounded-full', DOT[section])} aria-hidden="true" />
+                <span
+                  className={cn('forced-fill h-2 w-2 rounded-full', DOT[section])}
+                  aria-hidden="true"
+                />
                 <span className="font-mono tabular-nums text-foreground">{count}</span>
-                {LABEL[section].toLowerCase()}
+                <span className={cn('underline underline-offset-4', LINE[section])}>
+                  {LABEL[section].toLowerCase()}
+                </span>
               </li>
             ))}
         </ul>
       </div>
 
-      <div
+      {/* Named, so a browser that puts the scroller in the Tab order announces it. */}
+      <section
+        aria-label="Sample posting"
         className="rounded-xl sm:max-h-[30rem] sm:overflow-y-auto border border-border/50 bg-card/60 p-5 text-sm leading-7 whitespace-pre-wrap sm:p-6"
         style={{ viewTransitionName: 'home-specimen' }}
         data-testid="home-specimen"
       >
         {pieces}
-      </div>
+      </section>
     </div>
   );
 }

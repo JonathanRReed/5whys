@@ -105,6 +105,7 @@ export function NewApplicationForm({
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            required
             placeholder="e.g., Marketing Intern"
             className={inputClass}
           />
@@ -114,7 +115,7 @@ export function NewApplicationForm({
             htmlFor={`${idPrefix}-company`}
             className="mb-1 block text-sm font-medium text-foreground"
           >
-            Company
+            Company (optional)
           </label>
           <input
             id={`${idPrefix}-company`}
@@ -130,7 +131,7 @@ export function NewApplicationForm({
             htmlFor={`${idPrefix}-deadline`}
             className="mb-1 block text-sm font-medium text-foreground"
           >
-            Deadline
+            Deadline (optional)
           </label>
           <input
             id={`${idPrefix}-deadline`}
@@ -144,10 +145,16 @@ export function NewApplicationForm({
       <button
         type="submit"
         disabled={!title.trim()}
+        aria-describedby={title.trim() ? undefined : `${idPrefix}-needs`}
         className="rounded-lg bg-foam px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-foam/90 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
       >
         Track this application
       </button>
+      {!title.trim() && (
+        <p id={`${idPrefix}-needs`} className="text-xs text-muted-foreground">
+          Type the role to track it.
+        </p>
+      )}
     </form>
   );
 }

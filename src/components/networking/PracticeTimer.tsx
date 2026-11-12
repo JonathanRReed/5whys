@@ -1,7 +1,7 @@
 import type * as React from 'react';
+import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { TIMER_LENGTHS, type TimerState } from './useTimer';
 
@@ -72,43 +72,59 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset, onLeng
             </span>
           </div>
         </div>
-        <ToggleGroup
-          type="single"
-          value={String(timer.total)}
-          onValueChange={(value) => value && onLengthChange(Number(value))}
-          disabled={timer.isRunning}
-          aria-label="Rep length"
-          className="flex-wrap justify-center gap-1.5"
-        >
-          {TIMER_LENGTHS.map((option) => (
-            <Tooltip key={option.seconds}>
-              <TooltipTrigger asChild>
-                <ToggleGroupItem
-                  value={String(option.seconds)}
-                  aria-label={`${option.label}: ${option.hint}`}
-                  className="rounded-full border border-border/50 px-3 text-xs text-muted-foreground data-[state=on]:border-primary/70 data-[state=on]:bg-primary/15 data-[state=on]:text-foreground"
-                >
-                  {option.label}
-                </ToggleGroupItem>
-              </TooltipTrigger>
-              <TooltipContent>{option.hint}</TooltipContent>
-            </Tooltip>
-          ))}
-        </ToggleGroup>
+        {/* Native radios: the arrow keys move the choice as well as the focus. */}
+        <fieldset className="m-0 min-w-0 border-0 p-0" disabled={timer.isRunning}>
+          <legend className="sr-only">Rep length</legend>
+          <div className="flex flex-wrap justify-center gap-1.5">
+            {TIMER_LENGTHS.map((option) => (
+              <Tooltip key={option.seconds}>
+                <TooltipTrigger asChild>
+                  <label className="relative">
+                    <input
+                      type="radio"
+                      name="rep-length"
+                      value={option.seconds}
+                      checked={timer.total === option.seconds}
+                      onChange={() => onLengthChange(option.seconds)}
+                      className="peer absolute inset-0 m-0 cursor-pointer opacity-0 disabled:cursor-not-allowed"
+                    />
+                    <span
+                      className={cn(
+                        'inline-flex min-h-9 items-center rounded-full border border-border/50 px-3 text-xs text-muted-foreground transition-colors',
+                        'peer-hover:border-border peer-hover:text-foreground',
+                        'peer-checked:border-primary/70 peer-checked:bg-primary/15 peer-checked:text-foreground',
+                        'peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-disabled:opacity-70'
+                      )}
+                    >
+                      {option.label}
+                      <span className="sr-only">: {option.hint}</span>
+                    </span>
+                  </label>
+                </TooltipTrigger>
+                <TooltipContent>{option.hint}</TooltipContent>
+              </Tooltip>
+            ))}
+          </div>
+        </fieldset>
         <div className="flex flex-wrap justify-center gap-2">
+          {/* aria-disabled, not disabled: a disabled button drops the keyboard focus. */}
           <Button
-            onClick={onStart}
-            disabled={timer.isRunning}
+            onClick={() => {
+              if (!timer.isRunning) onStart();
+            }}
+            aria-disabled={timer.isRunning || undefined}
             aria-pressed={timer.isRunning}
-            className="bg-primary hover:bg-primary/80 disabled:bg-primary/40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+            className="bg-primary hover:bg-primary/90 aria-disabled:cursor-not-allowed aria-disabled:hover:bg-primary focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
           >
             {timer.isRunning ? 'Running' : isComplete ? 'Restart' : 'Start'}
           </Button>
           <Button
-            onClick={onPause}
-            disabled={!timer.isRunning}
+            onClick={() => {
+              if (timer.isRunning) onPause();
+            }}
+            aria-disabled={!timer.isRunning || undefined}
             variant="outline"
-            className="border-border/60 text-foreground disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+            className="border-border/60 text-foreground aria-disabled:cursor-not-allowed aria-disabled:text-muted-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
           >
             Pause
           </Button>
@@ -117,7 +133,7 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset, onLeng
             variant="outline"
             className="border-border/60 text-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
           >
-            Reset
+            Reset <span className="sr-only">timer</span>
           </Button>
         </div>
         {timer.elapsed > 0 ? (

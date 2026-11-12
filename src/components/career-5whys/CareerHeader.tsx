@@ -79,6 +79,7 @@ export default function CareerHeader({
                   key={key}
                   type="button"
                   onClick={() => onTrackChange(key as Track)}
+                  aria-pressed={isActive}
                   className={cn(
                     'flex-1 rounded-2xl border px-4 py-5 text-left transition-all',
                     'focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-primary',

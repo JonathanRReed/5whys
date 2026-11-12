@@ -37,7 +37,9 @@ export default function WorkspaceTabs({ showHUD, onLaunchHUD, counts }: Props) {
     <div className="flex flex-wrap items-center gap-2 border-b border-border/30 pb-2">
       <TabsList
         variant="line"
-        className="h-auto w-full flex-wrap justify-start gap-2 bg-transparent p-0"
+        // The list grows with its tabs: a fixed height let wrapped tabs spill
+        // over the buttons below on a phone.
+        className="h-auto w-full flex-wrap justify-start gap-2 bg-transparent p-0 group-data-[orientation=horizontal]/tabs:h-auto"
       >
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -55,7 +57,7 @@ export default function WorkspaceTabs({ showHUD, onLaunchHUD, counts }: Props) {
             >
               {tab.step ? (
                 <span
-                  className="flex size-5 items-center justify-center rounded-full bg-overlay/50 text-xs group-data-[state=active]/step:bg-primary-foreground/20"
+                  className="flex size-5 items-center justify-center rounded-full bg-overlay/50 text-xs group-data-[state=active]/step:bg-primary-foreground/10"
                   aria-hidden="true"
                 >
                   {tab.step}
@@ -65,7 +67,7 @@ export default function WorkspaceTabs({ showHUD, onLaunchHUD, counts }: Props) {
               )}
               <span>{tab.label}</span>
               {count > 0 && (
-                <span className="rounded-full bg-overlay/50 px-1.5 text-xs text-foreground group-data-[state=active]/step:bg-primary-foreground/20 group-data-[state=active]/step:text-primary-foreground">
+                <span className="rounded-full bg-overlay/50 px-1.5 text-xs text-foreground group-data-[state=active]/step:bg-primary-foreground/10 group-data-[state=active]/step:text-primary-foreground">
                   {count}
                 </span>
               )}

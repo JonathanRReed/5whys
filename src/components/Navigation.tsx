@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { cn } from '../lib/utils';
+import { cn, scrollBehavior } from '../lib/utils';
 import DisplayMenu from './DisplayMenu';
 
 type NavigationProps = {
@@ -26,6 +26,7 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
   const compactToolsTrigger = React.useRef<HTMLButtonElement>(null);
   const compactToolsMenu = React.useRef<HTMLDivElement>(null);
   const mobileMenuTrigger = React.useRef<HTMLButtonElement>(null);
+  const mobileMenu = React.useRef<HTMLElement>(null);
 
   React.useEffect(() => {
     const onScroll = () => {
@@ -38,7 +39,7 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
   }, []);
 
   const scrollToTop = React.useCallback(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: scrollBehavior() });
     const mainContent = document.getElementById('main-content');
     if (mainContent) {
       if (!mainContent.hasAttribute('tabindex')) {
@@ -96,6 +97,24 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
     };
   }, [compactToolsOpen]);
 
+  // The phone menu covers the page, so Tab must not walk into the page behind
+  // it. When focus leaves the menu (and its toggle), the menu closes.
+  React.useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onFocusIn = (event: FocusEvent) => {
+      const target = event.target;
+      if (
+        target instanceof Node &&
+        !mobileMenu.current?.contains(target) &&
+        !mobileMenuTrigger.current?.contains(target)
+      ) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('focusin', onFocusIn);
+    return () => document.removeEventListener('focusin', onFocusIn);
+  }, [menuOpen]);
+
   const isActive = React.useCallback(
     (href: string) => {
       if (href === '/') return currentPath === '/';
@@ -125,7 +144,8 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
       <nav
         aria-label="Primary"
         className={cn(
-          'mx-auto flex max-w-6xl items-center justify-between px-4 transition-all duration-300',
+          // Wraps rather than pushing the Aa and menu buttons off screen at large text sizes.
+          'mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-y-2 px-4 transition-all duration-300',
           isScrolled ? 'py-2.5' : 'py-3.5'
         )}
       >
@@ -234,7 +254,7 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
               ref={compactToolsTrigger}
               onClick={() => setCompactToolsOpen((open) => !open)}
               aria-expanded={compactToolsOpen}
-              aria-controls="compact-tools-menu"
+              aria-controls={compactToolsOpen ? 'compact-tools-menu' : undefined}
               className={cn(
                 'inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition-colors duration-200',
                 compactToolsActive || compactToolsOpen
@@ -337,12 +357,14 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
       )}
 
       {/* Mobile nav panel */}
-      <div
+      <nav
         id="primary-navigation"
+        ref={mobileMenu}
+        aria-label="Menu"
         aria-hidden={!menuOpen}
         inert={!menuOpen ? true : undefined}
         className={cn(
-          'fixed inset-y-0 right-0 z-50 flex w-72 flex-col gap-1 border-l border-border/25 bg-background/98 px-4 pb-4 pt-20 md:hidden transition-transform duration-300 ease-out',
+          'fixed inset-y-0 right-0 z-50 flex w-72 max-w-full flex-col gap-1 overflow-y-auto border-l border-border/25 bg-background/98 px-4 pb-4 pt-20 md:hidden transition-transform duration-300 ease-out',
           menuOpen ? 'translate-x-0' : 'translate-x-full pointer-events-none'
         )}
       >
@@ -452,7 +474,7 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
             })}
           </div>
         )}
-      </div>
+      </nav>
       {showScrollTop && (
         <button
           type="button"

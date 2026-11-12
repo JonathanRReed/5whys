@@ -205,6 +205,8 @@ export default function BackupControls({ onRestored, className }: Props) {
             type="file"
             accept="application/json,.json"
             onChange={handleFile}
+            // The "Import a file" button opens it; a second, invisible Tab stop helps no one.
+            tabIndex={-1}
             className="sr-only"
             aria-label="Import a 5 Whys Career Studio export file"
           />

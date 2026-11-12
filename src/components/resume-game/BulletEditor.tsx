@@ -7,6 +7,7 @@ import {
   PART_LABELS,
   scoreParts,
 } from '../../lib/resume-game';
+import Announcer, { useSettledAnnouncement } from '../shared/Announcer';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -50,9 +51,16 @@ export default function BulletEditor({
         ? `Your line already counts "${lineMeasure}". Add another only if it is true.`
         : 'Only a number you know is true, with what it counts. Leave it empty if you do not have one.';
 
+  // The score moves as the visitor types; read it once they pause.
+  const scoreMessage = useSettledAnnouncement(
+    bullet ? `Started at ${bullet.baselineScore}/100, now ${bullet.improvedScore}/100.` : '',
+    Boolean(bullet?.edited)
+  );
+
   return (
     <Card>
       <CardHeader>
+        <Announcer message={scoreMessage} />
         <CardTitle className="text-xl">Structured rewrite</CardTitle>
         {bullet && (
           <p className="text-xs text-muted-foreground">

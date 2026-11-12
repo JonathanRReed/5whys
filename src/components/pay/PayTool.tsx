@@ -25,7 +25,8 @@ import {
   type WageDataset,
 } from '../../lib/pay';
 import { type ParsedAmount, parseAmount } from '../../lib/pay-input';
-import { cn } from '../../lib/utils';
+import { cn, focusWhenReady } from '../../lib/utils';
+import Announcer, { useSettledAnnouncement } from '../shared/Announcer';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 
@@ -123,6 +124,16 @@ export default function PayTool() {
     () => (search && occupationQuery.length >= 2 ? search(occupationQuery, 8) : []),
     [search, occupationQuery]
   );
+  // Read the count of matches once the visitor stops typing, not per keystroke.
+  const [typed, setTyped] = React.useState(false);
+  const searchMessage = useSettledAnnouncement(
+    picked || !search || occupationQuery.length < 2
+      ? ''
+      : candidates.length === 0
+        ? 'No occupation matches that title.'
+        : `${candidates.length} ${candidates.length === 1 ? 'occupation matches' : 'occupations match'}. Pick the occupation that fits.`,
+    typed
+  );
 
   const lookup: PayLookup | null = React.useMemo(() => {
     if (!picked?.occupationCode || !national) return null;
@@ -156,8 +167,12 @@ export default function PayTool() {
     if (from?.title) setQuery(from.title);
   }, []);
 
+  // Whether the visitor has changed the worksheet on this visit, so a saved
+  // offer loading is not read out.
+  const [offerEdited, setOfferEdited] = React.useState(false);
   const offer = appId ? (desks.desks[appId]?.offer ?? createEmptyDesk().offer) : scratch;
   const changeOffer = (changes: Partial<OfferWorksheet>) => {
+    setOfferEdited(true);
     if (!appId) {
       setScratch((current) => ({ ...current, ...changes }));
       return;
@@ -167,6 +182,11 @@ export default function PayTool() {
     setDesks(next);
   };
   const equivalents = offerEquivalents(offer);
+  const worksOut = money(equivalents.hourly, 'hour');
+  const offerMessage = useSettledAnnouncement(
+    worksOut === 'Needs more detail' ? '' : `Works out to ${worksOut}.`,
+    offerEdited
+  );
   const credits = payAttributions();
 
   // Yearly base pay, when it can be worked out, is what a percentage refers to.
@@ -224,6 +244,7 @@ export default function PayTool() {
             data-guide="pay-title"
             onChange={(event) => {
               setQuery(event.target.value);
+              setTyped(true);
               setPicked(null);
               void ensureData();
             }}
@@ -236,6 +257,7 @@ export default function PayTool() {
           <p className="text-sm text-muted-foreground">Loading the title list.</p>
         )}
 
+        <Announcer message={searchMessage} />
         {candidates.length > 0 && !picked && (
           <div className="max-w-xl space-y-2">
             <p className="text-sm text-muted-foreground">
@@ -251,11 +273,18 @@ export default function PayTool() {
                 <li key={`${candidate.onetCode}-${candidate.matchedTitle}`}>
                   <button
                     type="button"
-                    onClick={() => setPicked(candidate)}
+                    onClick={() => {
+                      setPicked(candidate);
+                      // The list goes away; the occupation that replaced it takes focus.
+                      focusWhenReady('pay-occupation');
+                    }}
                     className="flex w-full flex-col items-start gap-0.5 px-4 py-2.5 text-left text-sm transition-colors hover:bg-overlay/30 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <span className="text-foreground">{candidate.title}</span>
-                    <span className="text-xs text-muted-foreground">{candidate.label}</span>
+                    {/* The title is already the first line: read it once. */}
+                    <span className="text-xs text-muted-foreground">
+                      <span aria-hidden="true">{candidate.title} </span>({candidate.onetCode})
+                    </span>
                   </button>
                 </li>
               ))}
@@ -270,9 +299,14 @@ export default function PayTool() {
 
         {picked && (
           <div className="space-y-4">
-            <p className="font-display text-xl font-semibold" data-testid="pay-occupation">
+            <h3
+              id="pay-occupation"
+              tabIndex={-1}
+              className="font-display text-xl font-semibold focus-visible:outline-hidden"
+              data-testid="pay-occupation"
+            >
               {picked.title}
-            </p>
+            </h3>
             {dataState === 'titles-only' || !national ? (
               <p className="max-w-[68ch] rounded-lg bg-gold/12 px-3 py-2 text-sm">
                 Wage figures are not included in this copy of the site yet, so there are no numbers
@@ -391,7 +425,7 @@ export default function PayTool() {
               <select
                 value={appId}
                 onChange={(event) => setAppId(event.target.value)}
-                className="h-9 max-w-[18rem] rounded-md border border-border/50 bg-transparent px-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                className="h-9 min-w-0 max-w-[min(18rem,100%)] rounded-md border border-border/50 bg-transparent px-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <option value="">No application (not saved)</option>
                 {applications.map((application) => (
@@ -470,6 +504,7 @@ export default function PayTool() {
             </label>
           </div>
 
+          <Announcer message={offerMessage} />
           <dl
             className="content-start space-y-3 rounded-xl border border-border/40 p-5"
             data-guide="offer-results"

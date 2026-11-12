@@ -107,16 +107,22 @@ export default function ResumeInput({
             data-guide="resume-analyze"
             onClick={onScan}
             className="h-12 rounded-lg bg-foam px-6 text-sm font-semibold text-background transition-colors hover:bg-foam/90 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
-            disabled={!resumeText.trim() || isScanning || isLoadingFile}
+            // Busy, not disabled, while it runs: a disabled button drops the
+            // keyboard focus to the top of the page.
+            disabled={!resumeText.trim() || isLoadingFile}
+            aria-disabled={isScanning || undefined}
+            aria-describedby="resume-analyze-state"
           >
             {isScanning ? 'Analyzing...' : 'Analyze resume'}
           </Button>
-          <p className="text-sm text-muted-foreground md:ml-4">
+          <p id="resume-analyze-state" className="text-sm text-muted-foreground md:ml-4">
             {isScanning
               ? 'Analyzing...'
               : scanComplete
                 ? 'Analysis complete'
-                : 'Ready when you are'}
+                : resumeText.trim()
+                  ? 'Ready when you are'
+                  : 'Paste a resume, upload one, or try the sample to analyze it.'}
             {needsRescan && scanComplete && (
               <span className="ml-2 text-xs text-gold">
                 Resume changed. Tap &quot;Analyze resume&quot; to update scores.
@@ -135,11 +141,10 @@ export default function ResumeInput({
             {fileError}
           </p>
         )}
-        {status ? (
-          <p className="text-sm text-foam" role="status">
-            {status}
-          </p>
-        ) : null}
+        {/* Always in the page, so a reader hears each new message arrive. */}
+        <p className={status ? 'text-sm text-foam' : 'sr-only'} role="status">
+          {status}
+        </p>
         {storageNotice && !status ? <p className="text-sm text-gold">{storageNotice}</p> : null}
       </CardContent>
     </Card>

@@ -19,6 +19,7 @@ import {
 } from '../../lib/glowup-store';
 import { decodePostingToBullets, type PostingSection, SAMPLE_POSTING } from '../../lib/posting';
 import { cn } from '../../lib/utils';
+import Announcer, { useAnnouncer } from '../shared/Announcer';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { PartyIcon, SearchIcon } from './icons';
 import SkillSelect from './SkillSelect';
@@ -57,6 +58,11 @@ function deriveTitle(rawJdText: string): string {
     : '';
 }
 
+/** A requirement, cut short enough to sit inside a control's name. */
+function shortText(text: string): string {
+  return text.length > 60 ? `${text.slice(0, 57).trimEnd()}...` : text;
+}
+
 const EMPTY_FIELDS: RoleFields = { jobTitle: '', company: '', jdUrl: '', rawJdText: '' };
 
 export default function DecodeSection({ data, setData, currentRole, audience = 'student' }: Props) {
@@ -67,6 +73,8 @@ export default function DecodeSection({ data, setData, currentRole, audience = '
   const [selectedBullets, setSelectedBullets] = React.useState<Set<string>>(new Set());
   const [skippedCount, setSkippedCount] = React.useState<number | null>(null);
   const [savedAt, setSavedAt] = React.useState<number | null>(null);
+  const [announcement, announce] = useAnnouncer();
+  const parseButtonRef = React.useRef<HTMLButtonElement>(null);
 
   const fields: RoleFields = currentRole
     ? {
@@ -114,7 +122,11 @@ export default function DecodeSection({ data, setData, currentRole, audience = '
   const parsePosting = () => {
     if (!fields.rawJdText.trim()) return;
     const { parsed, bullets: parsedBullets } = decodePostingToBullets(fields.rawJdText);
-    setSkippedCount(parsed.setAside.filter((line) => line.reason !== 'heading').length);
+    const setAside = parsed.setAside.filter((line) => line.reason !== 'heading').length;
+    setSkippedCount(setAside);
+    announce(
+      `Requirements (${parsedBullets.length}).${setAside > 0 ? ` Set aside ${setAside} ${setAside === 1 ? 'line' : 'lines'} that are not requirements.` : ''}`
+    );
     const title = fields.jobTitle.trim() ? {} : { jobTitle: deriveTitle(fields.rawJdText) };
     commit(
       { ...title, parsedJdText: parsed.text, postingEngineVersion: POSTING_ENGINE_VERSION },
@@ -197,6 +209,7 @@ export default function DecodeSection({ data, setData, currentRole, audience = '
             </button>
           )}
         </div>
+        <Announcer message={announcement} />
         <p className="text-xs text-muted-foreground" aria-live="polite">
           {currentRole
             ? savedAt
@@ -272,6 +285,7 @@ export default function DecodeSection({ data, setData, currentRole, audience = '
         />
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <button
+            ref={parseButtonRef}
             type="button"
             onClick={parsePosting}
             data-guide="decode-parse"
@@ -284,7 +298,11 @@ export default function DecodeSection({ data, setData, currentRole, audience = '
             <button
               type="button"
               data-guide="decode-sample"
-              onClick={() => commit({ rawJdText: SAMPLE_POSTING })}
+              onClick={() => {
+                commit({ rawJdText: SAMPLE_POSTING });
+                // This button goes away once there is text; the next step is Parse.
+                window.requestAnimationFrame(() => parseButtonRef.current?.focus());
+              }}
               className="rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
             >
               Use a sample posting
@@ -313,9 +331,9 @@ export default function DecodeSection({ data, setData, currentRole, audience = '
 
       {repeatedTerms.length > 0 && (
         <div className="rounded-xl border border-border/30 bg-overlay/15 p-4">
-          <h4 className="mb-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          <h3 className="mb-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Repeated phrases
-          </h4>
+          </h3>
           <p className="mb-3 text-xs text-muted-foreground">
             Phrases the posting keeps using, leaving out the employer's name and the job title. If a
             phrase repeats, expect a question about it and have a story ready.
@@ -334,9 +352,9 @@ export default function DecodeSection({ data, setData, currentRole, audience = '
         <div className="space-y-4" data-guide="decode-requirements">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h3 className="text-lg font-semibold text-foreground">
+              <h2 className="text-lg font-semibold text-foreground">
                 Requirements ({bullets.length})
-              </h3>
+              </h2>
               {skippedCount !== null && skippedCount > 0 && (
                 <p className="text-xs text-muted-foreground">
                   Set aside {skippedCount} {skippedCount === 1 ? 'line' : 'lines'} that are not
@@ -362,7 +380,7 @@ export default function DecodeSection({ data, setData, currentRole, audience = '
                   onClick={handleBulkIgnore}
                   className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive transition-colors hover:bg-destructive/15 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
                 >
-                  Ignore
+                  Ignore <span className="sr-only">the {selectedBullets.size} selected</span>
                 </button>
               </div>
             )}
@@ -408,7 +426,7 @@ export default function DecodeSection({ data, setData, currentRole, audience = '
                   >
                     {bullet.text}
                     {isNoise(bullet.text) && bullet.status !== 'ignored' && (
-                      <span className="ml-2 rounded bg-gold/20 px-1.5 py-0.5 text-xs text-gold">
+                      <span className="ml-2 rounded bg-gold/20 px-1.5 py-0.5 text-xs text-foreground">
                         noise?
                       </span>
                     )}
@@ -424,7 +442,7 @@ export default function DecodeSection({ data, setData, currentRole, audience = '
                         )
                       }
                       placeholder="Pick a skill..."
-                      aria-label="Skill this requirement tests"
+                      aria-label={`Skill this requirement tests: ${shortText(bullet.text)}`}
                       className="h-8 text-xs"
                       first={postingSkillIds}
                     />
@@ -442,18 +460,20 @@ export default function DecodeSection({ data, setData, currentRole, audience = '
                                 )
                               );
                             }}
-                            aria-label={
+                            title={
                               s.matchedKeywords && s.matchedKeywords.length > 0
-                                ? `Tag as ${getSkillName(s.skillId)}, matched on ${s.matchedKeywords.join(', ')}`
-                                : `Tag as ${getSkillName(s.skillId)}`
+                                ? `Matched on ${s.matchedKeywords.join(', ')}`
+                                : undefined
                             }
-                            className="rounded-full bg-foam/15 px-2 py-0.5 text-xs text-foam transition-colors hover:bg-foam/25 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+                            className="inline-flex min-h-6 items-center rounded-full bg-foam/15 px-2 py-0.5 text-xs text-foam underline-offset-2 transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                           >
+                            {/* The name starts with the visible words, so voice control can say them. */}
+                            <span className="sr-only">Tag as </span>
                             {getSkillName(s.skillId)}
                             {s.matchedKeywords && s.matchedKeywords.length > 0 && (
-                              <span className="text-foam/70" aria-hidden="true">
+                              <span className="text-foam">
                                 {' '}
-                                &middot; {s.matchedKeywords[0]}
+                                <span aria-hidden="true">&middot;</span> {s.matchedKeywords[0]}
                                 {s.matchedKeywords.length > 1 &&
                                   ` +${s.matchedKeywords.length - 1}`}
                               </span>
@@ -476,6 +496,7 @@ export default function DecodeSection({ data, setData, currentRole, audience = '
                       className="ml-auto rounded-lg border border-border/50 bg-overlay/30 px-3 py-1 text-xs text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                     >
                       {bullet.status === 'ignored' ? 'Restore' : 'Ignore'}
+                      <span className="sr-only">: {shortText(bullet.text)}</span>
                     </button>
                   </div>
                 </div>
@@ -488,9 +509,9 @@ export default function DecodeSection({ data, setData, currentRole, audience = '
       {bullets.length > 0 && (
         <div className="grid gap-4 md:grid-cols-2">
           <div className="rounded-xl border border-border/30 bg-overlay/15 p-4">
-            <h4 className="mb-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            <h3 className="mb-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               What this job tests
-            </h4>
+            </h3>
             <p className="mb-3 text-xs text-muted-foreground" data-testid="tests-denominator">
               {requirementTotal > 0
                 ? `Counted over the ${requirementTotal} ${requirementTotal === 1 ? 'line' : 'lines'} sorted as required, nice to have, or a duty. One line can test several skills, so the counts do not add up to ${requirementTotal}.`
@@ -508,7 +529,7 @@ export default function DecodeSection({ data, setData, currentRole, audience = '
                   </p>
                   <div className="h-2 rounded-full bg-overlay/40" aria-hidden="true">
                     <div
-                      className="h-full rounded-full bg-foam"
+                      className="forced-fill h-full rounded-full bg-foam"
                       style={{ width: `${(count / Math.max(1, requirementTotal)) * 100}%` }}
                     />
                   </div>
@@ -517,9 +538,9 @@ export default function DecodeSection({ data, setData, currentRole, audience = '
             </ul>
           </div>
           <div className="rounded-xl border border-destructive/25 bg-destructive/5 p-4">
-            <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-destructive">
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-destructive">
               Skills with no story yet
-            </h4>
+            </h3>
             {topGaps.length === 0 ? (
               <p className="flex items-center gap-1 text-sm text-muted-foreground">
                 Every tagged skill has a story. <PartyIcon className="h-4 w-4" />

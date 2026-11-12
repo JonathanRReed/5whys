@@ -77,9 +77,9 @@ export default function AiQuestions({ data, setData, role, packet }: Props) {
 
   return (
     <div className="space-y-3">
-      <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+      <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
         Questions they will probably ask
-      </h4>
+      </h3>
       <p className="text-xs text-muted-foreground">
         This prompt is built from the posting you decoded. Paste it into whatever AI you already
         use, then bring the answer back. This site sends nothing anywhere.

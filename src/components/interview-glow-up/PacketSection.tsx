@@ -96,11 +96,11 @@ export default function PacketSection({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-lg font-semibold text-foreground">
+          <h2 className="text-lg font-semibold text-foreground">
             {[currentRole.jobTitle || 'Untitled role', currentRole.company]
               .filter(Boolean)
               .join(' at ')}
-          </h3>
+          </h2>
           <p className="text-sm text-muted-foreground">
             {packetStories.length === 1 ? '1 story' : `${packetStories.length} stories`} in the
             packet. Five is plenty for one interview.
@@ -151,9 +151,9 @@ export default function PacketSection({
       {mode === 'prep' && (
         <div className="space-y-6">
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Stories in this packet
-            </h4>
+            </h3>
             {packetStories.length === 0 ? (
               <div className="rounded-xl border border-dashed border-border/40 p-5 text-sm text-muted-foreground">
                 Nothing packed yet.{' '}
@@ -233,9 +233,9 @@ export default function PacketSection({
           </div>
 
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               About the employer
-            </h4>
+            </h3>
             <div>
               <label htmlFor="packet-keywords" className="mb-1 block text-sm text-muted-foreground">
                 Three keywords for the top of the HUD
@@ -317,9 +317,9 @@ export default function PacketSection({
           </div>
 
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Questions to ask them
-            </h4>
+            </h3>
             <p className="text-xs text-muted-foreground">
               Good questions show interest and help you decide whether you want the job.
             </p>
@@ -348,7 +348,7 @@ export default function PacketSection({
                       setData(updatePacket(data, currentPacket.id, { customQuestions: updated }));
                     }}
                     aria-label={`Remove question ${i + 1}`}
-                    className="rounded px-2 text-muted-foreground hover:text-destructive focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
+                    className="inline-flex min-h-6 min-w-6 items-center justify-center rounded px-2 text-muted-foreground hover:text-destructive focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
                   >
                     &times;
                   </button>
@@ -363,7 +363,7 @@ export default function PacketSection({
                     })
                   );
                 }}
-                className="rounded px-1 text-sm text-foam hover:underline focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+                className="inline-flex min-h-6 items-center rounded px-1 text-sm text-foam hover:underline focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
               >
                 + Add question
               </button>
@@ -400,7 +400,7 @@ export default function PacketSection({
           <div className="rounded-xl border border-foam/30 bg-foam/5 p-5">
             <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h4 className="text-sm font-semibold text-foreground">Ready for the interview?</h4>
+                <h3 className="text-sm font-semibold text-foreground">Ready for the interview?</h3>
                 <p className="text-xs text-muted-foreground">
                   The HUD shows your stories, keywords, and fallback story on one screen, for a last
                   look before the call or a glance during it.
@@ -440,9 +440,9 @@ export default function PacketSection({
               </p>
               {storiesBySkill.map(([skillId, skillStories]) => (
                 <div key={skillId} className="space-y-3">
-                  <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                     {getSkillName(skillId)}
-                  </h4>
+                  </h3>
                   {skillStories.map((story) => (
                     <div
                       key={story.id}
@@ -483,9 +483,9 @@ export default function PacketSection({
               ))}
               {currentPacket.customQuestions.filter(Boolean).length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                     Questions to ask them
-                  </h4>
+                  </h3>
                   <ul className="space-y-1">
                     {currentPacket.customQuestions.filter(Boolean).map((q, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm text-foreground">
@@ -498,9 +498,9 @@ export default function PacketSection({
               )}
               {currentPacket.panicAnswer && (
                 <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
-                  <h4 className="text-sm font-semibold uppercase tracking-wide text-destructive">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-destructive">
                     Fallback story
-                  </h4>
+                  </h3>
                   <p className="mt-2 text-sm text-foreground">{currentPacket.panicAnswer}</p>
                 </div>
               )}

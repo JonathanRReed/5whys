@@ -217,7 +217,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search stories by skill, keyword..."
-                  className="w-full rounded-xl border border-border/80 bg-overlay/15 px-4 py-3 text-lg text-foreground placeholder:text-muted-foreground/60 focus:border-iris focus:outline-hidden"
+                  className="w-full rounded-xl border border-border/80 bg-overlay/15 px-4 py-3 text-lg text-foreground placeholder:text-muted-foreground focus:border-iris focus:outline-hidden"
                 />
               </div>
             )}
@@ -270,7 +270,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
                             <span className="rounded-full bg-iris/20 px-2 py-0.5 text-xs font-semibold text-iris">
                               {getSkillName(story.primarySkillId)}
                             </span>
-                            <span className="text-xs text-muted-foreground/60">
+                            <span className="text-xs text-muted-foreground">
                               {readinessLabel(story)}
                             </span>
                           </div>
@@ -282,7 +282,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
                             <ChartIcon className="h-4 w-4 inline" /> {story.proofSnippet}
                           </p>
                         </div>
-                        <div className="text-muted-foreground/50">
+                        <div className="text-muted-foreground">
                           {isExpanded ? (
                             <svg
                               aria-hidden="true"
@@ -325,20 +325,20 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
                       >
                         <div className="space-y-4">
                           <div>
-                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                               Play
                             </p>
                             <p className="mt-1 text-foreground leading-relaxed">{story.play}</p>
                           </div>
                           <div>
-                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                               Proof
                             </p>
                             <p className="mt-1 text-foam leading-relaxed">{story.proof}</p>
                           </div>
                           {story.questionPrompts.length > 0 && (
                             <div>
-                              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                                 Questions this story answers
                               </p>
                               <ul className="mt-1 space-y-1">
@@ -377,7 +377,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
             </ul>
 
             {packet.customQuestions.filter(Boolean).length === 0 && (
-              <p className="text-sm text-muted-foreground/60">No questions added yet.</p>
+              <p className="text-sm text-muted-foreground">No questions added yet.</p>
             )}
 
             {/* Notes */}
@@ -400,7 +400,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
             <button
               type="button"
               onClick={() => setPanicMode(true)}
-              className="flex items-center gap-2 text-sm text-destructive/70 hover:text-destructive"
+              className="flex items-center gap-2 min-h-6 text-sm text-destructive hover:underline"
             >
               <WarningIcon className="h-4 w-4" />
               <span>

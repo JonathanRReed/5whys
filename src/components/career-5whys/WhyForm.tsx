@@ -46,11 +46,13 @@ export default function WhyForm({
             className="bg-card/98 border-border/55 text-foreground shadow-inner shadow-background/16"
           >
             <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                   Depth {index + 1}
                 </p>
-                <CardTitle className="text-lg text-foreground">{prompt}</CardTitle>
+                <CardTitle id={`${exampleId}-question`} className="text-lg text-foreground">
+                  {prompt}
+                </CardTitle>
               </div>
               <span className="rounded-full border border-border/50 px-4 py-1 text-xs text-muted-foreground">
                 {response.trim().length ? 'Captured' : 'Pending'}
@@ -59,6 +61,7 @@ export default function WhyForm({
             <CardContent className="space-y-4">
               <Textarea
                 aria-label={`Depth ${index + 1} response`}
+                aria-describedby={`${exampleId}-question`}
                 value={response}
                 onChange={(event) => onResponseChange(index, event.target.value)}
                 placeholder="Document your reasoning. Be specific and concrete."
@@ -85,9 +88,12 @@ export default function WhyForm({
                 data-guide={`why-example-${index}`}
                 aria-expanded={isExampleVisible}
                 aria-controls={exampleId}
-                className="w-full justify-between rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+                className="h-auto min-h-9 w-full justify-between gap-3 rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-left text-sm font-medium whitespace-normal text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
               >
-                {isExampleVisible ? 'Hide worked example' : 'Show a worked example'}
+                <span>
+                  {isExampleVisible ? 'Hide worked example' : 'Show a worked example'}{' '}
+                  <span className="sr-only">for depth {index + 1}</span>
+                </span>
                 <span aria-hidden>{isExampleVisible ? '−' : '+'}</span>
               </Button>
               <div

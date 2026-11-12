@@ -6,6 +6,7 @@ import {
   deadlineLabel,
   setActiveApplication,
 } from '../../lib/applications';
+import { focusWhenReady } from '../../lib/utils';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -73,6 +74,8 @@ export default function ApplicationDesk() {
     setDeadline('');
     setAdding(false);
     openStation('posting');
+    // The form is gone; the posting step that replaced it takes focus.
+    focusWhenReady('desk-paste-heading');
   };
 
   if (!ready) {
@@ -96,7 +99,9 @@ export default function ApplicationDesk() {
         />
       </label>
       <label className="space-y-1">
-        <span className="block text-sm text-muted-foreground">Company or organization</span>
+        <span className="block text-sm text-muted-foreground">
+          Company or organization (optional)
+        </span>
         <Input
           value={company}
           onChange={(event) => setCompany(event.target.value)}
@@ -113,9 +118,18 @@ export default function ApplicationDesk() {
           className="text-base"
         />
       </label>
-      <Button type="submit" disabled={!title.trim()}>
+      <Button
+        type="submit"
+        disabled={!title.trim()}
+        aria-describedby={title.trim() ? undefined : 'desk-new-needs'}
+      >
         Start this application
       </Button>
+      {!title.trim() && (
+        <p id="desk-new-needs" className="text-xs text-muted-foreground sm:col-span-4">
+          Type the role to start.
+        </p>
+      )}
     </form>
   );
 

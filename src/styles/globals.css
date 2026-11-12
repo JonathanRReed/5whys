@@ -1245,4 +1245,20 @@ select[aria-invalid="true"] {
   [role="status"].fixed {
     border: 2px solid CanvasText;
   }
+
+  /* Bars and key dots are painted backgrounds, which forced colours remove.
+     Paint them in the system text colour so progress and the key survive. */
+  .forced-fill {
+    forced-color-adjust: none;
+    background-color: CanvasText;
+  }
+}
+
+/* Disabled controls: dimmed so the state shows, but never faded below 3:1.
+   Opacity under about 0.75 took filled buttons to 2.3:1. Each disabled
+   button also has a sentence nearby that says what it is waiting for. */
+button:disabled,
+button[aria-disabled="true"] {
+  opacity: 0.75;
+  cursor: not-allowed;
 }

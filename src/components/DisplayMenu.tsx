@@ -150,7 +150,7 @@ export default function DisplayMenu() {
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
-        aria-label="Display settings"
+        aria-label="Aa, display settings"
         title="Display settings"
         onClick={() => setOpen((value) => !value)}
         className={cn(
@@ -171,6 +171,8 @@ export default function DisplayMenu() {
           aria-labelledby={titleId}
           className={cn(
             'z-50 rounded-xl bg-popover p-4 text-popover-foreground shadow-[0_28px_70px_-32px_hsl(var(--background))] animate-in fade-in-0 zoom-in-95 duration-150 motion-reduce:animate-none',
+            // Scrolls inside itself when the window is short or the text is large.
+            'max-h-[calc(100dvh-5.5rem)] overflow-y-auto overscroll-contain',
             // Narrow screens: pinned under the header, inside the gutters.
             'fixed inset-x-4 top-[4.5rem] origin-top',
             // Wider screens: anchored to the button.

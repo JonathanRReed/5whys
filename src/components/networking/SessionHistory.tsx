@@ -169,6 +169,14 @@ export default function SessionHistory({
                     </div>
                     <ConfirmButton
                       tone="destructive"
+                      aria-label={`Delete rep: ${session.scenarioTitle}, ${new Date(
+                        session.createdAt
+                      ).toLocaleString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                      })}`}
                       confirmLabel="Delete rep?"
                       onConfirm={() => onRemoveSession(session.id)}
                       className="w-full border-border text-foreground sm:w-auto hover:bg-destructive/10 hover:text-destructive hover:border-destructive/40"

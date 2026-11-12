@@ -82,7 +82,7 @@ export default function ReflectionPanel({
           className="border-border/60 text-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
           onClick={onResetReview}
         >
-          Reset
+          Reset <span className="sr-only">this review</span>
         </Button>
         {draftEmpty ? (
           <p className="text-xs text-muted-foreground" data-guide="rep-not-ready">

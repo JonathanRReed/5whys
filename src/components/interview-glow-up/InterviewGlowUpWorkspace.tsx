@@ -177,7 +177,7 @@ export default function InterviewGlowUpWorkspace() {
           <span className="ml-auto flex flex-wrap items-center">
             <a
               href="/interview-glow-up/rehearse/"
-              className="mr-3 underline underline-offset-4 hover:text-foam focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-foam"
+              className="mr-3 inline-flex min-h-6 items-center underline underline-offset-4 hover:text-foam focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-foam"
             >
               Rehearse out loud
             </a>
