@@ -45,6 +45,21 @@ function wordsOf(text: string): string {
 }
 
 /**
+ * Whether a saved document is the resume in the text: most of its bullets
+ * still appear there. Edits to a few lines keep the document; a different
+ * resume does not.
+ */
+export function sameResume(doc: ResumeDoc, resumeText: string): boolean {
+  const text = resumeText.replace(/\s+/g, ' ').toLowerCase();
+  const bullets = bulletsOf(doc)
+    .map((bullet) => wordsOf(bullet.text).slice(0, 40))
+    .filter((start) => start.length >= 12);
+  if (bullets.length === 0) return true;
+  const found = bullets.filter((start) => text.includes(start)).length;
+  return found * 2 >= bullets.length;
+}
+
+/**
  * One master resume, tailored per application: choose which of its bullets
  * go into the copy for this role. Nothing here edits the resume itself; the
  * selection is all an application keeps.
@@ -63,7 +78,9 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
       .then(async ({ getResumeDoc }) => {
         const saved = await getResumeDoc<ResumeDoc>();
         if (cancelled) return;
-        if (saved) {
+        // An uploaded file is kept until it is replaced. If the visitor has
+        // since pasted a different resume, the pasted one is the resume.
+        if (saved && (!resumeText.trim() || sameResume(saved.doc, resumeText))) {
           setDoc(saved.doc);
           return;
         }

@@ -81,12 +81,18 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
   const derive = async () => {
     setBusy(true);
     const { messageVariants } = await loadFeature(import('../../lib/local-ai'));
-    const result = await messageVariants({
+    const input = {
       opener: letter.hook,
       role: application.title,
       company: application.company,
       contactName: letter.recipient.trim() || undefined,
-    });
+    };
+    let result = await messageVariants(input);
+    // These messages are saved and copied without a second look, so a model
+    // result that adds something the visitor did not write is not kept. The
+    // rules only rearrange the visitor's own words.
+    if (result.inventedClaims.length > 0)
+      result = await messageVariants(input, { rulesOnly: true });
     const source = toMessageSource(result.source);
     const { linkedInMessage, followUpEmail, introCallOpener } = result.value;
     const texts: Record<MessageKind, string> = {

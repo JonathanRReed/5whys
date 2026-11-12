@@ -395,7 +395,7 @@ export default function PacketSection({
             )}
           </div>
 
-          <AiQuestions data={data} setData={setData} role={currentRole} packet={currentPacket} />
+          <AiQuestions setData={setData} role={currentRole} packet={currentPacket} />
 
           <div className="rounded-xl border border-foam/30 bg-foam/5 p-5">
             <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">

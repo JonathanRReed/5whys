@@ -358,7 +358,7 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
           cancelScan();
           cancelUpload();
           setResumeTextValue(sampleResume);
-          setResumeDoc(null);
+          keepResumeDoc(null);
           setStatus('Sample resume loaded. Run the analysis to see suggestions.');
         }}
         onClear={() => {

@@ -6,6 +6,7 @@ import {
   deadlineLabel,
   setActiveApplication,
 } from '../../lib/applications';
+import { switchRole } from '../../lib/glowup-store';
 import { focusWhenReady } from '../../lib/utils';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -39,7 +40,15 @@ const isStation = (value: string | null): value is Station =>
  */
 export default function ApplicationDesk() {
   const desk = useDesk();
-  const { ready, applications, application, role, select, changeApplications } = desk;
+  const { ready, applications, application, role, select, changeApplications, changeGlow } = desk;
+  // The interview tools open on whichever role is current. Make it this
+  // application's before leaving, so they show this posting and not the last
+  // one worked on. Saved before the page changes; nothing is written when the
+  // role is already current.
+  const openOnThisRole = () => {
+    if (!role) return;
+    changeGlow((data) => (data.currentRoleId === role.id ? data : switchRole(data, role.id)));
+  };
   const [station, setStation] = React.useState<Station>('posting');
   const [adding, setAdding] = React.useState(false);
   const [title, setTitle] = React.useState('');
@@ -260,12 +269,14 @@ export default function ApplicationDesk() {
         <a
           className="underline underline-offset-4 hover:text-foam"
           href="/interview-glow-up/workspace/?tab=stories"
+          onClick={openOnThisRole}
         >
           Build interview stories
         </a>
         <a
           className="underline underline-offset-4 hover:text-foam"
           href="/interview-glow-up/rehearse/"
+          onClick={openOnThisRole}
         >
           Rehearse the interview
         </a>

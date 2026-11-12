@@ -25,6 +25,7 @@ export default function RepRecorder({ label }: Props) {
   const [kept, setKept] = React.useState(false);
   const [notice, setNotice] = React.useState<string | null>(null);
   const recorder = React.useRef<SpeechRecorder | null>(null);
+  const starting = React.useRef(false);
   const startedAt = React.useRef(0);
 
   React.useEffect(() => {
@@ -54,6 +55,10 @@ export default function RepRecorder({ label }: Props) {
   if (!supported) return null;
 
   const start = async () => {
+    // A second press before the microphone is ready would open a second
+    // recorder that nothing could stop.
+    if (starting.current) return;
+    starting.current = true;
     setNotice(null);
     setTake(null);
     setKept(false);
@@ -71,6 +76,9 @@ export default function RepRecorder({ label }: Props) {
           ? 'The microphone was not allowed. You can still practise against the timer.'
           : 'Recording could not start. You can still practise against the timer.'
       );
+      recorder.current = null;
+    } finally {
+      starting.current = false;
     }
   };
 

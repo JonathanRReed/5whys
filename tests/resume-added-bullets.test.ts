@@ -88,3 +88,18 @@ describe('rewritten lines in the clean copy', () => {
     ).toBe(0);
   });
 });
+
+describe('a saved resume document and the text beside it', () => {
+  it('is the same resume after a small edit, and a different one after a paste', async () => {
+    const { sameResume } = await import('../src/components/application-desk/ResumeStation');
+    const doc = fromText(RESUME);
+    expect(sameResume(doc, RESUME)).toBe(true);
+    expect(sameResume(doc, RESUME.replace('2,100 followers', '2,400 followers'))).toBe(true);
+    expect(
+      sameResume(
+        doc,
+        'Jordan Lee\n\nExperience\nWarehouse lead\n- Ran the evening shift for six years\n- Cut late orders from 40 a week to 6'
+      )
+    ).toBe(false);
+  });
+});

@@ -13,7 +13,6 @@ import { useClipboard } from '../networking/useClipboard';
 import { sourceLabel } from '../shared/AiText';
 
 type Props = {
-  data: GlowUpData;
   setData: React.Dispatch<React.SetStateAction<GlowUpData>>;
   role: DecodedRole;
   packet: InterviewPacket;
@@ -38,7 +37,7 @@ export function buildQuestionsPrompt(role: DecodedRole): string {
   ].join('\n\n');
 }
 
-export default function AiQuestions({ data, setData, role, packet }: Props) {
+export default function AiQuestions({ setData, role, packet }: Props) {
   const { copiedKey, handleCopy } = useClipboard();
   const prompt = buildQuestionsPrompt(role);
   const [busy, setBusy] = React.useState(false);
@@ -63,12 +62,14 @@ export default function AiQuestions({ data, setData, role, packet }: Props) {
           `${index + 1}. ${q.question}${q.requirement ? `\n   Tests: ${q.requirement}` : ''}`
       )
       .join('\n');
-    const existing = (packet.aiQuestions ?? '').trim();
-    setData(
-      updatePacket(data, packet.id, {
+    // Build on the workspace as it is now: the visitor may have typed in the
+    // box, or changed something else, while the list was being written.
+    setData((latest) => {
+      const existing = (latest.packets.find((p) => p.id === packet.id)?.aiQuestions ?? '').trim();
+      return updatePacket(latest, packet.id, {
         aiQuestions: existing ? `${existing}\n\n${list}` : list,
-      })
-    );
+      });
+    });
     setWritten(
       list ? sourceLabel(result.source) : 'No questions could be written from this posting.'
     );
@@ -116,7 +117,10 @@ export default function AiQuestions({ data, setData, role, packet }: Props) {
         <textarea
           id="ai-answer"
           value={packet.aiQuestions ?? ''}
-          onChange={(e) => setData(updatePacket(data, packet.id, { aiQuestions: e.target.value }))}
+          onChange={(e) => {
+            const value = e.target.value;
+            setData((latest) => updatePacket(latest, packet.id, { aiQuestions: value }));
+          }}
           placeholder="Paste the list here..."
           rows={6}
           className="w-full rounded-lg border border-border/50 bg-overlay/30 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"

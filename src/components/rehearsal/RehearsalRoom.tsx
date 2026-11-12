@@ -67,6 +67,7 @@ export default function RehearsalRoom() {
   const [notice, setNotice] = React.useState<string | null>(null);
   const [announcement, announce] = useAnnouncer();
   const recorder = React.useRef<SpeechRecorder | null>(null);
+  const startingRecorder = React.useRef(false);
   const startedAt = React.useRef(0);
   const speech = React.useRef<AbortController | null>(null);
 
@@ -264,6 +265,10 @@ export default function RehearsalRoom() {
   };
 
   const startRecording = async () => {
+    // A second press before the microphone is ready would open a second
+    // recorder that nothing could stop.
+    if (startingRecorder.current) return;
+    startingRecorder.current = true;
     speech.current?.abort();
     setNotice(null);
     try {
@@ -282,7 +287,10 @@ export default function RehearsalRoom() {
             ? 'No microphone was found. You can type your answer instead.'
             : 'Recording could not start. You can type your answer instead.'
       );
+      recorder.current = null;
       setMode('type');
+    } finally {
+      startingRecorder.current = false;
     }
   };
 
