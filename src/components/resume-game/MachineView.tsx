@@ -137,13 +137,12 @@ export default function MachineView({ doc, onChange }: Props) {
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
       );
       const check = await checkExport(bytes);
-      const toFix = check.findings.filter((f) => f.severity === 'fix').length;
       setNotice(
         check.ok
-          ? 'Saved. We read the new file back and found nothing to fix in how it reads.'
-          : toFix === 0
-            ? 'Saved. We read the new file back: nothing to fix. The optional checks above still apply.'
-            : `Saved. Reading the new file back still shows ${summarize(check.findings)}.`
+          ? check.contentFindings.length > 0
+            ? 'Saved. We read the new file back: nothing to fix in how it reads. The optional checks above still apply.'
+            : 'Saved. We read the new file back and found nothing to fix in how it reads.'
+          : `Saved. Reading the new file back still shows ${summarize(check.exportFindings)}.`
       );
     } catch {
       setNotice('The file could not be written. Your resume here is unchanged.');
@@ -258,7 +257,19 @@ export default function MachineView({ doc, onChange }: Props) {
                       {index + 1}
                     </span>
                     <span className="min-w-0">
-                      <span className="break-words text-foreground">{line.text}</span>
+                      <span
+                        className={cn(
+                          'break-words text-foreground',
+                          line.continuationOf && 'pl-4 text-foreground/80'
+                        )}
+                      >
+                        {line.bullet && !line.continuationOf && (
+                          <span aria-hidden="true" className="mr-1.5 text-muted-foreground">
+                            •
+                          </span>
+                        )}
+                        {line.text}
+                      </span>
                       {origin && (
                         <span className="ml-2 text-xs text-muted-foreground">({origin})</span>
                       )}
