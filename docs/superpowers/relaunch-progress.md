@@ -89,6 +89,11 @@ end of every working pass. Delete it in the final pull request.
   desk Resume station (per-application bullet selection and tailored .docx).
 - 2026-11-12: Networking Practice can record a rep and play it back
   (`networking/RepRecorder`). Full suite green: 895 unit, 64 browser.
+- 2026-11-12: offline use and install merged
+  (`t3/installable-offline-career-studio`): generated manifest and icons, a
+  hand-written service worker (precache 314 files, 12.4 MB), `src/lib/offline.ts`,
+  and `UpdateNotice` in the layout. Installed-app behavior on real phones and
+  deployed headers are unverified.
 
 ## Tool-flow findings from writing the guides (to fix)
 
@@ -113,7 +118,6 @@ end of every working pass. Delete it in the final pull request.
 
 | Piece | Model | Paths |
 | --- | --- | --- |
-| Offline use and install | GPT-6.1 Sol | service worker, manifest, `src/lib/offline.ts` |
 
 ## Next for the lead
 
@@ -141,10 +145,10 @@ end of every working pass. Delete it in the final pull request.
 - Still to build (lead): dashboard links into the desk and dated steps;
   worksheet print export for the bullets flow;
   a guide for the rehearsal room; a printable worksheet for the bullets
-  flow; offline status banner once `src/lib/offline.ts` lands;
+  flow;
   Five Whys: start from an experience, identity statement from own phrases,
   send to a story or intro;
-  homepage specimen hero (plates and nav are done);  offline and install;
+  homepage specimen hero (plates and nav are done);
   DESIGN.md specimen section; README and docs/decisions.md entries for the
   relaunch; llms.txt and sitemap check for the new pages.
 - Posting engine noise: plain description sentences can come through as

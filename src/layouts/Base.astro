@@ -3,6 +3,7 @@ import { siteConfig, baseSchemas } from '../config/site';
 import Seo from '../components/Seo.astro';
 import { ClientRouter } from 'astro:transitions';
 import Navigation from '../components/Navigation';
+import UpdateNotice from '../components/UpdateNotice';
 import '@fontsource-variable/fraunces/full.css';
 import '@fontsource-variable/fraunces/full-italic.css';
 import '@fontsource-variable/inter';
@@ -122,6 +123,7 @@ const noScriptParagraphs = [...defaultNoScriptContext, ...pageNoScriptContext].f
     </div>
     <div class="relative flex min-h-screen flex-col">
       <Navigation client:load currentPath={Astro.url.pathname} />
+      <UpdateNotice client:idle />
       <noscript>
         <section
           class="relative z-10 mx-auto mt-6 w-full max-w-6xl px-4"

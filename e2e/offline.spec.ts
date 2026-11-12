@@ -145,7 +145,11 @@ test('an update waits until applyUpdate is called, then reloads with the saved d
       .register('/sw.js?update-test=1', { scope: '/', updateViaCache: 'none' })
       .then(() => {})
   );
-  await expect(page.locator('html')).toHaveAttribute('data-offline-status', 'update-waiting');
+  // The new worker precaches the whole shell before it waits; with the suite
+  // running in parallel that takes longer than the default five seconds.
+  await expect(page.locator('html')).toHaveAttribute('data-offline-status', 'update-waiting', {
+    timeout: 45_000,
+  });
   expect(await page.evaluate(() => navigator.serviceWorker.controller?.scriptURL)).not.toContain(
     'update-test'
   );
