@@ -4,6 +4,7 @@ import { FOCUS_LABELS, STAGE_LABELS } from '../lib/profile';
 import { cn } from '../lib/utils';
 import ApplicationsPanel, { NewApplicationForm } from './ApplicationsPanel';
 import BackupControls from './BackupControls';
+import StoragePanel from './StoragePanel';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
 const TOOL_LINKS = [
@@ -371,6 +372,8 @@ export default function CareerDashboard() {
       )}
 
       <BackupControls onRestored={() => setData(readCareerDashboard())} />
+
+      <StoragePanel />
 
       {/* Quick links */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
