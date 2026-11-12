@@ -59,10 +59,15 @@ describe('parsePosting: student internship', () => {
     expect(sectionOf(parsed, 'Familiarity with GIS')).toBe('preferred');
   });
 
-  it('leaves lines under a heading that names no section unclassified', () => {
-    const intro = find(parsed, 'This is a paid ten-week internship');
-    expect(intro.section).toBe('unclassified');
-    expect(intro.classification?.basis).toBe('none');
+  it('sets aside description sentences under a heading that names no section', () => {
+    expect(parsed.requirements.some((r) => r.text.startsWith('This is a paid'))).toBe(false);
+    const reasons = Object.fromEntries(parsed.setAside.map((s) => [s.text, s.reason]));
+    expect(reasons['This is a paid ten-week internship on the planning team.']).toBe(
+      'company-description'
+    );
+    expect(reasons['You will work with analysts who study ridership and schedules.']).toBe(
+      'description'
+    );
   });
 
   it('sets aside about-us, benefits, title lines, and the equal opportunity statement', () => {
@@ -237,9 +242,10 @@ describe('parsePosting: one long paragraph', () => {
     expect(sectionOf(parsed, 'You will check materials')).toBe('unclassified');
   });
 
-  it('sets aside pay, hours, and the equal opportunity sentence', () => {
+  it('sets aside pay, hours, the company sentence, and the equal opportunity sentence', () => {
     expect(parsed.setAside.map((s) => s.reason).sort()).toEqual([
       'boilerplate',
+      'company-description',
       'job-details',
       'job-details',
     ]);

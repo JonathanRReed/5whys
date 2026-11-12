@@ -13,6 +13,7 @@ import {
   carryOverDecisions,
   confirmAllSuggested,
   confirmRequirement,
+  confirmsByDefault,
   dismissRequirement,
   findVaguePhrases,
   isSourceSpan,
@@ -180,6 +181,8 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
   const live = requirements.filter((r) => r.status !== 'dismissed');
   const dismissed = requirements.filter((r) => r.status === 'dismissed');
   const suggested = live.filter((r) => r.status === 'suggested').length;
+  // The button confirms only these; duties and unsorted lines wait for the student.
+  const confirmable = live.filter((r) => r.status === 'suggested' && confirmsByDefault(r)).length;
   const confirmed = live.filter((r) => r.status === 'confirmed').length;
 
   // The posting, cut into plain text and the sentences requirements came from.
@@ -245,14 +248,14 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
             {confirmed} confirmed, {suggested} to review. Confirm the ones that matter, dismiss what
             is not a real requirement, and sort any we could not place.
           </p>
-          {suggested > 0 && (
+          {confirmable > 0 && (
             <Button
               type="button"
               size="sm"
               variant="outline"
               onClick={() => saveRequirements(confirmAllSuggested(requirements))}
             >
-              Confirm all {suggested}
+              Confirm the required and preferred ones ({confirmable})
             </Button>
           )}
         </div>

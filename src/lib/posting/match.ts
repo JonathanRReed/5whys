@@ -1,8 +1,11 @@
 /**
  * Alias-aware term matching. A requirement is reduced to the terms a resume
- * or letter could actually show (skills, tools, credentials, short work
- * phrases), never to generic words. Each term is then looked for with
- * word-boundary matching that tolerates plural, -ing, and -ed forms.
+ * or letter could actually show: named tools and credentials, multi-word
+ * phrases, and (only when a clause has nothing else) its domain words.
+ * Generic words are never terms. Weak words ("management", "leadership",
+ * "Ohio", a company's name) may sit inside a phrase but never stand alone.
+ * Each term is looked for with word-boundary matching that tolerates plural,
+ * -ing, and -ed forms; a phrase matches as a phrase, not as one of its words.
  */
 
 import { SKILL_BANK } from '../glowup-banks';
@@ -14,14 +17,18 @@ import {
   UMBRELLA_KEYWORDS,
   WEAK_SKILL_KEYWORDS,
 } from './aliases';
-import { GENERIC_TERMS, isGenericWord } from './terms';
 import {
-  escapeRegExp,
-  normalizePunctuation,
-  splitSentences,
-  trimmedSegment,
-  wordCount,
-} from './text';
+  ACTION_VERBS,
+  COMPANY_SUFFIXES,
+  isWeakWord,
+  NOT_A_TOOL,
+  PLACE_NAMES,
+  STATE_CODES,
+  WEAK_VERBS,
+} from './lexicon';
+import { type DocumentLineKind, readDocument } from './resume-lines';
+import { GENERIC_TERMS, isGenericWord } from './terms';
+import { escapeRegExp, normalizePunctuation } from './text';
 import type { OccupationLookup, SourceSpan } from './types';
 
 // ============================================================================
@@ -33,7 +40,7 @@ function undouble(root: string): string {
 }
 
 /** A crude stem: enough to line up plan / plans / planned / planning. */
-function stem(word: string): { root: string; yForm: boolean } {
+export function stem(word: string): { root: string; yForm: boolean } {
   if (word.length > 4 && /(?:ies|ied)$/.test(word)) return { root: word.slice(0, -3), yForm: true };
   let w = word;
   if (w.length >= 6 && w.endsWith('ing')) w = undouble(w.slice(0, -3));
@@ -98,7 +105,7 @@ function compileVariant(variant: string): CompiledVariant {
 }
 
 /** Every place `variant` occurs in `text` (already lowercased copy in `lower`). */
-function findVariant(variant: string, text: string, lower: string): SourceSpan[] {
+export function findVariant(variant: string, text: string, lower: string): SourceSpan[] {
   const { regex, probe, capitalizedOnly } = compileVariant(variant);
   if (!lower.includes(probe)) return [];
   const spans: SourceSpan[] = [];
@@ -116,6 +123,14 @@ function findVariant(variant: string, text: string, lower: string): SourceSpan[]
 
 export type TermSource = 'skill-bank' | 'synonym' | 'occupation' | 'phrase';
 
+/**
+ * How much a term can prove on its own.
+ * - `named`: a tool, credential, acronym, or proper name ("Smartsheet", "WMS").
+ * - `phrase`: two words that belong together ("shipment schedules").
+ * - `word`: one domain word, used only when its clause has nothing stronger.
+ */
+export type TermShape = 'named' | 'phrase' | 'word';
+
 export interface RequirementTerm {
   /** Lowercase canonical form; two terms with one key are the same term. */
   key: string;
@@ -128,6 +143,8 @@ export interface RequirementTerm {
   variants: string[];
   /** Where the term sits in the requirement text. */
   span: SourceSpan;
+  /** How much the term can prove on its own. Absent on terms built by older code. */
+  shape?: TermShape;
 }
 
 export interface TermOptions {
@@ -141,12 +158,53 @@ interface SkillKeywordEntry {
   variants: string[];
 }
 
+/**
+ * Skills whose keywords name tools a line can show. Soft skills
+ * ("leadership", "communication") and broad domains ("retail", "finance")
+ * are left out: their keywords are umbrella words, and the umbrella is how
+ * "coached associates" used to count as tracking KPIs.
+ */
+const TOOL_SKILLS: ReadonlySet<string> = new Set(
+  SKILL_BANK.filter(
+    (skill) => skill.category === 'technical' || skill.id === 'agile' || skill.id === 'ux'
+  ).map((skill) => skill.id)
+);
+
+/**
+ * Tool-skill keywords that are everyday words in other postings: "mobile
+ * pantry", "store security", "sprint to the finish". They are read as plain
+ * words, so they need a phrase around them to count.
+ */
+const AMBIGUOUS_SKILL_WORDS: ReadonlySet<string> = new Set([
+  'mobile',
+  'security',
+  'cloud',
+  'infrastructure',
+  'architecture',
+  'accessibility',
+  'rest',
+  'node',
+  'lambda',
+  'sprint',
+  'standup',
+  'visualization',
+  'penetration',
+  'vulnerability',
+]);
+
+/** Authored synonym groups that name a quality, not a thing a line can show. */
+const SOFT_GROUPS: ReadonlySet<string> = new Set(['problem solving']);
+
 /** Bank keywords that may stand as terms, each with the spellings that count as evidence. */
 const SKILL_KEYWORD_ENTRIES: SkillKeywordEntry[] = (() => {
   const usable = (keyword: string) =>
-    !WEAK_SKILL_KEYWORDS.has(keyword) && !GENERIC_TERMS.has(keyword);
+    !WEAK_SKILL_KEYWORDS.has(keyword) &&
+    !AMBIGUOUS_SKILL_WORDS.has(keyword) &&
+    !GENERIC_TERMS.has(keyword) &&
+    !isWeakWord(keyword);
   const entries: SkillKeywordEntry[] = [];
   for (const skill of SKILL_BANK) {
+    if (!TOOL_SKILLS.has(skill.id)) continue;
     const umbrella = new Set(UMBRELLA_KEYWORDS[skill.id] ?? []);
     const skillVariants = skill.keywords.filter(usable).flatMap((k) => [...synonymsOf(k)]);
     for (const keyword of skill.keywords) {
@@ -189,14 +247,14 @@ const CALENDAR_WORDS = new Set([
   'winter',
 ]);
 
-interface Token extends SourceSpan {
+export interface Token extends SourceSpan {
   text: string;
   lower: string;
 }
 
-function tokenize(text: string): Token[] {
+export function tokenize(text: string): Token[] {
   const tokens: Token[] = [];
-  for (const match of text.matchAll(/[A-Za-z][A-Za-z0-9'+#]*(?:[./-][A-Za-z0-9+#]+)*/g)) {
+  for (const match of text.matchAll(/[A-Za-z][A-Za-z0-9'+#&]*(?:[./-][A-Za-z0-9+#&]+)*/g)) {
     const start = match.index ?? 0;
     const raw = match[0].replace(/'s$|'$/, '');
     tokens.push({ start, end: start + raw.length, text: raw, lower: raw.toLowerCase() });
@@ -204,11 +262,54 @@ function tokenize(text: string): Token[] {
   return tokens;
 }
 
-function isContentToken(token: Token): boolean {
+function isAcronym(token: Token): boolean {
+  return /^[A-Z][A-Z&]{1,5}s?$/.test(token.text) && !NOT_A_TOOL.has(token.lower);
+}
+
+/**
+ * What a token can contribute.
+ * - `stop`: generic or function word, never part of a term.
+ * - `weak`: an umbrella word; inside a phrase only.
+ * - `ignored`: a place or an organization's name; never part of a term.
+ * - `content`: a word that can carry a term.
+ */
+export type TokenRole = 'stop' | 'weak' | 'ignored' | 'content';
+
+/** Words that say how much a posting wants something, not what it wants. */
+const PREFERENCE_WORDS = new Set([
+  'old',
+  'exposure',
+  'second',
+  'third',
+  'another',
+  'language',
+  'languages',
+  'clear',
+  'concise',
+  'effective',
+  'keen',
+  'sharp',
+  'superb',
+  'thorough',
+  'helpful',
+  'desired',
+  'desirable',
+  'advantageous',
+  'asset',
+  'appreciated',
+  'considered',
+  'toward',
+  'towards',
+  'similar',
+]);
+
+export function isStopWord(lower: string): boolean {
   return (
-    token.lower.length >= 3 &&
-    !isGenericWord(token.lower) &&
-    !CALENDAR_WORDS.has(token.lower.replace(/s$/, ''))
+    isGenericWord(lower) ||
+    PREFERENCE_WORDS.has(lower) ||
+    CALENDAR_WORDS.has(lower.replace(/s$/, '')) ||
+    // Adverbs ("accurately", "independently") describe how, not what.
+    /(?:ately|ingly|edly|ently|antly|ously|ively|fully|ally|lessly)$/.test(lower)
   );
 }
 
@@ -217,174 +318,357 @@ function adjacent(text: string, a: Token, b: Token): boolean {
   return /^(?:'s?)?[\s-]+$/.test(text.slice(a.end, b.start));
 }
 
+const capitalized = (token: Token) => /^[A-Z]/.test(token.text);
+
+/** Roles for every token, with places and organization names marked `ignored`. */
+export function tokenRoles(text: string, tokens: Token[]): TokenRole[] {
+  const roles: TokenRole[] = tokens.map((token) => {
+    if (token.lower.length < 2 || NOT_A_TOOL.has(token.lower)) return 'stop';
+    if (isAcronym(token)) return 'content';
+    if (token.lower.length < 3 || isStopWord(token.lower)) return 'stop';
+    if (PLACE_NAMES.has(token.lower)) return 'ignored';
+    if (isWeakWord(token.lower)) return 'weak';
+    return 'content';
+  });
+  for (let i = 0; i + 1 < tokens.length; i++) {
+    if (
+      PLACE_NAMES.has(`${tokens[i].lower} ${tokens[i + 1].lower}`) &&
+      adjacent(text, tokens[i], tokens[i + 1])
+    ) {
+      roles[i] = 'ignored';
+      roles[i + 1] = 'ignored';
+    }
+  }
+  // Capitalized runs: "Columbus, OH" is a place, "Larkfield Brands, Inc." an organization.
+  let i = 0;
+  while (i < tokens.length) {
+    if (!capitalized(tokens[i])) {
+      i++;
+      continue;
+    }
+    let j = i;
+    while (
+      j + 1 < tokens.length &&
+      capitalized(tokens[j + 1]) &&
+      adjacent(text, tokens[j], tokens[j + 1])
+    )
+      j++;
+    const after = text.slice(tokens[j].end, tokens[j + 1]?.start ?? text.length);
+    const next = tokens[j + 1];
+    const afterNext = tokens[j + 2];
+    // "Columbus, OH" is a place; "Smartsheet, MS Project" is two tools.
+    const stateCode =
+      next &&
+      /^,\s*$/.test(after) &&
+      STATE_CODES.has(next.text) &&
+      !(afterNext && capitalized(afterNext) && adjacent(text, next, afterNext));
+    const company =
+      (j > i && COMPANY_SUFFIXES.has(tokens[j].lower)) ||
+      (next && /^,?\s*$/.test(after) && /^(?:inc|llc|ltd|corp)$/i.test(next.text));
+    if (stateCode || company) {
+      for (let k = i; k <= j; k++) roles[k] = 'ignored';
+      if (stateCode && next) roles[j + 1] = 'ignored';
+    }
+    i = j + 1;
+  }
+  return roles;
+}
+
 function sentenceInitial(text: string, token: Token): boolean {
   const before = text.slice(0, token.start).trimEnd();
   // After a colon or semicolon a capital usually starts a name ("one of: Canva, Figma").
   return before === '' || /[.!?(•*-]$/.test(before);
 }
 
-function phraseTerms(text: string): RequirementTerm[] {
-  const tokens = tokenize(text);
-  const terms: RequirementTerm[] = [];
-  const add = (from: Token, to: Token) => {
-    const label = text.slice(from.start, to.end);
-    terms.push({
-      key: label.toLowerCase(),
-      label,
-      source: 'phrase',
-      variants: [label.toLowerCase()],
-      span: { start: from.start, end: to.end },
-    });
-  };
-
-  const hasLowercase = /[a-z]/.test(text);
-  for (let i = 0; i < tokens.length; i++) {
-    const token = tokens[i];
-    const next = tokens[i + 1];
-    // Two content words in a row: "customer service", "stock shelves".
-    if (next && isContentToken(token) && isContentToken(next) && adjacent(text, token, next)) {
-      add(token, next);
-    }
-    // Acronyms: "CPR", "GPA", "POS".
-    if (/^[A-Z]{2,6}s?$/.test(token.text) && hasLowercase && isContentToken(token)) {
-      add(token, token);
-    }
-  }
-
-  // Runs of capitalized words: "Google Sheets", "Adobe Creative Suite", "Spanish".
-  if (hasLowercase) {
-    let run: Token[] = [];
-    const flush = () => {
-      if (run.length >= 2 || (run.length === 1 && !sentenceInitial(text, run[0]))) {
-        add(run[0], run[run.length - 1]);
-      }
-      run = [];
-    };
-    for (const token of tokens) {
-      const capitalized =
-        /^[A-Z]/.test(token.text) && !/^[A-Z]{2,6}s?$/.test(token.text) && isContentToken(token);
-      const previous = run[run.length - 1];
-      if (capitalized && (!previous || adjacent(text, previous, token))) {
-        run.push(token);
-      } else {
-        flush();
-        if (capitalized) run.push(token);
-      }
-    }
-    flush();
-  }
-  return terms;
-}
-
-/**
- * The last resort when a requirement yields no other term: its single
- * content words ("Strong writing and editing skills" asks for writing and
- * editing).
- */
-function singleWordTerms(text: string): RequirementTerm[] {
-  return tokenize(text)
-    .filter((token) => isContentToken(token) && token.lower.length >= 4)
-    .map((token) => ({
-      key: token.lower,
-      label: token.text,
-      source: 'phrase' as const,
-      variants: [token.lower],
-      span: { start: token.start, end: token.end },
-    }));
-}
-
 function overlaps(a: SourceSpan, b: SourceSpan): boolean {
   return a.start < b.end && b.start < a.end;
 }
 
-function contains(outer: SourceSpan, inner: SourceSpan): boolean {
-  return outer.start <= inner.start && inner.end <= outer.end;
+const PRONOUNS = new Set(['them', 'it', 'this', 'these', 'those', 'that']);
+
+/**
+ * Cuts a requirement into the separate things it asks for: at semicolons,
+ * and where "and", "or", or a comma introduces another duty verb ("Track
+ * KPIs and prepare weekly reports"). Never inside parentheses, and never
+ * before a pronoun ("own them to resolution" continues the clause before).
+ */
+export function splitClauses(text: string, tokens: Token[] = tokenize(text)): SourceSpan[] {
+  const depthAt = (index: number) => {
+    let depth = 0;
+    for (let k = 0; k < index; k++) {
+      if (text[k] === '(') depth++;
+      else if (text[k] === ')') depth = Math.max(0, depth - 1);
+    }
+    return depth;
+  };
+  const cuts: number[] = [];
+  for (let k = 0; k < text.length; k++) {
+    if (text[k] === ';' && depthAt(k) === 0) cuts.push(k);
+  }
+  for (let t = 1; t < tokens.length; t++) {
+    const token = tokens[t];
+    if (!ACTION_VERBS.has(token.lower)) continue;
+    const previous = tokens[t - 1];
+    const gap = text.slice(previous.end, token.start);
+    const joined = previous.lower === 'and' || previous.lower === 'or';
+    if (!joined && !/,\s*$/.test(gap)) continue;
+    if (PRONOUNS.has(tokens[t + 1]?.lower ?? '')) continue;
+    // "Track budgets and purchase orders": a verb followed straight by a noun it modifies is not a new duty.
+    if (token.lower === 'purchase' && tokens[t + 1]?.lower.startsWith('order')) continue;
+    const at = joined ? previous.start : previous.end;
+    // "Plan and schedule ...", "Build and maintain ...": a lone verb before
+    // "and" shares the object that follows, so it is not a clause of its own.
+    const since = Math.max(0, ...cuts.filter((c) => c < at));
+    const before = tokens.filter((t) => t.start >= since && t.end <= at);
+    const loneVerb = before.every(
+      (t) =>
+        ACTION_VERBS.has(t.lower) || isStopWord(t.lower) || t.lower === 'and' || t.lower === 'or'
+    );
+    if (depthAt(at) === 0 && !loneVerb) cuts.push(at);
+  }
+  cuts.sort((a, b) => a - b);
+  const spans: SourceSpan[] = [];
+  let start = 0;
+  for (const cut of cuts) {
+    if (cut > start) spans.push({ start, end: cut });
+    start = cut;
+  }
+  if (start < text.length) spans.push({ start, end: text.length });
+  return spans;
 }
 
 /**
- * The terms a requirement asks for. Skill-bank keywords, authored synonyms
- * (degrees, credentials, common tools), and the optional occupation lookup
- * come first; short content phrases fill in where they do not overlap.
- * Generic words ("currently", "enrolled", "degree", "program") never become
- * terms, so "Currently enrolled in a degree program" has none.
+ * Whether a clause lists alternatives ("inventory or logistics", "Spanish or
+ * another language"), not counting "30 or more", "18 or older", "or a
+ * related field", or "or equivalent".
  */
-export function extractRequirementTerms(
+export function offersAlternatives(clause: string): boolean {
+  return /\bor\b/i.test(
+    clause.replace(
+      /\bor\s+(?:more|older|higher|above|greater|later|less|fewer|equivalent|similar|related|a\s+related|other|another\s+related)\b/gi,
+      ' '
+    )
+  );
+}
+
+export interface ExtractedTerms {
+  /** Terms a resume line can show, in reading order. */
+  terms: RequirementTerm[];
+  /** Umbrella words, places, and names the requirement used: never evidence alone. */
+  weakTerms: RequirementTerm[];
+  /** Each clause with the terms inside it. Clauses with no terms are folded into a neighbour. */
+  clauses: { span: SourceSpan; terms: RequirementTerm[]; alternatives: boolean }[];
+}
+
+function termFrom(
+  text: string,
+  span: SourceSpan,
+  source: TermSource,
+  shape: TermShape,
+  variants?: string[]
+): RequirementTerm {
+  const label = text.slice(span.start, span.end);
+  const key = label.toLowerCase();
+  return { key, label, source, shape, variants: variants ?? [key], span };
+}
+
+/**
+ * Terms, weak words, and clauses for one requirement. The engine behind
+ * `extractRequirementTerms` and the evidence check.
+ */
+export function extractTermsWithClauses(
   requirementText: string,
   options: TermOptions = {}
-): RequirementTerm[] {
+): ExtractedTerms {
   const text = normalizePunctuation(requirementText);
   const lower = text.toLowerCase();
-  const strong: RequirementTerm[] = [];
+  const tokens = tokenize(text);
+  const roles = tokenRoles(text, tokens);
+  const hasLowercase = /[a-z]/.test(text);
+  const ignoredSpan = (span: SourceSpan) =>
+    tokens.some((t, k) => roles[k] === 'ignored' && overlaps(t, span));
 
-  for (const entry of SKILL_KEYWORD_ENTRIES) {
-    for (const span of findVariant(entry.keyword, text, lower)) {
-      strong.push({
-        key: canonicalTerm(entry.keyword),
-        label: text.slice(span.start, span.end),
-        source: 'skill-bank',
-        skillId: entry.skillId,
-        variants: entry.variants,
-        span,
-      });
-    }
-  }
-
-  for (const { member, group } of SYNONYM_ENTRIES) {
-    for (const span of findVariant(member, text, lower)) {
-      strong.push({
-        key: group[0],
-        label: text.slice(span.start, span.end),
-        source: 'synonym',
-        variants: [...group],
-        span,
-      });
-    }
-  }
-
+  const named: RequirementTerm[] = [];
+  // The caller's dataset first, so it wins a tie with an authored synonym.
   for (const hit of options.lookup?.matchSoftware?.(text) ?? []) {
     if (hit.start < 0 || hit.end > text.length || hit.end <= hit.start) continue;
     const variants = [hit.term, ...(hit.aliases ?? [])]
       .map((v) => v.toLowerCase())
       .filter((v) => !isGenericWord(v));
     if (variants.length === 0) continue;
-    strong.push({
+    named.push({
       key: hit.term.toLowerCase(),
       label: text.slice(hit.start, hit.end),
       source: 'occupation',
       variants: [...new Set(variants)],
       span: { start: hit.start, end: hit.end },
+      shape: 'named',
     });
   }
+  for (const entry of SKILL_KEYWORD_ENTRIES) {
+    for (const span of findVariant(entry.keyword, text, lower)) {
+      if (ignoredSpan(span)) continue;
+      named.push({
+        key: canonicalTerm(entry.keyword),
+        label: text.slice(span.start, span.end),
+        source: 'skill-bank',
+        skillId: entry.skillId,
+        variants: entry.variants,
+        span,
+        shape: 'named',
+      });
+    }
+  }
+  for (const { member, group } of SYNONYM_ENTRIES) {
+    if (SOFT_GROUPS.has(group[0])) continue;
+    for (const span of findVariant(member, text, lower)) {
+      if (ignoredSpan(span)) continue;
+      named.push({
+        key: group[0],
+        label: text.slice(span.start, span.end),
+        source: 'synonym',
+        variants: [...group],
+        span,
+        shape: 'named',
+      });
+    }
+  }
+  if (hasLowercase) {
+    // Acronyms: "WMS", "KPIs", "CPR".
+    tokens.forEach((token, k) => {
+      if (roles[k] === 'content' && isAcronym(token)) {
+        named.push(termFrom(text, token, 'phrase', 'named'));
+      }
+    });
+    // Capitalized runs that are not places or names: "Blue Yonder", "Smartsheet".
+    let run: number[] = [];
+    const flush = () => {
+      const hasContent = run.some((k) => roles[k] === 'content');
+      const single = run.length === 1;
+      if (run.length > 0 && hasContent && !(single && sentenceInitial(text, tokens[run[0]]))) {
+        const span = { start: tokens[run[0]].start, end: tokens[run[run.length - 1]].end };
+        named.push(termFrom(text, span, 'phrase', 'named'));
+      }
+      run = [];
+    };
+    tokens.forEach((token, k) => {
+      const usable =
+        capitalized(token) && !isAcronym(token) && (roles[k] === 'content' || roles[k] === 'weak');
+      const previous = run[run.length - 1];
+      if (usable && (previous === undefined || adjacent(text, tokens[previous], token))) {
+        run.push(k);
+      } else {
+        flush();
+        if (usable) run.push(k);
+      }
+    });
+    flush();
+  }
 
-  // Longest strong term wins where two overlap ("React Native" over "React").
-  strong.sort((a, b) => b.span.end - b.span.start - (a.span.end - a.span.start));
+  // Longest named term wins where two overlap ("React Native" over "React").
+  named.sort((a, b) => b.span.end - b.span.start - (a.span.end - a.span.start));
   const accepted: RequirementTerm[] = [];
-  for (const term of strong) {
+  for (const term of named) {
     if (!accepted.some((t) => overlaps(t.span, term.span))) accepted.push(term);
   }
 
-  const phrases = phraseTerms(text).filter(
-    (term) => !accepted.some((t) => overlaps(t.span, term.span))
-  );
-  for (const term of phrases) {
-    const swallowed = phrases.some(
-      (other) =>
-        other !== term &&
-        contains(other.span, term.span) &&
-        other.span.end - other.span.start > term.span.end - term.span.start
-    );
-    if (!swallowed) accepted.push(term);
+  // Phrases: two words side by side, at least one of them a content word,
+  // not opening on a generic verb ("coordinate vendors" is just "vendors").
+  for (let k = 0; k + 1 < tokens.length; k++) {
+    const a = tokens[k];
+    const b = tokens[k + 1];
+    const roleA = roles[k];
+    const roleB = roles[k + 1];
+    if (roleA !== 'content' && roleA !== 'weak') continue;
+    if (roleB !== 'content' && roleB !== 'weak') continue;
+    if (roleA !== 'content' && roleB !== 'content') continue;
+    if (WEAK_VERBS.has(a.lower) || !adjacent(text, a, b)) continue;
+    const span = { start: a.start, end: b.end };
+    if (accepted.some((t) => overlaps(t.span, span) && t.shape === 'named')) continue;
+    accepted.push(termFrom(text, span, 'phrase', 'phrase'));
   }
-  if (accepted.length === 0) accepted.push(...singleWordTerms(text));
+
+  // Clauses; a clause with no named term or phrase falls back to its words.
+  const clauseSpans = splitClauses(text, tokens);
+  const clauses = clauseSpans.map((span) => ({
+    span,
+    terms: accepted.filter((t) => t.span.start >= span.start && t.span.start < span.end),
+  }));
+  for (const clause of clauses) {
+    // "inventory or logistics", "Spanish or another second language": each
+    // alternative may stand alone, so the clause's words are terms too.
+    const alternatives = offersAlternatives(text.slice(clause.span.start, clause.span.end));
+    if (clause.terms.length > 0 && !alternatives) continue;
+    tokens.forEach((token, k) => {
+      if (roles[k] !== 'content' || token.lower.length < 3) return;
+      if (token.start < clause.span.start || token.end > clause.span.end) return;
+      if (accepted.some((t) => overlaps(t.span, token))) return;
+      const term = termFrom(text, token, 'phrase', 'word');
+      clause.terms.push(term);
+      accepted.push(term);
+    });
+  }
+  // Fold clauses with nothing in them ("Build" in "Build and maintain ...") into the next.
+  const folded: ExtractedTerms['clauses'] = [];
+  let pending: SourceSpan | null = null;
+  for (const clause of clauses) {
+    const span: SourceSpan = pending ? { start: pending.start, end: clause.span.end } : clause.span;
+    if (clause.terms.length === 0) {
+      pending = span;
+      continue;
+    }
+    pending = null;
+    folded.push({
+      span,
+      terms: clause.terms.sort((a, b) => a.span.start - b.span.start),
+      alternatives: false,
+    });
+  }
+  if (pending && folded.length > 0) {
+    const last = folded[folded.length - 1];
+    last.span = { start: last.span.start, end: pending.end };
+  }
 
   const seen = new Set<string>();
-  return accepted
+  const terms = accepted
     .sort((a, b) => a.span.start - b.span.start)
     .filter((term) => {
       if (seen.has(term.key)) return false;
       seen.add(term.key);
       return true;
     });
+  for (const clause of folded) {
+    clause.terms = clause.terms.filter((t) => terms.includes(t));
+    clause.alternatives = offersAlternatives(text.slice(clause.span.start, clause.span.end));
+  }
+
+  const weakTerms: RequirementTerm[] = [];
+  tokens.forEach((token, k) => {
+    if (roles[k] !== 'weak' && roles[k] !== 'ignored') return;
+    if (WEAK_VERBS.has(token.lower)) return;
+    if (accepted.some((t) => overlaps(t.span, token))) return;
+    if (weakTerms.some((t) => t.key === token.lower)) return;
+    weakTerms.push(termFrom(text, token, 'phrase', 'word'));
+  });
+
+  return { terms, weakTerms, clauses: folded.filter((c) => c.terms.length > 0) };
+}
+
+/**
+ * The terms a requirement asks for. Named tools and credentials (skill-bank
+ * tool keywords, authored synonyms, the optional occupation lookup,
+ * acronyms, capitalized names) and two-word phrases come first; a clause
+ * with neither falls back to its single domain words. Generic words
+ * ("currently", "enrolled", "degree", "program") never become terms, so
+ * "Currently enrolled in a degree program" has none. Umbrella words
+ * ("management", "leadership"), places, and organization names are never
+ * terms on their own.
+ */
+export function extractRequirementTerms(
+  requirementText: string,
+  options: TermOptions = {}
+): RequirementTerm[] {
+  return extractTermsWithClauses(requirementText, options).terms;
 }
 
 // ============================================================================
@@ -438,90 +722,34 @@ export interface EvidenceExcerpt extends SourceSpan {
    * of "shown".
    */
   listedOnly: boolean;
-}
-
-const SKILLS_LABEL =
-  /^(?:technical\s+|computer\s+|core\s+|relevant\s+|key\s+)?(?:skills|tools|technologies|software|languages|proficiencies|competencies|certifications)\b[^:\n]{0,30}:/i;
-const SKILLS_HEADING =
-  /^(?:technical\s+|computer\s+|core\s+|relevant\s+|key\s+|additional\s+)?(?:skills|tools|technologies|software|languages|proficiencies|competencies|certifications)(?:\s*(?:and|&|,)\s*[a-z]+){0,2}\s*:?$/i;
-
-function looksLikeResumeHeading(line: string): boolean {
-  const words = wordCount(line);
-  if (words === 0 || words > 4) return false;
-  return /:\s*$/.test(line) || (line === line.toUpperCase() && /[A-Z]/.test(line));
-}
-
-/** Longer lines (letter paragraphs) are cut into sentences so excerpts stay readable. */
-const MAX_EXCERPT_LINE = 240;
-
-interface Segment extends SourceSpan {
-  text: string;
-  listedOnly: boolean;
-}
-
-function segmentDocument(text: string): Segment[] {
-  const segments: Segment[] = [];
-  let inSkills = false;
-  let lineStart = 0;
-  while (lineStart <= text.length) {
-    let lineEnd = text.indexOf('\n', lineStart);
-    if (lineEnd === -1) lineEnd = text.length;
-    const line = text.slice(lineStart, lineEnd).trim();
-    if (line) {
-      if (looksLikeResumeHeading(line) || SKILLS_HEADING.test(line)) {
-        inSkills = SKILLS_HEADING.test(line);
-      }
-      const cleaned = line.replace(/^[•\-*◦○●‣⁃▪■–·]\s*/, '');
-      const listedOnly = inSkills || SKILLS_LABEL.test(cleaned);
-      const whole = trimmedSegment(text, lineStart, lineEnd);
-      const pieces = !whole
-        ? []
-        : whole.end - whole.start > MAX_EXCERPT_LINE
-          ? splitSentences(text, whole.start, whole.end)
-          : [whole];
-      for (const piece of pieces) segments.push({ ...piece, listedOnly });
-    }
-    lineStart = lineEnd + 1;
-  }
-  return segments;
-}
-
-/** Groups matches by the line or sentence that holds them. */
-export function groupIntoExcerpts(text: string, matches: TermMatch[]): EvidenceExcerpt[] {
-  if (matches.length === 0) return [];
-  const excerpts: EvidenceExcerpt[] = [];
-  for (const segment of segmentDocument(text)) {
-    const inside = matches.filter((m) => m.start >= segment.start && m.end <= segment.end);
-    if (inside.length > 0) excerpts.push({ ...segment, matches: inside });
-  }
-  return excerpts;
-}
-
-export interface RequirementEvidence {
-  terms: RequirementTerm[];
-  excerpts: EvidenceExcerpt[];
-  /** Terms with at least one match. */
-  foundTerms: RequirementTerm[];
-  /** Terms with no match anywhere in the text. */
-  missingTerms: RequirementTerm[];
+  /** What kind of line this is: a work line, a skills list, an education line, and so on. */
+  kind?: DocumentLineKind;
 }
 
 /**
- * Looks for a requirement's terms in a resume or letter and returns the
- * excerpts that hold them, with offsets into `documentText`.
+ * Groups matches by the line or sentence that holds them. With `kinds`, only
+ * lines of those kinds are kept.
  */
-export function findRequirementEvidence(
-  requirementText: string,
-  documentText: string,
-  options: TermOptions = {}
-): RequirementEvidence {
-  const terms = extractRequirementTerms(requirementText, options);
-  const matches = findTermMatches(terms, documentText);
-  const found = new Set(matches.map((m) => m.termKey));
-  return {
-    terms,
-    excerpts: groupIntoExcerpts(documentText, matches),
-    foundTerms: terms.filter((t) => found.has(t.key)),
-    missingTerms: terms.filter((t) => !found.has(t.key)),
-  };
+export function groupIntoExcerpts(
+  text: string,
+  matches: TermMatch[],
+  kinds?: ReadonlySet<DocumentLineKind>
+): EvidenceExcerpt[] {
+  if (matches.length === 0) return [];
+  const excerpts: EvidenceExcerpt[] = [];
+  for (const line of readDocument(text).lines) {
+    if (kinds && !kinds.has(line.kind)) continue;
+    const inside = matches.filter((m) => m.start >= line.start && m.end <= line.end);
+    if (inside.length > 0) {
+      excerpts.push({
+        start: line.start,
+        end: line.end,
+        text: line.text,
+        matches: inside,
+        listedOnly: line.listedOnly,
+        kind: line.kind,
+      });
+    }
+  }
+  return excerpts;
 }

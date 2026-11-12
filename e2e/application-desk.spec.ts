@@ -31,7 +31,7 @@ test('a posting is pasted once and worked through the desk, and it survives a re
   await expect(specimen.locator('mark').first()).toBeVisible();
   await expect(page.getByTestId('posting-count')).toContainText('0 confirmed');
   await expect(page.getByRole('heading', { name: 'Worth asking about' })).toBeVisible();
-  await page.getByRole('button', { name: /^Confirm all/ }).click();
+  await page.getByRole('button', { name: /^Confirm the required and preferred ones/ }).click();
   await expect(page.getByTestId('posting-count')).not.toContainText('0 confirmed');
 
   // Qualifications: one row per confirmed requirement, and a dated step.

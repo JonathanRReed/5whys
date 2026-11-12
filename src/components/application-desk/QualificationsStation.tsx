@@ -6,7 +6,15 @@ import {
   setQualification,
   updateActionStep,
 } from '../../lib/application-desk';
-import { describeCoverage, requirementsFromBullets, summarizeCoverage } from '../../lib/posting';
+import {
+  type CoverageRow,
+  describeCoverage,
+  describeParts,
+  type PostingRequirement,
+  type PostingSection,
+  requirementsFromBullets,
+  summarizeCoverage,
+} from '../../lib/posting';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -18,6 +26,47 @@ const STATUS: { value: QualificationStatus; label: string }[] = [
   { value: 'maybe', label: 'Maybe' },
   { value: 'not-yet', label: 'Not yet' },
 ];
+
+/** Rows are grouped the way the posting groups them. */
+const GROUPS: { section: PostingSection; label: string }[] = [
+  { section: 'required', label: 'Required' },
+  { section: 'preferred', label: 'Preferred' },
+  { section: 'responsibility', label: 'What you would do' },
+  { section: 'unclassified', label: 'Not sorted yet' },
+];
+
+/** What the resume shows for one row, in plain text. */
+function Evidence({ row }: { row: CoverageRow }) {
+  const excerpt = row.excerpts[0];
+  const parts = describeParts(row);
+  return (
+    <div className="space-y-1 text-xs leading-relaxed text-muted-foreground">
+      {row.state === 'evidence' && excerpt && (
+        <p>
+          <span className="text-foam">In your resume: </span>"{excerpt.text.trim()}"
+          {excerpt.listedOnly && ' (listed as a skill, not shown in use)'}
+        </p>
+      )}
+      {row.state === 'partial' && (
+        <>
+          <p>Shown: {parts.shown.join('; ')}.</p>
+          {excerpt && <p>In your resume: "{excerpt.text.trim()}"</p>}
+          <p>Not shown yet: {parts.notShown.join('; ')}.</p>
+        </>
+      )}
+      {row.state === 'none' && <p>Nothing in your resume mentions this yet.</p>}
+      {row.note && <p>{row.note}</p>}
+      {row.nearMisses.map((miss) => (
+        <div key={miss.start} className="space-y-0.5">
+          <p>This line may already say it, in other words: "{miss.text.trim()}"</p>
+          <p>
+            If it is the same work, say it with the posting's words: {miss.postingTerms.join(', ')}.
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const PLAN_PROMPT: Record<QualificationStatus, string> = {
   have: 'How will you show it? A bullet, a project, a story for the interview.',
@@ -55,6 +104,74 @@ export default function QualificationsStation({ desk }: { desk: DeskState }) {
     );
   }
 
+  const renderRow = (requirement: PostingRequirement) => {
+    const row = rows.get(requirement.id);
+    const status = row?.status ?? 'unset';
+    const found = evidence.get(requirement.id);
+    return (
+      <li
+        key={requirement.id}
+        className="grid gap-3 rounded-xl border border-border/40 p-4 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]"
+        style={{
+          viewTransitionName: `qual-${requirement.id.replace(/[^a-zA-Z0-9_-]/g, '')}`,
+        }}
+      >
+        <div className="min-w-0 space-y-2">
+          <p className="text-sm leading-relaxed text-foreground">{requirement.text}</p>
+          {coverage && found && <Evidence row={found} />}
+        </div>
+        <div className="min-w-0 space-y-2">
+          <fieldset className="m-0 min-w-0 border-0 p-0">
+            <legend className="sr-only">Where you stand on: {requirement.text}</legend>
+            <div className="flex flex-wrap gap-1.5">
+              {STATUS.map((option) => (
+                <label key={option.value} className="relative">
+                  <input
+                    type="radio"
+                    name={`status-${requirement.id}`}
+                    checked={status === option.value}
+                    onChange={() =>
+                      changeDesks((data) =>
+                        setQualification(data, appId, requirement.id, {
+                          status: option.value,
+                        })
+                      )
+                    }
+                    className="peer absolute inset-0 cursor-pointer opacity-0"
+                  />
+                  <span
+                    className={cn(
+                      'inline-flex min-h-9 items-center rounded-lg border border-border/50 px-3 text-sm text-muted-foreground transition-colors',
+                      'peer-hover:text-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring',
+                      'peer-checked:border-lichen peer-checked:bg-lichen/15 peer-checked:text-foreground'
+                    )}
+                  >
+                    {option.label}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <label className="block">
+            <span className="sr-only">Plan for: {requirement.text}</span>
+            <Textarea
+              rows={2}
+              value={row?.plan ?? ''}
+              disabled={status === 'unset'}
+              placeholder={PLAN_PROMPT[status]}
+              onChange={(event) =>
+                changeDesks((data) =>
+                  setQualification(data, appId, requirement.id, { plan: event.target.value })
+                )
+              }
+              className="text-base"
+            />
+          </label>
+        </div>
+      </li>
+    );
+  };
+
   return (
     <div className="space-y-10">
       <div className="space-y-2">
@@ -91,86 +208,20 @@ export default function QualificationsStation({ desk }: { desk: DeskState }) {
         </p>
       </div>
 
-      <ul className="space-y-3">
-        {requirements.map((requirement) => {
-          const row = rows.get(requirement.id);
-          const status = row?.status ?? 'unset';
-          const found = evidence.get(requirement.id);
-          const excerpt = found?.excerpts[0];
+      <div className="space-y-8">
+        {GROUPS.map(({ section, label }) => {
+          const items = requirements.filter((r) => r.section === section);
+          if (!items.length) return null;
           return (
-            <li
-              key={requirement.id}
-              className="grid gap-3 rounded-xl border border-border/40 p-4 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]"
-              style={{
-                viewTransitionName: `qual-${requirement.id.replace(/[^a-zA-Z0-9_-]/g, '')}`,
-              }}
-            >
-              <div className="min-w-0 space-y-2">
-                <p className="text-sm leading-relaxed text-foreground">{requirement.text}</p>
-                {coverage &&
-                  (excerpt ? (
-                    <p className="text-xs leading-relaxed text-muted-foreground">
-                      <span className="text-foam">In your resume: </span>"{excerpt.text.trim()}"
-                      {excerpt.listedOnly && ' (listed as a skill, not shown in use)'}
-                    </p>
-                  ) : found?.state === 'none' ? (
-                    <p className="text-xs text-muted-foreground">
-                      Nothing in your resume mentions this yet.
-                    </p>
-                  ) : null)}
-              </div>
-              <div className="min-w-0 space-y-2">
-                <fieldset className="m-0 min-w-0 border-0 p-0">
-                  <legend className="sr-only">Where you stand on: {requirement.text}</legend>
-                  <div className="flex flex-wrap gap-1.5">
-                    {STATUS.map((option) => (
-                      <label key={option.value} className="relative">
-                        <input
-                          type="radio"
-                          name={`status-${requirement.id}`}
-                          checked={status === option.value}
-                          onChange={() =>
-                            changeDesks((data) =>
-                              setQualification(data, appId, requirement.id, {
-                                status: option.value,
-                              })
-                            )
-                          }
-                          className="peer absolute inset-0 cursor-pointer opacity-0"
-                        />
-                        <span
-                          className={cn(
-                            'inline-flex min-h-9 items-center rounded-lg border border-border/50 px-3 text-sm text-muted-foreground transition-colors',
-                            'peer-hover:text-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring',
-                            'peer-checked:border-lichen peer-checked:bg-lichen/15 peer-checked:text-foreground'
-                          )}
-                        >
-                          {option.label}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
-                <label className="block">
-                  <span className="sr-only">Plan for: {requirement.text}</span>
-                  <Textarea
-                    rows={2}
-                    value={row?.plan ?? ''}
-                    disabled={status === 'unset'}
-                    placeholder={PLAN_PROMPT[status]}
-                    onChange={(event) =>
-                      changeDesks((data) =>
-                        setQualification(data, appId, requirement.id, { plan: event.target.value })
-                      )
-                    }
-                    className="text-base"
-                  />
-                </label>
-              </div>
-            </li>
+            <section key={section} aria-labelledby={`qual-group-${section}`} className="space-y-3">
+              <h3 id={`qual-group-${section}`} className="text-lg font-semibold">
+                {label}
+              </h3>
+              <ul className="space-y-3">{items.map(renderRow)}</ul>
+            </section>
           );
         })}
-      </ul>
+      </div>
 
       <section className="max-w-3xl space-y-4 border-t border-border/40 pt-6">
         <div className="space-y-2">

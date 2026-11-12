@@ -65,6 +65,7 @@ describe('summarizeCoverage', () => {
     expect(Object.keys(summary).sort()).toEqual([
       'confirmedCount',
       'notCheckableCount',
+      'partialCount',
       'rows',
       'withEvidenceCount',
       'withoutEvidenceCount',

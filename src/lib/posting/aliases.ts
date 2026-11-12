@@ -9,6 +9,10 @@
  * Keywords that name a skill broadly. When a requirement uses one, any
  * keyword of that skill counts as evidence: "Python" is shown by "pandas".
  * A narrow keyword ("Tableau") is only shown by itself and its synonyms.
+ * Only tool skills are read this way when looking for evidence (see
+ * TOOL_SKILLS in match.ts): a soft or domain umbrella ("leadership" shown by
+ * "coach") made unrelated lines count, so the soft and domain entries below
+ * are kept for reference but no longer widen a match.
  */
 export const UMBRELLA_KEYWORDS: Readonly<Record<string, readonly string[]>> = {
   python: ['python'],
@@ -74,7 +78,13 @@ export const WEAK_SKILL_KEYWORDS: ReadonlySet<string> = new Set([
  * Words that only count when capitalized, because the lowercase form is an
  * ordinary word: "Excel" the program, not "excel at".
  */
-export const CAPITALIZED_ONLY: ReadonlySet<string> = new Set(['excel', 'swift', 'flask']);
+export const CAPITALIZED_ONLY: ReadonlySet<string> = new Set([
+  'excel',
+  'swift',
+  'flask',
+  'outlook',
+  'lean',
+]);
 
 /**
  * Spellings that mean the same thing. The first entry is the canonical form.
@@ -101,11 +111,50 @@ export const SYNONYM_GROUPS: readonly (readonly string[])[] = [
   ['customer service', 'customer support'],
   ['cash handling', 'handling cash', 'cash register'],
   ["bachelor's", 'bachelors', 'bachelor', 'b.s.', 'b.a.', 'b.sc.', 'bs', 'ba'],
-  ["master's", 'masters', 'm.s.', 'm.a.', 'm.sc.'],
+  // Bare "masters" is left out: "item masters" is a data term, not a degree.
+  ["master's", 'masters degree', 'm.s.', 'm.a.', 'm.sc.'],
   ['high school diploma', 'ged'],
   ['gpa', 'grade point average'],
   ['cpr', 'cardiopulmonary resuscitation'],
   ['ci/cd', 'continuous integration'],
+  // Degree levels beyond the bachelor's and master's above. "Associate" alone
+  // is a job title ("Sales Associate"), so only the degree forms count.
+  [
+    "associate's degree",
+    'associate degree',
+    'associate of applied science',
+    'associate of arts',
+    'associate of science',
+  ],
+  ['phd', 'ph.d.', 'doctorate'],
+  ['mba', 'master of business administration'],
+  // Operations systems and the category phrase each one goes by.
+  ['warehouse management system', 'wms', 'warehouse management software'],
+  ['transportation management system', 'tms', 'transportation management software'],
+  ['enterprise resource planning', 'erp'],
+  ['customer relationship management', 'crm'],
+  ['electronic data interchange', 'edi'],
+  ['project management tools', 'project management tool', 'project management software'],
+  ['ms project', 'microsoft project'],
+  ['microsoft word', 'ms word'],
+  ['microsoft outlook', 'outlook'],
+  ['google workspace', 'g suite', 'google docs'],
+  ['pivot tables', 'pivot table', 'pivottable'],
+  ['vlookup'],
+  ['xlookup'],
+  ['quickbooks', 'intuit quickbooks'],
+  ['kronos', 'ukg'],
+  ['salesforce'],
+  ['six sigma', 'lean six sigma'],
+  ['lean', 'lean manufacturing'],
+  ['capm', 'certified associate in project management'],
+  ['pmp', 'project management professional'],
+  ['forklift certification', 'forklift certified', 'forklift license'],
+  ['servsafe', 'servsafe manager'],
+  ['osha 10', 'osha 10-hour', 'osha 30', 'osha 30-hour'],
+  ['first aid'],
+  ['data entry'],
+  ["driver's license", 'drivers license', 'driver license'],
 ];
 
 const GROUP_BY_MEMBER: ReadonlyMap<string, readonly string[]> = (() => {
