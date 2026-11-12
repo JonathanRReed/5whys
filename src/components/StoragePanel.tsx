@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { loadFeature, reportFeatureFailure, runFeature } from '../lib/lazy-feature';
 import type { StorageReport } from '../lib/local-db';
 import ConfirmButton from './shared/ConfirmButton';
 
@@ -20,16 +21,16 @@ export default function StoragePanel() {
   const [notice, setNotice] = React.useState<string | null>(null);
 
   const measure = React.useCallback(async () => {
-    const { storageReport } = await import('../lib/local-db');
+    const { storageReport } = await loadFeature(import('../lib/local-db'));
     setReport(await storageReport());
   }, []);
 
   React.useEffect(() => {
-    if (open) void measure();
+    if (open) void measure().catch(reportFeatureFailure);
   }, [open, measure]);
 
   const removeRecordings = async () => {
-    const { deleteAllRecordings } = await import('../lib/local-db');
+    const { deleteAllRecordings } = await loadFeature(import('../lib/local-db'));
     const result = await deleteAllRecordings();
     setNotice(
       result.ok
@@ -40,14 +41,14 @@ export default function StoragePanel() {
   };
 
   const removeModels = async () => {
-    const { deleteModels } = await import('../lib/local-db');
+    const { deleteModels } = await loadFeature(import('../lib/local-db'));
     const result = await deleteModels();
     setNotice(result.ok ? 'Deleted downloaded models.' : result.message);
     await measure();
   };
 
   const clearAll = async () => {
-    const { clearDevice } = await import('../lib/clear-device');
+    const { clearDevice } = await loadFeature(import('../lib/clear-device'));
     const result = await clearDevice();
     if (!result.complete) {
       setNotice(
@@ -61,7 +62,7 @@ export default function StoragePanel() {
   };
 
   const removeResumeFile = async () => {
-    const { deleteResumeFile } = await import('../lib/local-db');
+    const { deleteResumeFile } = await loadFeature(import('../lib/local-db'));
     const result = await deleteResumeFile();
     setNotice(result.ok ? 'Deleted the original resume file.' : result.message);
     await measure();
@@ -127,7 +128,7 @@ export default function StoragePanel() {
         </p>
         <ConfirmButton
           confirmLabel="Delete everything you wrote, uploaded and recorded here? Export first if you want a copy."
-          onConfirm={clearAll}
+          onConfirm={() => runFeature(clearAll)}
           className="px-3 py-1.5 text-sm"
         >
           Clear everything on this device
@@ -154,7 +155,7 @@ export default function StoragePanel() {
                     {row.remove && (
                       <ConfirmButton
                         confirmLabel={row.confirm ?? 'Delete it?'}
-                        onConfirm={row.remove}
+                        onConfirm={() => runFeature(row.remove ?? (async () => {}))}
                         className="px-3 py-1.5 text-xs"
                       >
                         Delete

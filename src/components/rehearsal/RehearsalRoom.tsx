@@ -1,6 +1,7 @@
 import * as React from 'react';
 import type { DecodedRole } from '../../lib/glowup-store';
 import { loadData } from '../../lib/glowup-store';
+import { loadFeature, reportFeatureFailure, runFeature } from '../../lib/lazy-feature';
 import type { HostedModel, ModelState } from '../../lib/models';
 import type { RecordedAudio, SpeechRecorder } from '../../lib/speech';
 import { cn } from '../../lib/utils';
@@ -75,7 +76,7 @@ export default function RehearsalRoom() {
     const current = data.roles.find((r) => r.id === data.currentRoleId) ?? data.roles[0] ?? null;
     setRole(current);
     void (async () => {
-      const { likelyQuestions } = await import('../../lib/local-ai');
+      const { likelyQuestions } = await loadFeature(import('../../lib/local-ai'));
       const result = await likelyQuestions(
         {
           jobTitle: current?.jobTitle || undefined,
@@ -96,9 +97,14 @@ export default function RehearsalRoom() {
           ? fromPosting
           : [...fromPosting, ...extra].slice(0, Math.max(MIN_QUESTIONS, fromPosting.length))
       );
-    })();
+    })().catch((error) => {
+      reportFeatureFailure(error);
+      if (!cancelled) setQuestions(FALLBACK_QUESTIONS);
+    });
     void (async () => {
-      const { speechCapabilities, rankVoices, loadVoiceChoice } = await import('../../lib/speech');
+      const { speechCapabilities, rankVoices, loadVoiceChoice } = await loadFeature(
+        import('../../lib/speech')
+      );
       const capabilities = await speechCapabilities();
       if (cancelled) return;
       setCanRecord(capabilities.mediaRecorder.supported);
@@ -110,15 +116,18 @@ export default function RehearsalRoom() {
         ranked.find((v) => v.voiceURI === savedVoice)?.voiceURI ?? ranked[0]?.voiceURI ?? null
       );
       if (!capabilities.mediaRecorder.supported) setMode('type');
-    })();
-    void refreshModels(() => cancelled);
+    })().catch((error) => {
+      reportFeatureFailure(error);
+      if (!cancelled) setMode('type');
+    });
+    void refreshModels(() => cancelled).catch(reportFeatureFailure);
     return () => {
       cancelled = true;
     };
   }, []);
 
   async function refreshModels(isCancelled: () => boolean = () => false) {
-    const lib = await import('../../lib/models');
+    const lib = await loadFeature(import('../../lib/models'));
     if (!(await lib.hostedModelsAvailable()) || !lib.hostedModelsSupported().supported) return;
     const catalogue = await lib.hostedModelCatalogue();
     const withState = await Promise.all(
@@ -153,7 +162,7 @@ export default function RehearsalRoom() {
       const controller = new AbortController();
       speech.current = controller;
       try {
-        const lib = await import('../../lib/speech');
+        const lib = await loadFeature(import('../../lib/speech'));
         const clip = prepared?.get(text);
         if (clip) await lib.playAudio(clip, { signal: controller.signal });
         else
@@ -186,7 +195,7 @@ export default function RehearsalRoom() {
   const download = async (id: HostedModel['id']) => {
     setDownloading({ id, fraction: 0 });
     try {
-      const { downloadModel } = await import('../../lib/models');
+      const { downloadModel } = await loadFeature(import('../../lib/models'));
       await downloadModel(id, {
         onProgress: (progress) =>
           setDownloading({
@@ -198,13 +207,13 @@ export default function RehearsalRoom() {
       setNotice('The download did not finish. Nothing was changed; you can try again.');
     }
     setDownloading(null);
-    await refreshModels();
+    await refreshModels().catch(reportFeatureFailure);
   };
 
   const prepareVoice = async () => {
     setPreparing('Preparing the spoken questions.');
     try {
-      const { prepareSpokenQuestions } = await import('../../lib/speech');
+      const { prepareSpokenQuestions } = await loadFeature(import('../../lib/speech'));
       const clips = await prepareSpokenQuestions(
         questions.map((q) => q.question),
         {
@@ -224,7 +233,7 @@ export default function RehearsalRoom() {
     speech.current?.abort();
     setNotice(null);
     try {
-      const { createRecorder } = await import('../../lib/speech');
+      const { createRecorder } = await loadFeature(import('../../lib/speech'));
       recorder.current = createRecorder({ onLevel: setLevel });
       await recorder.current.start();
       startedAt.current = performance.now();
@@ -258,7 +267,7 @@ export default function RehearsalRoom() {
     if (!audio || !whisperReady) return;
     setTranscribing(true);
     try {
-      const { transcribe } = await import('../../lib/speech');
+      const { transcribe } = await loadFeature(import('../../lib/speech'));
       const transcript = await transcribe(audio.blob);
       setTake((existing) =>
         existing && existing.audio === audio
@@ -290,7 +299,7 @@ export default function RehearsalRoom() {
 
   const keep = async () => {
     if (!take?.audio) return;
-    const { saveRecording } = await import('../../lib/local-db');
+    const { saveRecording } = await loadFeature(import('../../lib/local-db'));
     const result = await saveRecording({
       tool: 'interview-glow-up',
       question: take.question,
@@ -393,9 +402,9 @@ export default function RehearsalRoom() {
                     value={voiceURI ?? ''}
                     onChange={(event) => {
                       setVoiceURI(event.target.value);
-                      void import('../../lib/speech').then(({ saveVoiceChoice }) =>
-                        saveVoiceChoice(event.target.value)
-                      );
+                      void loadFeature(import('../../lib/speech'))
+                        .then(({ saveVoiceChoice }) => saveVoiceChoice(event.target.value))
+                        .catch(reportFeatureFailure);
                     }}
                     className="h-9 max-w-full rounded-md border border-border/50 bg-transparent px-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                   >
@@ -539,7 +548,7 @@ export default function RehearsalRoom() {
           transcribing={transcribing}
           canTranscribe={whisperReady}
           onTextChange={(text) => setTake({ ...take, text })}
-          onKeep={take.audio ? keep : null}
+          onKeep={take.audio ? () => runFeature(keep) : null}
           kept={kept}
           onRetry={() => ask(index)}
           onNext={() => (index + 1 < questions.length ? ask(index + 1) : setPhase('done'))}

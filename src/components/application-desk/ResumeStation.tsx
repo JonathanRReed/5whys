@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { setResumeSelection } from '../../lib/application-desk';
+import { loadFeature, reportFeatureFailure } from '../../lib/lazy-feature';
 import {
   extractRequirementTerms,
   findTermMatches,
@@ -41,21 +42,26 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
 
   React.useEffect(() => {
     let cancelled = false;
-    void import('../../lib/local-db').then(async ({ getResumeDoc }) => {
-      const saved = await getResumeDoc<ResumeDoc>();
-      if (cancelled) return;
-      if (saved) {
-        setDoc(saved.doc);
-        return;
-      }
-      // No uploaded file: a resume pasted into the Resume Game still counts.
-      if (resumeText.trim()) {
-        const { fromText } = await import('../../lib/resume-doc');
-        if (!cancelled) setDoc(fromText(resumeText));
-      } else {
-        setDoc(null);
-      }
-    });
+    void loadFeature(import('../../lib/local-db'))
+      .then(async ({ getResumeDoc }) => {
+        const saved = await getResumeDoc<ResumeDoc>();
+        if (cancelled) return;
+        if (saved) {
+          setDoc(saved.doc);
+          return;
+        }
+        // No uploaded file: a resume pasted into the Resume Game still counts.
+        if (resumeText.trim()) {
+          const { fromText } = await loadFeature(import('../../lib/resume-doc'));
+          if (!cancelled) setDoc(fromText(resumeText));
+        } else {
+          setDoc(null);
+        }
+      })
+      .catch((error) => {
+        reportFeatureFailure(error);
+        if (!cancelled) setDoc(null);
+      });
     return () => {
       cancelled = true;
     };
@@ -115,7 +121,7 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
 
   const download = async () => {
     try {
-      const { toDocx, checkExport } = await import('../../lib/resume-doc');
+      const { toDocx, checkExport } = await loadFeature(import('../../lib/resume-doc'));
       const bytes = await toDocx(doc, { bulletLineIds: selected });
       const url = URL.createObjectURL(
         new Blob([bytes as BlobPart], {

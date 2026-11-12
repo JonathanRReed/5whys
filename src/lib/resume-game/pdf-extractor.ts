@@ -1,4 +1,5 @@
 import type { TextItem } from 'pdfjs-dist/types/src/display/api';
+import { loadFeature } from '../lazy-feature';
 import { createPdfDataFactory } from './pdf-data';
 
 const MAX_PAGES = 50;
@@ -34,10 +35,10 @@ function pageText(items: Array<TextItem | { type: string }>): string {
 }
 
 export async function readPdfText(file: File): Promise<string> {
-  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  const pdfjs = await loadFeature(import('pdfjs-dist/legacy/build/pdf.mjs'));
   if (typeof window !== 'undefined') {
     // Ship the worker with the site. Resume bytes never go to a CDN or server.
-    const worker = await import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url');
+    const worker = await loadFeature(import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url'));
     pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
   }
   const { PdfDataFactory, getAssetError } = createPdfDataFactory();

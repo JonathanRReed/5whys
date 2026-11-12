@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { loadFeature, reportFeatureFailure, runFeature } from '../../lib/lazy-feature';
 import type { AiResult, InterviewFollowUpOutput } from '../../lib/local-ai';
 import type { DeliveryFacts, RecordedAudio, Transcript } from '../../lib/speech';
 import { sourceLabel } from '../shared/AiText';
@@ -72,23 +73,25 @@ export default function TakeReview({
 
   React.useEffect(() => {
     let cancelled = false;
-    void import('../../lib/speech').then(({ deliveryFacts }) => {
-      if (cancelled) return;
-      setFacts(
-        deliveryFacts({
-          text: take.text,
-          segments: take.segments,
-          durationSeconds: take.durationSeconds,
-        })
-      );
-    });
+    void loadFeature(import('../../lib/speech'))
+      .then(({ deliveryFacts }) => {
+        if (cancelled) return;
+        setFacts(
+          deliveryFacts({
+            text: take.text,
+            segments: take.segments,
+            durationSeconds: take.durationSeconds,
+          })
+        );
+      })
+      .catch(reportFeatureFailure);
     return () => {
       cancelled = true;
     };
   }, [take.text, take.segments, take.durationSeconds]);
 
   const askFollowUp = async () => {
-    const { interviewFollowUp } = await import('../../lib/local-ai');
+    const { interviewFollowUp } = await loadFeature(import('../../lib/local-ai'));
     setFollowUp(await interviewFollowUp({ question: take.question, answer: take.text }));
   };
 
@@ -210,7 +213,12 @@ export default function TakeReview({
 
           {take.text.trim() && (
             <div className="space-y-2">
-              <Button type="button" size="sm" variant="outline" onClick={askFollowUp}>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => void runFeature(askFollowUp)}
+              >
                 {followUp ? 'Another follow-up' : 'What might they ask next?'}
               </Button>
               <div aria-live="polite">

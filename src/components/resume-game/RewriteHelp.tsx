@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { loadFeature, runFeature } from '../../lib/lazy-feature';
 import type { AiResult, RewriteBulletOutput } from '../../lib/local-ai';
 import { AiText, sourceLabel } from '../shared/AiText';
 import { Button } from '../ui/button';
@@ -36,7 +37,7 @@ export default function RewriteHelp({ line }: Props) {
     request.current = controller;
     setBusy(true);
     setCopied(false);
-    const { rewriteBullet } = await import('../../lib/local-ai');
+    const { rewriteBullet } = await loadFeature(import('../../lib/local-ai'));
     const next = await rewriteBullet({ line }, { signal: controller.signal });
     if (controller.signal.aborted) return;
     setResult(next);
@@ -61,7 +62,13 @@ export default function RewriteHelp({ line }: Props) {
         <p className="text-sm text-muted-foreground">
           Want a second wording? It uses only what you wrote and runs on this device.
         </p>
-        <Button type="button" size="sm" variant="outline" onClick={suggest} disabled={busy}>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => void runFeature(suggest, () => setBusy(false))}
+          disabled={busy}
+        >
           {busy ? 'Writing' : result ? 'Suggest another' : 'Suggest a rewrite'}
         </Button>
       </div>

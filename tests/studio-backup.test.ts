@@ -1,13 +1,29 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   BACKUP_FORMAT,
+  BACKUP_SIZE_MESSAGE,
   collectBackup,
+  MAX_BACKUP_BYTES,
   parseBackup,
   restoreBackup,
   STUDIO_STORAGE_KEYS,
   type StudioBackup,
   summarizeBackup,
 } from '../src/lib/studio-backup';
+
+const validStores = {
+  'career-tools-profile': { stage: 'student', focus: 'resume' },
+  'career-why-session-v2': { topic: 'Biology', responses: [] },
+  'career-why-history': [{ id: 'imported' }],
+  'career-why-history-limit': 12,
+  'resume-game-session-v2': { bullets: [] },
+  'networking-practice-versions': [],
+  'networking-practice-sessions': [],
+  'networking-practice-draft': { text: 'My intro' },
+  'interview-glow-up-data': { roles: [], stories: [], packets: [] },
+  'career-applications': { applications: [] },
+  'career-application-desk': { desks: {} },
+} satisfies StudioBackup['stores'];
 
 describe('studio backup', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -67,7 +83,11 @@ describe('studio backup', () => {
   it.each([false, true])(
     'preserves existing work when an import write fails (replace=%s)',
     async (replace) => {
-      const originalProfile = JSON.stringify({ name: 'Original profile' });
+      const originalProfile = JSON.stringify({
+        stage: 'student',
+        focus: 'resume',
+        name: 'Original profile',
+      });
       const originalHistory = JSON.stringify([{ id: 'saved-reflection' }]);
       localStorage.setItem('career-tools-profile', originalProfile);
       localStorage.setItem('career-why-history', originalHistory);
@@ -88,7 +108,7 @@ describe('studio backup', () => {
           format: BACKUP_FORMAT,
           version: 1,
           stores: {
-            'career-tools-profile': { name: 'Imported profile' },
+            'career-tools-profile': { stage: 'student', focus: 'resume', name: 'Imported profile' },
             'career-why-history': [{ id: 'imported-reflection' }],
           },
         })
@@ -103,7 +123,7 @@ describe('studio backup', () => {
 
   it('serializes every imported store before changing saved work', async () => {
     localStorage.setItem('career-why-history', '[{"id":"saved-reflection"}]');
-    const circular: Record<string, unknown> = {};
+    const circular: Record<string, unknown> = { stage: 'student', focus: 'resume' };
     circular.self = circular;
     await expect(
       restoreBackup(
@@ -125,7 +145,7 @@ describe('studio backup', () => {
       const stores: StudioBackup['stores'] = {};
       for (const key of STUDIO_STORAGE_KEYS) {
         localStorage.setItem(key, JSON.stringify({ original: key }));
-        stores[key] = { imported: key };
+        stores[key] = validStores[key];
       }
       localStorage.setItem('unrelated', 'keep');
       const setItem = Storage.prototype.setItem;
@@ -134,7 +154,7 @@ describe('studio backup', () => {
         key,
         value
       ) {
-        if (key === failedKey && value.includes('imported')) {
+        if (key === failedKey && value === JSON.stringify(validStores[failedKey])) {
           throw new DOMException('Storage is full', 'QuotaExceededError');
         }
         setItem.call(this, key, value);
@@ -162,7 +182,9 @@ describe('studio backup', () => {
           format: BACKUP_FORMAT,
           version: 1,
           exportedAt: '',
-          stores: { 'career-tools-profile': { name: 'Imported profile' } },
+          stores: {
+            'career-tools-profile': { stage: 'student', focus: 'resume', name: 'Imported profile' },
+          },
         },
         true
       )
@@ -190,7 +212,9 @@ describe('studio backup', () => {
             format: BACKUP_FORMAT,
             version: 1,
             exportedAt: '',
-            stores: { 'career-tools-profile': { imported: true } },
+            stores: {
+              'career-tools-profile': { stage: 'student', focus: 'resume', imported: true },
+            },
           },
           true
         )
@@ -203,7 +227,11 @@ describe('studio backup', () => {
   );
 
   it('removes newly added keys before restoring larger overwritten values', async () => {
-    const originalProfile = JSON.stringify({ name: 'A longer original profile' });
+    const originalProfile = JSON.stringify({
+      stage: 'student',
+      focus: 'resume',
+      name: 'A longer original profile',
+    });
     localStorage.setItem('career-tools-profile', originalProfile);
     localStorage.setItem('career-why-history', '[{"id":"saved-reflection"}]');
     const setItem = Storage.prototype.setItem;
@@ -224,7 +252,7 @@ describe('studio backup', () => {
           version: 1,
           exportedAt: '',
           stores: {
-            'career-tools-profile': { name: 'New' },
+            'career-tools-profile': { stage: 'student', focus: 'resume', name: 'New' },
             'career-why-session-v2': { topic: 'New session' },
             'career-why-history': [{ id: 'imported-reflection' }],
           },
@@ -238,7 +266,10 @@ describe('studio backup', () => {
   });
 
   it('reports incomplete rollback and still restores other changed keys', async () => {
-    localStorage.setItem('career-tools-profile', '{"name":"Original profile"}');
+    localStorage.setItem(
+      'career-tools-profile',
+      '{"stage":"student","focus":"resume","name":"Original profile"}'
+    );
     localStorage.setItem('career-why-session-v2', '{"topic":"Original session"}');
     localStorage.setItem('unrelated', 'keep');
     const setItem = Storage.prototype.setItem;
@@ -256,7 +287,7 @@ describe('studio backup', () => {
           version: 1,
           exportedAt: '',
           stores: {
-            'career-tools-profile': { name: 'Imported profile' },
+            'career-tools-profile': { stage: 'student', focus: 'resume', name: 'Imported profile' },
             'career-why-session-v2': { topic: 'Imported session' },
             'career-why-history': [{ id: 'imported-reflection' }],
           },
@@ -265,12 +296,14 @@ describe('studio backup', () => {
       )
     ).rejects.toThrow(/some saved work may have changed/i);
     expect(localStorage.getItem('career-why-session-v2')).toBe('{"topic":"Original session"}');
-    expect(localStorage.getItem('career-tools-profile')).toBe('{"name":"Imported profile"}');
+    expect(localStorage.getItem('career-tools-profile')).toBe(
+      '{"stage":"student","focus":"resume","name":"Imported profile"}'
+    );
     expect(localStorage.getItem('unrelated')).toBe('keep');
   });
 
   it('frees space in overwritten stores before restoring removed work', async () => {
-    const originalProfile = '{"name":"Old"}';
+    const originalProfile = '{"stage":"student","focus":"resume","name":"Old"}';
     localStorage.setItem('career-tools-profile', originalProfile);
     localStorage.setItem('career-why-session-v2', '{"topic":"Saved session"}');
     localStorage.setItem('career-why-history', '[{"id":"saved-reflection"}]');
@@ -298,7 +331,13 @@ describe('studio backup', () => {
           format: BACKUP_FORMAT,
           version: 1,
           exportedAt: '',
-          stores: { 'career-tools-profile': { name: 'A larger imported profile' } },
+          stores: {
+            'career-tools-profile': {
+              stage: 'student',
+              focus: 'resume',
+              name: 'A larger imported profile',
+            },
+          },
         },
         true
       )
@@ -328,7 +367,7 @@ describe('studio backup', () => {
           version: 1,
           exportedAt: '',
           stores: {
-            'career-tools-profile': { name: 'Imported profile' },
+            'career-tools-profile': { stage: 'student', focus: 'resume', name: 'Imported profile' },
             'career-why-session-v2': { topic: 'Imported session' },
             'career-why-history': [{ id: 'imported-reflection' }],
           },
@@ -337,13 +376,18 @@ describe('studio backup', () => {
       )
     ).rejects.toThrow(/some saved work may have changed/i);
     expect(localStorage.getItem('career-why-session-v2')).toBeNull();
-    expect(localStorage.getItem('career-tools-profile')).toBe('{"name":"Imported profile"}');
+    expect(localStorage.getItem('career-tools-profile')).toBe(
+      '{"stage":"student","focus":"resume","name":"Imported profile"}'
+    );
   });
 
   it.each(['career-tools-profile', 'career-why-session-v2'])(
     'preserves a newer value in %s during rollback',
     async (changedKey) => {
-      localStorage.setItem('career-tools-profile', '{"name":"Original profile"}');
+      localStorage.setItem(
+        'career-tools-profile',
+        '{"stage":"student","focus":"resume","name":"Original profile"}'
+      );
       const setItem = Storage.prototype.setItem;
       vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (
         this: Storage,
@@ -364,7 +408,11 @@ describe('studio backup', () => {
             version: 1,
             exportedAt: '',
             stores: {
-              'career-tools-profile': { name: 'Imported profile' },
+              'career-tools-profile': {
+                stage: 'student',
+                focus: 'resume',
+                name: 'Imported profile',
+              },
               'career-why-session-v2': { topic: 'Imported session' },
               'career-why-history': [{ id: 'imported-reflection' }],
             },
@@ -377,7 +425,10 @@ describe('studio backup', () => {
   );
 
   it('preserves a newer value added after a replacement removed that store', async () => {
-    localStorage.setItem('career-tools-profile', '{"name":"Original profile"}');
+    localStorage.setItem(
+      'career-tools-profile',
+      '{"stage":"student","focus":"resume","name":"Original profile"}'
+    );
     localStorage.setItem('career-why-history', '[{"id":"saved-reflection"}]');
     localStorage.setItem('resume-game-session-v2', '{"bullets":[]}');
     const setItem = Storage.prototype.setItem;
@@ -396,17 +447,24 @@ describe('studio backup', () => {
           format: BACKUP_FORMAT,
           version: 1,
           exportedAt: '',
-          stores: { 'career-tools-profile': { name: 'Imported profile' } },
+          stores: {
+            'career-tools-profile': { stage: 'student', focus: 'resume', name: 'Imported profile' },
+          },
         },
         true
       )
     ).rejects.toThrow(/some saved work may have changed/i);
     expect(localStorage.getItem('career-why-history')).toBe('[{"id":"newer-reflection"}]');
-    expect(localStorage.getItem('career-tools-profile')).toBe('{"name":"Original profile"}');
+    expect(localStorage.getItem('career-tools-profile')).toBe(
+      '{"stage":"student","focus":"resume","name":"Original profile"}'
+    );
   });
 
   it('reads all original stores before changing any of them', async () => {
-    localStorage.setItem('career-tools-profile', '{"name":"Original profile"}');
+    localStorage.setItem(
+      'career-tools-profile',
+      '{"stage":"student","focus":"resume","name":"Original profile"}'
+    );
     const getItem = Storage.prototype.getItem;
     const failure = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(function (
       this: Storage,
@@ -422,13 +480,17 @@ describe('studio backup', () => {
           format: BACKUP_FORMAT,
           version: 1,
           exportedAt: '',
-          stores: { 'career-tools-profile': { name: 'Imported profile' } },
+          stores: {
+            'career-tools-profile': { stage: 'student', focus: 'resume', name: 'Imported profile' },
+          },
         },
         true
       )
     ).rejects.toThrow(/could not|couldn't/i);
     failure.mockRestore();
-    expect(localStorage.getItem('career-tools-profile')).toBe('{"name":"Original profile"}');
+    expect(localStorage.getItem('career-tools-profile')).toBe(
+      '{"stage":"student","focus":"resume","name":"Original profile"}'
+    );
   });
 
   it('reports unavailable storage without changing saved work', async () => {
@@ -441,7 +503,9 @@ describe('studio backup', () => {
           format: BACKUP_FORMAT,
           version: 1,
           exportedAt: '',
-          stores: { 'career-tools-profile': { name: 'Imported profile' } },
+          stores: {
+            'career-tools-profile': { stage: 'student', focus: 'resume', name: 'Imported profile' },
+          },
         },
         true
       )
@@ -480,5 +544,68 @@ describe('studio backup', () => {
     ).rejects.toThrow();
     expect(localStorage.getItem('career-tools-profile')).toBeNull();
     expect(localStorage.getItem('career-why-history')).toBe('[{"id":"saved-reflection"}]');
+  });
+  it.each(STUDIO_STORAGE_KEYS)(
+    'refuses an invalid %s before parse or restore can change anything',
+    async (key) => {
+      localStorage.setItem('career-why-history', '[{"id":"saved"}]');
+      const message = `That file contains invalid data for "${key}". Your saved work was not changed.`;
+      const backup: StudioBackup = {
+        format: BACKUP_FORMAT,
+        version: 1,
+        exportedAt: '',
+        stores: { ...validStores, [key]: 'x' },
+      };
+      expect(() => parseBackup(JSON.stringify(backup))).toThrow(new Error(message));
+      for (const replace of [false, true])
+        await expect(restoreBackup(backup, replace)).rejects.toThrow(new Error(message));
+      expect(localStorage.length).toBe(1);
+      expect(localStorage.getItem('career-why-history')).toBe('[{"id":"saved"}]');
+    }
+  );
+
+  it.each([
+    ['career-tools-profile', { stage: 'stranger', focus: 'resume' }],
+    ['career-why-session-v2', { topic: 3 }],
+    ['career-why-history', [null]],
+    ['career-why-history-limit', 7],
+    ['resume-game-session-v2', { bullets: 'x' }],
+    ['resume-game-session-v2', { bullets: [], resumeText: 42 }],
+    ['networking-practice-versions', [{ who: [] }]],
+    ['networking-practice-sessions', [{ attempts: [null] }]],
+    ['networking-practice-draft', { text: 'intro', ratingsTouched: 'yes' }],
+    ['interview-glow-up-data', { roles: [null], stories: [], packets: [] }],
+    ['career-applications', { applications: [{ title: 12 }] }],
+    ['career-application-desk', { desks: [] }],
+  ])('refuses malformed fields in %s with its store name', (key, value) => {
+    expect(() =>
+      parseBackup(
+        JSON.stringify({ format: BACKUP_FORMAT, version: 1, stores: { [String(key)]: value } })
+      )
+    ).toThrow(
+      new Error(`That file contains invalid data for "${key}". Your saved work was not changed.`)
+    );
+  });
+
+  it('refuses oversized text before JSON parsing, including multibyte text', () => {
+    for (const text of ['x'.repeat(MAX_BACKUP_BYTES + 1), 'é'.repeat(MAX_BACKUP_BYTES / 2 + 1)]) {
+      expect(() => parseBackup(text)).toThrow(new Error(BACKUP_SIZE_MESSAGE));
+    }
+  });
+
+  it('ignores an overlapping import, then allows another after completion', async () => {
+    const first: StudioBackup = {
+      format: BACKUP_FORMAT,
+      version: 1,
+      exportedAt: '',
+      stores: { 'career-why-history': [{ id: 'first' }] },
+    };
+    const running = restoreBackup(first, true);
+    expect(
+      await restoreBackup({ ...first, stores: { 'career-why-history': [{ id: 'second' }] } }, true)
+    ).toEqual([]);
+    await running;
+    expect(localStorage.getItem('career-why-history')).toBe('[{"id":"first"}]');
+    expect(await restoreBackup(first, false)).toEqual(['career-why-history']);
   });
 });

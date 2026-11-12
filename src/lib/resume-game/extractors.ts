@@ -1,4 +1,5 @@
 import JSZip from 'jszip';
+import { loadFeature } from '../lazy-feature';
 
 export async function extractTextFromFile(file: File): Promise<string> {
   if (file.size > 5 * 1024 * 1024) {
@@ -67,6 +68,6 @@ async function extractDocx(file: File): Promise<string> {
 }
 
 async function extractPdf(file: File): Promise<string> {
-  const { readPdfText } = await import('./pdf-extractor');
+  const { readPdfText } = await loadFeature(import('./pdf-extractor'));
   return readPdfText(file);
 }

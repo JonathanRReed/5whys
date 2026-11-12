@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { loadFeature, runFeature } from '../../lib/lazy-feature';
 import type { RecordedAudio, SpeechRecorder } from '../../lib/speech';
 import { Button } from '../ui/button';
 
@@ -57,7 +58,7 @@ export default function RepRecorder({ label }: Props) {
     setTake(null);
     setKept(false);
     try {
-      const { createRecorder } = await import('../../lib/speech');
+      const { createRecorder } = await loadFeature(import('../../lib/speech'));
       recorder.current = createRecorder({ onLevel: setLevel });
       await recorder.current.start();
       startedAt.current = performance.now();
@@ -87,7 +88,7 @@ export default function RepRecorder({ label }: Props) {
 
   const keep = async () => {
     if (!take) return;
-    const { saveRecording } = await import('../../lib/local-db');
+    const { saveRecording } = await loadFeature(import('../../lib/local-db'));
     const result = await saveRecording({
       tool: 'networking-practice',
       question: label,
@@ -148,7 +149,13 @@ export default function RepRecorder({ label }: Props) {
             <span className="font-mono text-sm tabular-nums text-muted-foreground">
               {clock(take.durationMs / 1000)} long
             </span>
-            <Button type="button" size="sm" variant="ghost" onClick={keep} disabled={kept}>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => void runFeature(keep)}
+              disabled={kept}
+            >
               {kept ? 'Kept on this device' : 'Keep this recording'}
             </Button>
           </div>

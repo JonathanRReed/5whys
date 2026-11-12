@@ -2,16 +2,47 @@
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
+      const names = await caches.keys();
+      const existed = names.includes(CACHE_NAME);
       const cache = await caches.open(CACHE_NAME);
       try {
-        // Bound concurrent downloads, including the larger optional speech libraries.
+        const previous = await Promise.all(
+          names
+            .filter((name) => name.startsWith(SHELL_CACHE_PREFIX))
+            .map((name) => caches.open(name))
+        );
         for (let at = 0; at < PRECACHE.length; at += 16) {
-          await cache.addAll(
-            PRECACHE.slice(at, at + 16).map((url) => new Request(url, { cache: 'reload' }))
+          await Promise.all(
+            PRECACHE.slice(at, at + 16).map(async (url) => {
+              // HTML always checks the server. Assets with the same URL and
+              // revision can be copied without a request, including older Vite caches.
+              const html = url.endsWith('/') || url.endsWith('.html');
+              if (!html) {
+                for (const old of previous) {
+                  const saved = await old.match(url, { ignoreVary: true });
+                  if (
+                    saved &&
+                    (immutableAsset(url) ||
+                      saved.headers.get('x-studio-revision') === REVISIONS[url])
+                  ) {
+                    await cache.put(url, saved);
+                    return;
+                  }
+                }
+              }
+              const response = await fetch(new Request(url, { cache: 'no-cache' }));
+              if (!response.ok || response.redirected) throw new Error(`Could not cache ${url}`);
+              const headers = new Headers(response.headers);
+              headers.set('x-studio-revision', REVISIONS[url]);
+              await cache.put(
+                url,
+                new Response(response.body, { status: response.status, headers })
+              );
+            })
           );
         }
       } catch (error) {
-        await caches.delete(CACHE_NAME);
+        if (!existed) await caches.delete(CACHE_NAME);
         throw error;
       }
       // Updates wait here until a visitor explicitly asks to apply them.
@@ -23,7 +54,28 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
       for (const name of await caches.keys()) {
-        if (obsoleteShellCache(name, CACHE_NAME)) await caches.delete(name);
+        if (!obsoleteShellCache(name, CACHE_NAME)) continue;
+        // Keep previously used lazy features available after an update too.
+        const old = await caches.open(name);
+        const current = await caches.open(CACHE_NAME);
+        for (const request of await old.keys()) {
+          const path = new URL(request.url).pathname;
+          if (
+            requestStrategy(
+              { url: request.url, method: 'GET', mode: 'cors' },
+              self.location.origin
+            ) === null ||
+            path.endsWith('/') ||
+            path.endsWith('.html') ||
+            PRECACHE.includes(path)
+          )
+            continue;
+          if (!(await current.match(request, { ignoreVary: true }))) {
+            const saved = await old.match(request);
+            if (saved) await current.put(request, saved);
+          }
+        }
+        await caches.delete(name);
       }
       await self.clients.claim();
     })()
@@ -32,6 +84,22 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'APPLY_UPDATE') event.waitUntil(self.skipWaiting());
+  if (event.data?.type === 'CACHE_USED' && Array.isArray(event.data.urls)) {
+    event.waitUntil(
+      (async () => {
+        const cache = await caches.open(CACHE_NAME);
+        for (const url of new Set(event.data.urls)) {
+          if (
+            typeof url !== 'string' ||
+            !requestStrategy({ url, method: 'GET', mode: 'cors' }, self.location.origin)
+          )
+            continue;
+          if (await cache.match(url, { ignoreVary: true })) continue;
+          await fetchAndCache(new Request(url), cache).catch(() => {});
+        }
+      })()
+    );
+  }
 });
 
 async function fetchAndCache(request, cache) {
@@ -45,7 +113,7 @@ async function fetchAndCache(request, cache) {
 
 self.addEventListener('fetch', (event) => {
   const request = event.request;
-  const strategy = requestStrategy(
+  let strategy = requestStrategy(
     {
       url: request.url,
       method: request.method,
@@ -55,6 +123,11 @@ self.addEventListener('fetch', (event) => {
     self.location.origin
   );
   if (!strategy) return;
+  // The next install checks revisions for public shell assets too. Avoid
+  // overwriting that metadata with a background refresh between deploys.
+  if (strategy !== 'network-first' && PRECACHE.includes(new URL(request.url).pathname)) {
+    strategy = 'cache-first';
+  }
 
   if (strategy === 'network-first') {
     event.respondWith(
@@ -77,7 +150,7 @@ self.addEventListener('fetch', (event) => {
   const cache = caches.open(CACHE_NAME);
   // Static shell bytes do not vary by Origin. Module requests add that header;
   // install-time fetches do not, and development previews send Vary: Origin.
-  const matchOptions = { ignoreVary: PRECACHE.includes(new URL(request.url).pathname) };
+  const matchOptions = { ignoreVary: true };
   if (strategy === 'cache-first') {
     event.respondWith(
       cache.then(

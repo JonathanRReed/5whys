@@ -11,6 +11,7 @@ import {
   saveResumeDoc,
   saveResumeFile,
 } from '../src/lib/local-db';
+import { fromText } from '../src/lib/resume-doc/model';
 import {
   BACKUP_FORMAT,
   BACKUP_VERSION,
@@ -21,13 +22,14 @@ import {
   RESUME_DOCUMENT_RECORD,
   restoreBackup,
   STUDIO_STORAGE_KEYS,
+  type StudioBackup,
   summarizeBackup,
 } from '../src/lib/studio-backup';
 
 const fixture = (name: string): string =>
   readFileSync(path.join(import.meta.dirname, 'fixtures', 'backups', name), 'utf8');
 
-const RESUME = { sections: [{ heading: 'Experience', lines: ['Led a club fundraiser.'] }] };
+const RESUME = fromText('Experience\n- Led a club fundraiser.');
 const DESK = { version: 1, desks: { 'app-1': { checklist: { 'someone-read-it': true } } } };
 
 beforeEach(async () => {
@@ -214,4 +216,22 @@ describe('backup version 2', () => {
     ).rejects.toThrow(/not changed/);
     expect(localStorage.getItem('career-why-history')).toBe('[{"id":"saved-reflection"}]');
   });
+});
+
+it('refuses a malformed resume document before changing either storage system', async () => {
+  localStorage.setItem('career-why-history', '[{"id":"saved"}]');
+  await saveResumeDoc(RESUME);
+  const invalid: StudioBackup = {
+    format: BACKUP_FORMAT,
+    version: 2,
+    exportedAt: '',
+    stores: { 'career-why-history': [] },
+    records: { [RESUME_DOCUMENT_RECORD]: 'x' },
+  };
+  const message =
+    'That file contains invalid data for "resume-document". Your saved work was not changed.';
+  expect(() => parseBackup(JSON.stringify(invalid))).toThrow(new Error(message));
+  await expect(restoreBackup(invalid, true)).rejects.toThrow(new Error(message));
+  expect(localStorage.getItem('career-why-history')).toBe('[{"id":"saved"}]');
+  expect((await getResumeDoc())?.doc).toEqual(RESUME);
 });

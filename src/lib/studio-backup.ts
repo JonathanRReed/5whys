@@ -23,6 +23,7 @@ import {
   getResumeFile,
   saveResumeDoc,
 } from './local-db/records';
+import { isFocus, isStage } from './profile';
 
 export const STUDIO_STORAGE_KEYS = [
   'career-tools-profile', // src/lib/profile.ts
@@ -174,8 +175,225 @@ export async function downloadBackup(): Promise<StudioBackup> {
   return backup;
 }
 
+/** LocalStorage commonly has a 5 MiB quota. Reject oversized text before parsing. */
+export const MAX_BACKUP_BYTES = 5 * 1024 * 1024;
+export const BACKUP_SIZE_MESSAGE =
+  'That file is larger than the 5 MiB backup limit for browser storage. Your saved work was not changed.';
+
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+const isText = (value: unknown) => typeof value === 'string';
+const isNumber = (value: unknown) => typeof value === 'number' && Number.isFinite(value);
+const isBoolean = (value: unknown) => typeof value === 'boolean';
+const nullableText = (value: unknown) => value === null || isText(value);
+const textArray = (value: unknown) => Array.isArray(value) && value.every(isText);
+const objectArray = (value: unknown): value is Record<string, unknown>[] =>
+  Array.isArray(value) && value.every(isObject);
+
+/** Missing fields that older loaders supply are allowed. Present fields must have their shape. */
+function fields(
+  value: Record<string, unknown>,
+  checks: Record<string, (value: unknown) => boolean>
+): boolean {
+  return Object.entries(checks).every(
+    ([key, check]) => value[key] === undefined || check(value[key])
+  );
+}
+const namedRecords = (value: unknown): value is Record<string, unknown>[] =>
+  objectArray(value) &&
+  value.every((entry: Record<string, unknown>) =>
+    fields(entry, { id: isText, updatedAt: (v) => isText(v) || isNumber(v) })
+  );
+const reflection = (value: unknown) =>
+  isObject(value) &&
+  fields(value, {
+    id: isText,
+    topic: isText,
+    track: (v) => v === 'career' || v === 'interest',
+    responses: textArray,
+    timestamp: isText,
+    updatedAt: isText,
+    version: isNumber,
+    whyStatement: isText,
+    rootReason: isText,
+    nextStep: isText,
+  });
+const ratings = (value: unknown) => isObject(value) && Object.values(value).every(isNumber);
+const notes = (value: unknown) => isObject(value) && Object.values(value).every(isText);
+
+/** Small checks for the shapes each tool's loader accepts, without rewriting old saves. */
+const STORE_CHECKS: Record<StudioStorageKey, (value: unknown) => boolean> = {
+  'career-tools-profile': (v) =>
+    isObject(v) && isStage(v.stage) && isFocus(v.focus) && fields(v, { updatedAt: isText }),
+  'career-why-session-v2': (v) => reflection(v) && isObject(v) && isText(v.topic),
+  'career-why-history': (v) => Array.isArray(v) && v.every(reflection),
+  'career-why-history-limit': (v) => isNumber(v) && [6, 12, 24].includes(Number(v)),
+  'resume-game-session-v2': (v) =>
+    isObject(v) &&
+    namedRecords(v.bullets) &&
+    fields(v, {
+      resumeText: isText,
+      needsRescan: isBoolean,
+      selectedBulletId: nullableText,
+      lastAnalyzedAt: nullableText,
+      signalReport: isObject,
+    }) &&
+    v.bullets.every((b: Record<string, unknown>) =>
+      fields(b, {
+        original: isText,
+        improved: isText,
+        fields: notes,
+        baselineScore: isNumber,
+        improvedScore: isNumber,
+      })
+    ),
+  'networking-practice-versions': (v) =>
+    namedRecords(v) &&
+    Array.isArray(v) &&
+    v.every((entry) =>
+      fields(entry, {
+        title: isText,
+        scenarioId: isText,
+        who: isText,
+        where: isText,
+        what: isText,
+        notes: isText,
+      })
+    ),
+  'networking-practice-sessions': (v) =>
+    namedRecords(v) &&
+    Array.isArray(v) &&
+    v.every((entry) =>
+      fields(entry, {
+        versionId: isText,
+        scenarioId: isText,
+        scenarioTitle: isText,
+        createdAt: isText,
+        what: isText,
+        durationSeconds: isNumber,
+        attempts: (a) =>
+          namedRecords(a) &&
+          Array.isArray(a) &&
+          a.every((item) =>
+            fields(item, {
+              script: isText,
+              label: isText,
+              durationSeconds: isNumber,
+              createdAt: isText,
+            })
+          ),
+        ratings,
+        reflection: notes,
+        questionDraft: isText,
+        affirmation: isText,
+      })
+    ),
+  'networking-practice-draft': (v) =>
+    isObject(v) &&
+    isText(v.text) &&
+    fields(v, {
+      ratings,
+      reflection: notes,
+      ratingsTouched: isBoolean,
+      versionId: nullableText,
+      updatedAt: isText,
+    }),
+  'interview-glow-up-data': (v) =>
+    isObject(v) &&
+    namedRecords(v.roles) &&
+    namedRecords(v.stories) &&
+    namedRecords(v.packets) &&
+    fields(v, { version: isNumber, currentRoleId: nullableText, currentPacketId: nullableText }) &&
+    v.roles.every((role: Record<string, unknown>) =>
+      fields(role, { jobTitle: isText, company: isText, rawJdText: isText, bullets: namedRecords })
+    ) &&
+    v.stories.every((story: Record<string, unknown>) =>
+      fields(story, {
+        hook: isText,
+        play: isText,
+        proof: isText,
+        otherSkillIds: textArray,
+        questionPrompts: textArray,
+        tags: textArray,
+      })
+    ),
+  'career-applications': (v) =>
+    isObject(v) &&
+    namedRecords(v.applications) &&
+    fields(v, { version: isNumber, activeId: nullableText }) &&
+    v.applications.every(
+      (app: Record<string, unknown>) =>
+        fields(app, {
+          title: isText,
+          company: isText,
+          deadline: nullableText,
+          roleId: nullableText,
+          createdAt: isNumber,
+          updatedAt: isNumber,
+        }) &&
+        (isText(app.title) || isText(app.company))
+    ),
+  'career-application-desk': (v) =>
+    isObject(v) &&
+    isObject(v.desks) &&
+    fields(v, { version: isNumber }) &&
+    Object.values(v.desks).every(
+      (desk) =>
+        isObject(desk) &&
+        fields(desk, {
+          qualifications: namedRecords,
+          actionPlan: namedRecords,
+          bullets: isObject,
+          letter: isObject,
+          checklist: (c) => isObject(c) && Object.values(c).every(isBoolean),
+          offer: isObject,
+          resumeSelection: (r) => r === null || (isObject(r) && textArray(r.bulletIds)),
+          updatedAt: isNumber,
+        })
+    ),
+};
+
+/** The structured resume has no normalizer at read time. Check its top-level contract too. */
+function validateResumeDocument(value: unknown): void {
+  if (
+    !isObject(value) ||
+    !['pdf', 'docx', 'text'].includes(String(value.source)) ||
+    !isObject(value.file) ||
+    !isText(value.file.name) ||
+    !isNumber(value.file.sizeBytes) ||
+    !(value.file.pageCount === null || isNumber(value.file.pageCount)) ||
+    !objectArray(value.pages) ||
+    !objectArray(value.lines) ||
+    !textArray(value.extractionOrder) ||
+    !textArray(value.geometricOrder) ||
+    !objectArray(value.sections) ||
+    !isObject(value.contact) ||
+    !objectArray(value.contact.links) ||
+    !isText(value.plainText) ||
+    !objectArray(value.findings)
+  ) {
+    throw new Error(
+      `That file contains invalid data for "${RESUME_DOCUMENT_RECORD}". Your saved work was not changed.`
+    );
+  }
+}
+
+function validateStore(key: StudioStorageKey, value: unknown): void {
+  if (!STORE_CHECKS[key](value)) {
+    throw new Error(
+      `That file contains invalid data for "${key}". Your saved work was not changed.`
+    );
+  }
+}
+
 /** Parse and validate a file the user picked. Throws a readable message. */
 export function parseBackup(text: string): StudioBackup {
+  if (
+    text.length > MAX_BACKUP_BYTES ||
+    new TextEncoder().encode(text).byteLength > MAX_BACKUP_BYTES
+  ) {
+    throw new Error(BACKUP_SIZE_MESSAGE);
+  }
   let data: unknown;
   try {
     data = JSON.parse(text);
@@ -197,7 +415,10 @@ export function parseBackup(text: string): StudioBackup {
   }
   const stores: StudioBackup['stores'] = {};
   for (const [key, value] of Object.entries(candidate.stores)) {
-    if (isKey(key) && value !== undefined && value !== null) stores[key] = value;
+    if (isKey(key) && value !== undefined && value !== null) {
+      validateStore(key, value);
+      stores[key] = value;
+    }
   }
   const parsed: StudioBackup = {
     format: BACKUP_FORMAT,
@@ -209,7 +430,10 @@ export function parseBackup(text: string): StudioBackup {
   const records = candidate.records;
   if (records && typeof records === 'object' && !Array.isArray(records)) {
     const doc = (records as Record<string, unknown>)[RESUME_DOCUMENT_RECORD];
-    if (doc !== undefined && doc !== null) parsed.records = { [RESUME_DOCUMENT_RECORD]: doc };
+    if (doc !== undefined && doc !== null) {
+      validateResumeDocument(doc);
+      parsed.records = { [RESUME_DOCUMENT_RECORD]: doc };
+    }
   }
   return parsed;
 }
@@ -267,7 +491,7 @@ function rollbackLocal(
  * fails, the localStorage changes are rolled back. Recovery is best effort:
  * localStorage has no transaction across keys or tabs.
  */
-export async function restoreBackup(
+async function restoreValidatedBackup(
   backup: StudioBackup,
   replace: boolean
 ): Promise<RestoredStore[]> {
@@ -275,6 +499,13 @@ export async function restoreBackup(
   if (!backup.stores || typeof backup.stores !== 'object' || Array.isArray(backup.stores)) {
     throw new Error('That file was not exported by 5 Whys Career Studio.');
   }
+  for (const key of STUDIO_STORAGE_KEYS) {
+    const value = backup.stores[key];
+    if (value !== undefined && value !== null) validateStore(key, value);
+  }
+  const resumeDocument = backup.records?.[RESUME_DOCUMENT_RECORD];
+  if (resumeDocument !== undefined && resumeDocument !== null)
+    validateResumeDocument(resumeDocument);
   const staged = new Map<StudioStorageKey, string>();
   let stagedDoc: { value: unknown; json: string } | null = null;
   try {
@@ -368,4 +599,20 @@ export async function restoreBackup(
   const restored: RestoredStore[] = [...staged.keys()];
   if (stagedDoc) restored.push(RESUME_DOCUMENT_RECORD);
   return restored;
+}
+
+let importing = false;
+
+/** A second submission must not overlap a staged import or its rollback. */
+export async function restoreBackup(
+  backup: StudioBackup,
+  replace: boolean
+): Promise<RestoredStore[]> {
+  if (importing) return [];
+  importing = true;
+  try {
+    return await restoreValidatedBackup(backup, replace);
+  } finally {
+    importing = false;
+  }
 }

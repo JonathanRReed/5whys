@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { loadFeature, reportFeatureFailure } from '../lib/lazy-feature';
 import { cn } from '../lib/utils';
 import CareerHeader from './career-5whys/CareerHeader';
 import ExportActions from './career-5whys/ExportActions';
@@ -42,10 +43,12 @@ export default function Career5Whys({
   const [modelReady, setModelReady] = React.useState(false);
   React.useEffect(() => {
     let cancelled = false;
-    void import('../lib/local-ai').then(async ({ getBrowserModelCapability }) => {
-      const capability = await getBrowserModelCapability();
-      if (!cancelled) setModelReady(capability.state === 'available');
-    });
+    void loadFeature(import('../lib/local-ai'))
+      .then(async ({ getBrowserModelCapability }) => {
+        const capability = await getBrowserModelCapability();
+        if (!cancelled) setModelReady(capability.state === 'available');
+      })
+      .catch(reportFeatureFailure);
     return () => {
       cancelled = true;
     };

@@ -3,51 +3,66 @@ import { expect, test } from 'vitest';
 import { buildPrecache, nightColor, precachePath } from '../scripts/offline/build.mjs';
 import { navigationKey, obsoleteShellCache, requestStrategy } from '../scripts/offline/routing.mjs';
 
-test('precache selects every shell category, with canonical HTML URLs and no model files', () => {
-  const paths = [
-    'index.html',
-    'career/index.html',
-    '404.html',
-    '_astro/page.hash.js',
-    '_astro/style.hash.css',
-    'fonts/readable.woff2',
-    'data/pay/titles.json',
-    'icons/maskable-512.png',
-    'site.webmanifest',
-    'models/index.html',
-    'models/chunk.bin',
-    'models/config.json',
-    'sw.js',
-    '_headers',
-    'precache-report.json',
-  ];
-  expect(paths.map(precachePath)).toEqual([
+test('precache follows HTML, static imports, default Latin fonts and install icons only', () => {
+  const sources: Record<string, string> = {
+    'index.html': `<script type="module" src="/_astro/entry.hash1234.js"></script><link rel="stylesheet" href="/_astro/style.hash1234.css"><astro-island component-url="/_astro/island.hash1234.js" renderer-url="/_astro/react.hash1234.js"></astro-island><link rel="icon" href="/favicon.ico">`,
+    'career/index.html': '<script type="module">import "../_astro/inline.hash1234.js";</script>',
+    '404.html': 'not found',
+    '_astro/entry.hash1234.js': `import './shared.hash1234.js'; export { a } from './export.hash1234.js'; const heavy = () => import('./pdf.hash1234.js'); const deps = ['/_astro/kokoro.hash1234.js'];`,
+    '_astro/shared.hash1234.js': `import './entry.hash1234.js';`,
+    '_astro/island.hash1234.js': '',
+    '_astro/react.hash1234.js': '',
+    '_astro/inline.hash1234.js': '',
+    '_astro/export.hash1234.js': '',
+    '_astro/style.hash1234.css': `@font-face{font-family:"Inter Variable";src:url(/_astro/inter-latin-wght-normal.hash1234.woff2)}@font-face{font-family:"Inter Variable";src:url(/_astro/inter-latin-ext-wght-normal.hash1234.woff2)}@font-face{font-family:OpenDyslexic;src:url(/fonts/dyslexic.woff2)}`,
+    '_astro/inter-latin-wght-normal.hash1234.woff2': 'default font',
+    '_astro/inter-latin-ext-wght-normal.hash1234.woff2': 'extra font',
+    '_astro/pdf.hash1234.js': 'pdf',
+    '_astro/kokoro.hash1234.js': 'speech',
+    'fonts/dyslexic.woff2': 'optional font',
+    'data/pay/titles.json': 'large titles',
+    'og/career.png': 'share image',
+    'favicon.ico': 'icon',
+    'icons/maskable-512.png': 'install icon',
+    'site.webmanifest': JSON.stringify({ icons: [{ src: '/icons/maskable-512.png' }] }),
+    'models/index.html': 'model',
+    'models/chunk.bin': 'model bytes',
+    'sw.js': 'worker',
+    _headers: 'headers',
+  };
+  const report = buildPrecache(
+    Object.entries(sources).map(([path, source]) => ({ path, bytes: Buffer.from(source) }))
+  );
+  expect(report.urls).toEqual([
     '/',
-    '/career/',
+    '/_astro/entry.hash1234.js',
+    '/_astro/export.hash1234.js',
+    '/_astro/inline.hash1234.js',
+    '/_astro/inter-latin-wght-normal.hash1234.woff2',
+    '/_astro/island.hash1234.js',
+    '/_astro/react.hash1234.js',
+    '/_astro/shared.hash1234.js',
+    '/_astro/style.hash1234.css',
     '/404.html',
-    '/_astro/page.hash.js',
-    '/_astro/style.hash.css',
-    '/fonts/readable.woff2',
-    '/data/pay/titles.json',
+    '/career/',
+    '/favicon.ico',
     '/icons/maskable-512.png',
     '/site.webmanifest',
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
   ]);
-  const report = buildPrecache(paths.map((path) => ({ path, bytes: Buffer.from('shell') })));
-  expect(report.files).toBe(9);
-  expect(report.bytes).toBe(45);
-  expect(report.urls).toHaveLength(new Set(report.urls).size);
+  expect(report.files).toBe(report.urls.length);
+  expect(report.gzipBytes).toBeGreaterThan(0);
+  expect(Object.values(report.revisions).every((hash) => /^[a-f0-9]{64}$/.test(String(hash)))).toBe(
+    true
+  );
+  expect(precachePath('models/index.html')).toBeNull();
 });
 
 test('precache version is deterministic and binds file contents, paths, and worker behavior', () => {
-  const files = ['index.html', '_astro/a.hash.js'].map((path) => ({
+  const files = ['index.html', '_astro/a.hash1234.js'].map((path) => ({
     path,
-    bytes: Buffer.from(path),
+    bytes: Buffer.from(
+      path.endsWith('.html') ? '<script src="/_astro/a.hash1234.js"></script>' : path
+    ),
   }));
   const initial = buildPrecache(files, 'worker');
   expect(buildPrecache([...files].reverse(), 'worker')).toEqual(initial);
@@ -74,7 +89,8 @@ const request = (path: string, mode = 'cors', method = 'GET', range = false) =>
 
 test('routing only handles full same-origin GET requests outside model ownership', () => {
   expect(request('/career/?id=123', 'navigate')).toBe('network-first');
-  expect(request('/_astro/tool.hash.js')).toBe('cache-first');
+  expect(request('/_astro/tool.hash1234.js')).toBe('cache-first');
+  expect(request('/_astro/unhashed.js')).toBe('stale-while-revalidate');
   expect(request('/data/pay/titles.json')).toBe('stale-while-revalidate');
   expect(request('/fonts/readable.woff2')).toBe('stale-while-revalidate');
   for (const path of [

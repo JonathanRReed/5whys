@@ -1,5 +1,10 @@
 import * as React from 'react';
-import type { OfflineStatus } from '../lib/offline';
+import {
+  dismissFeatureFailure,
+  reportFeatureFailure,
+  useFeatureFailure,
+} from '../lib/lazy-feature';
+import { applyUpdate, type OfflineStatus, subscribe } from '../lib/offline';
 
 /**
  * Says when a newer version of the site has been downloaded and is waiting.
@@ -7,21 +12,27 @@ import type { OfflineStatus } from '../lib/offline';
  */
 export default function UpdateNotice() {
   const [status, setStatus] = React.useState<OfflineStatus>('unsupported');
+  const failure = useFeatureFailure();
   const [dismissed, setDismissed] = React.useState(false);
 
-  React.useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
-    let cancelled = false;
-    void import('../lib/offline').then(({ subscribe }) => {
-      if (cancelled) return;
-      unsubscribe = subscribe(setStatus);
-    });
-    return () => {
-      cancelled = true;
-      unsubscribe?.();
-    };
-  }, []);
+  React.useEffect(() => subscribe(setStatus), []);
 
+  if (failure)
+    return (
+      <div
+        role="alert"
+        className="fixed inset-x-3 top-20 z-40 mx-auto max-w-xl space-y-2 rounded-xl bg-popover px-4 py-3 text-sm text-popover-foreground shadow-lg print:hidden"
+      >
+        <p>{failure}</p>
+        <button
+          type="button"
+          onClick={dismissFeatureFailure}
+          className="min-h-9 rounded-lg px-3 focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          Dismiss
+        </button>
+      </div>
+    );
   if (status !== 'update-waiting' || dismissed) return null;
 
   return (
@@ -35,7 +46,7 @@ export default function UpdateNotice() {
       <div className="flex gap-2">
         <button
           type="button"
-          onClick={() => void import('../lib/offline').then(({ applyUpdate }) => applyUpdate())}
+          onClick={() => void applyUpdate().catch(reportFeatureFailure)}
           className="inline-flex min-h-9 items-center rounded-lg bg-primary px-3 font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
         >
           Update now

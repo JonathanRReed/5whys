@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { ModuleKind, ScriptTarget, transpileModule } from 'typescript';
+import { pdfFile } from '../tests/fixtures/resume-pdfs';
 import { useStudentProfile, waitForHydration } from './helpers';
 
 declare global {
@@ -49,7 +50,11 @@ test('the installed shell opens tools and saved work offline, including query ro
     const cache = await caches.open(`career-studio-shell-${version}`);
     return (await cache.keys()).map((request) => new URL(request.url).pathname).sort();
   }, report.version);
-  expect(cached).toEqual([...report.urls].sort());
+  expect(cached).toEqual(expect.arrayContaining(report.urls));
+  expect(report.gzipBytes).toBeLessThan(2.5 * 1024 * 1024);
+  expect(
+    report.urls.some((url: string) => /pdf|kokoro|transformers|data\/pay|fonts\//.test(url))
+  ).toBe(false);
   expect(cached.some((url) => url.startsWith('/models/'))).toBe(false);
 
   await context.setOffline(true);
@@ -114,8 +119,9 @@ test('the manifest and generated icons describe a standalone install', async ({ 
   );
 });
 
-test('an update waits until applyUpdate is called, then reloads with the saved draft', async ({
+test('an update reuses unchanged assets, waits for approval, and keeps the saved draft', async ({
   page,
+  context,
 }) => {
   test.setTimeout(90_000);
   await useStudentProfile(page);
@@ -139,6 +145,22 @@ test('an update waits until applyUpdate is called, then reloads with the saved d
     })
   );
   await page.locator('#career-topic').fill('Keep this draft through an update');
+  // Keep the first install's bytes under a previous deployment's cache name,
+  // so the second real install must copy across cache versions.
+  await page.evaluate(async (version) => {
+    const name = `career-studio-shell-${version}`;
+    const current = await caches.open(name);
+    const previous = await caches.open('career-studio-shell-before-update-test');
+    for (const request of await current.keys()) {
+      const response = await current.match(request);
+      if (response) await previous.put(request, response);
+    }
+    await caches.delete(name);
+  }, report.version);
+  const updateRequests: string[] = [];
+  context.on('request', (request) => {
+    if (request.serviceWorker()) updateRequests.push(new URL(request.url()).pathname);
+  });
   // A distinct main-script URL creates a real waiting worker without changing the shared dist.
   await page.evaluate(() =>
     navigator.serviceWorker
@@ -150,6 +172,14 @@ test('an update waits until applyUpdate is called, then reloads with the saved d
   await expect(page.locator('html')).toHaveAttribute('data-offline-status', 'update-waiting', {
     timeout: 45_000,
   });
+  expect(
+    updateRequests.filter(
+      (path) => report.urls.includes(path) && !path.endsWith('/') && !path.endsWith('.html')
+    )
+  ).toEqual([]);
+  expect(updateRequests.filter((path) => path.endsWith('/') || path.endsWith('.html')).length).toBe(
+    report.urls.filter((path: string) => path.endsWith('/') || path.endsWith('.html')).length
+  );
   expect(await page.evaluate(() => navigator.serviceWorker.controller?.scriptURL)).not.toContain(
     'update-test'
   );
@@ -162,4 +192,89 @@ test('an update waits until applyUpdate is called, then reloads with the saved d
     'update-test=1'
   );
   await expect(page.locator('#career-topic')).toHaveValue('Keep this draft through an update');
+  expect(await page.evaluate(() => caches.keys())).not.toContain(
+    'career-studio-shell-before-update-test'
+  );
 });
+
+test('a visited PDF feature works offline with its lazy code and font data', async ({
+  page,
+  context,
+}) => {
+  test.setTimeout(90_000);
+  await useStudentProfile(page);
+  await page.goto('/resume-game/');
+  await waitForHydration(page);
+  await page.evaluate(() => navigator.serviceWorker.ready.then(() => {}));
+  await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
+  const input = page.getByLabel('Upload resume file (PDF, DOCX, TXT, or Markdown)');
+  const resume = pdfFile('BT /F1 12 Tf 72 720 Td (Jordan Lee offline resume) Tj ET');
+  await input.setInputFiles({
+    name: 'resume.pdf',
+    mimeType: 'application/pdf',
+    buffer: Buffer.from(await resume.arrayBuffer()),
+  });
+  await expect(page.getByLabel('Paste resume text')).toHaveValue(/Jordan Lee offline resume/);
+  await page.waitForFunction(async (version) => {
+    const urls = (await (await caches.open(`career-studio-shell-${version}`)).keys()).map(
+      (r) => r.url
+    );
+    return urls.some((url) => url.includes('pdf.worker'));
+  }, report.version);
+  await context.setOffline(true);
+  await page.reload();
+  await waitForHydration(page);
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  const revised = pdfFile('BT /F1 12 Tf 72 720 Td (Jordan Lee revised offline resume) Tj ET');
+  await page.getByLabel('Upload resume file (PDF, DOCX, TXT, or Markdown)').setInputFiles({
+    name: 'resume.pdf',
+    mimeType: 'application/pdf',
+    buffer: Buffer.from(await revised.arrayBuffer()),
+  });
+  await expect(page.getByLabel('Paste resume text')).toHaveValue(
+    /Jordan Lee revised offline resume/
+  );
+  expect(errors).toEqual([]);
+});
+
+for (const theme of ['night', 'dawn']) {
+  test(`an unvisited tool opens offline and names a missing lazy feature (${theme})`, async ({
+    page,
+    context,
+  }, testInfo) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.addInitScript((theme) => {
+      localStorage.setItem('career-tools-theme', theme);
+      localStorage.setItem('career-tools-font', 'dyslexic');
+    }, theme);
+    await useStudentProfile(page);
+    await page.goto('/');
+    await page.evaluate(() => navigator.serviceWorker.ready.then(() => {}));
+    await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
+    await context.setOffline(true);
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    expect((await page.goto('/resume-game/'))?.fromServiceWorker()).toBe(true);
+    await waitForHydration(page);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    const resume = pdfFile('BT /F1 12 Tf 72 720 Td (Offline resume) Tj ET');
+    await page.getByLabel('Upload resume file (PDF, DOCX, TXT, or Markdown)').setInputFiles({
+      name: 'resume.pdf',
+      mimeType: 'application/pdf',
+      buffer: Buffer.from(await resume.arrayBuffer()),
+    });
+    await expect(
+      page
+        .getByRole('alert')
+        .filter({ hasText: 'This part has not been downloaded on this device yet.' })
+        .first()
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Dismiss', exact: true })).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath(`missing-feature-${theme}.png`) });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true
+    );
+    expect(errors).toEqual([]);
+  });
+}

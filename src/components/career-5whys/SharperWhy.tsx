@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { loadFeature, runFeature } from '../../lib/lazy-feature';
 import type { AiResult, FollowUpWhyInput, FollowUpWhyOutput } from '../../lib/local-ai';
 import { sourceLabel } from '../shared/AiText';
 import { Button } from '../ui/button';
@@ -32,7 +33,7 @@ export default function SharperWhy({ track, topic, answers }: Props) {
     const controller = new AbortController();
     request.current = controller;
     setBusy(true);
-    const { followUpWhy } = await import('../../lib/local-ai');
+    const { followUpWhy } = await loadFeature(import('../../lib/local-ai'));
     const next = await followUpWhy({ track, topic, answers }, { signal: controller.signal });
     if (controller.signal.aborted) return;
     setResult(next);
@@ -43,7 +44,13 @@ export default function SharperWhy({ track, topic, answers }: Props) {
 
   return (
     <div className="space-y-2">
-      <Button type="button" size="sm" variant="outline" onClick={ask} disabled={busy}>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        onClick={() => void runFeature(ask, () => setBusy(false))}
+        disabled={busy}
+      >
         {busy ? 'Thinking' : result ? 'Ask another' : 'Ask me a sharper why'}
       </Button>
       <div aria-live="polite">

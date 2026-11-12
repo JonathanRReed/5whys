@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { loadFeature, reportFeatureFailure } from '../lib/lazy-feature';
 import { isStudentLike, readProfile } from '../lib/profile';
 import type { ResumeDoc } from '../lib/resume-doc';
 import type { BulletFields, BulletRecord, StoredResumeSession } from '../lib/resume-game';
@@ -211,10 +212,12 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
   // it is only saved again after an upload or a repair the visitor made.
   React.useEffect(() => {
     let cancelled = false;
-    void import('../lib/local-db').then(async ({ getResumeDoc }) => {
-      const saved = await getResumeDoc<ResumeDoc>();
-      if (!cancelled && saved) setResumeDoc((current) => current ?? saved.doc);
-    });
+    void loadFeature(import('../lib/local-db'))
+      .then(async ({ getResumeDoc }) => {
+        const saved = await getResumeDoc<ResumeDoc>();
+        if (!cancelled && saved) setResumeDoc((current) => current ?? saved.doc);
+      })
+      .catch(reportFeatureFailure);
     return () => {
       cancelled = true;
     };
@@ -222,10 +225,12 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
 
   const keepResumeDoc = React.useCallback((doc: ResumeDoc | null) => {
     setResumeDoc(doc);
-    void import('../lib/local-db').then(async ({ saveResumeDoc, deleteResumeDoc }) => {
-      if (doc) await saveResumeDoc(doc);
-      else await deleteResumeDoc();
-    });
+    void loadFeature(import('../lib/local-db'))
+      .then(async ({ saveResumeDoc, deleteResumeDoc }) => {
+        if (doc) await saveResumeDoc(doc);
+        else await deleteResumeDoc();
+      })
+      .catch(reportFeatureFailure);
   }, []);
 
   React.useEffect(
@@ -253,7 +258,7 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     }
     setIsLoadingFile(true);
     try {
-      const { extractTextFromFile } = await import('../lib/resume-game/extractors');
+      const { extractTextFromFile } = await loadFeature(import('../lib/resume-game/extractors'));
       const text = await extractTextFromFile(file);
       if (sequence !== uploadSequence.current) return;
       setResumeTextValue(text);
@@ -262,7 +267,7 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
       // above is still loaded and scoring still works.
       try {
         const name = file.name.toLowerCase();
-        const engine = await import('../lib/resume-doc');
+        const engine = await loadFeature(import('../lib/resume-doc'));
         const doc = name.endsWith('.pdf')
           ? await engine.extractPdf(file)
           : name.endsWith('.docx')

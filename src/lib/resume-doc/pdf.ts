@@ -1,4 +1,5 @@
 import type { TextItem } from 'pdfjs-dist/types/src/display/api';
+import { loadFeature } from '../lazy-feature';
 import { createPdfDataFactory } from '../resume-game/pdf-data';
 import { recomputeDoc } from './model';
 import { normalizePdfLines } from './pdf-lines';
@@ -16,9 +17,9 @@ function union(a: BoundingBox, b: BoundingBox): BoundingBox {
 }
 
 export async function extractPdf(file: File): Promise<ResumeDoc> {
-  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  const pdfjs = await loadFeature(import('pdfjs-dist/legacy/build/pdf.mjs'));
   if (typeof window !== 'undefined') {
-    const worker = await import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url');
+    const worker = await loadFeature(import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url'));
     pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
   }
   const { PdfDataFactory, getAssetError } = createPdfDataFactory();

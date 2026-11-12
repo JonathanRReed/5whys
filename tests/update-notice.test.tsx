@@ -1,8 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 
-const listeners: ((status: string) => void)[] = [];
-const applyUpdate = vi.fn();
+const { listeners, applyUpdate } = vi.hoisted(() => ({
+  listeners: [] as ((status: string) => void)[],
+  applyUpdate: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock('../src/lib/offline', () => ({
   subscribe: (listener: (status: string) => void) => {
     listeners.push(listener);
