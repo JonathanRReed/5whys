@@ -610,3 +610,17 @@ export function toggleStoryInPacket(
     ),
   };
 }
+
+/**
+ * Before a link opens the interview tools for one application, make that
+ * application's role the current one, so they open on its posting and packet
+ * and not the last role worked on. Reads the store fresh and writes only when
+ * the role exists and is not already current.
+ */
+export function openRole(roleId: string | null | undefined): void {
+  if (!roleId) return;
+  const data = loadData();
+  if (data.currentRoleId === roleId) return;
+  const next = switchRole(data, roleId);
+  if (next !== data) saveData(next);
+}

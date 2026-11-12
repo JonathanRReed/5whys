@@ -9,6 +9,7 @@ import {
   updateApplication,
 } from '../lib/applications';
 import type { ApplicationSummary } from '../lib/career-bridge';
+import { openRole } from '../lib/glowup-store';
 import { cn } from '../lib/utils';
 import Announcer, { useAnnouncer } from './shared/Announcer';
 import ConfirmButton from './shared/ConfirmButton';
@@ -292,6 +293,7 @@ export default function ApplicationsPanel({ applications, readiness, onChanged }
                       <a
                         className="text-foreground underline underline-offset-4 hover:text-foam"
                         href="/interview-glow-up/rehearse/"
+                        onClick={() => openRole(app.roleId)}
                       >
                         Rehearse the interview
                       </a>
@@ -302,6 +304,7 @@ export default function ApplicationsPanel({ applications, readiness, onChanged }
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <a
                     href={link.href}
+                    onClick={() => openRole(app.roleId)}
                     className="rounded-lg border border-border/50 bg-overlay/30 px-3 py-1.5 text-sm font-medium text-foam transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                   >
                     {link.label}
