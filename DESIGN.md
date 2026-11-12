@@ -28,6 +28,8 @@ utilities read `bg-foam/15` or `border-border/40`. Never write an arbitrary
 - **Accent / Gold**: 40 54% 56% — warm brass
 - **Love**: 14 56% 57% — terracotta
 - **Iris**: 286 24% 65% — muted plum
+- **Lichen**: 76 36% 58% — yellow-green, Plate V
+- **Madder**: 346 40% 68% — dyed red, Plate VI
 - **Muted-foreground**: 100 8% 72% — readable secondary text
 - **Border**: 150 7% 22% — subtle separation
 
@@ -39,6 +41,8 @@ utilities read `bg-foam/15` or `border-border/40`. Never write an arbitrary
 - **Accent / Gold**: 36 64% 36% / 36 66% 38% — bronze
 - **Love**: 14 56% 41% — deep terracotta
 - **Iris**: 286 30% 42% — deep plum
+- **Lichen**: 76 56% 25% — deep olive
+- **Madder**: 346 46% 38% — deep madder
 - **Border**: 48 20% 80% — light separation
 
 ### Rules

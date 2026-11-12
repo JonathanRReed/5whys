@@ -40,6 +40,8 @@
   --color-pine: hsl(var(--pine));
   --color-foam: hsl(var(--foam));
   --color-iris: hsl(var(--iris));
+  --color-lichen: hsl(var(--lichen));
+  --color-madder: hsl(var(--madder));
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
@@ -461,6 +463,10 @@
     --pine: 150 42% 34%;
     --foam: 150 48% 45%;
     --iris: 286 24% 65%;
+    /* Plates V and VI: a lichen yellow-green and a madder red, both from the
+       same dyed-earth family as brass and terracotta. */
+    --lichen: 76 36% 58%;
+    --madder: 346 40% 68%;
     --border: 150 7% 22%;
     --input: 150 7% 22%;
     --ring: 150 48% 45%;
@@ -505,6 +511,8 @@
     --pine: 150 46% 22%;
     --foam: 150 50% 26%;
     --iris: 286 30% 42%;
+    --lichen: 76 56% 25%;
+    --madder: 346 46% 38%;
     --border: 48 20% 80%;
     --input: 48 20% 80%;
     --ring: 150 50% 26%;
