@@ -1,0 +1,104 @@
+export type ResumeSource = 'pdf' | 'docx' | 'text';
+
+/** Coordinates in PDF points, measured from the top left of the displayed page. */
+export type BoundingBox = { x: number; y: number; width: number; height: number };
+export type LineOrigin =
+  | { kind: 'body'; part: string }
+  | { kind: 'header' | 'footer' | 'text-box'; part: string }
+  | { kind: 'table'; part: string; table: number; row: number; cell: number };
+export type ResumeTextItem = {
+  text: string;
+  box: BoundingBox;
+  fontName: string;
+  fontSize: number;
+};
+export type ResumeLine = {
+  id: string;
+  text: string;
+  pageIndex: number;
+  box: BoundingBox | null;
+  fontName: string | null;
+  fontSize: number | null;
+  origin: LineOrigin;
+  bullet: boolean;
+  items: ResumeTextItem[];
+};
+export type ResumePage = {
+  index: number;
+  width: number | null;
+  height: number | null;
+  /** Null when image operators were not inspected. */
+  hasImages: boolean | null;
+};
+export type SectionKind =
+  | 'experience'
+  | 'education'
+  | 'skills'
+  | 'projects'
+  | 'summary'
+  | 'activities'
+  | 'awards'
+  | 'certifications'
+  | 'other';
+export type ResumeSection = {
+  id: string;
+  kind: SectionKind;
+  headingLineId: string;
+  lineIds: string[];
+};
+export type ContactField = { value: string; lineId: string };
+export type ResumeContact = {
+  email: ContactField | null;
+  phone: ContactField | null;
+  links: ContactField[];
+};
+export type RepairId =
+  | 'linearize'
+  | 'move-contact'
+  | 'rename-heading'
+  | 'normalize-dates'
+  | 'replace-line';
+export type ResumeFinding = {
+  id: string;
+  detector: string;
+  group: 'document-reading';
+  severity: 'fix' | 'check';
+  lineIds: string[];
+  claim: string;
+  explanation: string;
+  citation?: { label: string; url: string };
+  repairId?: RepairId;
+};
+export type ResumeDoc = {
+  source: ResumeSource;
+  /** Imported file facts remain intact when the structured copy is repaired. */
+  file: { name: string; sizeBytes: number; pageCount: number | null };
+  /** DOCX and text have one unpaginated container with unknown dimensions. */
+  pages: ResumePage[];
+  /** Lines retain content-stream order until the structured copy is repaired. */
+  lines: ResumeLine[];
+  extractionOrder: string[];
+  geometricOrder: string[];
+  sections: ResumeSection[];
+  contact: ResumeContact;
+  plainText: string;
+  findings: ResumeFinding[];
+};
+export type DateStyle = 'short-month' | 'long-month' | 'numeric';
+export type ExportOptions = {
+  /** Omit to include every bullet. Non-bullet lines always remain. */
+  bulletLineIds?: ReadonlySet<string>;
+  dateStyle?: DateStyle;
+};
+export type PrintParagraph = {
+  lineId: string;
+  kind: 'name' | 'contact' | 'heading' | 'bullet' | 'text';
+  text: string;
+};
+export type PrintModel = {
+  fontFamily: 'Arial';
+  fontSizePt: number;
+  page: { widthPt: number; heightPt: number; marginPt: number };
+  paragraphs: PrintParagraph[];
+};
+export type ExportCheck = { doc: ResumeDoc; findings: ResumeFinding[]; ok: boolean };
