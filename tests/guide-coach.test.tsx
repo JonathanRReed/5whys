@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import GuideCoach from '../src/components/shared/GuideCoach';
-import { loadGuideProgress } from '../src/lib/guide';
+import { type GuideTool, loadGuideProgress } from '../src/lib/guide';
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => {
@@ -51,6 +51,7 @@ it('can skip a step and be ended, and remembers the choice', () => {
 });
 
 it('shows nothing for a tool that has no guide', () => {
-  const { container } = render(<GuideCoach tool="pay" />);
+  // Every listed tool has a guide now, so stand in a name the registry lacks.
+  const { container } = render(<GuideCoach tool={'unlisted' as GuideTool} />);
   expect(container).toBeEmptyDOMElement();
 });

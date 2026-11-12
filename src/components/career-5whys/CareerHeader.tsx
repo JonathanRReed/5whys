@@ -60,7 +60,10 @@ export default function CareerHeader({
         </header>
       )}
 
-      <Card className="bg-card/98 border-border/55 text-foreground shadow-[0_20px_80px_hsl(var(--background)/0.28)]">
+      <Card
+        data-guide="why-track"
+        className="bg-card/98 border-border/55 text-foreground shadow-[0_20px_80px_hsl(var(--background)/0.28)]"
+      >
         <CardHeader className="space-y-6">
           <div>
             <CardTitle className="text-2xl font-semibold">Select your track</CardTitle>

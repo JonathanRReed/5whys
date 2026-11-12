@@ -2,6 +2,7 @@
 import PayTool from '../components/pay/PayTool';
 import PlateHeader from '../components/PlateHeader.astro';
 import ErrorBoundary from '../components/shared/ErrorBoundary';
+import GuideCoach from '../components/shared/GuideCoach';
 import Base from '../layouts/Base.astro';
 
 const noScript = [
@@ -28,6 +29,7 @@ const noScript = [
       description="Look up what a job tends to pay, with the source and year beside every figure, and put an offer into terms you can compare."
       accent="madder"
     />
+    <GuideCoach client:load tool="pay" />
     <section class="mx-auto w-full max-w-6xl">
       <ErrorBoundary client:load>
         <PayTool client:load />

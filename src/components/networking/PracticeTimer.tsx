@@ -38,7 +38,7 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset, onLeng
   };
 
   return (
-    <Card className="border-primary/60 bg-overlay/30">
+    <Card className="border-primary/60 bg-overlay/30" data-guide="rep-timer">
       <CardHeader className="text-center">
         <CardTitle className="text-primary">Rep timer</CardTitle>
       </CardHeader>
@@ -121,7 +121,7 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset, onLeng
           </Button>
         </div>
         {timer.elapsed > 0 ? (
-          <p className="text-sm font-medium text-foam">
+          <p className="text-sm font-medium text-foam" data-guide="timer-elapsed">
             {formatTime(timer.elapsed)} practiced this rep
           </p>
         ) : null}

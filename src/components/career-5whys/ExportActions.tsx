@@ -25,6 +25,7 @@ export default function ExportActions({
         <Button
           type="button"
           onClick={onSaveSnapshot}
+          data-guide="why-save"
           disabled={!canExport}
           className="h-12 rounded-lg bg-foam px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-foam/90 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
         >

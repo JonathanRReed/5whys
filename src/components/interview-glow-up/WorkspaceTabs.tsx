@@ -46,6 +46,7 @@ export default function WorkspaceTabs({ showHUD, onLaunchHUD, counts }: Props) {
             <TabsTrigger
               key={tab.id}
               value={tab.id}
+              data-guide={`tab-${tab.id}`}
               className={cn(
                 'group/step flex flex-none items-center gap-2 rounded-xl border border-transparent px-4 py-2.5 text-sm font-semibold',
                 'hover:bg-overlay/40 hover:text-foreground',
