@@ -34,6 +34,7 @@ import {
 } from './applications';
 import { averageRating, computeNextStep, type Ratings } from './networking-advice';
 import { type CareerProfile, readProfile } from './profile';
+import { STRONG_SCORE } from './resume-game/thresholds';
 
 export type ToolName =
   | 'Career 5 Whys'
@@ -82,8 +83,8 @@ interface ResumeGameData {
   needsRescan?: boolean;
   bullets: ResumeBulletRecord[];
   lastAnalyzedAt: string | null;
+  /** Older sessions also stored retired composite numbers here; they are not read. */
   signalReport?: {
-    visible?: number;
     hardSkills?: string[];
   };
 }
@@ -365,8 +366,8 @@ export interface CareerDashboardData {
     needsRescan: boolean;
     lastAnalyzedAt: string | null;
     bulletCount: number;
-    /** Mean of each bullet's latest score. */
-    averageScore: number;
+    /** Lines whose latest score is at or above the Resume Game's strong label. */
+    strongCount: number;
     hardSkills: string[];
   } | null;
   reflection: {
@@ -471,11 +472,11 @@ export function readCareerDashboard(): CareerDashboardData {
     applications.length
   );
 
-  const avgScore = resume?.bullets.length
-    ? Math.round(
-        resume.bullets.reduce((s, b) => s + (b.improvedScore ?? 0), 0) / resume.bullets.length
-      )
-    : 0;
+  // A count, not an average: the Resume Game has no resume-level score.
+  const strongCount =
+    resume?.bullets.filter(
+      (b) => typeof b.improvedScore === 'number' && b.improvedScore >= STRONG_SCORE
+    ).length ?? 0;
 
   // ---- Recent activity -----------------------------------------------------
   const recentActivity: CareerDashboardData['recentActivity'] = [];
@@ -712,7 +713,7 @@ export function readCareerDashboard(): CareerDashboardData {
           needsRescan: resumeNeedsRescan,
           lastAnalyzedAt: resume.lastAnalyzedAt ?? null,
           bulletCount: resume.bullets.length,
-          averageScore: avgScore,
+          strongCount,
           hardSkills,
         }
       : null,

@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { type CareerDashboardData, readCareerDashboard } from '../lib/career-bridge';
 import { FOCUS_LABELS, STAGE_LABELS } from '../lib/profile';
+import { STRONG_SCORE } from '../lib/resume-game/thresholds';
 import { cn } from '../lib/utils';
 import ApplicationsPanel, { NewApplicationForm } from './ApplicationsPanel';
 import BackupControls from './BackupControls';
@@ -54,10 +55,15 @@ function formatDate(iso: string | null): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+/** "today", "3 days ago", or "on Nov 12": a date that reads inside a sentence. */
+function scoredWhen(iso: string): string {
+  const when = formatDate(iso);
+  return /^[A-Z][a-z]{2} \d/.test(when) ? `on ${when}` : when.toLowerCase();
+}
+
 /**
  * One line naming what the visitor has actually saved, in the order they
- * would have made it. Counts belong in a sentence; only a real 0-100 score
- * earns its own numeral.
+ * would have made it. Counts belong in a sentence.
  */
 function ledgerSentence(data: CareerDashboardData): string {
   const parts: string[] = [];
@@ -260,10 +266,10 @@ export default function CareerDashboard() {
         </section>
       )}
 
-      {/* What is on file. A sentence, not a wall of rings: three of the four
-          values here are counts, and a progress ring around a count reads as a
-          proportion it does not have. The resume score is the one real 0-100
-          measure, so it is the only figure given its own weight. */}
+      {/* What is on file. A sentence, not a wall of rings: the values here are
+          counts, and a progress ring around a count reads as a proportion it
+          does not have. The resume is described the same way, as a count of
+          strong lines; each line's own score lives in the Resume Game. */}
       <section className="border-y border-border/40 py-6">
         <p className="eyebrow text-muted-foreground">On file</p>
         <p className="mt-3 max-w-3xl text-pretty text-lg leading-relaxed text-foreground">
@@ -275,17 +281,11 @@ export default function CareerDashboard() {
           </p>
         )}
         {data.resume && data.resume.bulletCount > 0 && !data.resume.needsRescan && (
-          <p className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-muted-foreground">
-            <span className="font-display text-4xl leading-none text-love">
-              {Math.max(0, Math.min(100, Math.round(data.resume.averageScore)))}
-            </span>
-            <span className="text-sm">
-              average bullet score across {data.resume.bulletCount}{' '}
-              {data.resume.bulletCount === 1 ? 'line' : 'lines'}
-              {data.resume.lastAnalyzedAt
-                ? `, ${formatDate(data.resume.lastAnalyzedAt).toLowerCase()}`
-                : ''}
-            </span>
+          <p className="mt-4 text-sm text-muted-foreground">
+            {data.resume.strongCount} of {data.resume.bulletCount} resume{' '}
+            {data.resume.bulletCount === 1 ? 'line is' : 'lines are'} strong, {STRONG_SCORE} or more
+            {data.resume.lastAnalyzedAt ? `, scored ${scoredWhen(data.resume.lastAnalyzedAt)}` : ''}
+            .
           </p>
         )}
       </section>

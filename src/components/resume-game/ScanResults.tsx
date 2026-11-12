@@ -3,7 +3,8 @@ import type { BulletRecord, HighlightToken, SignalReport } from '../../lib/resum
 import {
   generateBulletSuggestions,
   parseHighlightedResume,
-  suggestStrongerVerb,
+  summarizeLines,
+  summarySentences,
 } from '../../lib/resume-game';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
@@ -13,12 +14,6 @@ type Props = {
   signalReport: SignalReport;
   resumeOutOfDate: boolean;
 };
-
-function benchmarkColor(value: number, goodThreshold: number, warnThreshold: number): string {
-  if (value >= goodThreshold) return 'text-foam';
-  if (value >= warnThreshold) return 'text-gold';
-  return 'text-love';
-}
 
 function renderToken(token: HighlightToken, index: number) {
   if (token.type === 'newline') {
@@ -62,19 +57,21 @@ export default function ScanResults({
   const tokens = React.useMemo(() => parseHighlightedResume(resumeText), [resumeText]);
 
   const hasDeepData =
-    signalReport.benchmarkScore !== undefined ||
-    signalReport.weakWordCount !== undefined ||
-    signalReport.impactCoverage !== undefined ||
+    (signalReport.weakWordCount ?? 0) > 0 ||
     (signalReport.keywordDensity && signalReport.keywordDensity.length > 0) ||
     (signalReport.repetitiveVerbs && signalReport.repetitiveVerbs.length > 0);
 
-  const verbTarget = Math.min(8, Math.max(1, signalReport.bulletCount));
+  // The resume as a whole is described in counts, read from each line as it
+  // reads now. There is no resume-level score.
+  const standing = summarySentences(
+    summarizeLines(bullets.map((bullet) => bullet.improved || bullet.original))
+  );
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl">Analysis visualization</CardTitle>
+          <CardTitle className="text-xl">Your text, marked</CardTitle>
           {resumeOutOfDate && (
             <p className="text-xs text-gold">
               Resume updated. Rerun the analysis to refresh metrics.
@@ -100,9 +97,9 @@ export default function ScanResults({
         <CardHeader className="space-y-2">
           <CardTitle className="text-xl">Resume review</CardTitle>
           <p className="text-sm text-muted-foreground">
-            A writing checklist, not a hiring prediction or a grade on your experience. Reviewed{' '}
-            {signalReport.bulletCount}{' '}
-            {signalReport.bulletCount === 1 ? 'achievement line' : 'achievement lines'}.
+            Each line is scored for what you did, what the work was, what happened because of it,
+            and a number that says what it counts. A writing checklist, not a hiring prediction or a
+            grade on your experience.
           </p>
           <p className="text-xs text-muted-foreground">
             These rules may miss skills, context, and valid ways of describing your work. Check the
@@ -115,44 +112,16 @@ export default function ScanResults({
           )}
         </CardHeader>
         <CardContent className="space-y-5">
-          {/* Signal strength */}
-          <div>
-            <div className="mb-2 flex justify-between text-xs text-muted-foreground">
-              <span>Writing checklist coverage</span>
-              <span className={signalReport.visible >= 70 ? 'text-love' : 'text-gold'}>
-                {signalReport.visible}%
-              </span>
-            </div>
-            <div
-              className="h-2.5 w-full overflow-hidden rounded-full border border-border/35 bg-overlay/25"
-              role="progressbar"
-              aria-valuenow={signalReport.visible}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label="Resume signal strength"
-            >
-              <div
-                className="h-full rounded-full bg-foam"
-                style={{ width: `${signalReport.visible}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Metrics grid */}
-          <div className="grid grid-cols-2 gap-3 text-center text-sm">
-            <div className="rounded-2xl border border-border/35 bg-overlay/45 p-4">
-              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Numbers</p>
-              <p className="text-3xl font-semibold text-foam">{signalReport.numbers}</p>
-              <p className="mt-1 text-[10px] text-muted-foreground">In bullets</p>
-            </div>
-            <div className="rounded-2xl border border-border/35 bg-overlay/45 p-4">
-              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                Action verbs
-              </p>
-              <p className="text-3xl font-semibold text-iris">{signalReport.verbs}</p>
-              <p className="mt-1 text-[10px] text-muted-foreground">Leading a bullet</p>
-            </div>
-          </div>
+          {standing.length > 0 && (
+            <section aria-label="Where your lines stand" className="space-y-2">
+              <h3 className="text-base font-semibold">Where your lines stand</h3>
+              <ul className="space-y-1.5 text-sm text-muted-foreground">
+                {standing.map((sentence) => (
+                  <li key={sentence}>{sentence}</li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           {/* Resume length */}
           {signalReport.wordCount > 0 && (
@@ -175,7 +144,7 @@ export default function ScanResults({
                   <p className="text-lg font-semibold text-foreground">
                     {signalReport.bulletCount}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">Bullets</p>
+                  <p className="text-[10px] text-muted-foreground">Lines scored</p>
                 </div>
               </div>
               <p
@@ -213,7 +182,9 @@ export default function ScanResults({
               </p>
               {signalReport.hardSkills.length > 0 && (
                 <div className="mt-2">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Hard</p>
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    Tools and methods
+                  </p>
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     {signalReport.hardSkills.map((skill) => (
                       <span
@@ -228,7 +199,9 @@ export default function ScanResults({
               )}
               {signalReport.softSkills.length > 0 && (
                 <div className="mt-2">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Soft</p>
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    Ways of working
+                  </p>
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     {signalReport.softSkills.map((skill) => (
                       <span
@@ -271,8 +244,8 @@ export default function ScanResults({
               </p>
             )}
             <p className="text-xs text-muted-foreground">
-              Suggestions come from limited writing rules. Keep technical terms that matter to your
-              audience and never invent a metric to satisfy the tool.
+              Suggestions come from limited writing rules. Keep the words your field uses, and never
+              invent a number to satisfy the tool.
             </p>
           </section>
 
@@ -287,123 +260,18 @@ export default function ScanResults({
                 aria-controls={deepAnalysisId}
               >
                 <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                  Deep Analysis
+                  More detail
                 </p>
                 <span className="text-lg text-muted-foreground">{deepOpen ? '−' : '+'}</span>
               </button>
 
               <div id={deepAnalysisId} hidden={!deepOpen} className="mt-4 space-y-4">
-                {/* Resume Health Score */}
-                {signalReport.benchmarkScore !== undefined && (
-                  <div className="rounded-xl border border-border/35 bg-overlay/40 p-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                        Writing checklist score
-                      </p>
-                      <span
-                        className={`text-2xl font-bold ${
-                          (signalReport.benchmarkScore ?? 0) >= 80
-                            ? 'text-foam'
-                            : (signalReport.benchmarkScore ?? 0) >= 50
-                              ? 'text-gold'
-                              : 'text-love'
-                        }`}
-                      >
-                        {signalReport.benchmarkScore}
-                      </span>
-                    </div>
-                    <div className="mt-2 h-2 w-full overflow-hidden rounded-full border border-border/35 bg-overlay/25">
-                      <div
-                        className="h-full rounded-full bg-foam"
-                        style={{ width: `${signalReport.benchmarkScore}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Benchmark grid */}
-                <div className="grid grid-cols-2 gap-3">
-                  {/* Numbers coverage */}
-                  <div className="rounded-xl border border-border/35 bg-overlay/40 p-3 text-center">
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                      Bullets with numbers
-                    </p>
-                    <p
-                      className={`text-xl font-semibold ${benchmarkColor(
-                        signalReport.quantifiedBulletPercent ?? 0,
-                        70,
-                        50
-                      )}`}
-                    >
-                      {signalReport.quantifiedBulletPercent ?? 0}%
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">Target: 70%+</p>
-                  </div>
-
-                  {/* Unique verbs */}
-                  <div className="rounded-xl border border-border/35 bg-overlay/40 p-3 text-center">
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                      Unique action verbs
-                    </p>
-                    <p
-                      className={`text-xl font-semibold ${benchmarkColor(
-                        signalReport.uniqueVerbCount ?? 0,
-                        verbTarget,
-                        Math.ceil(verbTarget / 2)
-                      )}`}
-                    >
-                      {signalReport.uniqueVerbCount ?? 0}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">
-                      Target: one per bullet, up to 8
-                    </p>
-                  </div>
-
-                  {/* Avg bullet length */}
-                  <div className="rounded-xl border border-border/35 bg-overlay/40 p-3 text-center">
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                      Avg bullet length
-                    </p>
-                    <p
-                      className={`text-xl font-semibold ${
-                        (signalReport.avgBulletLength ?? 0) <= 30
-                          ? 'text-foam'
-                          : (signalReport.avgBulletLength ?? 0) <= 40
-                            ? 'text-gold'
-                            : 'text-love'
-                      }`}
-                    >
-                      {signalReport.avgBulletLength ?? 0}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">Target: {'<'}30 words</p>
-                  </div>
-
-                  {/* Passive voice */}
-                  <div className="rounded-xl border border-border/35 bg-overlay/40 p-3 text-center">
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                      Passive voice
-                    </p>
-                    <p
-                      className={`text-xl font-semibold ${
-                        (signalReport.passiveVoicePercent ?? 0) === 0
-                          ? 'text-foam'
-                          : (signalReport.passiveVoicePercent ?? 0) <= 20
-                            ? 'text-gold'
-                            : 'text-love'
-                      }`}
-                    >
-                      {signalReport.passiveVoicePercent ?? 0}%
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">Target: 0%</p>
-                  </div>
-                </div>
-
                 {/* Weak words */}
                 {(signalReport.weakWordCount ?? 0) > 0 && (
                   <div className="rounded-xl border border-border/35 bg-overlay/40 p-4">
                     <div className="flex items-center justify-between">
                       <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                        Weak / Hedging Words
+                        Hedging phrases
                       </p>
                       <span className="text-lg font-semibold text-love">
                         {signalReport.weakWordCount}
@@ -411,63 +279,27 @@ export default function ScanResults({
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
                       {(signalReport.weakWordCount ?? 0) <= 3
-                        ? 'A few hedging phrases. Swap them for direct verbs.'
-                        : 'Hedging language appears often. Lead each line with a direct verb.'}
+                        ? 'A few phrases like "responsible for" say you were there, not what you did.'
+                        : 'Phrases like "responsible for" come up often. Start each line with what you did.'}
                     </p>
                   </div>
                 )}
 
-                {/* Repetitive verbs */}
+                {/* Repeated verbs */}
                 {signalReport.repetitiveVerbs && signalReport.repetitiveVerbs.length > 0 && (
                   <div className="rounded-xl border border-border/35 bg-overlay/40 p-4">
                     <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                      Repetitive Verbs
+                      Repeated first words
                     </p>
                     <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
-                      {signalReport.repetitiveVerbs.map((rv) => {
-                        const suggestion = suggestStrongerVerb(rv.verb);
-                        return (
-                          <li key={rv.verb} className="flex items-start gap-2">
-                            <span className="mt-0.5 text-gold">!</span>
-                            <span>
-                              <span className="font-medium capitalize text-foreground">
-                                {rv.verb}
-                              </span>{' '}
-                              used {rv.count}x.{' '}
-                              {suggestion ? (
-                                <span>
-                                  Try alternating with:{' '}
-                                  <span className="text-foam">{suggestion}</span>
-                                </span>
-                              ) : (
-                                'Try varying your language with stronger alternatives.'
-                              )}
-                            </span>
-                          </li>
-                        );
-                      })}
+                      {signalReport.repetitiveVerbs.map((rv) => (
+                        <li key={rv.verb}>
+                          <span className="font-medium capitalize text-foreground">{rv.verb}</span>{' '}
+                          starts {rv.count} lines. If the work was different each time, say what you
+                          did differently.
+                        </li>
+                      ))}
                     </ul>
-                  </div>
-                )}
-
-                {/* Impact coverage */}
-                {signalReport.impactCoverage !== undefined && (
-                  <div className="rounded-xl border border-border/35 bg-overlay/40 p-4">
-                    <div className="mb-2 flex justify-between text-xs text-muted-foreground">
-                      <span>Impact coverage</span>
-                      <span className={benchmarkColor(signalReport.impactCoverage, 70, 50)}>
-                        {signalReport.impactCoverage}%
-                      </span>
-                    </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full border border-border/35 bg-overlay/25">
-                      <div
-                        className="h-full rounded-full bg-foam"
-                        style={{ width: `${signalReport.impactCoverage}%` }}
-                      />
-                    </div>
-                    <p className="mt-1 text-[10px] text-muted-foreground">
-                      Bullets with business outcomes, scope signals, or qualitative impact.
-                    </p>
                   </div>
                 )}
 
@@ -475,7 +307,7 @@ export default function ScanResults({
                 {signalReport.keywordDensity && signalReport.keywordDensity.length > 0 && (
                   <div className="rounded-xl border border-border/35 bg-overlay/40 p-4">
                     <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                      Keyword Density
+                      Words you use most
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {signalReport.keywordDensity.map((kw) => (

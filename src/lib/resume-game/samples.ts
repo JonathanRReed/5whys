@@ -1,3 +1,5 @@
+import type { CareerStage } from '../profile';
+
 /**
  * Sample resumes for the "try a sample" button. Each is deliberately weak:
  * the game is watching the score climb as a line gains a verb, a number, and
@@ -23,11 +25,23 @@ Participated in club meetings and the spring fundraiser
 SKILLS
 Canva, Google Sheets, Instagram, Spanish (conversational)`;
 
-export const PROFESSIONAL_SAMPLE_RESUME = `• Led a 6-person product pod launching a pricing diagnostics dashboard adopted by 4 global regions within the first quarter.
-• Automated weekly revenue reporting with Python + Airflow, trimming manual analysis time by 9 hours per analyst.
-• Mentored three new hires, coaching them on stakeholder narrative reviews that helped lift NPS by 14 points.
-• Responsible for vendor relationships.
-• Worked on the customer onboarding process.`;
+/**
+ * The sample for anyone who is not a student: someone moving out of retail,
+ * food service, warehouse, office, healthcare support, or customer service
+ * work. Weak on purpose, like the student one.
+ */
+export const PROFESSIONAL_SAMPLE_RESUME = `Sam Rivera
+sam.rivera@example.com · (555) 318-2290
+
+EXPERIENCE
+Shift Lead, Corner Market, March 2022 – Present
+Responsible for opening and closing the store
+Helped with inventory and freight
+Worked on the weekly schedule for the front end
+Handled customer complaints
+
+SKILLS
+Cash handling, scheduling, Excel, forklift certified`;
 
 export const STUDENT_PLACEHOLDER = `Paste your whole resume, or just the bullets.
 
@@ -35,4 +49,30 @@ Class projects, internships, campus jobs, clubs, and volunteering all count. Lin
 
 export const PROFESSIONAL_PLACEHOLDER = `Paste your whole resume, or just the bullets.
 
-Each line gets scored for the action you took, the result, and the measure. Weak lines get a structured rewrite.`;
+Store, shift, warehouse, office, and customer work all count. Lines like "Responsible for opening and closing" are exactly what this tool is for.`;
+
+/** Which set of examples to show. Students and early-career visitors, and anyone who has not said, get the student set. */
+export type Register = 'student' | 'work';
+
+export function registerForStage(stage: CareerStage | null | undefined): Register {
+  return !stage || stage === 'student' || stage === 'early' ? 'student' : 'work';
+}
+
+/** Placeholders for the four rewrite fields, in the visitor's register. */
+export const FIELD_PLACEHOLDERS: Record<
+  Register,
+  { verb: string; task: string; impact: string; quantifier: string }
+> = {
+  student: {
+    verb: 'For example: Wrote, Ran, Tutored',
+    task: "For example: the campus radio station's Instagram",
+    impact: 'For example: so more students came to the Thursday show',
+    quantifier: 'For example: 3 posts a week',
+  },
+  work: {
+    verb: 'For example: Scheduled, Stocked, Trained',
+    task: 'For example: the weekly schedule for the front end',
+    impact: 'For example: so every shift was covered without overtime',
+    quantifier: 'For example: 40 orders a shift',
+  },
+};

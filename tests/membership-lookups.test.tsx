@@ -7,12 +7,7 @@ import {
   type InterviewPacket,
   type Story,
 } from '../src/lib/glowup-store';
-import {
-  getVerbStrength,
-  INVOLVEMENT_VERBS,
-  POWER_VERBS_STRONG,
-  POWER_VERBS_WEAK,
-} from '../src/lib/resume-game/constants';
+import { INVOLVEMENT_PHRASES, isVerbWord, leadingAction } from '../src/lib/resume-game/verbs';
 
 afterEach(() => {
   cleanup();
@@ -71,10 +66,11 @@ it('batch-adds only new selections without changing existing or unselected stori
   expect(screen.queryByText('2 selected')).toBeNull();
 });
 
-it('retains verb tier precedence and case normalization for every vocabulary entry', () => {
-  for (const verb of [...POWER_VERBS_STRONG, ...POWER_VERBS_WEAK, ...INVOLVEMENT_VERBS]) {
-    const expected = POWER_VERBS_STRONG.includes(verb) ? 'strong' : 'weak';
-    expect(getVerbStrength('  ' + verb.toUpperCase() + '  ')).toBe(expected);
+it('recognizes every involvement phrase regardless of case', () => {
+  for (const phrase of INVOLVEMENT_PHRASES) {
+    expect(leadingAction(`  ${phrase.toUpperCase()} the spring fundraiser`)?.involvement).toBe(
+      true
+    );
   }
-  expect(getVerbStrength('unlisted-word')).toBe('medium');
+  expect(isVerbWord('unlisted-word')).toBe(false);
 });

@@ -83,7 +83,7 @@ export async function readPdfText(file: File): Promise<string> {
       const text = pages.join('\n\n').trim();
       if (!text) {
         throw new Error(
-          'This PDF has no selectable text. Export a text-based PDF, use DOCX, or paste your resume. Scanned pages need OCR first.'
+          'This PDF has no text to read. A scanned PDF is a picture of text, so there is nothing to read; export it from the program you wrote it in, or paste your resume.'
         );
       }
       return text;

@@ -1,6 +1,12 @@
-import { isStudentLike, readProfile } from '../../lib/profile';
-import type { BulletRecord } from '../../lib/resume-game';
-import { generateBulletSuggestions } from '../../lib/resume-game';
+import type { BulletRecord, Register } from '../../lib/resume-game';
+import {
+  FIELD_PLACEHOLDERS,
+  findMeasures,
+  generateBulletSuggestions,
+  measureHasWords,
+  PART_LABELS,
+  scoreParts,
+} from '../../lib/resume-game';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -11,6 +17,8 @@ type Props = {
   bullet: BulletRecord | null;
   /** Position in the bullet list; rotates the worked examples. */
   index?: number;
+  /** Which worked examples and placeholders to show. Students by default. */
+  register?: Register;
   onFieldChange: (
     id: string,
     field: 'verb' | 'quantifier' | 'task' | 'impact',
@@ -18,12 +26,29 @@ type Props = {
   ) => void;
 };
 
-export default function BulletEditor({ bullet, index, onFieldChange }: Props) {
-  const register = isStudentLike(readProfile()) ? 'student' : 'professional';
+const fieldClass =
+  'mt-2 border-border/50 bg-overlay/30 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2';
+const labelClass = 'text-xs uppercase tracking-[0.3em] text-muted-foreground';
+const PART_KEYS = ['action', 'work', 'result', 'measure'] as const;
+
+export default function BulletEditor({
+  bullet,
+  index,
+  register = 'student',
+  onFieldChange,
+}: Props) {
   const suggestions = bullet ? generateBulletSuggestions(bullet, index ?? bullet.original) : [];
-  // Hints pulled from the user's own text: if their line already contains a
-  // number, surface it as the quantifier candidate.
-  const detectedNumber = bullet?.original.match(/\$?\d[\d,]*\.?\d*%?/)?.[0] ?? null;
+  const current = bullet ? bullet.improved || bullet.original : '';
+  const parts = bullet ? scoreParts(current) : null;
+  const placeholders = FIELD_PLACEHOLDERS[register];
+  const typedNumber = bullet?.fields.quantifier.trim() ?? '';
+  const lineMeasure = bullet ? findMeasures(bullet.original)[0] : undefined;
+  const numberHint =
+    typedNumber && !measureHasWords(typedNumber)
+      ? `Say what ${typedNumber} counts, for example "${typedNumber} orders a shift". It joins the line once it does.`
+      : lineMeasure && !typedNumber
+        ? `Your line already counts "${lineMeasure}". Add another only if it is true.`
+        : 'Only a number you know is true, with what it counts. Leave it empty if you do not have one.';
 
   return (
     <Card>
@@ -38,44 +63,57 @@ export default function BulletEditor({ bullet, index, onFieldChange }: Props) {
         )}
       </CardHeader>
       <CardContent className="space-y-6">
-        {bullet ? (
+        {bullet && parts ? (
           <>
-            {/* Suggestions */}
+            <section aria-label="How this line scores" className="space-y-2">
+              <p className={labelClass}>How this line scores</p>
+              <ul className="space-y-1.5 text-sm">
+                {PART_KEYS.map((key) => (
+                  <li key={key} className="flex flex-wrap items-baseline gap-x-2">
+                    <span className="font-medium text-foreground">{PART_LABELS[key]}</span>
+                    <span
+                      className={
+                        parts[key].points === parts[key].max ? 'text-love' : 'text-muted-foreground'
+                      }
+                    >
+                      {parts[key].points} of {parts[key].max}
+                    </span>
+                    <span className="w-full text-xs text-muted-foreground">{parts[key].note}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
             {suggestions.length > 0 ? (
               <div className="rounded-2xl border border-gold/40 bg-gold/8 p-4">
                 <p className="text-xs uppercase tracking-[0.3em] text-gold">Suggestions</p>
                 <ul className="mt-2 space-y-3">
-                  {suggestions.map((suggestion, idx) => (
-                    <li key={idx} className="space-y-1.5 text-sm text-muted-foreground">
-                      <div className="flex items-start gap-2">
-                        <span className="mt-0.5 text-gold">+</span>
-                        <span>
-                          {suggestion.message}
-                          {suggestion.fix && (
-                            <span className="ml-1 text-foam">{suggestion.fix}</span>
-                          )}
-                        </span>
-                      </div>
-                      {(suggestion.studentExample || suggestion.professionalExample) && (
-                        <div className="ml-6 space-y-1 border-l border-border/40 pl-3 text-xs">
-                          {suggestion.studentExample && register === 'student' && (
-                            <p>
-                              <span className="mr-1 uppercase tracking-wide text-gold">
-                                Student
-                              </span>
-                              {suggestion.studentExample}
-                            </p>
-                          )}
-                          {suggestion.professionalExample && register === 'professional' && (
-                            <p>
-                              <span className="mr-1 uppercase tracking-wide text-gold">Pro</span>
-                              {suggestion.professionalExample}
-                            </p>
-                          )}
+                  {suggestions.map((suggestion) => {
+                    const example =
+                      register === 'student' ? suggestion.studentExample : suggestion.workExample;
+                    return (
+                      <li
+                        key={suggestion.type}
+                        className="space-y-1.5 text-sm text-muted-foreground"
+                      >
+                        <div className="flex items-start gap-2">
+                          <span className="mt-0.5 text-gold">+</span>
+                          <span>
+                            {suggestion.message}
+                            {suggestion.fix && (
+                              <span className="ml-1 text-foam">{suggestion.fix}</span>
+                            )}
+                          </span>
                         </div>
-                      )}
-                    </li>
-                  ))}
+                        {example && (
+                          <p className="ml-6 border-l border-border/40 pl-3 text-xs">
+                            <span className="mr-1 uppercase tracking-wide text-gold">Example</span>
+                            {example}
+                          </p>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ) : (
@@ -87,103 +125,81 @@ export default function BulletEditor({ bullet, index, onFieldChange }: Props) {
               </div>
             )}
 
-            <RewriteHelp line={bullet.improved || bullet.original} />
+            <RewriteHelp line={current} />
 
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <Label
-                  htmlFor={`bullet-${bullet.id}-verb`}
-                  className="text-xs uppercase tracking-[0.3em] text-muted-foreground"
-                >
-                  Action verb (first word)
+                <Label htmlFor={`bullet-${bullet.id}-verb`} className={labelClass}>
+                  What you did (first word)
                 </Label>
                 <Input
                   id={`bullet-${bullet.id}-verb`}
                   value={bullet.fields.verb}
                   onChange={(event) => onFieldChange(bullet.id, 'verb', event.target.value)}
-                  className="mt-2 border-border/50 bg-overlay/30 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
-                  placeholder="e.g., Led, Built, Increased"
+                  className={fieldClass}
+                  placeholder={placeholders.verb}
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
-                  The action you took. Should be strong and specific.
+                  The word for what you did yourself. It replaces the first word of the line.
                 </p>
               </div>
               <div>
-                <Label
-                  htmlFor={`bullet-${bullet.id}-quantifier`}
-                  className="text-xs uppercase tracking-[0.3em] text-muted-foreground"
-                >
-                  Measurable result (number)
+                <Label htmlFor={`bullet-${bullet.id}-quantifier`} className={labelClass}>
+                  A number (optional)
                 </Label>
                 <Input
                   id={`bullet-${bullet.id}-quantifier`}
                   value={bullet.fields.quantifier}
                   onChange={(event) => onFieldChange(bullet.id, 'quantifier', event.target.value)}
-                  className="mt-2 border-border/50 bg-overlay/30 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
-                  placeholder={
-                    detectedNumber
-                      ? `From your line: ${detectedNumber}`
-                      : 'e.g., 32%, 120 users, $500K'
-                  }
+                  className={fieldClass}
+                  placeholder={placeholders.quantifier}
                 />
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {detectedNumber && !bullet.fields.quantifier.trim()
-                    ? `Your line mentions ${detectedNumber}. Use it here so it lands where readers look.`
-                    : 'A number that proves impact: percentage, count, or dollar amount. No number? Use team size, frequency, or audience.'}
-                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{numberHint}</p>
               </div>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <Label
-                  htmlFor={`bullet-${bullet.id}-task`}
-                  className="text-xs uppercase tracking-[0.3em] text-muted-foreground"
-                >
-                  What you did
+                <Label htmlFor={`bullet-${bullet.id}-task`} className={labelClass}>
+                  What the work was
                 </Label>
                 <Textarea
                   id={`bullet-${bullet.id}-task`}
                   value={bullet.fields.task}
                   onChange={(event) => onFieldChange(bullet.id, 'task', event.target.value)}
-                  className="mt-2 min-h-[100px] border-border/50 bg-overlay/30 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
-                  placeholder="e.g., a cross-functional team to launch a new dashboard"
+                  className={`${fieldClass} min-h-[100px]`}
+                  placeholder={placeholders.task}
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
-                  The work itself. Don&apos;t repeat the verb here.
+                  What it was, and where or for whom. Do not repeat the first word here.
                 </p>
               </div>
               <div>
-                <Label
-                  htmlFor={`bullet-${bullet.id}-impact`}
-                  className="text-xs uppercase tracking-[0.3em] text-muted-foreground"
-                >
-                  Result
+                <Label htmlFor={`bullet-${bullet.id}-impact`} className={labelClass}>
+                  What happened because of it
                 </Label>
                 <Textarea
                   id={`bullet-${bullet.id}-impact`}
                   value={bullet.fields.impact}
                   onChange={(event) => onFieldChange(bullet.id, 'impact', event.target.value)}
-                  className="mt-2 min-h-[100px] border-border/50 bg-overlay/30 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
-                  placeholder="e.g., to increase adoption by 40% in Q1"
+                  className={`${fieldClass} min-h-[100px]`}
+                  placeholder={placeholders.impact}
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
-                  The result. Start with &quot;to&quot; or &quot;by&quot; to connect to the action.
+                  Write it the way you would say it. &quot;So customers waited less&quot; works.
                 </p>
               </div>
             </div>
             <div className="rounded-2xl border border-border/35 bg-overlay/30 p-4">
-              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                Live preview
-              </p>
-              <p className="mt-3 text-base">{bullet.improved}</p>
+              <p className={labelClass}>Your line now</p>
+              <p className="mt-3 text-base">{current}</p>
             </div>
           </>
         ) : (
           <div className="flex flex-col items-center justify-center min-h-[240px] text-center">
-            <p className="text-sm text-muted-foreground mb-2">No bullet selected</p>
+            <p className="text-sm text-muted-foreground mb-2">No line selected</p>
             <p className="text-xs text-muted-foreground max-w-xs">
-              Select a bullet from the list on the left to edit its verb, quantifier, task, and
-              impact. Your changes update the score in real time.
+              Pick a line from the list to rewrite it one part at a time. The score updates as you
+              type.
             </p>
           </div>
         )}

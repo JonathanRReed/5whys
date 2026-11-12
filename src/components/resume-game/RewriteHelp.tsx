@@ -7,6 +7,27 @@ import { Button } from '../ui/button';
 type Props = {
   /** The line as it currently reads. */
   line: string;
+  /**
+   * What to say after "No safer wording found without adding facts." Fits
+   * where the help is shown: the Resume Game has fields below it, the
+   * Application Desk does not.
+   */
+  noneFollowUp?: string;
+};
+
+const DEFAULT_NONE_FOLLOW_UP =
+  'Use the fields below to add what happened because of the work, or a number you know is true.';
+
+/** Case, spacing, and end punctuation alone do not make a different wording. */
+const sameWording = (a: string, b: string) => {
+  const plain = (text: string) =>
+    text
+      .replace(/^[-•*]\s*/, '')
+      .replace(/[.!?]+\s*$/, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  return plain(a) === plain(b);
 };
 
 /**
@@ -14,7 +35,7 @@ type Props = {
  * is shown beside the visitor's own line and is never applied for them: the
  * score only moves when they change a field themselves.
  */
-export default function RewriteHelp({ line }: Props) {
+export default function RewriteHelp({ line, noneFollowUp = DEFAULT_NONE_FOLLOW_UP }: Props) {
   const [result, setResult] = React.useState<AiResult<RewriteBulletOutput> | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
@@ -55,6 +76,7 @@ export default function RewriteHelp({ line }: Props) {
   };
 
   const invented = result?.inventedClaims ?? [];
+  const changed = !!result && result.value.changed && !sameWording(result.value.rewrite, line);
 
   return (
     <div className="space-y-3 rounded-2xl border border-border/40 p-4">
@@ -75,7 +97,7 @@ export default function RewriteHelp({ line }: Props) {
 
       <div aria-live="polite">
         {result &&
-          (result.value.changed ? (
+          (changed ? (
             <div className="space-y-2">
               <p className="text-sm leading-relaxed text-foreground" data-testid="rewrite-text">
                 <AiText text={result.value.rewrite} claims={invented} />
@@ -94,8 +116,7 @@ export default function RewriteHelp({ line }: Props) {
             </div>
           ) : (
             <p className="text-sm text-muted-foreground" data-guide="rewrite-none">
-              No safer wording found without adding facts. The fields below are the way to
-              strengthen this line.
+              No safer wording found without adding facts. {noneFollowUp}
             </p>
           ))}
       </div>

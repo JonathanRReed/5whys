@@ -36,12 +36,12 @@ export function analyzeResumeLength(text: string, extractedBulletCount = 0) {
 
   let recommendation: string;
   if (estimatedPages > 2) {
-    recommendation = 'Consider trimming to 1-2 pages for better recruiter engagement.';
+    recommendation = 'Most resumes fit on one or two pages. Consider trimming.';
   } else if (words < 200) {
     recommendation =
       'Short resume. Projects, coursework, campus jobs, and volunteering all count as experience worth listing.';
   } else if (words > 800) {
-    recommendation = 'Resume is getting long. Prioritize your strongest bullets.';
+    recommendation = 'This is getting long. Keep your strongest lines.';
   } else {
     recommendation = 'Good length for most roles.';
   }

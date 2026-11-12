@@ -46,7 +46,7 @@ it('does not restore old analysis after Clear interrupts a scan', () => {
   finishPendingScan();
 
   expect(screen.getByLabelText('Paste resume text')).toHaveValue('');
-  expect(screen.queryByRole('heading', { name: 'Analysis visualization' })).toBeNull();
+  expect(screen.queryByRole('heading', { name: 'Your text, marked' })).toBeNull();
   expect(JSON.parse(localStorage.getItem('resume-game-session-v2') ?? 'null').bullets).toEqual([]);
 });
 
@@ -57,7 +57,7 @@ it('does not label older results current when text changes during a scan', () =>
   finishPendingScan();
 
   expect(screen.getByLabelText('Paste resume text')).toHaveValue(newText);
-  expect(screen.queryByRole('heading', { name: 'Analysis visualization' })).toBeNull();
+  expect(screen.queryByRole('heading', { name: 'Your text, marked' })).toBeNull();
   expect(screen.getByRole('button', { name: 'Analyze resume' })).toBeEnabled();
   fireEvent.click(screen.getByRole('button', { name: 'Analyze resume' }));
   finishPendingScan();
@@ -73,7 +73,7 @@ it('cancels pending analysis when a sample replaces the input', () => {
   finishPendingScan();
 
   expect(screen.getByLabelText('Paste resume text')).not.toHaveValue(oldText);
-  expect(screen.queryByRole('heading', { name: 'Analysis visualization' })).toBeNull();
+  expect(screen.queryByRole('heading', { name: 'Your text, marked' })).toBeNull();
 });
 
 it('does not mark a completed current analysis stale after reload', () => {
@@ -83,7 +83,7 @@ it('does not mark a completed current analysis stale after reload', () => {
   view.unmount();
   render(<ResumeGame />);
 
-  expect(screen.getByRole('heading', { name: 'Analysis visualization' })).toBeVisible();
+  expect(screen.getByRole('heading', { name: 'Your text, marked' })).toBeVisible();
   expect(screen.queryByText('Resume updated. Rerun the analysis to refresh metrics.')).toBeNull();
 });
 
@@ -141,7 +141,7 @@ it.each(['Escape', 'blur', 'timeout'])(
 
     expect(screen.getByRole('button', { name: 'Clear' })).toBeInTheDocument();
     expect(screen.getByLabelText('Paste resume text')).toHaveValue(oldText);
-    expect(screen.getByRole('heading', { name: 'Analysis visualization' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Your text, marked' })).toBeVisible();
     expect(localStorage.getItem('resume-game-session-v2')).toBe(storedBefore);
     fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
     expect(screen.getByRole('button', { name: 'Clear resume and scores?' })).toBeInTheDocument();
@@ -154,7 +154,7 @@ it('can clear retained analysis after the resume text has been erased', () => {
   beginScan();
   finishPendingScan();
   fireEvent.change(screen.getByLabelText('Paste resume text'), { target: { value: '' } });
-  expect(screen.getByRole('heading', { name: 'Analysis visualization' })).toBeVisible();
+  expect(screen.getByRole('heading', { name: 'Your text, marked' })).toBeVisible();
   expect(JSON.parse(localStorage.getItem('resume-game-session-v2') ?? 'null').bullets).toHaveLength(
     1
   );
@@ -162,10 +162,10 @@ it('can clear retained analysis after the resume text has been erased', () => {
   const clear = screen.getByRole('button', { name: 'Clear' });
   expect(clear).toBeEnabled();
   fireEvent.click(clear);
-  expect(screen.getByRole('heading', { name: 'Analysis visualization' })).toBeVisible();
+  expect(screen.getByRole('heading', { name: 'Your text, marked' })).toBeVisible();
   fireEvent.click(screen.getByRole('button', { name: 'Clear resume and scores?' }));
   finishPendingScan();
-  expect(screen.queryByRole('heading', { name: 'Analysis visualization' })).toBeNull();
+  expect(screen.queryByRole('heading', { name: 'Your text, marked' })).toBeNull();
   const stored = JSON.parse(localStorage.getItem('resume-game-session-v2') ?? 'null');
   expect(stored.bullets).toEqual([]);
   expect(stored.lastAnalyzedAt).toBeNull();

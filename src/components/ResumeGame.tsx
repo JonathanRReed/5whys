@@ -1,11 +1,12 @@
 import * as React from 'react';
 import { loadFeature, reportFeatureFailure } from '../lib/lazy-feature';
-import { isStudentLike, readProfile } from '../lib/profile';
+import { readProfile } from '../lib/profile';
 import type { ResumeDoc } from '../lib/resume-doc';
-import type { BulletFields, BulletRecord, StoredResumeSession } from '../lib/resume-game';
+import type { BulletFields, BulletRecord, Register, StoredResumeSession } from '../lib/resume-game';
 import {
   applyFieldChange,
   buildDeepSignalReport,
+  buildReviewReport,
   createBulletRecord,
   decodeEntities,
   detectResumeStructure,
@@ -13,9 +14,11 @@ import {
   EMPTY_SESSION,
   EMPTY_SIGNAL_REPORT,
   exportDocx,
-  POWER_VERB_PATTERN,
   PROFESSIONAL_PLACEHOLDER,
   PROFESSIONAL_SAMPLE_RESUME,
+  REVIEW_FILE_BASE,
+  registerForStage,
+  STRONG_SCORE,
   STUDENT_PLACEHOLDER,
   STUDENT_SAMPLE_RESUME,
   useResumeSession,
@@ -38,15 +41,6 @@ import ShareScoreCard from './resume-game/ShareScoreCard';
 const SCAN_TRANSITION_MS = 300;
 const STATUS_RESET_MS = 3500;
 
-function slugify(value: string) {
-  if (!value) return '';
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80);
-}
-
 type ResumeGameProps = {
   showHeader?: boolean;
   className?: string;
@@ -58,12 +52,13 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
   const [scanComplete, setScanComplete] = React.useState(false);
   const needsRescan = session.needsRescan ?? false;
   const [status, setStatus] = React.useState<string | null>(null);
-  const [studentRegister, setStudentRegister] = React.useState(false);
+  // Student examples until the visitor's saved profile says otherwise.
+  const [register, setRegister] = React.useState<Register>('student');
   const scanTimeoutRef = React.useRef<number | null>(null);
   const deepLinkHandled = React.useRef(false);
 
   React.useEffect(() => {
-    setStudentRegister(isStudentLike(readProfile()));
+    setRegister(registerForStage(readProfile()?.stage));
   }, []);
 
   const setSessionState = React.useCallback(
@@ -100,25 +95,9 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
   const selectedBullet = bullets.find((bullet) => bullet.id === selectedBulletId) ?? null;
   const signalReport = session.signalReport ?? EMPTY_SIGNAL_REPORT;
 
-  // Single-pass memoized computation of overall resume metrics to avoid repeated array filtering,
-  // reduces overhead during state updates in ResumeGame.
-  const { averageScore, quantifiedBullets, verbCoverage } = React.useMemo(() => {
-    if (!bullets.length) return { averageScore: 0, quantifiedBullets: 0, verbCoverage: 0 };
-    let totalScore = 0;
-    let quantifiedCount = 0;
-    let verbCount = 0;
-    for (let i = 0; i < bullets.length; i++) {
-      const bullet = bullets[i];
-      totalScore += bullet.improvedScore;
-      if (/\d/.test(bullet.improved)) quantifiedCount++;
-      if (POWER_VERB_PATTERN.test(bullet.improved.toLowerCase())) verbCount++;
-    }
-    return {
-      averageScore: Math.round(totalScore / bullets.length),
-      quantifiedBullets: quantifiedCount,
-      verbCoverage: Math.round((verbCount / bullets.length) * 100),
-    };
-  }, [bullets]);
+  // The share card is only offered when every scored line is strong.
+  const allStrong =
+    bullets.length > 0 && bullets.every((bullet) => bullet.improvedScore >= STRONG_SCORE);
 
   React.useEffect(() => {
     if (!storageNotice) return;
@@ -258,25 +237,34 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     }
     setIsLoadingFile(true);
     try {
-      const { extractTextFromFile } = await loadFeature(import('../lib/resume-game/extractors'));
-      const text = await extractTextFromFile(file);
+      // The structured copy knows which lines are bullets and which visual
+      // lines wrap, so the editor gets whole bullets from it, read once. When
+      // the layout cannot be read, the plain extractor is used instead: it
+      // gives the clear messages for scanned, locked, or damaged files.
+      let doc: ResumeDoc | null = null;
+      let text = '';
+      const name = file.name.toLowerCase();
+      if (name.endsWith('.pdf') || name.endsWith('.docx')) {
+        try {
+          const engine = await loadFeature(import('../lib/resume-doc'));
+          doc = name.endsWith('.pdf')
+            ? await engine.extractPdf(file)
+            : await engine.extractDocx(new Uint8Array(await file.arrayBuffer()), file.name);
+          text = engine.toEditorText(doc);
+        } catch {
+          doc = null;
+        }
+        if (sequence !== uploadSequence.current) return;
+      }
+      if (!text.trim()) {
+        doc = null;
+        const { extractTextFromFile } = await loadFeature(import('../lib/resume-game/extractors'));
+        text = await extractTextFromFile(file);
+      }
       if (sequence !== uploadSequence.current) return;
+      keepResumeDoc(doc);
       setResumeTextValue(text);
       setStatus('File loaded. Review the text below before analyzing.');
-      // The machine view is extra: if the layout cannot be read, the text
-      // above is still loaded and scoring still works.
-      try {
-        const name = file.name.toLowerCase();
-        const engine = await loadFeature(import('../lib/resume-doc'));
-        const doc = name.endsWith('.pdf')
-          ? await engine.extractPdf(file)
-          : name.endsWith('.docx')
-            ? await engine.extractDocx(new Uint8Array(await file.arrayBuffer()), file.name)
-            : null;
-        if (sequence === uploadSequence.current) keepResumeDoc(doc);
-      } catch {
-        if (sequence === uploadSequence.current) keepResumeDoc(null);
-      }
     } catch (error) {
       if (sequence !== uploadSequence.current) return;
       setFileError(error instanceof Error ? error.message : 'Failed to read file.');
@@ -296,8 +284,7 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
       const nextBullets = previous.bullets.map((bullet: BulletRecord) =>
         bullet.id === id ? applyFieldChange(bullet, field, value) : bullet
       );
-      // Keep the report in sync with edits so the health score and signal
-      // strength reflect the current state of the bullets.
+      // Keep the stored report in sync with edits.
       return {
         ...previous,
         bullets: nextBullets,
@@ -311,50 +298,28 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     });
   };
 
-  const markdownReport = React.useCallback(() => {
-    const original = bullets.map((bullet, index) => `${index + 1}. ${bullet.original}`);
-    const improved = bullets.map((bullet, index) => `${index + 1}. ${bullet.improved}`);
-    const healthLine =
-      typeof signalReport.benchmarkScore === 'number'
-        ? `\n- Resume health score: ${signalReport.benchmarkScore}/100`
-        : '';
-    return `# Resume Game Report
+  const reviewName = React.useCallback(
+    () =>
+      `${REVIEW_FILE_BASE}-${(session.lastAnalyzedAt ?? new Date().toISOString()).slice(0, 10)}`,
+    [session.lastAnalyzedAt]
+  );
 
-## Scores
-- Visible value: ${signalReport.visible}%
-- Average bullet score: ${averageScore}/100
-- Quantified bullets: ${quantifiedBullets}/${bullets.length || 0}${healthLine}
+  const reviewText = React.useCallback(
+    () => buildReviewReport(bullets, new Date().toISOString().slice(0, 10)),
+    [bullets]
+  );
 
-## Original Bullets
-${original.join('\n')}
-
-## Improved Bullets
-${improved.join('\n')}
-`;
-  }, [averageScore, bullets, quantifiedBullets, signalReport.visible, signalReport.benchmarkScore]);
-
-  const exportBase = React.useMemo(() => {
-    const headline =
-      bullets[0]?.improved ||
-      bullets[0]?.original ||
-      resumeText.split('\n').find((line) => line.trim()) ||
-      'resume-session';
-    const slug = slugify(headline).slice(0, 60) || 'resume-session';
-    const stamped = (session.lastAnalyzedAt ?? new Date().toISOString()).slice(0, 10);
-    return `resume-game-${slug}-${stamped}`;
-  }, [bullets, resumeText, session.lastAnalyzedAt]);
-
-  const handleExportMarkdown = React.useCallback(async () => {
-    downloadTextFile(`${exportBase}.md`, markdownReport());
-  }, [exportBase, markdownReport]);
+  const handleExportMarkdown = React.useCallback(() => {
+    downloadTextFile(`${reviewName()}.md`, reviewText());
+  }, [reviewName, reviewText]);
 
   const handleExportDocx = React.useCallback(async () => {
-    await exportDocx(`${exportBase}.docx`, markdownReport());
-  }, [exportBase, markdownReport]);
+    await exportDocx(`${reviewName()}.docx`, reviewText());
+  }, [reviewName, reviewText]);
 
   const resumeOutOfDate = needsRescan && scanComplete && resumeText.trim().length > 0;
-  const sampleResume = studentRegister ? STUDENT_SAMPLE_RESUME : PROFESSIONAL_SAMPLE_RESUME;
-  const placeholder = studentRegister ? STUDENT_PLACEHOLDER : PROFESSIONAL_PLACEHOLDER;
+  const sampleResume = register === 'student' ? STUDENT_SAMPLE_RESUME : PROFESSIONAL_SAMPLE_RESUME;
+  const placeholder = register === 'student' ? STUDENT_PLACEHOLDER : PROFESSIONAL_PLACEHOLDER;
 
   return (
     <div
@@ -403,8 +368,7 @@ ${improved.join('\n')}
       {!scanComplete && resumeText.trim() && (
         <div className="rounded-2xl border border-dashed border-border/35 bg-overlay/15 p-8 text-center">
           <p className="text-sm text-muted-foreground">
-            Click &quot;Analyze resume&quot; above to see your signal report, highlighted text, and
-            scoring breakdown.
+            Press &quot;Analyze resume&quot; above to score each line and see what it is missing.
           </p>
         </div>
       )}
@@ -455,6 +419,7 @@ ${improved.join('\n')}
           <BulletEditor
             bullet={selectedBullet}
             index={bullets.findIndex((b) => b.id === selectedBulletId)}
+            register={register}
             onFieldChange={updateBulletField}
           />
         </div>
@@ -464,24 +429,13 @@ ${improved.join('\n')}
 
       {scanComplete && bullets.length > 0 && (
         <Scoreboard
-          averageScore={averageScore}
-          quantifiedBullets={quantifiedBullets}
-          totalBullets={bullets.length}
-          verbCoverage={verbCoverage}
-          signalReport={signalReport}
+          bullets={bullets}
           onExportMarkdown={handleExportMarkdown}
           onExportDocx={handleExportDocx}
         />
       )}
 
-      {scanComplete && bullets.length > 0 && (
-        <ShareScoreCard
-          bullets={bullets}
-          averageScore={averageScore}
-          signalReport={signalReport}
-          verbCoverage={verbCoverage}
-        />
-      )}
+      {scanComplete && !needsRescan && allStrong && <ShareScoreCard bullets={bullets} />}
     </div>
   );
 }

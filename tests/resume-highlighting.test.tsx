@@ -10,7 +10,7 @@ async function visualizationFor(text: string) {
   render(<ResumeGame />);
   fireEvent.change(screen.getByLabelText('Paste resume text'), { target: { value: text } });
   fireEvent.click(screen.getByRole('button', { name: 'Analyze resume' }));
-  const heading = await screen.findByRole('heading', { name: 'Analysis visualization' });
+  const heading = await screen.findByRole('heading', { name: 'Your text, marked' });
   const card = heading.closest('[data-slot="card"]');
   if (!card) throw new Error('Analysis card was not rendered');
   return card;

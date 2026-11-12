@@ -51,8 +51,9 @@ export default function ResumeInput({
       <CardHeader className="space-y-4">
         <CardTitle className="text-2xl">Upload or paste resume</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Paste your resume or import TXT, Markdown, DOCX, or a text-based PDF. Review the extracted
-          text before analyzing. Scanned PDFs need OCR first. Everything stays in your browser.
+          Paste your resume or upload a PDF, Word file, or text file. Check the text below before
+          you analyze it. A scanned PDF is a picture of text, so there is nothing to read; export it
+          from the program you wrote it in. Everything stays in your browser.
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
