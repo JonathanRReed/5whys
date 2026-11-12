@@ -1,4 +1,5 @@
 ---
+import HomeSpecimen from '../components/HomeSpecimen';
 import Base from '../layouts/Base.astro';
 import { siteConfig } from '../config/site';
 
@@ -439,6 +440,12 @@ const homeStructuredData = [
           <span class="eyebrow text-muted-foreground">Anatomy of a decision</span>
         </figcaption>
       </figure>
+    </section>
+
+    {/* ============================ A WORKING SPECIMEN ============================ */}
+    <section class="mx-auto w-full max-w-6xl" aria-label="Try it">
+      <div class="rule-brass mb-10"></div>
+      <HomeSpecimen client:visible />
     </section>
 
     {/* ============================ THE PLATES ============================ */}
