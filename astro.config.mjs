@@ -6,6 +6,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'astro/config';
 import { localSpeechRuntime, speechLibraries } from './scripts/models/build.mjs';
 import { previewHeaders } from './scripts/models/headers.mjs';
+import { offlineShell } from './scripts/offline/build.mjs';
 
 // https://astro.build/config
 export default defineConfig({
@@ -30,5 +31,6 @@ export default defineConfig({
       changefreq: 'weekly',
       priority: 0.8,
     }),
+    offlineShell(),
   ],
 });
