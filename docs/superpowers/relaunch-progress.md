@@ -258,6 +258,26 @@ Still to do after the fix builders merge:
 - Subprocessors page still describes Cloudflare Web Analytics; the CSP now
   blocks it. Owner to confirm analytics is off, then correct that page.
 
+### Resume Game repairs merged (`t3/repair-resume-game-scoring`)
+
+One score per line with four visible parts (what you did 20, what the work
+was 25, what happened because of it 40, a number that says what it counts
+15); every other composite number removed; fair scores for honest lines; a
+bare number or team size earns nothing; verbs detected by form; the sentence
+builder produces usable sentences; uploads go through the layout reader, so
+a Word file now scores its bullets (verified by the lead: 2 of 2); examples
+follow the profile; downloads are labelled as a review. Suite after merge:
+985 unit, 88 browser.
+
+Left from that builder's notes:
+- The session hook writes the restored session back on load (breaks the
+  read-only rule); old sessions are rescored when the tool opens.
+- "Download clean .docx" in the machine view exports the same text.
+- A passive-voice note still appears on a line that scores 100.
+- Spelled-out numbers do not count; "Cut fabric" reads as a result.
+- Resume and machine-view browser flows run close to the time limit under
+  load; rerun alone before treating a timeout as a failure.
+
 ## In flight (builders, started 2026-11-12)
 
 | Piece | Model | Paths |
