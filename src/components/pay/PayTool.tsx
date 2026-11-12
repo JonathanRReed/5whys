@@ -158,6 +158,7 @@ export default function PayTool() {
       <span className="block text-sm text-muted-foreground">{label}</span>
       <Input
         inputMode="decimal"
+        data-guide={`offer-${key}`}
         value={offer[key] ?? ''}
         onChange={(event) => changeOffer({ [key]: toNumber(event.target.value) })}
         className="text-base"
@@ -183,6 +184,7 @@ export default function PayTool() {
           <Input
             value={query}
             onFocus={ensureData}
+            data-guide="pay-title"
             onChange={(event) => {
               setQuery(event.target.value);
               setPicked(null);
@@ -202,7 +204,10 @@ export default function PayTool() {
             <p className="text-sm text-muted-foreground">
               Titles mean different things at different employers. Pick the occupation that fits.
             </p>
-            <ul className="divide-y divide-border/30 rounded-xl border border-border/40">
+            <ul
+              className="divide-y divide-border/30 rounded-xl border border-border/40"
+              data-guide="pay-candidates"
+            >
               {candidates.map((candidate) => (
                 <li key={`${candidate.onetCode}-${candidate.matchedTitle}`}>
                   <button
@@ -376,6 +381,7 @@ export default function PayTool() {
               <span className="block text-sm text-muted-foreground">Paid</span>
               <select
                 value={offer.payPeriod ?? ''}
+                data-guide="offer-period"
                 onChange={(event) =>
                   changeOffer({ payPeriod: (event.target.value || null) as PayPeriod | null })
                 }
@@ -409,7 +415,10 @@ export default function PayTool() {
             </label>
           </div>
 
-          <dl className="content-start space-y-3 rounded-xl border border-border/40 p-5">
+          <dl
+            className="content-start space-y-3 rounded-xl border border-border/40 p-5"
+            data-guide="offer-results"
+          >
             {(
               [
                 ['Works out to', money(equivalents.hourly, 'hour')],

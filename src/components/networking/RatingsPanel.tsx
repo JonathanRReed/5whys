@@ -22,7 +22,7 @@ export default function RatingsPanel({ ratings, onRatingChange }: Props) {
   const nextStep = React.useMemo(() => computeNextStep(ratings), [ratings]);
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-6" data-guide="rep-ratings">
       {RATING_FIELDS.map(({ key, label, helpText }) => (
         <div key={key} className="grid gap-2">
           <div className="flex items-center justify-between text-sm">

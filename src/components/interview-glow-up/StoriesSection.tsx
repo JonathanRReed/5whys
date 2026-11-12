@@ -143,7 +143,7 @@ export default function StoriesSection({
   return (
     <div className="space-y-6">
       {!editingId && (
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3" data-guide="stories-start">
           <button
             type="button"
             onClick={() => startNew()}
@@ -560,6 +560,7 @@ export default function StoriesSection({
             <button
               type="button"
               onClick={saveStory}
+              data-guide="story-save"
               disabled={!formData.primarySkillId || !formData.play}
               className="rounded-lg bg-foam px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-foam/90 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
             >
@@ -576,7 +577,11 @@ export default function StoriesSection({
           </h3>
           <div className="grid gap-3 sm:grid-cols-2">
             {recentStories.map((story) => (
-              <div key={story.id} className="rounded-xl border border-border/30 bg-overlay/15 p-4">
+              <div
+                key={story.id}
+                className="rounded-xl border border-border/30 bg-overlay/15 p-4"
+                data-guide="story-card"
+              >
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <span className="rounded-full bg-foam/15 px-2 py-0.5 text-xs font-medium text-foam">

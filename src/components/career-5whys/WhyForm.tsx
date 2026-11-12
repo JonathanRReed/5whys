@@ -82,6 +82,7 @@ export default function WhyForm({
                 type="button"
                 variant="ghost"
                 onClick={() => onToggleExample(index)}
+                data-guide={`why-example-${index}`}
                 aria-expanded={isExampleVisible}
                 aria-controls={exampleId}
                 className="w-full justify-between rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"

@@ -110,7 +110,11 @@ export default function SessionHistory({
             })).filter((entry) => entry.value.length > 0);
 
             return (
-              <Card key={session.id} className="border-border/60 bg-overlay/30">
+              <Card
+                key={session.id}
+                className="border-border/60 bg-overlay/30"
+                data-guide="saved-rep"
+              >
                 <CardContent className="flex flex-col gap-4 py-4 md:flex-row md:items-start md:justify-between">
                   <div className="min-w-0 flex-1">
                     <div className="text-sm uppercase tracking-[0.3em] text-muted-foreground">

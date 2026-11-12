@@ -392,6 +392,7 @@ export default function PacketSection({
               <button
                 type="button"
                 onClick={onLaunchHUD}
+                data-guide="packet-hud"
                 className="flex items-center gap-2 rounded-lg bg-foam px-4 py-2.5 text-sm font-semibold text-background shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
               >
                 <TargetIcon className="h-4 w-4" />
