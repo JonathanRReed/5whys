@@ -22,7 +22,9 @@ it('does not overwrite newer typed work when an earlier upload finishes', async 
   fireEvent.change(screen.getByLabelText('Upload resume file (PDF, DOCX, TXT, or Markdown)'), {
     target: { files: [new File(['old'], 'resume.pdf', { type: 'application/pdf' })] },
   });
-  await waitFor(() => expect(extract).toHaveBeenCalledOnce());
+  // The layout reader is tried first and rejects this stand-in file before
+  // the plain extractor is called, so allow it time to load.
+  await waitFor(() => expect(extract).toHaveBeenCalledOnce(), { timeout: 8000 });
   fireEvent.change(screen.getByLabelText('Paste resume text'), {
     target: { value: 'Newer work that must stay' },
   });
