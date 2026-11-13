@@ -33,7 +33,10 @@ export function answerPhrases(answer: string): string[] {
   const seen = new Set<string>();
   const phrases: string[] = [];
   for (const piece of answer.replace(/\s+/g, ' ').split(CLAUSE_SPLIT)) {
-    const text = (piece ?? '').replace(EDGE_PUNCTUATION, '').trim();
+    const text = (piece ?? '')
+      .replace(EDGE_PUNCTUATION, '')
+      .replace(/^(?:and|but|because|so)\s+/i, '')
+      .trim();
     if (!text || answerWordCount(text) < 2 || seen.has(text.toLowerCase())) continue;
     seen.add(text.toLowerCase());
     phrases.push(text);
