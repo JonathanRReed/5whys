@@ -541,10 +541,26 @@
     /* clip, not hidden: hidden would turn <html> into a scroll container */
     overflow-x: clip;
     scroll-behavior: auto;
+    /* Keep whatever takes focus or is scrolled to clear of the sticky header. */
+    scroll-padding-top: calc(var(--header-h, 4.75rem) + 0.75rem);
+  }
+
+  /* At large text sizes the header wraps and would cover a fifth of a phone
+     screen: it scrolls away with the page instead. */
+  :root[data-header-tall] [data-site-header] {
+    position: static !important;
+  }
+
+  /* A grid child may shrink below its content's width, so long words wrap
+     inside it at large text sizes instead of pushing past the screen edge. */
+  :where(.grid) > :where(*) {
+    min-width: 0;
   }
 
   body {
     @apply bg-background text-foreground antialiased transition-colors duration-300;
+    /* A word longer than its column breaks instead of running off the screen. */
+    overflow-wrap: break-word;
     font-family: var(--font-sans);
     font-feature-settings:
       "cv05" 1,
@@ -1216,6 +1232,9 @@ select[aria-invalid="true"] {
 /* Windows High Contrast and other forced-colour modes drop backgrounds and
    shadows, so state has to be carried by borders and outlines. */
 @media (forced-colors: active) {
+  /* Links drawn as filled buttons lose their fill: give them the same box. */
+  a[class*="bg-primary"],
+  summary,
   button,
   [role="tab"],
   .peer + span,
@@ -1258,6 +1277,12 @@ select[aria-invalid="true"] {
     forced-color-adjust: none;
     background-color: CanvasText;
   }
+
+  /* The ring on a hidden radio's label is a box shadow, which is dropped. */
+  .peer:focus-visible + span {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
 }
 
 /* Disabled controls: dimmed so the state shows, but never faded below 3:1.
@@ -1267,4 +1292,12 @@ button:disabled,
 button[aria-disabled="true"] {
   opacity: 0.75;
   cursor: not-allowed;
+}
+
+/* In OpenDyslexic, tracked capitals are the hardest text on the page to
+   decode: labels keep their size and colour but read as ordinary words. */
+:root[data-font="dyslexic"] .eyebrow {
+  text-transform: none;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
 }

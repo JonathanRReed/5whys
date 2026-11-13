@@ -13,8 +13,8 @@ export type Typeface = 'default' | 'readable' | 'dyslexic';
 export const TYPEFACE_STORAGE_KEY = 'career-tools-font';
 
 export const TYPEFACE_OPTIONS: { value: Typeface; label: string; family: string }[] = [
-  { value: 'default', label: 'Fraunces', family: 'var(--font-display)' },
-  { value: 'readable', label: 'Nebula Sans', family: '"Nebula Sans", system-ui, sans-serif' },
+  { value: 'default', label: 'Default', family: 'var(--font-display)' },
+  { value: 'readable', label: 'Readable sans', family: '"Nebula Sans", system-ui, sans-serif' },
   { value: 'dyslexic', label: 'OpenDyslexic', family: '"OpenDyslexic", system-ui, sans-serif' },
 ];
 

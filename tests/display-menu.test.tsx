@@ -19,7 +19,7 @@ it('opens a panel with theme and typeface choices', () => {
   expect(screen.getByRole('dialog', { name: 'Display' })).toBeInTheDocument();
   expect(screen.getByRole('radio', { name: 'Night' })).toBeInTheDocument();
   expect(screen.getByRole('radio', { name: 'Dawn' })).toBeInTheDocument();
-  for (const name of ['Fraunces', 'Nebula Sans', 'OpenDyslexic']) {
+  for (const name of ['Default', 'Readable sans', 'OpenDyslexic']) {
     expect(screen.getByRole('radio', { name })).toBeInTheDocument();
   }
 });
@@ -31,7 +31,7 @@ it('applies and remembers a typeface, and clears the attribute for the default',
   expect(document.documentElement.dataset.font).toBe('dyslexic');
   expect(window.localStorage.getItem(TYPEFACE_STORAGE_KEY)).toBe('dyslexic');
 
-  fireEvent.click(screen.getByRole('radio', { name: 'Fraunces' }));
+  fireEvent.click(screen.getByRole('radio', { name: 'Default' }));
   expect(document.documentElement.dataset.font).toBeUndefined();
   expect(window.localStorage.getItem(TYPEFACE_STORAGE_KEY)).toBe('default');
 });
@@ -40,7 +40,7 @@ it('picks up the typeface the boot script already applied', () => {
   document.documentElement.dataset.font = 'readable';
   render(<DisplayMenu />);
   openMenu();
-  expect(screen.getByRole('radio', { name: 'Nebula Sans' })).toBeChecked();
+  expect(screen.getByRole('radio', { name: 'Readable sans' })).toBeChecked();
 });
 
 it('applies and remembers a theme', () => {

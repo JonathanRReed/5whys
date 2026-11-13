@@ -129,6 +129,30 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
   const toolsLinks = navLinks.filter(
     (l) => l.href !== '/' && l.href !== '/start/' && l.href !== '/dashboard/'
   );
+  // The header's real height, for the page to scroll focused things clear of
+  // it. At large text sizes it wraps to two rows; once it would take more than
+  // a fifth of the screen it stops being sticky, so it cannot cover the work.
+  const headerRef = React.useRef<HTMLElement>(null);
+  React.useEffect(() => {
+    const header = headerRef.current;
+    if (!header || typeof ResizeObserver === 'undefined') return undefined;
+    const root = document.documentElement;
+    const measure = () => {
+      const height = header.getBoundingClientRect().height;
+      const tall = height > window.innerHeight * 0.2;
+      root.style.setProperty('--header-h', tall ? '0px' : `${Math.ceil(height)}px`);
+      root.toggleAttribute('data-header-tall', tall);
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(header);
+    window.addEventListener('resize', measure);
+    measure();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, []);
+
   const [toolsOpen, setToolsOpen] = React.useState(toolsLinks.some((l) => isActive(l.href)));
   const compactToolsActive = toolsLinks.some((l) => isActive(l.href));
 
@@ -137,9 +161,11 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
       className={cn(
         'sticky top-0 z-40 w-full border-b transition-all duration-300',
         isScrolled
-          ? 'border-border/50 bg-background/97 shadow-[0_18px_42px_-34px_hsl(var(--background)/0.95)]'
-          : 'border-border/28 bg-background/94'
+          ? 'border-border/50 bg-background shadow-[0_18px_42px_-34px_hsl(var(--background)/0.95)]'
+          : 'border-border/28 bg-background'
       )}
+      ref={headerRef}
+      data-site-header
     >
       <nav
         aria-label="Primary"

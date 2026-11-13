@@ -557,7 +557,7 @@ const homeStructuredData = [
     {/* ============================ A WORKING SPECIMEN ============================ */}
     <section class="mx-auto w-full max-w-6xl" aria-label="Try it">
       <div class="rule-brass mb-10"></div>
-      <HomeSpecimen client:visible />
+      <HomeSpecimen client:idle />
     </section>
 
     {/* ============================ THE PLATES ============================ */}
@@ -598,7 +598,8 @@ const homeStructuredData = [
           plates.map((p) => (
             <a
               href={p.href}
-              class="group relative flex flex-col gap-5 bg-background p-6 transition-colors duration-200 hover:bg-card/55 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:p-8"
+              aria-label={`${p.name}. ${p.desc}`}
+              class="group relative flex min-w-0 flex-col gap-5 bg-background p-6 transition-colors duration-200 hover:bg-card/55 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:p-8"
               style={`--p: var(--${p.accent})`}
             >
               <span

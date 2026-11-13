@@ -152,7 +152,7 @@ const noScriptParagraphs = [...defaultNoScriptContext, ...pageNoScriptContext].f
           </div>
         </section>
       </noscript>
-      <main id="main-content" class="relative z-10 flex-1">
+      <main id="main-content" tabindex="-1" class="relative z-10 flex-1 focus:outline-hidden">
         <slot />
       </main>
       <footer

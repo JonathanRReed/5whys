@@ -60,22 +60,35 @@ export default function HomeSpecimen() {
   // it says so, instead of swallowing a tap.
   const [live, setLive] = React.useState(false);
   React.useEffect(() => setLive(true), []);
+  // The button that was pressed is replaced by another: hand focus to it, so
+  // a keyboard or screen-reader user is not dropped at the top of the page.
+  const afterRef = React.useRef<HTMLAnchorElement>(null);
+  const beforeRef = React.useRef<HTMLButtonElement>(null);
+  const moveFocus = React.useRef<'after' | 'before' | null>(null);
+  React.useEffect(() => {
+    if (moveFocus.current === 'after') afterRef.current?.focus();
+    if (moveFocus.current === 'before') beforeRef.current?.focus();
+    moveFocus.current = null;
+  });
 
   const source = own === null ? SAMPLE_POSTING : own.slice(0, MAX_POSTING);
   const sort = () => {
     if (!source.trim()) return;
     const parsed = parsePosting(source);
+    moveFocus.current = 'after';
     withViewTransition(() => {
       setText(parsed.text);
       setRequirements(parsed.requirements);
     });
   };
 
-  const reset = () =>
+  const reset = () => {
+    moveFocus.current = 'before';
     withViewTransition(() => {
       setRequirements(null);
       setText(SAMPLE_POSTING);
     });
+  };
 
   /** Keep the pasted posting for the desk, in this tab only. */
   const carry = () => {
@@ -163,6 +176,7 @@ export default function HomeSpecimen() {
           {requirements ? (
             <>
               <a
+                ref={afterRef}
                 href="/application/"
                 onClick={carry}
                 className="inline-flex min-h-11 items-center rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
@@ -179,6 +193,7 @@ export default function HomeSpecimen() {
             </>
           ) : (
             <button
+              ref={beforeRef}
               type="button"
               onClick={sort}
               disabled={!live || !source.trim()}
@@ -197,8 +212,12 @@ export default function HomeSpecimen() {
             </button>
           )}
         </div>
+        <p className="sr-only" role="status">
+          {requirements
+            ? `Decoded: ${counts.map(({ section, count }) => `${count} ${LABEL[section].toLowerCase()}`).join(', ')}${asks.length ? `, and ${asks.length} ${asks.length === 1 ? 'phrase' : 'phrases'} worth asking about` : ''}.`
+            : ''}
+        </p>
         <ul
-          aria-live="polite"
           className={cn(
             'space-y-1.5 text-sm transition-opacity duration-300 motion-reduce:transition-none',
             requirements ? 'opacity-100' : 'opacity-0'
