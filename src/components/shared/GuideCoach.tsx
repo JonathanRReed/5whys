@@ -392,8 +392,9 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
     if (mode === 'free' && coachRef.current?.contains(document.activeElement)) {
       window.requestAnimationFrame(() => freeRadioRef.current?.focus());
     }
-    // Someone who just asked for the guide wants to read the first step.
-    if (mode === 'guided') setCollapsed(false);
+    // The folded bar already says the task. On a small or short screen it
+    // opens folded, so it never starts on top of the thing it points at.
+    if (mode === 'guided') setCollapsed(window.matchMedia?.(COMPACT_QUERY).matches ?? false);
     if (mode === 'free') update({ ...view, mode: 'free' });
     else if (view.finished) startAgain();
     else update({ ...view, mode: 'guided' });
@@ -505,7 +506,9 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
                 'fixed inset-x-3 bottom-3 z-40 rounded-xl bg-popover text-popover-foreground shadow-[0_28px_70px_-32px_hsl(var(--background))] ring-1 ring-border/50 print:hidden',
                 // Never taller than the screen, so Hide and End guide stay reachable at large text sizes.
                 'max-h-[calc(100dvh-1.5rem)] overflow-y-auto overscroll-contain',
-                'sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[22rem]'
+                // A fixed width in pixels: in rem it doubles with a visitor's text size
+                // and covers the page it describes.
+                'sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[352px] sm:max-w-[calc(100vw-2.5rem)]'
               )}
             >
               <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1 px-4 pt-3">

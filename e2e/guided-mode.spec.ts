@@ -40,7 +40,10 @@ test('guided mode walks a first-timer through the Resume Game by watching what t
 
   await page.getByRole('button', { name: 'Analyze resume' }).click();
   await expect(coach).toContainText('Step 3 of 4');
-  await expect(page.locator('#bullet-editor')).toHaveAttribute('data-guide-active', '');
+  await expect(page.locator('#bullet-editor [id$="-verb"]')).toHaveAttribute(
+    'data-guide-active',
+    ''
+  );
 
   // Progress survives a reload, and the guide can be ended.
   await page.reload();

@@ -27,10 +27,10 @@ export const applicationGuide: Guide = {
     {
       id: 'stand',
       title: 'Qualifications: mark where you stand',
-      body: 'Choose "Have it", "Maybe" or "Not yet" for a requirement.',
+      body: 'Choose "Have it", "Maybe" or "Not yet" for two of them.',
       why: 'You do not need every requirement to apply. Write how you will show the ones you have.',
       target: '[data-guide="station-qualifications"]',
-      done: { kind: 'exists', selector: 'input[name^="status-"]:checked' },
+      done: { kind: 'count', selector: 'input[name^="status-"]:checked', atLeast: 2 },
     },
     {
       id: 'bullets',

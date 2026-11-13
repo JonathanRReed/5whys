@@ -33,7 +33,7 @@ test('a visitor picks their situation and lands in the tool with the guide on', 
 }) => {
   await page.goto('/');
   const way = page.getByRole('region', { name: /What brought you here/ });
-  await expect(way.getByRole('listitem')).toHaveCount(6);
+  await expect(way.getByRole('listitem')).toHaveCount(7);
   await way.getByRole('link', { name: /I found a job I want to apply for/ }).click();
   await expect(page).toHaveURL(/\/application\/\?guide=1&path=applying$/);
   await expect(page.getByRole('complementary', { name: 'Guide' })).toBeVisible();

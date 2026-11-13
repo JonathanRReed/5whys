@@ -6,10 +6,11 @@ export const resumeGameGuide: Guide = {
   steps: [
     {
       id: 'add-resume',
-      title: 'Put a resume in the box',
-      body: 'Paste it or upload it. No resume? Press "I do not have a resume yet".',
+      title: 'Put a resume in, or build one',
+      body: 'Paste it, upload it, or answer the short form. A job is not needed.',
       why: 'Everything here works on the lines you gave it, and they stay on this device.',
-      target: '[aria-label="Paste resume text"]',
+      // The start-from-nothing form when it is open, otherwise the paste box.
+      target: '[data-guide="first-resume"], [aria-label="Paste resume text"]',
       done: { kind: 'filled', selector: '[aria-label="Paste resume text"]', minLength: 10 },
       // A scored line means a resume is in, however short it was.
       passed: { kind: 'exists', selector: '[data-bullet-list] button' },
@@ -27,7 +28,8 @@ export const resumeGameGuide: Guide = {
       title: 'Rewrite your weakest line',
       body: 'Press the lowest score in the list, then start the line with what you did.',
       why: 'No number to add? Say what changed because of your work. Never invent one.',
-      target: '#bullet-editor',
+      // The first field of the open line, so the keyboard lands where the typing starts.
+      target: '#bullet-editor [id$="-verb"]',
       done: { kind: 'text', selector: '#bullet-editor', pattern: 'Started at \\d+/100' },
     },
     {
