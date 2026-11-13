@@ -1,13 +1,16 @@
 import * as React from 'react';
 import { cn } from '../lib/utils';
+import { type ReflectionForReuse, readReflectionForReuse } from './career-5whys/outcome';
 import ConversationIngredients from './networking/ConversationIngredients';
 import IntroDraft from './networking/IntroDraft';
 import NetworkingHeader from './networking/NetworkingHeader';
 import PracticeTimer from './networking/PracticeTimer';
+import { isWritten } from './networking/practice-model';
 import QuestionPrompts from './networking/QuestionPrompts';
 import RapportWarmups from './networking/RapportWarmups';
 import RatingsPanel from './networking/RatingsPanel';
 import ReflectionPanel from './networking/ReflectionPanel';
+import RepFlow from './networking/RepFlow';
 import RepRecorder from './networking/RepRecorder';
 import SavedIntros from './networking/SavedIntros';
 import ScenarioBlueprint from './networking/ScenarioBlueprint';
@@ -76,6 +79,17 @@ export default function NetworkingPractice({
   className,
 }: NetworkingPracticeProps) {
   const state = useNetworkingPractice();
+  const written = isWritten(state.currentScenario);
+  const writtenIds = React.useMemo(
+    () => new Set(state.scenarios.filter(isWritten).map((scenario) => scenario.id)),
+    [state.scenarios]
+  );
+  const lastRep = state.sessions[0];
+  // A finished Five Whys reflection, offered beside the draft. Read only.
+  const [reflection, setReflection] = React.useState<ReflectionForReuse | null>(null);
+  React.useEffect(() => {
+    setReflection(readReflectionForReuse());
+  }, []);
   // Reference material opens by default on wide screens and stays folded on
   // phones, where the draft box and timer need to come first.
   const [wide, setWide] = React.useState(false);
@@ -112,12 +126,24 @@ export default function NetworkingPractice({
             scenarios={state.scenarios}
             currentScenario={state.currentScenario}
             onScenarioChange={state.handleScenarioChange}
+            studentFirst={state.studentLike}
           />
         </section>
 
-        {/* 2. The practice: draft first, timer beside it */}
+        {/* 2. One rep: write, say, rate, save. The last rep's fix comes first. */}
+        <RepFlow
+          activeStep={state.activeRepStep}
+          written={written}
+          lastRep={lastRep}
+          lastRepWritten={lastRep ? writtenIds.has(lastRep.scenarioId) : false}
+        />
         <section className="grid gap-6 md:grid-cols-[1fr_minmax(0,320px)]">
-          <IntroDraft draft={state.draft} onDraftChange={state.setDraft} />
+          <IntroDraft
+            draft={state.draft}
+            onDraftChange={state.setDraft}
+            written={written}
+            reflection={reflection}
+          />
           <PracticeTimer
             timer={state.timer}
             onStart={state.startTimer}
@@ -127,7 +153,11 @@ export default function NetworkingPractice({
           />
         </section>
 
-        <RepRecorder label={state.draft.trim().slice(0, 120) || 'Networking intro'} />
+        <RepRecorder
+          label={state.draft.trim().slice(0, 120) || 'Networking intro'}
+          onStart={state.handleRecordingStart}
+          onStop={state.handleRecordingStop}
+        />
 
         {/* 3. Reference material, folded on phones */}
         <Disclosure
@@ -140,12 +170,13 @@ export default function NetworkingPractice({
             <ScenarioBlueprint
               currentScenario={state.currentScenario}
               scenarioSteps={state.scenarioSteps}
-              timer={state.timer}
             />
             <ConversationIngredients
               currentScenario={state.currentScenario}
               onCopy={state.handleCopy}
               copiedKey={state.copiedKey}
+              studentLike={state.studentLike}
+              applicationLine={state.fromApplication?.line ?? null}
             />
           </div>
           <div className="grid gap-6 lg:grid-cols-2">
@@ -154,6 +185,7 @@ export default function NetworkingPractice({
               scenarioId={state.currentScenario?.id}
               onCopy={state.handleCopy}
               copiedKey={state.copiedKey}
+              prepNote={state.currentScenario?.prepNote ?? null}
             />
             <QuestionPrompts
               questionTemplates={state.questionTemplates}
@@ -193,11 +225,17 @@ export default function NetworkingPractice({
               <CardTitle className="text-iris">Rate this rep</CardTitle>
               <p className="mt-2 text-sm text-muted-foreground">
                 Rate it honestly after you say it out loud, 1 to 5 on each. Green means 4 or higher,
-                and that is the target. The next step tracks your lowest rating.
+                and that is the target. The next step tracks your lowest rating, and it stays on the
+                saved rep.
               </p>
             </CardHeader>
             <CardContent className="grid gap-6 lg:grid-cols-2">
-              <RatingsPanel ratings={state.ratings} onRatingChange={state.handleRatingChange} />
+              <RatingsPanel
+                ratings={state.ratings}
+                onRatingChange={state.handleRatingChange}
+                written={written}
+                draft={state.draft}
+              />
               <ReflectionPanel
                 reflection={state.reflection}
                 onReflectionField={state.handleReflectionField}
@@ -216,6 +254,7 @@ export default function NetworkingPractice({
           onExport={state.exportSessions}
           onClearHistory={state.clearSessionHistory}
           onRemoveSession={state.removeSession}
+          isWrittenScenario={(id) => writtenIds.has(id)}
         />
       </div>
     </div>

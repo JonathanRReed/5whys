@@ -1,3 +1,4 @@
+import { completeRatings, computeNextStep } from '../../lib/networking-advice';
 import type { NetworkingPracticeSession } from '../../utils/storage';
 import ConfirmButton from '../shared/ConfirmButton';
 import { Button } from '../ui/button';
@@ -8,6 +9,8 @@ type Props = {
   onExport: () => void;
   onClearHistory: () => void;
   onRemoveSession: (id: string) => void;
+  /** True for a written scenario, whose next step comes from the message. */
+  isWrittenScenario?: (scenarioId: string) => boolean;
 };
 
 function formatDuration(seconds: number | undefined) {
@@ -65,6 +68,7 @@ export default function SessionHistory({
   onExport,
   onClearHistory,
   onRemoveSession,
+  isWrittenScenario = () => false,
 }: Props) {
   return (
     <section className="w-full space-y-6">
@@ -108,6 +112,15 @@ export default function SessionHistory({
               label,
               value: session.reflection?.[key]?.trim() ?? '',
             })).filter((entry) => entry.value.length > 0);
+            // The step the ratings panel showed when this rep was saved, worked
+            // out again from what was saved, so it is not lost on save.
+            const rated = completeRatings(session.ratings);
+            const nextStep = rated
+              ? computeNextStep(rated, {
+                  written: isWrittenScenario(session.scenarioId),
+                  draft,
+                })
+              : '';
 
             return (
               <Card
@@ -150,6 +163,14 @@ export default function SessionHistory({
                         ))}
                       </dl>
                     ) : null}
+                    {nextStep && (
+                      <p className="mt-3 text-sm text-muted-foreground">
+                        <span className="text-xs uppercase tracking-[0.2em] text-foam">
+                          Next step
+                        </span>{' '}
+                        {nextStep}
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap items-center gap-4 sm:gap-6 md:shrink-0">
