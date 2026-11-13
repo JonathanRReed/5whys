@@ -244,9 +244,6 @@ function Summary({ data, onChanged }: { data: CareerDashboardData; onChanged: ()
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-2">
           <h2 className="text-2xl font-semibold tracking-tight">Where things stand</h2>
-          <p className="text-muted-foreground">
-            Your progress across all tools. Everything stays on your device.
-          </p>
         </div>
         {data.profile && (
           <a
@@ -388,14 +385,22 @@ function Summary({ data, onChanged }: { data: CareerDashboardData; onChanged: ()
             Saved resume results need a fresh analysis before their scores can guide you.
           </p>
         )}
-        {data.resume && data.resume.bulletCount > 0 && !data.resume.needsRescan && (
-          <p className="mt-4 text-sm text-muted-foreground">
-            {data.resume.strongCount} of {data.resume.bulletCount} resume{' '}
-            {data.resume.bulletCount === 1 ? 'line is' : 'lines are'} strong, {STRONG_SCORE} or more
-            {data.resume.lastAnalyzedAt ? `, scored ${scoredWhen(data.resume.lastAnalyzedAt)}` : ''}
-            .
-          </p>
-        )}
+        {/* A count of strong lines is worth saying once there is one. "0 of 2
+            are strong" tells a first-timer only that they failed. */}
+        {data.resume &&
+          data.resume.bulletCount > 0 &&
+          data.resume.strongCount > 0 &&
+          !data.resume.needsRescan && (
+            <p className="mt-4 text-sm text-muted-foreground">
+              {data.resume.strongCount} of {data.resume.bulletCount} resume{' '}
+              {data.resume.bulletCount === 1 ? 'line is' : 'lines are'} strong, {STRONG_SCORE} or
+              more
+              {data.resume.lastAnalyzedAt
+                ? `, scored ${scoredWhen(data.resume.lastAnalyzedAt)}`
+                : ''}
+              .
+            </p>
+          )}
       </section>
 
       {/* Skills */}

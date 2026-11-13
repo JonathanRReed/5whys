@@ -50,7 +50,8 @@ export default function WorkspaceTabs({ showHUD, onLaunchHUD, counts }: Props) {
               value={tab.id}
               data-guide={`tab-${tab.id}`}
               className={cn(
-                'group/step flex flex-none items-center gap-2 rounded-xl border border-transparent px-4 py-2.5 text-sm font-semibold',
+                // May shrink and wrap its label, so at large text sizes it stays on screen.
+                'group/step flex h-auto max-w-full flex-none items-center gap-2 rounded-xl border border-transparent px-4 py-2.5 text-left text-sm font-semibold',
                 'hover:bg-overlay/40 hover:text-foreground',
                 'after:hidden'
               )}
@@ -65,7 +66,7 @@ export default function WorkspaceTabs({ showHUD, onLaunchHUD, counts }: Props) {
               ) : (
                 <Icon className="size-4" aria-hidden="true" />
               )}
-              <span>{tab.label}</span>
+              <span className="min-w-0">{tab.label}</span>
               {count > 0 && (
                 <span className="rounded-full bg-overlay/50 px-1.5 text-xs text-foreground group-data-[state=active]/step:bg-primary-foreground/10 group-data-[state=active]/step:text-primary-foreground">
                   {count}
