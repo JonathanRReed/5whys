@@ -111,24 +111,26 @@ test('a career break, personal details, and a summary each get a plain note', as
   await useStudentProfile(page);
   await page.goto('/resume-game/');
   await waitForHydration(page);
-  await page.getByLabel('Paste resume text').fill(
-    [
-      'Renee Alvarado',
-      'Date of Birth: 1985/03/14 | Nationality: US',
-      '',
-      'SUMMARY',
-      'Dedicated, hard-working team player seeking an operations role.',
-      '',
-      'EXPERIENCE',
-      'Store Manager, Brightline Home Goods',
-      'March 2018 - February 2026',
-      '- Rebuilt the weekly schedule, so every shift was covered without overtime.',
-      '',
-      'Family Caregiver',
-      'March 2026 - October 2026',
-      '- Full-time caregiver for a parent after surgery',
-    ].join('\n')
-  );
+  await page
+    .getByLabel('Paste resume text')
+    .fill(
+      [
+        'Renee Alvarado',
+        'Date of Birth: 1985/03/14 | Nationality: US',
+        '',
+        'SUMMARY',
+        'Dedicated, hard-working team player seeking an operations role.',
+        '',
+        'EXPERIENCE',
+        'Store Manager, Brightline Home Goods',
+        'March 2018 - February 2026',
+        '- Rebuilt the weekly schedule, so every shift was covered without overtime.',
+        '',
+        'Family Caregiver',
+        'March 2026 - October 2026',
+        '- Full-time caregiver for a parent after surgery',
+      ].join('\n')
+    );
   await page.getByRole('button', { name: 'Analyze resume' }).click();
   await expect(page.getByTestId('career-break-note')).toContainText(
     'A career break, stated plainly. It is not scored, and there is nothing to rewrite.'
