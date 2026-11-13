@@ -12,12 +12,16 @@ import {
   PAY_PERIODS,
   type PayPeriod,
   type PercentField,
+  periodPhrase,
   saveApplicationDesks,
   updateOfferWorksheet,
 } from '../../lib/application-desk';
 import {
   APPLICATIONS_KEY,
+  activeApplicationId,
+  addApplication,
   loadApplications,
+  saveApplications,
   type TrackedApplication,
 } from '../../lib/applications';
 import { onDeviceCleared } from '../../lib/device-events';
@@ -36,6 +40,7 @@ import {
 import { type ParsedAmount, parseAmount } from '../../lib/pay-input';
 import { cn, focusWhenReady } from '../../lib/utils';
 import Announcer, { useSettledAnnouncement } from '../shared/Announcer';
+import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 
@@ -46,14 +51,22 @@ const PERIOD_LABEL: Record<PayPeriod, string> = {
   year: 'per year',
 };
 
-const money = (value: number | null, unit: 'hour' | 'year') =>
+const NEEDS_MORE = 'Needs more detail';
+
+/**
+ * An amount in the currency typed with the base pay, followed by what it is
+ * for: "an hour", "a week", "a year", or "over 10 weeks".
+ */
+export const money = (value: number | null, per: string, symbol = '$', cents = false) =>
   value === null
-    ? 'Needs more detail'
-    : `${new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        maximumFractionDigits: unit === 'hour' ? 2 : 0,
-      }).format(value)} ${unit === 'hour' ? 'an hour' : 'a year'}`;
+    ? NEEDS_MORE
+    : `${symbol}${new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: cents ? 2 : 0,
+        maximumFractionDigits: cents ? 2 : 0,
+      }).format(value)} ${per}`;
+
+/** Hours a week past which hourly work is usually paid as overtime in the United States. */
+const OVERTIME_AFTER_HOURS = 40;
 
 type Search = (query: string, limit?: number) => TitleCandidate[];
 
@@ -169,7 +182,7 @@ export default function PayTool() {
     setDesks(loadApplicationDesks());
     const wanted = new URLSearchParams(window.location.search).get('id');
     const known = apps.applications.some((a) => a.id === wanted);
-    setAppId(known && wanted ? wanted : (apps.activeId ?? ''));
+    setAppId(known && wanted ? wanted : (activeApplicationId(apps) ?? ''));
     // Arriving from an application's desk: start from that role's title. The
     // title is read from this device's storage, never from the address.
     const from = apps.applications.find((a) => a.id === wanted);
@@ -250,11 +263,72 @@ export default function PayTool() {
     setDesks(next);
   };
   const equivalents = offerEquivalents(offer);
-  const worksOut = money(equivalents.hourly, 'hour');
+  const symbol = offer.currency ?? '$';
+  const period = periodPhrase(offer);
+  const shown = {
+    hourly: money(equivalents.hourly, 'an hour', symbol, true),
+    weekly: money(equivalents.weekly, 'a week', symbol),
+    base: money(equivalents.annualBase, period, symbol),
+  };
   const offerMessage = useSettledAnnouncement(
-    worksOut === 'Needs more detail' ? '' : `Works out to ${worksOut}.`,
+    shown.hourly === NEEDS_MORE && shown.base === NEEDS_MORE
+      ? ''
+      : `Works out to ${[shown.hourly, shown.weekly, shown.base]
+          .filter((text) => text !== NEEDS_MORE)
+          .join(', ')}, before taxes.`,
     offerEdited
   );
+  const hasBonus =
+    (offer.guaranteedBonus ?? 0) > 0 || (offer.percentOfBase?.guaranteedBonus ?? 0) > 0;
+  const hasVariable = (offer.variablePay ?? 0) > 0 || (offer.percentOfBase?.variablePay ?? 0) > 0;
+  const hasOvertime = equivalents.overtimeAnnual > 0;
+  const longHours =
+    offer.payPeriod === 'hour' &&
+    (offer.hoursPerWeek ?? 0) > OVERTIME_AFTER_HOURS &&
+    offer.overtimeHoursPerWeek === null;
+  const notPromised =
+    hasOvertime && hasVariable
+      ? 'If the overtime and variable pay come through'
+      : hasOvertime
+        ? 'With the overtime'
+        : 'If the variable pay comes through';
+
+  // --- Another offer to compare ------------------------------------------
+  const [adding, setAdding] = React.useState(false);
+  const [newTitle, setNewTitle] = React.useState('');
+  const [newCompany, setNewCompany] = React.useState('');
+  const [addFailed, setAddFailed] = React.useState(false);
+  const addOffer = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!newTitle.trim()) return;
+    const { data, application } = addApplication(loadApplications(), {
+      title: newTitle,
+      company: newCompany,
+    });
+    if (!saveApplications(data)) {
+      setAddFailed(true);
+      return;
+    }
+    // What was typed with no application to keep it goes with the new one.
+    const kept = !appId && scratch.basePay !== null;
+    if (kept) {
+      const next = updateOfferWorksheet(loadApplicationDesks(), application.id, {
+        ...scratch,
+        percentOfBase: scratch.percentOfBase ?? {},
+      });
+      saveApplicationDesks(next);
+      setDesks(next);
+      setScratch(createEmptyDesk().offer);
+    }
+    setApplications(data.applications);
+    setAddFailed(false);
+    setGone(false);
+    setAppId(application.id);
+    setNewTitle('');
+    setNewCompany('');
+    setAdding(false);
+    focusWhenReady('offer-title');
+  };
   const credits = payAttributions();
 
   // Yearly base pay, when it can be worked out, is what a percentage refers to.
@@ -272,20 +346,34 @@ export default function PayTool() {
       guide={`offer-${key}`}
       value={offer[key]}
       percent={isPercentField(key) ? (offer.percentOfBase?.[key] ?? null) : null}
-      parse={(text) =>
-        parseAmount(text, {
+      symbol={key === 'basePay' ? (offer.currency ?? null) : null}
+      parse={(text) => {
+        const parsed = parseAmount(text, {
           label,
           min: options.min,
           max: options.max,
+          money: isMoneyField(key),
           ...(options.percent ? { percentOf: yearlyBase } : {}),
-        })
-      }
+        });
+        // One offer, one currency: the one typed with the base pay.
+        const typed = parsed.ok ? (parsed.currency ?? (text.includes('$') ? '$' : null)) : null;
+        if (key !== 'basePay' && typed && typed !== symbol) {
+          return {
+            ok: false,
+            value: null,
+            error: `${label} is in ${typed}, but the base pay is in ${symbol}. Use one currency for the offer.`,
+          };
+        }
+        return parsed;
+      }}
       percentOf={options.percent ? yearlyBase : undefined}
-      onCommit={(value, percent) =>
+      onCommit={(value, percent, currency) =>
         changeOffer(
           isPercentField(key)
             ? { [key]: value, percentOfBase: { [key]: percent ?? null } }
-            : { [key]: value }
+            : key === 'basePay'
+              ? { basePay: value, ...(currency !== undefined ? { currency } : {}) }
+              : { [key]: value }
         )
       }
     />
@@ -488,7 +576,11 @@ export default function PayTool() {
 
       <section aria-labelledby="offer-title" className="space-y-5 border-t border-border/40 pt-10">
         <div className="space-y-2">
-          <h2 id="offer-title" className="text-2xl font-semibold">
+          <h2
+            id="offer-title"
+            tabIndex={-1}
+            className="text-2xl font-semibold focus:outline-hidden"
+          >
             Offer worksheet
           </h2>
           <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
@@ -507,34 +599,91 @@ export default function PayTool() {
               gone when the page closes.
             </p>
           )}
-          {applications.length > 0 ? (
-            <label className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-              <span>Save with</span>
-              <select
-                value={appId}
-                onChange={(event) => {
-                  setGone(false);
-                  setAppId(event.target.value);
-                }}
-                className="h-9 min-w-0 max-w-[min(18rem,100%)] rounded-md border border-border/50 bg-transparent px-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="">No application (not saved)</option>
-                {applications.map((application) => (
-                  <option key={application.id} value={application.id}>
-                    {application.title}
-                    {application.company ? `, ${application.company}` : ''}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              This worksheet is not saved. Start an application on the{' '}
-              <a className="underline underline-offset-2" href="/application/">
-                Application Desk
-              </a>{' '}
-              to keep it.
-            </p>
+          <div className="flex flex-wrap items-center gap-2">
+            {applications.length > 0 ? (
+              <label className="flex min-w-0 max-w-full flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                <span>Save with</span>
+                <select
+                  value={appId}
+                  onChange={(event) => {
+                    setGone(false);
+                    setAppId(event.target.value);
+                  }}
+                  className="h-10 w-full min-w-0 max-w-[18rem] rounded-md border border-border/50 bg-transparent px-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <option value="">No application (not saved)</option>
+                  {applications.map((application) => (
+                    <option key={application.id} value={application.id}>
+                      {application.title}
+                      {application.company ? `, ${application.company}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                This worksheet is not saved until it belongs to an offer.
+              </p>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              aria-expanded={adding}
+              onClick={() => setAdding((open) => !open)}
+            >
+              {adding
+                ? 'Cancel'
+                : applications.length > 0
+                  ? 'Add another offer'
+                  : 'Save it as an offer'}
+            </Button>
+          </div>
+          {adding && (
+            <form
+              onSubmit={addOffer}
+              aria-label="Another offer to compare"
+              className="grid max-w-2xl gap-3 sm:grid-cols-[2fr_2fr_auto] sm:items-end"
+            >
+              <label className="space-y-1">
+                <span className="block text-sm text-muted-foreground">Role</span>
+                <Input
+                  value={newTitle}
+                  onChange={(event) => setNewTitle(event.target.value)}
+                  placeholder="Summer camp counselor"
+                  className="text-base"
+                  required
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="block text-sm text-muted-foreground">
+                  Company or organization (optional)
+                </span>
+                <Input
+                  value={newCompany}
+                  onChange={(event) => setNewCompany(event.target.value)}
+                  placeholder="Lakeside YMCA"
+                  className="text-base"
+                />
+              </label>
+              <Button type="submit" disabled={!newTitle.trim()}>
+                Add it
+              </Button>
+              <p className="text-xs text-muted-foreground sm:col-span-3">
+                It is tracked like any application, so it also shows on the dashboard and the
+                Application Desk.
+                {!appId && scratch.basePay !== null ? ' What you typed below goes with it.' : ''}
+              </p>
+              {addFailed && (
+                <p
+                  role="alert"
+                  className="rounded-lg bg-gold/12 px-3 py-2 text-sm text-foreground sm:col-span-3"
+                >
+                  This browser would not save it. Free some space in the storage panel on the
+                  dashboard, then try again.
+                </p>
+              )}
+            </form>
           )}
         </div>
 
@@ -602,41 +751,66 @@ export default function PayTool() {
           >
             {(
               [
-                ['Works out to', money(equivalents.hourly, 'hour')],
-                ['Base pay over the period', money(equivalents.annualBase, 'year')],
-                ['With the guaranteed bonus', money(equivalents.annualGuaranteed, 'year')],
+                ['Works out to', shown.hourly, true],
+                ['A week', shown.weekly, true],
+                ['Base pay over the period', shown.base, true],
                 [
-                  'If the variable pay comes through',
-                  money(equivalents.annualWithVariable, 'year'),
+                  'Overtime, if you work it',
+                  money(equivalents.overtimeAnnual, period, symbol),
+                  hasOvertime,
+                ],
+                [
+                  'With the guaranteed bonus',
+                  money(equivalents.annualGuaranteed, period, symbol),
+                  hasBonus,
+                ],
+                [
+                  notPromised,
+                  money(equivalents.annualWithVariable, period, symbol),
+                  hasOvertime || hasVariable,
                 ],
               ] as const
-            ).map(([term, value]) => (
-              <div key={term} className="flex flex-wrap items-baseline justify-between gap-x-4">
-                <dt className="text-sm text-muted-foreground">{term}</dt>
-                <dd
-                  className={cn(
-                    // A long figure wraps inside the panel instead of widening the page.
-                    'min-w-0 max-w-full font-mono text-base tabular-nums break-all',
-                    value === 'Needs more detail' ? 'text-muted-foreground' : 'text-foreground'
-                  )}
-                >
-                  {value}
-                </dd>
-              </div>
-            ))}
-            {equivalents.overtimeAnnual > 0 && (
-              <p className="pt-1 text-xs text-muted-foreground">
-                The yearly figures include {money(equivalents.overtimeAnnual, 'year')} of overtime.
+            )
+              .filter(([, , show]) => show)
+              .map(([term, value]) => (
+                <div key={term} className="flex flex-wrap items-baseline justify-between gap-x-4">
+                  <dt className="text-sm text-muted-foreground">{term}</dt>
+                  <dd
+                    className={cn(
+                      // A long figure wraps inside the panel instead of widening the page.
+                      'min-w-0 max-w-full font-mono text-base tabular-nums break-all',
+                      value === NEEDS_MORE ? 'text-muted-foreground' : 'text-foreground'
+                    )}
+                  >
+                    {value}
+                  </dd>
+                </div>
+              ))}
+            <p className="pt-1 text-xs text-muted-foreground">
+              All figures are before taxes and deductions.
+            </p>
+            {hasOvertime && (
+              <p className="text-xs text-muted-foreground">
+                Overtime depends on the hours you are given, so it is expected, not promised. It is
+                kept out of the base and counted only in the last line.
+              </p>
+            )}
+            {longHours && (
+              <p className="text-xs text-foreground" data-testid="overtime-hint">
+                In the United States, hours over {OVERTIME_AFTER_HOURS} a week are usually paid at
+                time and a half for hourly workers. If some of these hours are overtime, put{' '}
+                {OVERTIME_AFTER_HOURS} in "Hours a week" and the rest in "Overtime each week, in
+                hours".
               </p>
             )}
             {offer.payPeriod !== null && offer.payPeriod !== 'hour' && offer.basePay !== null && (
-              <p className="pt-1 text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 A salary usually pays the same however many hours you work, so more hours a week
                 means less an hour.
               </p>
             )}
             {equivalents.missing.length > 0 && offer.basePay !== null && (
-              <p className="pt-1 text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 Fill in hours and weeks to complete the blank figures.
               </p>
             )}
@@ -654,50 +828,66 @@ export default function PayTool() {
                       Offer
                     </th>
                     <th scope="col" className="py-2 pr-4 font-medium">
+                      Hours a week
+                    </th>
+                    <th scope="col" className="py-2 pr-4 font-medium">
                       An hour
                     </th>
                     <th scope="col" className="py-2 pr-4 font-medium">
-                      A year, base
+                      Base, over the period
                     </th>
                     <th scope="col" className="py-2 pr-4 font-medium">
                       With guaranteed bonus
                     </th>
                     <th scope="col" className="py-2 font-medium">
-                      If variable pay comes through
+                      If overtime and variable pay come through
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {compared.map(({ application, figures }) => (
-                    <tr key={application.id} className="border-b border-border/25 align-top">
-                      <th scope="row" className="py-2 pr-4 text-left font-normal text-foreground">
-                        {application.title}
-                        {application.company && (
-                          <span className="block text-xs text-muted-foreground">
-                            {application.company}
-                          </span>
-                        )}
-                      </th>
-                      <td className="py-2 pr-4 font-mono tabular-nums">
-                        {money(figures.hourly, 'hour')}
-                      </td>
-                      <td className="py-2 pr-4 font-mono tabular-nums">
-                        {money(figures.annualBase, 'year')}
-                      </td>
-                      <td className="py-2 pr-4 font-mono tabular-nums">
-                        {money(figures.annualGuaranteed, 'year')}
-                      </td>
-                      <td className="py-2 font-mono tabular-nums">
-                        {money(figures.annualWithVariable, 'year')}
-                      </td>
-                    </tr>
-                  ))}
+                  {compared.map(({ application, offer: row, figures }) => {
+                    const sign = row.currency ?? '$';
+                    const per = periodPhrase(row);
+                    return (
+                      <tr key={application.id} className="border-b border-border/25 align-top">
+                        <th scope="row" className="py-2 pr-4 text-left font-normal text-foreground">
+                          {application.title}
+                          {application.company && (
+                            <span className="block text-xs text-muted-foreground">
+                              {application.company}
+                            </span>
+                          )}
+                        </th>
+                        <td className="py-2 pr-4 font-mono tabular-nums">
+                          {row.hoursPerWeek ?? 'Not given'}
+                          {row.overtimeHoursPerWeek ? (
+                            <span className="block text-xs text-muted-foreground">
+                              +{row.overtimeHoursPerWeek} overtime
+                            </span>
+                          ) : null}
+                        </td>
+                        <td className="py-2 pr-4 font-mono tabular-nums">
+                          {money(figures.hourly, 'an hour', sign, true)}
+                        </td>
+                        <td className="py-2 pr-4 font-mono tabular-nums">
+                          {money(figures.annualBase, per, sign)}
+                        </td>
+                        <td className="py-2 pr-4 font-mono tabular-nums">
+                          {money(figures.annualGuaranteed, per, sign)}
+                        </td>
+                        <td className="py-2 font-mono tabular-nums">
+                          {money(figures.annualWithVariable, per, sign)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
             <p className="text-xs text-muted-foreground">
               The hourly figure divides pay by the hours you entered, so a salary with long weeks
-              shows what an hour of it is really worth.
+              shows what an hour of it is really worth. Overtime is never counted in the base. Every
+              figure is before taxes.
             </p>
           </div>
         )}
@@ -708,6 +898,10 @@ export default function PayTool() {
 
 const isPercentField = (key: NumberKey): key is PercentField =>
   key === 'guaranteedBonus' || key === 'variablePay';
+
+/** Hours and weeks are counts, not money: a currency symbol there is refused. */
+const isMoneyField = (key: NumberKey) =>
+  key === 'basePay' || key === 'guaranteedBonus' || key === 'variablePay';
 
 type NumberKey =
   | 'basePay'
@@ -727,12 +921,23 @@ type AmountFieldProps = {
   parse: (text: string) => ParsedAmount;
   /** What a typed percentage is a share of. When it changes, a percentage is worked out again. */
   percentOf?: number | null;
-  onCommit: (value: number | null, percent: number | null) => void;
+  /** The currency symbol a stored amount was typed with, other than dollars. */
+  symbol?: string | null;
+  /** `currency` is the symbol typed, or undefined when none was. */
+  onCommit: (value: number | null, percent: number | null, currency?: string) => void;
 };
 
 /** What the field shows for a stored amount: the percentage it was typed as, or the number. */
-const shownText = (value: number | null, percent: number | null | undefined) =>
-  typeof percent === 'number' ? `${percent}%` : value === null ? '' : String(value);
+const shownText = (
+  value: number | null,
+  percent: number | null | undefined,
+  symbol?: string | null
+) =>
+  typeof percent === 'number'
+    ? `${percent}%`
+    : value === null
+      ? ''
+      : `${symbol && symbol !== '$' ? symbol : ''}${value}`;
 
 /**
  * A pay field that keeps what was typed. "62k" and "5%" are understood and
@@ -746,9 +951,10 @@ function AmountField({
   percent,
   parse,
   percentOf,
+  symbol,
   onCommit,
 }: AmountFieldProps) {
-  const [text, setText] = React.useState(shownText(value, percent));
+  const [text, setText] = React.useState(shownText(value, percent, symbol));
   const [error, setError] = React.useState<string | null>(null);
   const lastCommitted = React.useRef(value);
   const noteId = React.useId();
@@ -758,7 +964,7 @@ function AmountField({
   React.useEffect(() => {
     if (value === lastCommitted.current) return;
     lastCommitted.current = value;
-    setText(shownText(value, percent));
+    setText(shownText(value, percent, symbol));
     setError(null);
   }, [value]);
 
@@ -767,7 +973,12 @@ function AmountField({
     const parsed = parse(next);
     setError(parsed.ok ? null : parsed.error);
     lastCommitted.current = parsed.value;
-    onCommit(parsed.value, parsed.ok ? (parsed.percent ?? null) : null);
+    onCommit(
+      parsed.value,
+      parsed.ok ? (parsed.percent ?? null) : null,
+      // A dollar sign typed again returns the offer to dollars.
+      parsed.ok ? (parsed.currency ?? (next.includes('$') ? '$' : undefined)) : undefined
+    );
   };
 
   // "5%" of the base pay is a different amount once the base pay is corrected.
@@ -780,7 +991,11 @@ function AmountField({
   }, [percentOf]);
 
   const understood =
-    !error && value !== null && text.trim() !== '' && String(value) !== text.trim();
+    !error &&
+    value !== null &&
+    text.trim() !== '' &&
+    shownText(value, null, symbol) !== text.trim() &&
+    String(value) !== text.trim();
   const note =
     error ??
     (understood
