@@ -7,6 +7,7 @@ import {
   questionFits,
   questionsFor,
   resolveQuestionText,
+  SKILL_MAP,
   usesStudentExamples,
 } from '../../lib/glowup-banks';
 import {
@@ -15,6 +16,7 @@ import {
   type GlowUpData,
   getTopGaps,
   type InterviewPacket,
+  type KeptAnswer,
   READINESS,
   readinessLabel,
   readinessOf,
@@ -51,6 +53,23 @@ export const newStoryEditor = (skillId?: string): StoryEditor => ({
   },
 });
 
+/**
+ * A story editor opened on an answer kept in the rehearsal room: the answer
+ * becomes what you did, the question it answered is attached, and the
+ * question's first skill is picked. The rest is the visitor's to write.
+ */
+export function storyEditorFromAnswer(answer: KeptAnswer): StoryEditor {
+  const editor = newStoryEditor(answer.skillIds.find((id) => SKILL_MAP.has(id)));
+  return {
+    ...editor,
+    formData: {
+      ...editor.formData,
+      play: answer.text.trim(),
+      questionPrompts: [answer.questionId ?? answer.question],
+    },
+  };
+}
+
 type Props = {
   data: GlowUpData;
   setData: React.Dispatch<React.SetStateAction<GlowUpData>>;
@@ -63,17 +82,28 @@ type Props = {
   onEditorChange?: React.Dispatch<React.SetStateAction<StoryEditor>>;
 };
 
-/** The one line the cheat sheet shows: the proof's first sentence, kept short. */
+/**
+ * The one line the cheat sheet shows: the proof's first sentence, or, when
+ * that holds no number and a later one does, the first sentence with a
+ * number, since a measure is what the line is for. Kept short.
+ */
 export function proofLine(proof: string): string {
   const text = proof.replace(/\s+/g, ' ').trim();
   if (!text) return '';
-  const sentence = (text.match(/^[^.!?]+[.!?]?/)?.[0] ?? text).trim();
+  // A sentence ends at . ! or ? before a space, so "4.1%" stays whole.
+  const sentences = text.split(/(?<=[.!?])\s+/).filter(Boolean);
+  const first = sentences[0] ?? text;
+  const sentence = (
+    /\d/.test(first) ? first : (sentences.find((s) => /\d/.test(s)) ?? first)
+  ).trim();
   if (sentence.length <= 100) return sentence;
   const cut = sentence.slice(0, 100);
   return `${cut.slice(0, Math.max(cut.lastIndexOf(' '), 60)).trimEnd()}\u2026`;
 }
 
 const MAX_SKILL_SUGGESTIONS = 8;
+/** Gaps shown before "Show all". */
+const GAPS_SHOWN = 5;
 
 /** Placeholders and prompts in the visitor's register. */
 const EXAMPLES = {
@@ -83,6 +113,13 @@ const EXAMPLES = {
     proof: 'A grade, a before and after, what an instructor or manager said...',
     proofHint:
       'Numbers you can stand behind, feedback, or a before and after. No business numbers? A grade, the size of the job, or what an instructor said counts too.',
+  },
+  experienced: {
+    trigger: 'Peak-season reset, carrier switch',
+    hook: 'Late orders climbed every peak season and nobody owned the fix...',
+    proof: 'Money saved, a rate that moved, a team that stayed, what a client or director said...',
+    proofHint:
+      'Numbers you can stand behind: a budget you held, a rate before and after, a deadline met, people kept. Name your part, not only the team result.',
   },
   work: {
     trigger: 'Holiday schedule, freight backlog',
@@ -104,12 +141,14 @@ export default function StoriesSection({
   onEditorChange,
 }: Props) {
   const student = usesStudentExamples(audience);
-  const examples = student ? EXAMPLES.student : EXAMPLES.work;
+  const seasoned = audience === 'experienced';
+  const examples = student ? EXAMPLES.student : seasoned ? EXAMPLES.experienced : EXAMPLES.work;
   const [ownEditor, setOwnEditor] = React.useState<StoryEditor>(CLOSED_EDITOR);
   const { editingId, formData } = liftedEditor ?? ownEditor;
   const setEditor = onEditorChange ?? setOwnEditor;
   const setFormData = (next: Partial<Story>) => setEditor((prev) => ({ ...prev, formData: next }));
   const [customQuestion, setCustomQuestion] = React.useState('');
+  const [showAllGaps, setShowAllGaps] = React.useState(false);
   const [showGeneralQuestions, setShowGeneralQuestions] = React.useState(false);
   const [announcement, announce] = useAnnouncer();
   // Where focus goes when the editor opens or closes: the editor's heading, or
@@ -240,7 +279,7 @@ export default function StoriesSection({
           {topGaps.length > 0 && (
             <>
               <span className="text-sm text-muted-foreground">Start with a gap:</span>
-              {topGaps.map((skillId) => (
+              {(showAllGaps ? topGaps : topGaps.slice(0, GAPS_SHOWN)).map((skillId) => (
                 <button
                   key={skillId}
                   type="button"
@@ -251,6 +290,16 @@ export default function StoriesSection({
                   {getSkillName(skillId)}
                 </button>
               ))}
+              {topGaps.length > GAPS_SHOWN && (
+                <button
+                  type="button"
+                  aria-expanded={showAllGaps}
+                  onClick={() => setShowAllGaps((open) => !open)}
+                  className="inline-flex min-h-6 items-center rounded px-1 text-sm text-foam underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+                >
+                  {showAllGaps ? 'Show fewer' : `Show all ${topGaps.length}`}
+                </button>
+              )}
             </>
           )}
         </div>
@@ -331,6 +380,42 @@ export default function StoriesSection({
                   budget), a before and after, classmates using what you made, or what an instructor
                   said.
                 </p>
+              </div>
+            </details>
+          ) : seasoned ? (
+            <details className="rounded-lg border border-gold/30 bg-gold/5 px-4 py-3">
+              <summary className="cursor-pointer text-sm font-medium text-foreground">
+                Where to find stories from your work
+              </summary>
+              <div className="mt-3 space-y-2 text-xs leading-relaxed text-muted-foreground">
+                <p>Senior interviews ask for decisions and results. Look at:</p>
+                <ul className="list-inside list-disc space-y-1 pl-2">
+                  <li>
+                    <strong>A number you owned:</strong> a budget, a target, a rate, and one time it
+                    moved the wrong way.
+                  </li>
+                  <li>
+                    <strong>A change you led:</strong> how it worked before, how you got people to
+                    adopt it, and what it is now.
+                  </li>
+                  <li>
+                    <strong>A hard call:</strong> a decision you made without all the facts, and
+                    what happened.
+                  </li>
+                  <li>
+                    <strong>People:</strong> a hire, someone who was not performing, a team you kept
+                    through a hard stretch.
+                  </li>
+                  <li>
+                    <strong>Influence:</strong> a peer team, a vendor, or a senior leader you moved
+                    without authority over them.
+                  </li>
+                  <li>
+                    <strong>A miss:</strong> a target you missed, what you owned, and what you
+                    changed after.
+                  </li>
+                </ul>
+                <p>Say it in the words this posting uses, but only for work you really did.</p>
               </div>
             </details>
           ) : (
@@ -828,7 +913,9 @@ export default function StoriesSection({
           <p className="mt-2 text-xs text-muted-foreground">
             {student
               ? 'No work experience yet? Class projects, internships, club events, part-time jobs, and volunteering all produce stories.'
-              : 'Any job produces stories: a hard shift, a schedule you fixed, a customer you kept, a count that finally matched.'}
+              : seasoned
+                ? 'Your work already holds the stories: a budget you owned, a change you led, a hard call, a person you developed.'
+                : 'Any job produces stories: a hard shift, a schedule you fixed, a customer you kept, a count that finally matched.'}
           </p>
         </div>
       )}
