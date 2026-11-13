@@ -380,12 +380,12 @@ export default function ApplicationDesk() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {applications.applications.length > 1 && (
-            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            <label className="flex min-w-0 max-w-full flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <span>Switch</span>
               <select
                 value={application.id}
                 onChange={(event) => focusOn(event.target.value)}
-                className="h-9 max-w-[14rem] rounded-md border border-border/50 bg-transparent px-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                className="h-auto min-h-9 w-full min-w-0 max-w-[14rem] rounded-md border border-border/50 bg-transparent px-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {applications.applications.map((item) => (
                   <option key={item.id} value={item.id}>

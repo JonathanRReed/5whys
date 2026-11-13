@@ -109,6 +109,12 @@ export type ExportOptions = {
    * One whose line is missing from the copy goes after the last bullet.
    */
   addedBullets?: readonly { afterLineId: string; text: string }[];
+  /**
+   * When an added bullet has no line to follow (a resume with no job on it
+   * yet), the heading it goes under at the end, such as "Experience". Without
+   * it, such a bullet follows the last bullet in the resume.
+   */
+  looseHeading?: string;
   /** Omit to preserve dates exactly as written. */
   dateStyle?: DateStyle;
 };

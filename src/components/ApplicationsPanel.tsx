@@ -443,7 +443,7 @@ export default function ApplicationsPanel({ applications, readiness, onChanged }
                     title={app.title}
                     onChange={(sentOn) => sent(app, sentOn)}
                   />
-                  <label className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
+                  <label className="ml-auto flex min-w-0 max-w-full flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     Deadline
                     <input
                       type="date"

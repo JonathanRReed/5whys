@@ -167,6 +167,20 @@ export default function CareerDashboard() {
 
   React.useEffect(() => {
     setData(readSafely());
+    // Work is often done in another tab while this one stays open: read
+    // again when storage changes and when the visitor comes back to it.
+    const reread = () => setData(readSafely());
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') reread();
+    };
+    window.addEventListener('storage', reread);
+    window.addEventListener('focus', reread);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.removeEventListener('storage', reread);
+      window.removeEventListener('focus', reread);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, []);
 
   if (data === undefined) {

@@ -18,6 +18,7 @@ import {
   type TrackedApplication,
 } from '../../lib/applications';
 import { RESUME_SESSION_KEY, readResumeRewrites, readResumeText } from '../../lib/career-bridge';
+import { forgetDeskDrafts } from '../../lib/desk-drafts';
 import { onDeviceCleared } from '../../lib/device-events';
 import {
   createDefaultData,
@@ -159,6 +160,12 @@ export function useDesk(options: { snapshot?: () => string } = {}): DeskState {
 
   const refresh = React.useCallback(
     (cause?: 'cleared') => {
+      if (cause === 'cleared') {
+        // Everything was asked to go: that includes text this page was only
+        // holding to be copied out, and anything typed but not yet added.
+        forgetDeskDrafts();
+        setLost((current) => (current ? { ...current, reason: 'cleared', text: '' } : current));
+      }
       const apps = held.current.applications ?? loadApplications();
       const id = selected.current;
       if (id && !apps.applications.some((a) => a.id === id)) {

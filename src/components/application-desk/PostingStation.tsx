@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { remapQualifications } from '../../lib/application-desk';
 import { updateApplication } from '../../lib/applications';
+import { keepDeskDraft, readDeskDraft } from '../../lib/desk-drafts';
 import { detectSkillsFromText } from '../../lib/glowup-banks';
 import {
   createRole,
@@ -153,9 +154,16 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
     );
   }, [sourceText, requirements]);
 
+  // An edit not yet decoded stays with its application when the visitor
+  // switches to another and comes back; otherwise the box shows the posting.
+  const draftFor = application?.id ?? '';
   React.useEffect(() => {
-    setDraft(role?.rawJdText ?? '');
-  }, [role?.rawJdText]);
+    setDraft(readDeskDraft(draftFor, 'posting') ?? role?.rawJdText ?? '');
+  }, [role?.rawJdText, draftFor]);
+  React.useEffect(() => {
+    if (!draftFor) return;
+    keepDeskDraft(draftFor, 'posting', draft !== (role?.rawJdText ?? '') ? draft : null);
+  }, [draft, draftFor, role?.rawJdText]);
 
   // A posting pasted into the homepage demo is waiting in this tab: use it for
   // an application that has no posting yet, once.

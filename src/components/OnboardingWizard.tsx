@@ -1,8 +1,10 @@
 import * as React from 'react';
 import {
+  clearProfile,
   FOCUS_LABELS,
   isFocus,
   isStageAnswer,
+  profileSaved,
   readProfile,
   STAGE_LABELS,
   stageAnswer,
@@ -282,6 +284,7 @@ export default function OnboardingWizard() {
   const [step, setStep] = React.useState(0);
   const [answers, setAnswers] = React.useState<Record<number, string>>({});
   const [done, setDone] = React.useState(false);
+  const [unsaved, setUnsaved] = React.useState(false);
   const [restored, setRestored] = React.useState(false);
   const headingRef = React.useRef<HTMLHeadingElement>(null);
   const [navigation, setNavigation] = React.useState(0);
@@ -330,7 +333,9 @@ export default function OnboardingWizard() {
     }
     // The two answers become the studio's profile so every tool can default
     // to the right register (student samples, interest track first, and so on).
-    if (isStageAnswer(next[0]) && isFocus(next[1])) writeProfile(next[0], next[1]);
+    if (isStageAnswer(next[0]) && isFocus(next[1])) {
+      setUnsaved(!profileSaved(writeProfile(next[0], next[1])));
+    }
     setDone(true);
   };
 
@@ -347,6 +352,9 @@ export default function OnboardingWizard() {
   };
 
   const handleStartOver = () => {
+    // "Clear both answers" means the saved ones too, not only this screen.
+    clearProfile();
+    setUnsaved(false);
     changedAt.current = performance.now();
     setNavigation((n) => n + 1);
     setAnswers({});
@@ -400,6 +408,12 @@ export default function OnboardingWizard() {
             {isStageAnswer(answers[0]) && isFocus(answers[1]) ? ' · ' : ''}
             {isFocus(answers[1]) ? FOCUS_LABELS[answers[1]] : ''}
           </p>
+          {unsaved && (
+            <p role="alert" className="rounded-lg bg-gold/12 px-3 py-2 text-sm text-foreground">
+              This browser would not save your answers. The suggestion below is for this visit only,
+              and the tools will use student examples until the review is saved.
+            </p>
+          )}
           <div className="flex flex-wrap justify-center gap-2">
             <button type="button" onClick={handleBack} className={quiet}>
               Change the last answer

@@ -223,3 +223,18 @@ describe('links inside a resume', () => {
     expect(texts.indexOf('avery@example.edu')).toBeLessThan(texts.indexOf('PROJECTS'));
   });
 });
+
+describe('a resume with no job on it', () => {
+  it('gives an added bullet its own section instead of putting it under Education', () => {
+    const doc = fromText(
+      'Riya Shah\nriya@example.edu\n\nEDUCATION\nState University, B.S. Computer Science, expected 2027\n- Built 4 research projects in Python.'
+    );
+    const texts = toPrintModel(doc, {
+      addedBullets: [{ afterLineId: '', text: 'Tutored 12 first-year students in calculus' }],
+      looseHeading: 'EXPERIENCE',
+    }).paragraphs.map((p) => `${p.kind}:${p.text}`);
+    const heading = texts.indexOf('heading:EXPERIENCE');
+    expect(heading).toBeGreaterThan(texts.indexOf('bullet:Built 4 research projects in Python.'));
+    expect(texts[heading + 1]).toBe('bullet:Tutored 12 first-year students in calculus');
+  });
+});

@@ -409,3 +409,49 @@ test.describe('finding 20: the career review at phone width', () => {
     expect(box?.width ?? 0).toBeGreaterThan(250);
   });
 });
+
+test('clearing the career review forgets the saved answers too', async ({ page }) => {
+  await useStudentProfile(page);
+  await page.goto('/start/');
+  await waitForHydration(page);
+  await expect(page.getByText(/Welcome back/)).toBeVisible();
+  await page.getByRole('button', { name: 'Start over' }).click();
+  await page.getByRole('button', { name: 'Clear both answers' }).click();
+  // The saved answers are gone, not only this screen. (The test's own
+  // profile helper writes it again on every load, so a reload proves nothing.)
+  expect(await readStorage(page, 'career-tools-profile')).toBeNull();
+  await expect(page.getByText(/Welcome back/)).toHaveCount(0);
+});
+
+test('the dashboard follows an application added in another tab', async ({ page, context }) => {
+  await useStudentProfile(page);
+  await seed(page, [{ id: 'a', title: 'Library assistant' }]);
+  const dashboard = await open(context, '/dashboard/');
+  await expect(dashboard.getByText('Library assistant').first()).toBeVisible();
+  const other = await open(context, '/dashboard/');
+  await other.evaluate(() => {
+    const data = JSON.parse(localStorage.getItem('career-applications') ?? '{}');
+    data.applications[0].title = 'Research assistant';
+    localStorage.setItem('career-applications', JSON.stringify(data));
+  });
+  await dashboard.bringToFront();
+  await expect(dashboard.getByText('Research assistant').first()).toBeVisible();
+  await expect(dashboard.getByText('Library assistant')).toHaveCount(0);
+});
+
+test('an unfinished step stays with its application across a switch', async ({ page }) => {
+  await useStudentProfile(page);
+  await seed(page, [
+    { id: 'a', title: 'Library assistant' },
+    { id: 'b', title: 'Research assistant' },
+  ]);
+  await page.goto('/application/?id=a&station=posting');
+  await waitForHydration(page);
+  await page.getByLabel('Job description').fill('A posting half typed for the library role');
+  await page.getByLabel('Switch').selectOption('b');
+  await expect(page.getByLabel('Job description')).toHaveValue('');
+  await page.getByLabel('Switch').selectOption('a');
+  await expect(page.getByLabel('Job description')).toHaveValue(
+    'A posting half typed for the library role'
+  );
+});

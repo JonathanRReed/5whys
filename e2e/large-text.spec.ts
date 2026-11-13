@@ -24,11 +24,34 @@ const ROUTES = [
 
 test.use({ viewport: { width: 390, height: 844 } });
 
-for (const route of ROUTES) {
+/** Several tracked applications with long names, as a busy visitor would have. */
+const APPLICATIONS = {
+  version: 1,
+  activeId: 'a',
+  applications: [
+    ['a', 'Summer Operations Intern', 'Cedar Valley Parks and Recreation'],
+    ['b', 'Community Programs Assistant', 'Harbor Street Food Bank'],
+    ['c', 'Camp Counselor', 'Lakeside YMCA'],
+  ].map(([id, title, company]) => ({
+    id,
+    title,
+    company,
+    deadline: '2026-12-01',
+    roleId: null,
+    createdAt: 1,
+    updatedAt: 1,
+  })),
+};
+
+for (const route of [...ROUTES, '/application/?busy', '/dashboard/?busy']) {
   test(`${route} reflows at 200 percent text in OpenDyslexic`, async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('career-tools-font', 'dyslexic');
-    });
+    await page.addInitScript(
+      ({ busy, applications }) => {
+        localStorage.setItem('career-tools-font', 'dyslexic');
+        if (busy) localStorage.setItem('career-applications', JSON.stringify(applications));
+      },
+      { busy: route.endsWith('?busy'), applications: APPLICATIONS }
+    );
     await page.goto(route);
     await waitForHydration(page);
     await page.addStyleTag({ content: 'html{font-size:200% !important}' });

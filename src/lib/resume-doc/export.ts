@@ -180,8 +180,17 @@ export function toPrintModel(doc: ResumeDoc, options: ExportOptions = {}): Print
   ]);
   // A line that no longer exists in the resume at all: after the last bullet.
   if (loose.length > 0) {
-    const at = paragraphs.findLastIndex((paragraph) => paragraph.kind === 'bullet');
-    paragraphs.splice(at === -1 ? paragraphs.length : at + 1, 0, ...loose);
+    if (options.looseHeading) {
+      // Work with no job to sit under gets its own section, not a place
+      // under Education or Skills.
+      paragraphs.push(
+        { lineId: 'added-heading', kind: 'heading', text: options.looseHeading },
+        ...loose
+      );
+    } else {
+      const at = paragraphs.findLastIndex((paragraph) => paragraph.kind === 'bullet');
+      paragraphs.splice(at === -1 ? paragraphs.length : at + 1, 0, ...loose);
+    }
   }
   return {
     fontFamily: 'Arial',

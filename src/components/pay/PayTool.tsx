@@ -280,7 +280,17 @@ export default function PayTool() {
       ? ''
       : `Works out to ${[shown.hourly, shown.weekly, shown.base]
           .filter((text) => text !== NEEDS_MORE)
-          .join(', ')}, before taxes.`,
+          .join(', ')}, before taxes.${
+          equivalents.annualGuaranteed !== null &&
+          equivalents.annualGuaranteed !== equivalents.annualBase
+            ? ` With the guaranteed bonus, ${money(equivalents.annualGuaranteed, period, symbol)}.`
+            : ''
+        }${
+          equivalents.annualWithVariable !== null &&
+          equivalents.annualWithVariable !== equivalents.annualGuaranteed
+            ? ` If the pay that is not promised comes through, ${money(equivalents.annualWithVariable, period, symbol)}.`
+            : ''
+        }`,
     offerEdited
   );
   const hasBonus =

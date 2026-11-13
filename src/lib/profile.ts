@@ -68,6 +68,26 @@ export function readProfile(): CareerProfile | null {
   }
 }
 
+/** Forget the saved career review. */
+export function clearProfile(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(PROFILE_STORAGE_KEY);
+  } catch {
+    /* storage unavailable: there was nothing saved to forget */
+  }
+}
+
+/** True when the last career review could not be saved on this device. */
+export function profileSaved(profile: CareerProfile): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return window.localStorage.getItem(PROFILE_STORAGE_KEY) === JSON.stringify(profile);
+  } catch {
+    return false;
+  }
+}
+
 export function writeProfile(answer: StageAnswer, focus: CareerFocus): CareerProfile {
   const profile: CareerProfile =
     answer === 'first-job'

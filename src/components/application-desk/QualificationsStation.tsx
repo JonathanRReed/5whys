@@ -8,6 +8,7 @@ import {
 } from '../../lib/application-desk';
 import { shortDate } from '../../lib/applications';
 import { describeStanding, deskRequirements, standing } from '../../lib/desk-checks';
+import { keepDeskDraft, readDeskDraft } from '../../lib/desk-drafts';
 import {
   type CoverageRow,
   describeParts,
@@ -86,8 +87,19 @@ const PLAN_PROMPT: Record<QualificationStatus, string> = {
 
 export default function QualificationsStation({ desk }: { desk: DeskState }) {
   const { application, role, resumeText, changeDesks } = desk;
-  const [step, setStep] = React.useState('');
-  const [due, setDue] = React.useState('');
+  // A step being typed stays with its application when the visitor switches
+  // to another and comes back.
+  const draftFor = desk.application?.id ?? '';
+  const [step, setStepState] = React.useState(() => readDeskDraft(draftFor, 'step') ?? '');
+  const [due, setDueState] = React.useState(() => readDeskDraft(draftFor, 'due') ?? '');
+  const setStep = (value: string) => {
+    setStepState(value);
+    if (draftFor) keepDeskDraft(draftFor, 'step', value || null);
+  };
+  const setDue = (value: string) => {
+    setDueState(value);
+    if (draftFor) keepDeskDraft(draftFor, 'due', value || null);
+  };
 
   // Work authorization, a minimum age, a background check: kept apart, because
   // they are not skills to show or to get.

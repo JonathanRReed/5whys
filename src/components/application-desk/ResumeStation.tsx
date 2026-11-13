@@ -349,12 +349,21 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
       included: slot.included,
     }))
     .filter((slot) => slot.text);
-  const defaultAfter =
-    defaultPlacement(
-      doc,
-      bullets.map((b) => b.id)
-    ) ?? bullets[bullets.length - 1].id;
+  // The last bullet of the most recent job. A resume with no job on it (only
+  // school, say) has none: bullets written here then get an Experience
+  // section of their own, instead of landing under Education.
+  const jobAnchor = defaultPlacement(
+    doc,
+    bullets.map((b) => b.id)
+  );
+  const NEW_SECTION = '';
+  const defaultAfter = jobAnchor ?? NEW_SECTION;
   const placeOf = (after: string | null) => (after && known.has(after) ? after : defaultAfter);
+  const headingsAreCapitals = doc.sections.some((section) => {
+    const heading = doc.lines.find((line) => line.id === section.headingLineId)?.text ?? '';
+    return /[A-Z]/.test(heading) && heading === heading.toUpperCase();
+  });
+  const looseHeading = headingsAreCapitals ? 'EXPERIENCE' : 'Experience';
   const place = (index: 0 | 1, slot: { bulletId?: string; included?: boolean }) =>
     changeDesks((data) => updateBulletsFlow(data, appId, { bullet: { index, slot } }));
   const addedBullets = written
@@ -384,7 +393,12 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
       // Only the bullets the visitor can choose are filtered. A skills or
       // certifications list is made of list lines too, and it stays whole.
       const keep = new Set([...selected, ...listedLineIds(doc)]);
-      const bytes = await toDocx(doc, { bulletLineIds: keep, addedBullets, rewrites });
+      const bytes = await toDocx(doc, {
+        bulletLineIds: keep,
+        addedBullets,
+        rewrites,
+        looseHeading,
+      });
       const url = URL.createObjectURL(
         new Blob([bytes as BlobPart], {
           type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -527,7 +541,7 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
           </h3>
           <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
             {written.every((slot) => slot.included)
-              ? `${written.length === 1 ? 'This bullet is' : 'Both are'} in the copy for this role, after the last bullet of your most recent job. Untick one to leave it out, or choose where it goes.`
+              ? `${written.length === 1 ? 'This bullet is' : 'Both are'} in the copy for this role, ${jobAnchor ? 'after the last bullet of your most recent job' : 'under an Experience heading of their own, because this resume lists no job yet'}. Untick one to leave it out, or choose where it goes.`
               : 'A ticked bullet is in the copy for this role. Tick one to put it back.'}{' '}
             To keep one for every application, add it to your resume in the Resume Game.
           </p>
@@ -573,6 +587,9 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
                         onChange={(event) => place(slot.index, { bulletId: event.target.value })}
                         className="h-10 max-w-full min-w-0 flex-1 rounded-md border border-border/50 bg-transparent px-1.5 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                       >
+                        {!jobAnchor && (
+                          <option value={NEW_SECTION}>A new Experience section</option>
+                        )}
                         {bullets.map((bullet) => (
                           <option key={bullet.id} value={bullet.id}>
                             {bullet.text.length > 70
