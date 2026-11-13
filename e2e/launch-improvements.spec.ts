@@ -135,8 +135,9 @@ test('the letter uses the proof already written and shows whole', async ({ page 
 
   await page.getByRole('tab', { name: /Letter/ }).click();
   await page.getByRole('button', { name: 'Start from what you marked "have it"' }).click();
+  // The skill first, then the proof the visitor wrote for it.
   await expect(page.getByLabel(/Why you/)).toHaveValue(
-    'Cashier at FreshWay Market since 2025, I help customers every shift.'
+    'Customer service: Cashier at FreshWay Market since 2025, I help customers every shift.'
   );
   await page.getByLabel(/Name the role with a hook/).fill('I kept the weekly counts at FreshWay.');
   const preview = page.getByTestId('letter-preview').first();
