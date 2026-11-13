@@ -1,7 +1,7 @@
 import { loadFeature } from '../lazy-feature';
 import { extractDocx } from './docx';
 import { logicalLines } from './layout';
-import { linearize, moveContactToTop, normalizeDates } from './repairs';
+import { contactLineIds, linearize, moveContactToTop, normalizeDates } from './repairs';
 import type { ExportCheck, ExportOptions, PrintModel, PrintParagraph, ResumeDoc } from './types';
 
 const MARKER = /^\s*[-–•*◦○●▪·o]\s+/;
@@ -26,11 +26,7 @@ function cleanCopy(doc: ResumeDoc, options: ExportOptions): ResumeDoc {
 }
 export function toPrintModel(doc: ResumeDoc, options: ExportOptions = {}): PrintModel {
   const copy = cleanCopy(doc, options);
-  const contactIds = new Set([
-    copy.contact.email?.lineId,
-    copy.contact.phone?.lineId,
-    ...copy.contact.links.map((field) => field.lineId),
-  ]);
+  const contactIds = contactLineIds(copy);
   const headings = new Set(copy.sections.map((section) => section.headingLineId));
   const rewritten = new Map(
     (options.rewrites ?? [])

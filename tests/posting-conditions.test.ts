@@ -28,6 +28,8 @@ describe('conditions of hiring', () => {
     '15+ years of progressive leadership experience',
     'Experience organizing people, events, or schedules',
     'Background in biology or a related field',
+    'Experience in drug testing procedures',
+    'Conduct background checks for new hires',
   ])('leaves "%s" as a qualification', (text) => {
     expect(hiringCondition(text)).toBeNull();
   });

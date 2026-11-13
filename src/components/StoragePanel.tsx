@@ -54,6 +54,9 @@ export default function StoragePanel() {
       setNotice(
         'Most of it is gone, but something is still open in another tab. Close the other tabs for this site and clear again.'
       );
+      // The message is shown with the details, so open them: someone clearing
+      // a shared computer must see that work may remain.
+      setOpen(true);
       await measure();
       return;
     }

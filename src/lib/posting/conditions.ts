@@ -26,7 +26,7 @@ export interface HiringCondition {
   note: string;
 }
 
-const CONDITIONS: readonly (HiringCondition & { pattern: RegExp })[] = [
+const CONDITIONS: readonly (HiringCondition & { pattern: RegExp; unless?: RegExp })[] = [
   {
     kind: 'security-clearance',
     label: 'Security clearance',
@@ -64,6 +64,10 @@ const CONDITIONS: readonly (HiringCondition & { pattern: RegExp })[] = [
     label: 'Background check',
     pattern:
       /\bbackground (?:check|screen(?:ing)?|investigation)s?\b|\bdrug (?:test|screen)(?:ing)?s?\b|\bcriminal (?:record|history)\b|\be-?verify\b/i,
+    // Doing this work is a skill: "Experience in drug testing procedures",
+    // "Conduct background checks for new hires".
+    unless:
+      /\b(?:experience|knowledge|familiar(?:ity)?|skilled|proficien\w+|expertise|conduct\w*|administer\w*|perform\w*|process\w*|review\w*|run|running|manage\w*|coordinat\w*)\b[^.]*\b(?:background|drug|criminal|e-?verify)/i,
     note: 'A check made during hiring, often after an offer. There is nothing to put on a resume. If you have a record, a legal aid office or a reentry program can explain what an employer where you live may ask and when.',
   },
   {
@@ -77,8 +81,8 @@ const CONDITIONS: readonly (HiringCondition & { pattern: RegExp })[] = [
 
 /** The condition a posting line states, or null when it is an ordinary qualification. */
 export function hiringCondition(text: string): HiringCondition | null {
-  for (const { pattern, kind, label, note } of CONDITIONS) {
-    if (pattern.test(text)) return { kind, label, note };
+  for (const { pattern, unless, kind, label, note } of CONDITIONS) {
+    if (pattern.test(text) && !unless?.test(text)) return { kind, label, note };
   }
   return null;
 }

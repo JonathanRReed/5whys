@@ -46,12 +46,28 @@ function reflow(doc: ResumeDoc, ids: string[]): ResumeDoc {
 export function linearize(doc: ResumeDoc): ResumeDoc {
   return reflow(doc, doc.geometricOrder);
 }
+/**
+ * The lines that are contact details. A line with an email address or a
+ * phone number is one. A line with a link is one only when it is a short row
+ * of its own ("linkedin.com/in/maya"): a bullet or a sentence that mentions a
+ * project's address is part of its section and stays there.
+ */
+export function contactLineIds(doc: ResumeDoc): Set<string> {
+  const byId = new Map(doc.lines.map((line) => [line.id, line]));
+  const ids = new Set<string>();
+  for (const field of [doc.contact.email, doc.contact.phone]) {
+    if (field) ids.add(field.lineId);
+  }
+  for (const link of doc.contact.links) {
+    const line = byId.get(link.lineId);
+    if (!line || ids.has(line.id)) continue;
+    const words = line.text.trim().split(/\s+/).length;
+    if (!line.bullet && !line.continuationOf && words <= 6) ids.add(line.id);
+  }
+  return ids;
+}
 export function moveContactToTop(doc: ResumeDoc): ResumeDoc {
-  const contactIds = new Set([
-    doc.contact.email?.lineId,
-    doc.contact.phone?.lineId,
-    ...doc.contact.links.map((field) => field.lineId),
-  ]);
+  const contactIds = contactLineIds(doc);
   const order = doc.geometricOrder;
   const first = order.find((id) => !contactIds.has(id));
   const firstLine = doc.lines.find((line) => line.id === first);

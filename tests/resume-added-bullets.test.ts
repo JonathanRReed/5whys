@@ -208,3 +208,18 @@ describe('sixth review round', () => {
     expect(check?.detail).toContain('[Hiring Manager]');
   });
 });
+
+describe('links inside a resume', () => {
+  it('keeps a project link with its project and moves a contact link to the top', () => {
+    const doc = fromText(
+      'Avery Chen\n\nPROJECTS\n- Built an accessible event guide: https://github.com/avery/events\n\nlinkedin.com/in/avery\navery@example.edu'
+    );
+    const paragraphs = toPrintModel(doc).paragraphs;
+    const texts = paragraphs.map((p) => p.text);
+    const project = paragraphs.find((p) => p.text.includes('event guide'));
+    expect(project?.kind).toBe('bullet');
+    expect(texts.indexOf(project?.text ?? '')).toBeGreaterThan(texts.indexOf('PROJECTS'));
+    expect(texts.indexOf('linkedin.com/in/avery')).toBeLessThan(texts.indexOf('PROJECTS'));
+    expect(texts.indexOf('avery@example.edu')).toBeLessThan(texts.indexOf('PROJECTS'));
+  });
+});
