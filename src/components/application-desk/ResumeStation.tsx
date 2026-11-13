@@ -52,6 +52,23 @@ function wordsOf(text: string): string {
 }
 
 /**
+ * A pasted resume often has no bullet marks. The lines the Resume Game reads
+ * as achievements are its bullets, so they can be chosen here too.
+ */
+export function withAchievementLines(doc: ResumeDoc, achievements: readonly string[]): ResumeDoc {
+  const found = new Set(achievements.map(wordsOf));
+  if (found.size === 0) return doc;
+  return {
+    ...doc,
+    lines: doc.lines.map((line) =>
+      !line.bullet && !line.continuationOf && found.has(wordsOf(line.text))
+        ? { ...line, bullet: true }
+        : line
+    ),
+  };
+}
+
+/**
  * Whether a saved document is the resume in the text: most of its bullets
  * still appear there. Edits to a few lines keep the document; a different
  * resume does not.
@@ -117,7 +134,12 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
         // No uploaded file: a resume pasted into the Resume Game still counts.
         if (resumeText.trim()) {
           const { fromText } = await loadFeature(import('../../lib/resume-doc'));
-          if (!cancelled) setDoc(fromText(resumeText));
+          const { detectResumeStructure } = await loadFeature(import('../../lib/resume-game'));
+          if (!cancelled) {
+            setDoc(
+              withAchievementLines(fromText(resumeText), detectResumeStructure(resumeText).bullets)
+            );
+          }
         } else {
           setDoc(null);
         }

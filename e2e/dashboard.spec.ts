@@ -60,7 +60,11 @@ test('the dashboard turns saved work into next actions and links', async ({ page
 test('the dashboard says so when the whole loop is closed', async ({ page }) => {
   await page.addInitScript(() => {
     const now = new Date().toISOString();
-    const deadline = new Date(Date.now() + 4 * 86400000).toISOString().slice(0, 10);
+    // Four days from today on the visitor's own calendar. The UTC date is
+    // already tomorrow in the evening west of Greenwich, which read as five.
+    const due = new Date();
+    due.setDate(due.getDate() + 4);
+    const deadline = `${due.getFullYear()}-${String(due.getMonth() + 1).padStart(2, '0')}-${String(due.getDate()).padStart(2, '0')}`;
     window.localStorage.setItem(
       'career-why-history',
       JSON.stringify([

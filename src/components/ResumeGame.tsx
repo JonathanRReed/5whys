@@ -101,6 +101,19 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
         .map((bullet) => ({ original: bullet.original, improved: bullet.improved })),
     [bullets]
   );
+  // The posting is compared with the resume as it will be exported: the
+  // original text with each rewritten line in its new wording.
+  const matchText = React.useMemo(
+    () =>
+      rewrites.reduce(
+        (text, rewrite) =>
+          rewrite.original.trim() && text.includes(rewrite.original)
+            ? text.replace(rewrite.original, () => rewrite.improved)
+            : text,
+        resumeText
+      ),
+    [rewrites, resumeText]
+  );
   const selectedBulletId = session.selectedBulletId;
   const selectedBullet = bullets.find((bullet) => bullet.id === selectedBulletId) ?? null;
   const signalReport = session.signalReport ?? EMPTY_SIGNAL_REPORT;
@@ -373,7 +386,7 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
 
       {resumeDoc && <MachineView doc={resumeDoc} onChange={keepResumeDoc} rewrites={rewrites} />}
 
-      <PostingMatch resumeText={resumeText} />
+      <PostingMatch resumeText={matchText} />
 
       {!scanComplete && resumeText.trim() && (
         <div className="rounded-2xl border border-dashed border-border/35 bg-overlay/15 p-8 text-center">

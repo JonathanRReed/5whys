@@ -323,15 +323,15 @@ export function readDateRange(
   const match = text.match(DATE_RANGE);
   if (!match) return null;
   const from = stampOf(match[1], match[2], match[3]);
-  if (match[7]) {
-    return {
-      from,
-      to: { year: today.getFullYear(), month: today.getMonth() + 1 },
-      ongoing: true,
-    };
-  }
+  const now: MonthStamp = { year: today.getFullYear(), month: today.getMonth() + 1 };
+  const months = (stamp: MonthStamp) => stamp.year * 12 + stamp.month;
+  // A role that has not started yet is not experience.
+  if (months(from) > months(now)) return null;
+  if (match[7]) return { from, to: now, ongoing: true };
   const to = stampOf(match[4], match[5], match[6]);
-  if (to.year * 12 + to.month < from.year * 12 + from.month) return null;
+  if (months(to) < months(from)) return null;
+  // An expected end date ("Jan 2025 - Dec 2027") counts only up to this month.
+  if (months(to) > months(now)) return { from, to: now, ongoing: true };
   return { from, to, ongoing: false };
 }
 

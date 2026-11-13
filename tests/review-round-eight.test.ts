@@ -71,3 +71,38 @@ describe('a dated job title that begins with a word that is also a verb', () => 
     );
   });
 });
+
+describe('ninth review round', () => {
+  it('does not count months that have not happened yet', async () => {
+    const { readDateRange } = await import('../src/lib/posting/resume-lines');
+    const today = new Date('2026-11-12');
+    expect(readDateRange('Analyst | Jan 2025 - Dec 2027', today)).toEqual({
+      from: { year: 2025, month: 1 },
+      to: { year: 2026, month: 11 },
+      ongoing: true,
+    });
+    expect(readDateRange('Analyst | Jan 2027 - Dec 2027', today)).toBeNull();
+    expect(readDateRange('Analyst | Jan 2022 - Jan 2023', today)?.ongoing).toBe(false);
+    const resume =
+      'Sam Lee\nsam@example.edu\n\nEXPERIENCE\nData Analyst | Jan 2025 - Dec 2027\n- Built weekly reports for the operations team';
+    expect(findRequirementEvidence('2 years of experience', resume, { today }).state).not.toBe(
+      'evidence'
+    );
+  });
+
+  it('reads unmarked achievement lines in a pasted resume as bullets', async () => {
+    const { withAchievementLines } = await import(
+      '../src/components/application-desk/ResumeStation'
+    );
+    const { fromText } = await import('../src/lib/resume-doc');
+    const { detectResumeStructure } = await import('../src/lib/resume-game');
+    const resume =
+      'Maya Torres\nmaya@example.edu\n\nExperience\nCampus Radio, Social Media Lead\nGrew the Instagram account from 400 to 2,100 followers by posting three times a week\nScheduled 12 volunteer DJs each week in a shared spreadsheet';
+    const found = detectResumeStructure(resume).bullets;
+    expect(found.length).toBeGreaterThan(0);
+    const plain = fromText(resume);
+    expect(plain.lines.filter((line) => line.bullet)).toHaveLength(0);
+    const doc = withAchievementLines(plain, found);
+    expect(doc.lines.filter((line) => line.bullet)).toHaveLength(found.length);
+  });
+});
