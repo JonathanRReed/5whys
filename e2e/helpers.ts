@@ -50,6 +50,9 @@ export async function rate(page: Page, label: string, value: number) {
   const group = page.getByRole('radiogroup', { name: label });
   // The radio is visually hidden inside its numbered label; click the label,
   // as a visitor would, then confirm the radio took it.
-  await group.locator('label').filter({ hasText: new RegExp(`^${value}$`) }).click();
+  await group
+    .locator('label')
+    .filter({ hasText: new RegExp(`^${value}$`) })
+    .click();
   await expect(group.getByRole('radio', { name: String(value), exact: true })).toBeChecked();
 }
