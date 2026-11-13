@@ -166,6 +166,23 @@ function normalizeStoredSession(value: unknown): StoredResumeSession {
   };
 }
 
+function readStoredSession(): string | null {
+  try {
+    return window.localStorage.getItem(SESSION_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function sessionFrom(stored: string | null): StoredResumeSession {
+  if (!stored) return EMPTY_SESSION;
+  try {
+    return normalizeStoredSession(JSON.parse(stored) as unknown);
+  } catch {
+    return EMPTY_SESSION;
+  }
+}
+
 function persistResumeSession(session: StoredResumeSession) {
   if (!isBrowser()) return true;
   try {
@@ -193,11 +210,16 @@ export function useResumeSession() {
   );
   const [storageNotice, setStorageNotice] = React.useState<string | null>(null);
 
+  // The saved text this tab last read or wrote. If storage holds something
+  // else when this tab saves, another tab saved newer work in between.
+  const lastSeen = React.useRef<string | null>(null);
+
   React.useEffect(() => {
     setMounted(true);
     if (!isBrowser()) return;
     try {
       const stored = window.localStorage.getItem(SESSION_STORAGE_KEY);
+      lastSeen.current = stored;
       if (stored) {
         const parsed = JSON.parse(stored) as unknown;
         setLoaded(normalizeStoredSession(parsed));
@@ -218,9 +240,37 @@ export function useResumeSession() {
     }
   }, []);
 
+  // Follow saves from other tabs, so an older tab never edits stale work.
+  React.useEffect(() => {
+    if (!isBrowser()) return;
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== SESSION_STORAGE_KEY && event.key !== null) return;
+      const stored = readStoredSession();
+      if (stored === lastSeen.current) return;
+      lastSeen.current = stored;
+      changed.current = false;
+      setLoaded(sessionFrom(stored));
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
   React.useEffect(() => {
     if (!mounted || !changed.current) return;
+    const stored = readStoredSession();
+    if (stored !== lastSeen.current) {
+      // Another tab saved after this one read. Writing now would put the
+      // older resume back over it, so show the newer one instead.
+      lastSeen.current = stored;
+      changed.current = false;
+      setLoaded(sessionFrom(stored));
+      setStorageNotice(
+        'This resume was changed in another tab. This page now shows that version, so make your last change again.'
+      );
+      return;
+    }
     const success = persistResumeSession(session);
+    if (success) lastSeen.current = readStoredSession();
     if (!success) {
       setStorageNotice('Auto-save is paused because browser storage is unavailable.');
     } else if (storageNotice) {
