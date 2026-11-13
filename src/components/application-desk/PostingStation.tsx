@@ -29,6 +29,7 @@ import {
   type SetAsideReason,
   setRequirementSection,
 } from '../../lib/posting';
+import { POSTING_HANDOFF_KEY } from '../../lib/posting-handoff';
 import { cn } from '../../lib/utils';
 import { withViewTransition } from '../../lib/view-transition';
 import Announcer, { useAnnouncer } from '../shared/Announcer';
@@ -155,6 +156,21 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
   React.useEffect(() => {
     setDraft(role?.rawJdText ?? '');
   }, [role?.rawJdText]);
+
+  // A posting pasted into the homepage demo is waiting in this tab: use it for
+  // an application that has no posting yet, once.
+  const hasPosting = Boolean(role?.rawJdText?.trim());
+  React.useEffect(() => {
+    if (!application || hasPosting) return;
+    try {
+      const waiting = window.sessionStorage.getItem(POSTING_HANDOFF_KEY);
+      if (!waiting?.trim()) return;
+      window.sessionStorage.removeItem(POSTING_HANDOFF_KEY);
+      setDraft(waiting);
+    } catch {
+      // Storage is blocked: the visitor pastes the posting here instead.
+    }
+  }, [application, hasPosting]);
 
   if (!application) return null;
   const showEditor = editing || !role || !sourceText.trim();

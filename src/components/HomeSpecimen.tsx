@@ -6,6 +6,7 @@ import {
   parsePosting,
   SAMPLE_POSTING,
 } from '../lib/posting';
+import { POSTING_HANDOFF_KEY } from '../lib/posting-handoff';
 import { cn } from '../lib/utils';
 import { withViewTransition } from '../lib/view-transition';
 
@@ -45,16 +46,24 @@ const SHOWN: PostingSection[] = ['required', 'preferred', 'responsibility'];
  * with a single press. It is the real posting engine, not a recording, so
  * what they see here is what the Application Desk does with their own.
  */
+/** Enough for any real posting; keeps a pasted novel from stalling the page. */
+const MAX_POSTING = 20_000;
+
 export default function HomeSpecimen() {
   const [requirements, setRequirements] = React.useState<PostingRequirement[] | null>(null);
   const [text, setText] = React.useState(SAMPLE_POSTING);
+  // The visitor's own posting, once they choose to paste one.
+  const [own, setOwn] = React.useState<string | null>(null);
+  const ownId = React.useId();
   // The button is server-rendered before this island loads. Until it is live
   // it says so, instead of swallowing a tap.
   const [live, setLive] = React.useState(false);
   React.useEffect(() => setLive(true), []);
 
+  const source = own === null ? SAMPLE_POSTING : own.slice(0, MAX_POSTING);
   const sort = () => {
-    const parsed = parsePosting(SAMPLE_POSTING);
+    if (!source.trim()) return;
+    const parsed = parsePosting(source);
     withViewTransition(() => {
       setText(parsed.text);
       setRequirements(parsed.requirements);
@@ -66,6 +75,16 @@ export default function HomeSpecimen() {
       setRequirements(null);
       setText(SAMPLE_POSTING);
     });
+
+  /** Keep the pasted posting for the desk, in this tab only. */
+  const carry = () => {
+    if (own === null || !own.trim()) return;
+    try {
+      window.sessionStorage.setItem(POSTING_HANDOFF_KEY, own.slice(0, MAX_POSTING));
+    } catch {
+      // Storage is blocked: the desk opens empty and the posting is pasted again.
+    }
+  };
 
   const marks = (requirements ?? [])
     .filter((r) => SHOWN.includes(r.section) && isSourceSpan(r.span, text))
@@ -105,17 +124,19 @@ export default function HomeSpecimen() {
           A job posting is written in code. Sort it.
         </h2>
         <p className="max-w-[46ch] text-pretty text-base leading-relaxed text-muted-foreground">
-          This is a made-up posting. Press the button and the same tool the Application Desk uses
-          will sort what it asks for, right here on your device.
+          {own === null
+            ? 'This is a made-up posting. Press the button and the same tool the Application Desk uses will sort what it asks for, right here on your device.'
+            : 'Paste a posting you are looking at. It is sorted on your device and goes nowhere.'}
         </p>
         <div className="flex flex-wrap items-center gap-3">
           {requirements ? (
             <>
               <a
                 href="/application/"
+                onClick={carry}
                 className="inline-flex min-h-11 items-center rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
               >
-                Do this with a real posting
+                {own === null ? 'Do this with a real posting' : 'Take this posting to the desk'}
               </a>
               <button
                 type="button"
@@ -129,10 +150,19 @@ export default function HomeSpecimen() {
             <button
               type="button"
               onClick={sort}
-              disabled={!live}
+              disabled={!live || !source.trim()}
               className="inline-flex min-h-11 items-center rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
             >
               {live ? 'Sort what it asks for' : 'Getting ready'}
+            </button>
+          )}
+          {!requirements && live && (
+            <button
+              type="button"
+              onClick={() => setOwn((current) => (current === null ? '' : null))}
+              className="inline-flex min-h-11 items-center rounded-lg border border-border/60 px-4 text-sm transition-colors hover:bg-overlay/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {own === null ? 'Try your own posting' : 'Use the sample'}
             </button>
           )}
         </div>
@@ -159,15 +189,33 @@ export default function HomeSpecimen() {
         </ul>
       </div>
 
-      {/* Named, so a browser that puts the scroller in the Tab order announces it. */}
-      <section
-        aria-label="Sample posting"
-        className="rounded-xl sm:max-h-[30rem] sm:overflow-y-auto border border-border/50 bg-card/60 p-5 text-sm leading-7 whitespace-pre-wrap sm:p-6"
-        style={{ viewTransitionName: 'home-specimen' }}
-        data-testid="home-specimen"
-      >
-        {pieces}
-      </section>
+      {own !== null && !requirements ? (
+        <div className="space-y-2">
+          <label htmlFor={ownId} className="block text-sm text-muted-foreground">
+            Your posting
+          </label>
+          <textarea
+            id={ownId}
+            value={own}
+            onChange={(event) => setOwn(event.target.value)}
+            rows={14}
+            maxLength={MAX_POSTING}
+            placeholder="Paste the whole job description here."
+            data-testid="home-own-posting"
+            className="w-full rounded-xl border border-[hsl(var(--field-border))] bg-card/60 p-5 text-base leading-7 text-foreground placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+          />
+        </div>
+      ) : (
+        // Named, so a browser that puts the scroller in the Tab order announces it.
+        <section
+          aria-label={own === null ? 'Sample posting' : 'Your posting, sorted'}
+          className="rounded-xl sm:max-h-[30rem] sm:overflow-y-auto border border-border/50 bg-card/60 p-5 text-sm leading-7 whitespace-pre-wrap sm:p-6"
+          style={{ viewTransitionName: 'home-specimen' }}
+          data-testid="home-specimen"
+        >
+          {pieces}
+        </section>
+      )}
     </div>
   );
 }
