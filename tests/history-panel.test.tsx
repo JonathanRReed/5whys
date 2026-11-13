@@ -77,7 +77,9 @@ it('distinguishes actual visible records even when topics and saved minutes or t
   expect(target).toHaveTextContent(`${restingName}?`);
   expect(props.onDeleteSnapshot).not.toHaveBeenCalled();
   fireEvent.click(target);
-  expect(props.onDeleteSnapshot).toHaveBeenCalledExactlyOnceWith('private-two');
+  expect(props.onDeleteSnapshot).toHaveBeenCalledExactlyOnceWith(
+    expect.objectContaining({ id: 'private-two' })
+  );
 });
 
 it('keeps the selected snapshot topic in the second-press confirmation', () => {
@@ -116,7 +118,9 @@ it.each(['Escape', 'blur'])('retains the target context after %s cancels deletio
   fireEvent.click(button);
   expect(props.onDeleteSnapshot).not.toHaveBeenCalled();
   fireEvent.click(button);
-  expect(props.onDeleteSnapshot).toHaveBeenCalledExactlyOnceWith('private-two');
+  expect(props.onDeleteSnapshot).toHaveBeenCalledExactlyOnceWith(
+    expect.objectContaining({ id: 'private-two' })
+  );
 });
 
 it('keeps an armed target bound to its record when another visible snapshot is removed', () => {
@@ -131,7 +135,9 @@ it('keeps an armed target bound to its record when another visible snapshot is r
   });
   expect(screen.getByText(/Snapshot 1 of 1/)).toBeVisible();
   fireEvent.click(target);
-  expect(props.onDeleteSnapshot).toHaveBeenCalledExactlyOnceWith('private-two');
+  expect(props.onDeleteSnapshot).toHaveBeenCalledExactlyOnceWith(
+    expect.objectContaining({ id: 'private-two' })
+  );
 });
 
 it('leaves empty history without snapshot actions and disables exporting all', () => {

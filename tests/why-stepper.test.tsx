@@ -33,10 +33,10 @@ it.each([
 
 it.each([
   { name: 'empty responses', responses: [], currentDepth: 1 },
-  { name: 'whitespace-only first answer', responses: [' \t\n', 'Later answer'], currentDepth: 1 },
+  { name: 'whitespace-only first answer', responses: [' \t\n', 'A later answer'], currentDepth: 1 },
   {
     name: 'a gap before later answers',
-    responses: ['First answer', '', 'Later answer'],
+    responses: ['My first answer', '', 'A later answer'],
     currentDepth: 2,
   },
 ])('keeps later answers pending for $name', ({ responses, currentDepth }) => {
@@ -52,11 +52,11 @@ it.each([
 });
 
 it('updates accessible progress when an earlier answer is cleared and then completed again', () => {
-  const answers = Array(5).fill('A reason');
+  const answers = Array(5).fill('A real reason');
   const { rerender } = render(<WhyStepper responses={answers} sequentialCount={5} />);
   expect(screen.queryByRole('img', { current: 'step' })).not.toBeInTheDocument();
 
-  const gappedAnswers = ['A reason', '', 'A reason', 'A reason', 'A reason'];
+  const gappedAnswers = ['A real reason', '', 'A real reason', 'A real reason', 'A real reason'];
   rerender(
     <WhyStepper
       responses={gappedAnswers}

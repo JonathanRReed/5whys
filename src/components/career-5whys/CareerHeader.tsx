@@ -13,6 +13,8 @@ type CareerHeaderProps = {
   progressPercent: number;
   onTrackChange: (track: Track) => void;
   onTopicChange: (topic: string) => void;
+  /** The placeholder in the visitor's register. Students by default. */
+  topicPlaceholder?: string;
 };
 
 export default function CareerHeader({
@@ -23,6 +25,7 @@ export default function CareerHeader({
   progressPercent,
   onTrackChange,
   onTopicChange,
+  topicPlaceholder,
 }: CareerHeaderProps) {
   const activeTrack = TRACKS[track];
   // Show what a sentence-shaped topic will be called in the prompts.
@@ -49,7 +52,7 @@ export default function CareerHeader({
               },
               {
                 title: 'Answer in order',
-                body: 'Each question quotes your last answer and asks why again. The sidebar tracks depth so you can spot gaps quickly.',
+                body: 'Each question builds on your last answer and asks why again. The sidebar tracks depth so you can spot gaps quickly.',
               },
               {
                 title: 'Save or export',
@@ -106,7 +109,7 @@ export default function CareerHeader({
                 id="career-topic"
                 value={topic}
                 onChange={(event) => onTopicChange(event.target.value)}
-                placeholder={activeTrack.topicPlaceholder}
+                placeholder={topicPlaceholder ?? activeTrack.topicPlaceholder}
                 aria-describedby={readsAs ? 'career-topic-reads-as' : undefined}
                 className="mt-2 bg-overlay/30 border-border/50 text-foreground placeholder:text-muted-foreground"
               />

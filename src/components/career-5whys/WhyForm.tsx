@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import type { FollowUpWhyInput } from '../../lib/local-ai';
+import { isNonAnswer, isRealAnswer } from '../../lib/non-answer';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Textarea } from '../ui/textarea';
@@ -37,6 +38,7 @@ export default function WhyForm({
         const locked = index > sequentialCount;
         const previousAnswer = index > 0 ? (responses[index - 1] ?? '') : '';
         const nudge = locked ? null : getAnswerNudge(response, previousAnswer);
+        const placeholderAnswer = isNonAnswer(response);
         const exampleAnswer = example.answers[index] ?? '';
         const examplePrevious = index > 0 ? condenseAnswer(example.answers[index - 1] ?? '') : '';
         const exampleId = `${exampleIdPrefix}-example-depth-${index}`;
@@ -55,7 +57,7 @@ export default function WhyForm({
                 </CardTitle>
               </div>
               <span className="rounded-full border border-border/50 px-4 py-1 text-xs text-muted-foreground">
-                {response.trim().length ? 'Captured' : 'Pending'}
+                {isRealAnswer(response) ? 'Captured' : placeholderAnswer ? 'Not yet' : 'Pending'}
               </span>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -73,14 +75,28 @@ export default function WhyForm({
                   Complete the previous depth before continuing.
                 </p>
               )}
-              {nudge && <p className="text-xs leading-relaxed text-gold">{nudge}</p>}
-              {sharper && !locked && index > 0 && previousAnswer.trim() && !response.trim() && (
-                <SharperWhy
-                  track={sharper.track}
-                  topic={sharper.topic}
-                  answers={responses.slice(0, index)}
-                />
+              {nudge && (
+                <p
+                  className={
+                    placeholderAnswer
+                      ? 'text-sm leading-relaxed text-foreground'
+                      : 'text-xs leading-relaxed text-gold'
+                  }
+                >
+                  {nudge}
+                </p>
               )}
+              {sharper &&
+                !locked &&
+                index > 0 &&
+                isRealAnswer(previousAnswer) &&
+                !response.trim() && (
+                  <SharperWhy
+                    track={sharper.track}
+                    topic={sharper.topic}
+                    answers={responses.slice(0, index)}
+                  />
+                )}
               <Button
                 type="button"
                 variant="ghost"

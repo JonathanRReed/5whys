@@ -26,7 +26,7 @@ type HistoryPanelProps = {
   onClearHistory: () => void;
   onRestoreSnapshot: (snapshot: WhySnapshot) => void;
   onExportSnapshot: (snapshot: WhySnapshot) => void;
-  onDeleteSnapshot: (id: string) => void;
+  onDeleteSnapshot: (snapshot: WhySnapshot) => void;
 };
 
 export default function HistoryPanel({
@@ -156,7 +156,7 @@ export default function HistoryPanel({
                     <ConfirmButton
                       tone="destructive"
                       confirmLabel={`Delete snapshot: ${entryTitle}?`}
-                      onConfirm={() => onDeleteSnapshot(entry.id)}
+                      onConfirm={() => onDeleteSnapshot(entry)}
                       aria-label={`Delete snapshot: ${entryTitle}`}
                       className="min-h-9 max-w-full break-words px-3 text-left text-xs"
                     >
