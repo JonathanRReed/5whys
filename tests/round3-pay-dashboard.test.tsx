@@ -522,7 +522,11 @@ describe('complete 4: a recommendation opens the application it names', () => {
     ]);
     const recs = readCareerDashboard().recommendations;
     const library = recs.find((r) => r.text.includes('Library assistant'));
-    expect(library).toMatchObject({ href: '/interview-glow-up/rehearse/', roleId: role.id });
+    // The link names the role too, so a new tab opens on it (batch I, item 10).
+    expect(library).toMatchObject({
+      href: `/interview-glow-up/rehearse/?role=${encodeURIComponent(role.id)}`,
+      roleId: role.id,
+    });
     const clerk = recs.find((r) => r.text.includes('Clerk'));
     expect(clerk?.href).toBe('/application/?id=b&station=posting');
   });

@@ -108,6 +108,11 @@ function ledgerSentence(data: CareerDashboardData): string {
       `${n === 1 ? 'one practice round' : `${n} practice rounds`}${avg ? ` averaging ${avg} of 5` : ''}`
     );
   }
+  if (data.glowup?.answerCount) {
+    // Interview practice from the rehearsal room, typed or spoken.
+    const n = data.glowup.answerCount;
+    parts.push(n === 1 ? 'one kept interview answer' : `${n} kept interview answers`);
+  }
   if (data.networking?.hasDraft) {
     parts.push('an introduction draft');
   } else if (!data.networking?.sessionCount && data.networking?.versionCount) {
