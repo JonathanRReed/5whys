@@ -798,7 +798,7 @@ describe('10. dashboard tone and polish (A A4, S F18, C 14, X A11)', () => {
     ]);
     const rec = readCareerDashboard().recommendations.find((r) => r.tool === 'The Resume Game');
     expect(rec?.text).toBe(
-      '1 of your 2 resume lines are already strong. A good next line to work on: "Babysat two kids after school".'
+      '1 of your 2 resume lines is already strong. A good next line to work on: "Babysat two kids after school".'
     );
     expect(rec?.text).not.toMatch(/lowest|scores \d/);
   });

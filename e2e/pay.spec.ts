@@ -1,29 +1,28 @@
 import { expect, test } from '@playwright/test';
 import { waitForHydration } from './helpers';
 
-test('a job title is matched on the device and an offer is put into plain terms', async ({
+test('the offer worksheet puts an offer into plain terms and requests nothing it does not have', async ({
   page,
 }) => {
+  const requests: string[] = [];
+  const failed: string[] = [];
+  page.on('request', (request) => requests.push(request.url()));
+  page.on('response', (response) => {
+    if (response.status() >= 400) failed.push(response.url());
+  });
   await page.goto('/pay/');
   await waitForHydration(page);
-  const requests: string[] = [];
-  page.on('request', (request) => requests.push(request.url()));
 
-  await page.getByLabel('Job title').fill('marketing assistant');
-  const firstMatch = page.getByRole('listitem').getByRole('button').first();
-  await expect(firstMatch).toBeVisible();
-  await firstMatch.click();
-  await expect(page.getByTestId('pay-occupation')).not.toBeEmpty();
-
-  // What was typed never appears in a request.
-  expect(requests.some((url) => /marketing/i.test(decodeURIComponent(url)))).toBe(false);
+  // Without wage figures built in, no search promises pay and no wage file is asked for.
+  await expect(page.getByText('What the job tends to pay')).toHaveCount(0);
+  await expect(page.getByLabel('Job title')).toHaveCount(0);
   const origin = new URL(page.url()).origin;
   expect(requests.every((url) => new URL(url).origin === origin)).toBe(true);
 
   // Nothing is assumed: hours and weeks are needed before an hourly figure appears.
   await page.getByLabel('Base pay').fill('6000');
   await page.getByLabel('Paid').selectOption('month');
-  const worksOutTo = page.locator('dl > div').filter({ hasText: 'Works out to' });
+  const worksOutTo = page.locator('dl > div').filter({ hasText: 'An hour' });
   await expect(worksOutTo).toContainText('Needs more detail');
   await page.getByLabel('Hours a week').fill('40');
   await page.getByLabel('Weeks a year').fill('10');
@@ -39,4 +38,6 @@ test('a job title is matched on the device and an offer is put into plain terms'
   await expect(withBonus).toContainText('65,100');
   await page.getByLabel('Base pay').fill('100000');
   await expect(withBonus).toContainText('105,000');
+  expect(requests.some((url) => /oews|wages/i.test(url))).toBe(false);
+  expect(failed).toEqual([]);
 });

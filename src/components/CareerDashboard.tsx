@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { shortDate } from '../lib/applications';
 import { type CareerDashboardData, readCareerDashboard } from '../lib/career-bridge';
+import { openRole } from '../lib/glowup-store';
 import { FOCUS_LABELS, STAGE_LABELS, stageAnswer } from '../lib/profile';
 import { STRONG_SCORE } from '../lib/resume-game/thresholds';
 import { cn } from '../lib/utils';
@@ -278,6 +279,36 @@ function Summary({ data, onChanged }: { data: CareerDashboardData; onChanged: ()
       {/* The guided path, when the career review started one. */}
       <PathCard />
 
+      {/* Coming back another day: the last thing saved, and the way back in. */}
+      {data.leftOff && (
+        <section
+          aria-labelledby="left-off-title"
+          className="rounded-2xl border border-foam/35 bg-foam/8 p-5"
+          data-testid="left-off"
+        >
+          <h2 id="left-off-title" className="eyebrow text-foam">
+            Where you left off
+          </h2>
+          <p className="mt-2 text-base leading-relaxed text-foreground wrap-anywhere">
+            {data.leftOff.what}
+            <span className="text-muted-foreground">
+              {' '}
+              · {data.leftOff.tool}, {scoredWhen(data.leftOff.date)}
+            </span>
+          </p>
+          {data.leftOff.next && (
+            <p className="mt-1 text-sm text-muted-foreground">Next: {data.leftOff.next}</p>
+          )}
+          <a
+            href={data.leftOff.href}
+            onClick={() => openRole(data.leftOff?.roleId)}
+            className="mt-3 inline-flex items-center gap-1 rounded-lg bg-foam px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-foam/90 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+          >
+            Pick it up
+          </a>
+        </section>
+      )}
+
       {/* One quiet line when the whole loop is actually closed. */}
       {data.arcLine && <p className="text-sm text-foam">{data.arcLine}</p>}
 
@@ -324,8 +355,11 @@ function Summary({ data, onChanged }: { data: CareerDashboardData; onChanged: ()
         <div className="grid gap-3 sm:grid-cols-2">
           {data.recommendations.map((rec) => (
             <a
-              key={`${rec.tool}-${rec.href}`}
+              key={`${rec.tool}-${rec.href}-${rec.text}`}
               href={rec.href}
+              // The interview tools open on the current role: make the one
+              // this card names current first.
+              onClick={() => openRole(rec.roleId)}
               className="group flex flex-col justify-between gap-3 rounded-2xl border border-border/35 bg-overlay/20 p-4 transition hover:-translate-y-0.5 hover:border-border/60 hover:bg-overlay/35"
             >
               <div className="space-y-1">

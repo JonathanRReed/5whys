@@ -196,8 +196,12 @@ test('Pay names a summer total by its weeks and compares another offer', async (
   await page.getByLabel('Hours a week').fill('45');
   await expect(page.getByTestId('overtime-hint')).toBeVisible();
   await page.getByLabel('Weeks a year').fill('8');
-  const table = page.getByTestId('offer-compare');
-  await expect(table.getByRole('columnheader', { name: 'Hours a week' })).toBeVisible();
+  // A phone gets a card per offer; a wider screen gets the table.
+  const narrow = (page.viewportSize()?.width ?? 1280) < 640;
+  const table = page.getByTestId(narrow ? 'offer-compare-cards' : 'offer-compare');
+  if (!narrow) {
+    await expect(table.getByRole('columnheader', { name: 'Hours a week' })).toBeVisible();
+  }
   await expect(table).toContainText('$4,250 over 10 weeks');
 
   await page.getByLabel('Base pay').fill('62.000');

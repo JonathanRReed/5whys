@@ -320,7 +320,7 @@ test('findings 12 and 17: decimal commas and huge numbers on the pay page', asyn
   await page.getByLabel('Paid').selectOption('hour');
   await page.getByLabel('Hours a week').fill('40');
   await page.getByLabel('Weeks a year').fill('52');
-  const worksOut = page.locator('dt', { hasText: 'Works out to' }).locator('+ dd');
+  const worksOut = page.locator('dt', { hasText: 'An hour' }).locator('+ dd');
   await expect(worksOut).toHaveText('$26.50 an hour');
 
   await page.getByLabel('Base pay').fill('26,5000');

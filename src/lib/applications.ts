@@ -32,9 +32,25 @@ export interface TrackedApplication {
    * Absent in applications saved before it was recorded.
    */
   sentOn?: string | null;
+  /**
+   * Set when the visitor decided not to apply. The work stays saved; the
+   * application moves to the end of the list and stops asking for prep.
+   * Absent while it is in play.
+   */
+  setAside?: SetAside | null;
   createdAt: number;
   updatedAt: number;
 }
+
+export interface SetAside {
+  /** 'YYYY-MM-DD' it was set aside. */
+  on: string;
+  /** The visitor's reason, in their words. May be empty. */
+  reason: string;
+}
+
+/** Longest reason kept, so a pasted page cannot fill the store. */
+const REASON_MAX = 280;
 
 export interface ApplicationsData {
   version: number;
@@ -80,6 +96,17 @@ function normalizeApplication(value: unknown): TrackedApplication | null {
     deadline: isDeadline(raw.deadline) ? raw.deadline : null,
     roleId: typeof raw.roleId === 'string' ? raw.roleId : null,
     sentOn: isDeadline(raw.sentOn) ? raw.sentOn : null,
+    ...(raw.setAside && typeof raw.setAside === 'object' && isDeadline(raw.setAside.on)
+      ? {
+          setAside: {
+            on: raw.setAside.on,
+            reason:
+              typeof raw.setAside.reason === 'string'
+                ? raw.setAside.reason.slice(0, REASON_MAX)
+                : '',
+          },
+        }
+      : {}),
     createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : now,
     updatedAt: typeof raw.updatedAt === 'number' ? raw.updatedAt : now,
   };
@@ -216,6 +243,33 @@ export function markSent(
   };
 }
 
+/**
+ * Set an application aside as "not applying" on a date, with an optional
+ * reason, or bring it back with null. Its desk work and role stay saved.
+ */
+export function setAsideApplication(
+  data: ApplicationsData,
+  id: string,
+  aside: { on: string; reason?: string } | null
+): ApplicationsData {
+  if (!data.applications.some((a) => a.id === id)) return data;
+  if (aside && !isDeadline(aside.on)) return data;
+  return {
+    ...data,
+    applications: data.applications.map((a) => {
+      if (a.id !== id) return a;
+      const { setAside: _previous, ...rest } = a;
+      return aside
+        ? {
+            ...rest,
+            setAside: { on: aside.on, reason: (aside.reason ?? '').trim().slice(0, REASON_MAX) },
+            updatedAt: Date.now(),
+          }
+        : { ...rest, updatedAt: Date.now() };
+    }),
+  };
+}
+
 export type ApplicationStatus = 'not-started' | 'in-progress' | 'sent';
 
 /**
@@ -263,11 +317,11 @@ export function daysUntilDeadline(deadline: string | null, now: Date = new Date(
   return Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-/** How the deadline reads next to an application: "in 4 days", "Due today", "3 days past". */
+/** How the deadline reads next to an application: "Due in 4 days", "Due today", "3 days past". */
 export function deadlineLabel(days: number): string {
   if (days === 0) return 'Due today';
   if (days === 1) return 'Due tomorrow';
-  if (days > 1) return `in ${days} days`;
+  if (days > 1) return `Due in ${days} days`;
   if (days === -1) return '1 day past';
   return `${-days} days past`;
 }
@@ -277,18 +331,31 @@ export function deadlineLabel(days: number): string {
 // ============================================================================
 
 /**
- * The focused application first, then by soonest deadline (none last), then
- * most recently touched. The dashboard and the bridge share this ordering.
+ * Applications in the order they need attention: those still in play by the
+ * soonest date (a deadline, or the date an offer must be answered by), with
+ * no date after any date; then the ones already sent; then the ones set
+ * aside. The one in focus leads among equals, then the most recently
+ * touched. The dashboard and the bridge share this ordering.
  */
 export function sortApplications<
-  T extends { id: string; daysUntil: number | null; updatedAt: number },
+  T extends {
+    id: string;
+    daysUntil: number | null;
+    updatedAt: number;
+    sentOn?: string | null;
+    setAside?: SetAside | null;
+  },
 >(applications: T[], activeId: string | null): T[] {
+  const group = (app: T) => (app.setAside ? 2 : app.sentOn ? 1 : 0);
   return [...applications].sort((a, b) => {
+    if (group(a) !== group(b)) return group(a) - group(b);
+    if (a.daysUntil !== b.daysUntil) {
+      if (a.daysUntil === null) return 1;
+      if (b.daysUntil === null) return -1;
+      return a.daysUntil - b.daysUntil;
+    }
     if (a.id === activeId) return -1;
     if (b.id === activeId) return 1;
-    if (a.daysUntil === null && b.daysUntil === null) return b.updatedAt - a.updatedAt;
-    if (a.daysUntil === null) return 1;
-    if (b.daysUntil === null) return -1;
-    return a.daysUntil - b.daysUntil;
+    return b.updatedAt - a.updatedAt;
   });
 }
