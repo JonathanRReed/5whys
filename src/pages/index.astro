@@ -1,4 +1,5 @@
 ---
+import HomeReturn from '../components/HomeReturn';
 import HomeSpecimen from '../components/HomeSpecimen';
 import Base from '../layouts/Base.astro';
 import { hasWages } from '../config/pay';
@@ -501,6 +502,8 @@ const homeStructuredData = [
       aria-labelledby="start-title"
     >
       <div class="rule-brass mb-10"></div>
+      {/* Renders only for a visitor with saved work on this device. */}
+      <HomeReturn client:idle />
       <div class="grid gap-x-14 gap-y-8 lg:grid-cols-[0.8fr_1.2fr]">
         <div class="space-y-4">
           <span class="eyebrow" style="color:hsl(var(--gold))">Start from where you are</span>

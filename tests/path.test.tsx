@@ -186,3 +186,24 @@ describe('every guide teaches by doing', () => {
     page.remove();
   });
 });
+
+describe('coming back to the home page', () => {
+  it('shows nothing and reads nothing on a device with no saved work', async () => {
+    const { default: HomeReturn } = await import('../src/components/HomeReturn');
+    localStorage.setItem('career-tools-theme', 'night');
+    const { container } = render(<HomeReturn />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('shows the path a returning visitor is on', async () => {
+    const { default: HomeReturn } = await import('../src/components/HomeReturn');
+    startPath('resume');
+    finish('resume-game');
+    render(<HomeReturn />);
+    expect(await screen.findByTestId('path-card')).toHaveTextContent('1 of 2 stops done');
+    expect(screen.getByRole('link', { name: 'Continue the path' })).toHaveAttribute(
+      'href',
+      '/application/?guide=1'
+    );
+  });
+});

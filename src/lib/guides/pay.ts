@@ -69,7 +69,7 @@ export const payGuide: Guide = {
   },
   finish: {
     title: 'The offer is in plain terms',
-    body: 'Press "Save it as an offer" to keep it. Then hold it against what you want.',
+    body: 'An offer you saved stays on this device. Hold it against what you want before you answer.',
     link: { label: 'Check it against your reason', href: '/career/' },
   },
 };
