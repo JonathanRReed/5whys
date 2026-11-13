@@ -16,7 +16,7 @@ export {
   documentDetectors,
 } from './detectors';
 export { extractDocx } from './docx';
-export { toEditorText } from './editor-text';
+export { listedLineTexts, toEditorText } from './editor-text';
 export {
   bulletRewrites,
   checkExport,

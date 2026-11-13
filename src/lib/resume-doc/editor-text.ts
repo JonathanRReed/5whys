@@ -88,3 +88,18 @@ export function toEditorText(doc: ResumeDoc): string {
     .map((paragraph) => (paragraph.bullet ? `- ${paragraph.text}` : paragraph.text))
     .join('\n');
 }
+
+/**
+ * The text of every line the structured copy places in a skills or
+ * certifications section. The Resume Game leaves these out of scoring
+ * wherever the editor text puts them, so a sidebar read between experience
+ * lines is still a list of skills, not a set of weak achievements.
+ */
+export function listedLineTexts(doc: ResumeDoc): string[] {
+  const byId = new Map(doc.lines.map((line) => [line.id, line]));
+  return doc.sections
+    .filter((section) => section.kind === 'skills' || section.kind === 'certifications')
+    .flatMap((section) => section.lineIds)
+    .map((id) => byId.get(id)?.text.trim() ?? '')
+    .filter(Boolean);
+}

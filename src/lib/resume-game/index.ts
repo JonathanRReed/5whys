@@ -12,6 +12,7 @@ export {
   summarySentences,
 } from './analysis';
 export { ACTION_VERBS, WEAK_WORDS } from './constants';
+export { readDatesNote } from './dates-note';
 export { downloadTextFile, exportDocx } from './exporters';
 export type { HighlightToken } from './highlight';
 export { highlightResume, parseHighlightedResume } from './highlight';
