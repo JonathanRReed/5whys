@@ -37,7 +37,7 @@ export default function ScenarioPicker({ scenarios, currentScenario, onScenarioC
 
   return (
     <div className="grid gap-4 md:grid-cols-[minmax(0,320px)_1fr] md:items-start">
-      <div className="grid gap-2">
+      <div className="grid min-w-0 gap-2">
         <Label
           htmlFor="scenario"
           className="text-xs uppercase tracking-[0.3em] text-muted-foreground"
@@ -47,7 +47,7 @@ export default function ScenarioPicker({ scenarios, currentScenario, onScenarioC
         <Select value={currentScenario?.id ?? ''} onValueChange={onScenarioChange}>
           <SelectTrigger
             id="scenario"
-            className="w-full rounded-xl border-border/60 bg-overlay/30 py-6 text-base"
+            className="h-auto min-h-12 w-full min-w-0 max-w-full rounded-xl border-border/60 bg-overlay/30 py-3 text-left text-base whitespace-normal [&>span]:line-clamp-none [&>span]:whitespace-normal"
           >
             <SelectValue placeholder="Pick a scenario" />
           </SelectTrigger>

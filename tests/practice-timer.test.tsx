@@ -39,7 +39,7 @@ it('announces start, immediate pause and resume without waiting for an elapsed t
 
   fireEvent.click(screen.getByRole('button', { name: 'Start' }));
   expect(status).toHaveTextContent('Timer started');
-  expect(screen.getByRole('button', { name: 'Running' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Running' })).toHaveAttribute('aria-disabled', 'true');
   fireEvent.click(screen.getByRole('button', { name: 'Pause' }));
   expect(status).toHaveTextContent('Timer paused');
   expect(countdown).toHaveTextContent('00:30');
@@ -78,10 +78,10 @@ it('keeps per-second updates outside the live region and announces completion on
   expect(mutations).toHaveLength(0);
 
   await act(async () => vi.advanceTimersByTime(1000));
-  expect(status).toHaveTextContent("Time's up! Rep finished.");
+  expect(status).toHaveTextContent('Time is up. Rep finished.');
   expect(screen.getByRole('timer')).toHaveTextContent('00:00');
   expect(screen.getByRole('button', { name: 'Restart' })).toBeEnabled();
-  expect(screen.getByRole('button', { name: 'Pause' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Pause' })).toHaveAttribute('aria-disabled', 'true');
   expect(mutations).toHaveLength(1);
   await act(async () => vi.advanceTimersByTime(5000));
   expect(mutations).toHaveLength(1);
@@ -94,7 +94,7 @@ it('clears the announcement on reset or length change and can announce a fresh r
   const status = screen.getByRole('status');
   fireEvent.click(screen.getByRole('button', { name: 'Start' }));
   act(() => vi.advanceTimersByTime(1000));
-  fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Reset timer' }));
   expect(status).toBeEmptyDOMElement();
   expect(screen.getByRole('timer')).toHaveTextContent('00:30');
   expect(screen.queryByText(/practiced this rep/)).not.toBeInTheDocument();
@@ -107,8 +107,8 @@ it('clears the announcement on reset or length change and can announce a fresh r
   expect(screen.getByRole('timer')).toHaveTextContent('01:00');
   fireEvent.click(screen.getByRole('button', { name: 'Start' }));
   act(() => vi.advanceTimersByTime(60000));
-  expect(status).toHaveTextContent("Time's up! Rep finished.");
-  fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+  expect(status).toHaveTextContent('Time is up. Rep finished.');
+  fireEvent.click(screen.getByRole('button', { name: 'Reset timer' }));
   expect(status).toBeEmptyDOMElement();
   expect(screen.getByRole('timer')).toHaveTextContent('01:00');
   fireEvent.click(screen.getByRole('button', { name: 'Start' }));
@@ -126,13 +126,16 @@ it('restarts completed reps from zero without accumulating displayed practice ti
     expect(screen.getByRole('timer')).toHaveTextContent('00:30');
     expect(screen.queryByText(/practiced this rep/)).not.toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('Timer started');
-    expect(screen.getByRole('button', { name: 'Running' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Running' })).toHaveAttribute(
+      'aria-disabled',
+      'true'
+    );
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
     act(() => vi.advanceTimersByTime(1000));
     expect(screen.getByRole('timer')).toHaveTextContent('00:29');
     expect(screen.getByText('00:01 practiced this rep')).toBeInTheDocument();
     act(() => vi.advanceTimersByTime(29000));
-    expect(screen.getByRole('status')).toHaveTextContent("Time's up! Rep finished.");
+    expect(screen.getByRole('status')).toHaveTextContent('Time is up. Rep finished.');
   }
   expect(screen.getByText('00:30 practiced this rep')).toBeInTheDocument();
 });
@@ -152,6 +155,13 @@ it('resumes a paused rep without resetting its elapsed practice time', () => {
   expect(screen.getByText('00:12 practiced this rep')).toBeInTheDocument();
 });
 
+/** A rep saves only once all four ratings are set. */
+function rateAllFour(
+  rate: (key: 'confidence' | 'clarity' | 'rapport' | 'authenticity', value: number) => void
+) {
+  for (const key of ['confidence', 'clarity', 'rapport', 'authenticity'] as const) rate(key, 4);
+}
+
 it.each([30, 60, 120, 300])(
   'saves only the restarted rep duration for a %i-second practice',
   (seconds) => {
@@ -159,7 +169,7 @@ it.each([30, 60, 120, 300])(
     act(() => {
       result.current.setTimerLength(seconds);
       result.current.setDraft('I built a synthetic test project for a student team.');
-      result.current.handleRatingChange('clarity', 4);
+      rateAllFour(result.current.handleRatingChange);
     });
     act(() => result.current.startTimer());
     act(() => vi.advanceTimersByTime(seconds * 1000));
@@ -180,7 +190,7 @@ it('saves actual partial practice after restarting and pausing rather than the s
   act(() => {
     result.current.setTimerLength(30);
     result.current.setDraft('A synthetic intro for practice.');
-    result.current.handleRatingChange('clarity', 4);
+    rateAllFour(result.current.handleRatingChange);
   });
   act(() => result.current.startTimer());
   act(() => vi.advanceTimersByTime(30000));

@@ -1,18 +1,16 @@
 import * as React from 'react';
 
 import { buildBullet } from './analysis';
+import { normalizeDraft } from './first-resume';
 import { scoreBullet } from './scoring';
 import { decodeEntities, uniqueId } from './text';
 import type { BulletFields, BulletRecord, SignalReport, StoredResumeSession } from './types';
 
 const SESSION_STORAGE_KEY = 'resume-game-session-v2';
 
-// Deep metrics (health score, weak words, impact coverage, etc.) are
-// intentionally absent here: they only exist once a real analysis has
-// produced them. Backfilling them with zeros would show fake results.
+// Optional details (hedging words, repetition, etc.) are intentionally
+// absent here: they only exist once a real analysis has produced them.
 const EMPTY_SIGNAL_REPORT: SignalReport = {
-  visible: 0,
-  hidden: 100,
   numbers: 0,
   verbs: 0,
   wordCount: 0,
@@ -83,13 +81,11 @@ function normalizeSignalReport(value: unknown): SignalReport {
       }))
       .filter((item) => item.word && item.count > 0);
   };
-  const visible = clamp(data.visible, 0, 100, 0);
   const numbers = clamp(data.numbers, 0, 999, 0);
   const verbs = clamp(data.verbs, 0, 999, 0);
-  const hidden = clamp(data.hidden, 0, 100, 100 - visible);
+  // Retired composite numbers from older sessions ("visible", "hidden",
+  // "benchmarkScore", "impactCoverage", and the percentages) are dropped here.
   return {
-    visible,
-    hidden,
     numbers,
     verbs,
     wordCount: clamp(data.wordCount, 0, 10000, 0),
@@ -105,13 +101,7 @@ function normalizeSignalReport(value: unknown): SignalReport {
     skippedLines: clampOptional(data.skippedLines, 0, 999),
     weakWordCount: clampOptional(data.weakWordCount, 0, 999),
     repetitiveVerbs: toRepetitiveVerbArray(data.repetitiveVerbs),
-    impactCoverage: clampOptional(data.impactCoverage, 0, 100),
     keywordDensity: toKeywordDensityArray(data.keywordDensity),
-    benchmarkScore: clampOptional(data.benchmarkScore, 0, 100),
-    uniqueVerbCount: clampOptional(data.uniqueVerbCount, 0, 999),
-    quantifiedBulletPercent: clampOptional(data.quantifiedBulletPercent, 0, 100),
-    avgBulletLength: clampOptional(data.avgBulletLength, 0, 200),
-    passiveVoicePercent: clampOptional(data.passiveVoicePercent, 0, 100),
   };
 }
 
@@ -128,12 +118,11 @@ function normalizeStoredBullet(entry: unknown, index: number): BulletRecord | nu
   const original = sanitizeString(data.original, '');
   const fallbackBullet = buildBullet(fields);
   const improved = sanitizeString(data.improved, fallbackBullet || original || fallbackBullet);
-  const baselineScore = clampScore(
-    typeof data.baselineScore === 'number' ? data.baselineScore : scoreBullet(original || improved)
-  );
-  const improvedScore = clampScore(
-    typeof data.improvedScore === 'number' ? data.improvedScore : scoreBullet(improved)
-  );
+  // Scores are a pure function of the text, so they are recomputed on load:
+  // a session saved under an older rubric shows the same numbers as a fresh
+  // analysis of the same lines.
+  const baselineScore = clampScore(scoreBullet(original || improved));
+  const improvedScore = clampScore(scoreBullet(improved));
   const id = typeof data.id === 'string' ? data.id : uniqueId('stored-bullet', index);
   const toStrArray = (v: unknown): string[] => {
     if (Array.isArray(v)) return v.filter((s): s is string => typeof s === 'string');
@@ -167,6 +156,7 @@ function normalizeStoredSession(value: unknown): StoredResumeSession {
   }
   const lastAnalyzedAt = typeof data.lastAnalyzedAt === 'string' ? data.lastAnalyzedAt : null;
   const signalReport = normalizeSignalReport(data.signalReport);
+  const draft = normalizeDraft(data.draft);
   return {
     resumeText,
     // Older sessions did not record whether their saved text was re-analyzed.
@@ -175,7 +165,25 @@ function normalizeStoredSession(value: unknown): StoredResumeSession {
     selectedBulletId,
     lastAnalyzedAt,
     signalReport,
+    ...(draft ? { draft } : {}),
   };
+}
+
+function readStoredSession(): string | null {
+  try {
+    return window.localStorage.getItem(SESSION_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function sessionFrom(stored: string | null): StoredResumeSession {
+  if (!stored) return EMPTY_SESSION;
+  try {
+    return normalizeStoredSession(JSON.parse(stored) as unknown);
+  } catch {
+    return EMPTY_SESSION;
+  }
 }
 
 function persistResumeSession(session: StoredResumeSession) {
@@ -190,24 +198,40 @@ function persistResumeSession(session: StoredResumeSession) {
 }
 
 export function useResumeSession() {
-  const [session, setSession] = React.useState<StoredResumeSession>(EMPTY_SESSION);
+  const [session, setLoaded] = React.useState<StoredResumeSession>(EMPTY_SESSION);
   const [mounted, setMounted] = React.useState(false);
+  // True once the visitor has changed something. Opening the page only reads:
+  // another tab, or an import on the dashboard, may have saved newer work, and
+  // writing back the snapshot this tab loaded would destroy it.
+  const changed = React.useRef(false);
+  const setSession = React.useCallback<React.Dispatch<React.SetStateAction<StoredResumeSession>>>(
+    (next) => {
+      changed.current = true;
+      setLoaded(next);
+    },
+    []
+  );
   const [storageNotice, setStorageNotice] = React.useState<string | null>(null);
+
+  // The saved text this tab last read or wrote. If storage holds something
+  // else when this tab saves, another tab saved newer work in between.
+  const lastSeen = React.useRef<string | null>(null);
 
   React.useEffect(() => {
     setMounted(true);
     if (!isBrowser()) return;
     try {
       const stored = window.localStorage.getItem(SESSION_STORAGE_KEY);
+      lastSeen.current = stored;
       if (stored) {
         const parsed = JSON.parse(stored) as unknown;
-        setSession(normalizeStoredSession(parsed));
+        setLoaded(normalizeStoredSession(parsed));
         return;
       }
 
       const legacy = window.localStorage.getItem('resume-game-text');
       if (legacy) {
-        setSession(
+        setLoaded(
           normalizeStoredSession({
             resumeText: decodeEntities(legacy),
           })
@@ -219,9 +243,37 @@ export function useResumeSession() {
     }
   }, []);
 
+  // Follow saves from other tabs, so an older tab never edits stale work.
   React.useEffect(() => {
-    if (!mounted) return;
+    if (!isBrowser()) return;
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== SESSION_STORAGE_KEY && event.key !== null) return;
+      const stored = readStoredSession();
+      if (stored === lastSeen.current) return;
+      lastSeen.current = stored;
+      changed.current = false;
+      setLoaded(sessionFrom(stored));
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
+  React.useEffect(() => {
+    if (!mounted || !changed.current) return;
+    const stored = readStoredSession();
+    if (stored !== lastSeen.current) {
+      // Another tab saved after this one read. Writing now would put the
+      // older resume back over it, so show the newer one instead.
+      lastSeen.current = stored;
+      changed.current = false;
+      setLoaded(sessionFrom(stored));
+      setStorageNotice(
+        'This resume was changed in another tab. This page now shows that version, so make your last change again.'
+      );
+      return;
+    }
     const success = persistResumeSession(session);
+    if (success) lastSeen.current = readStoredSession();
     if (!success) {
       setStorageNotice('Auto-save is paused because browser storage is unavailable.');
     } else if (storageNotice) {
@@ -232,4 +284,4 @@ export function useResumeSession() {
   return { session, setSession, storageNotice } as const;
 }
 
-export { EMPTY_SESSION, EMPTY_SIGNAL_REPORT, SESSION_STORAGE_KEY };
+export { EMPTY_SESSION, EMPTY_SIGNAL_REPORT, normalizeStoredSession, SESSION_STORAGE_KEY };

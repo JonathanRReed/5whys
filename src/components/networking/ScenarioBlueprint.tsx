@@ -14,7 +14,7 @@ const FLOW_STEPS = [
   { label: 'Draft your intro', description: 'Your words, not the samples' },
   { label: 'Run the timer', description: 'Say it out loud' },
   { label: 'Rate the rep', description: 'Score it honestly' },
-  { label: 'Save session', description: 'Track the reps' },
+  { label: 'Save the rep', description: 'Track the reps' },
 ] as const;
 
 function getActiveStep(timer: TimerState | undefined): number {
@@ -65,12 +65,12 @@ export default function ScenarioBlueprint({ currentScenario, scenarioSteps, time
                       ? 'bg-foam/15 text-foam ring-1 ring-foam/40'
                       : isPast
                         ? 'bg-overlay/30 text-muted-foreground'
-                        : 'bg-overlay/20 text-muted-foreground/70'
+                        : 'bg-overlay/20 text-muted-foreground'
                   }`}
                   aria-current={isActive ? 'step' : undefined}
                 >
                   <span
-                    className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
+                    className={`flex h-5 w-5 items-center justify-center rounded-full text-[0.72rem] font-bold ${
                       isActive
                         ? 'bg-foam text-background'
                         : isPast

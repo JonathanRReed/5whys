@@ -160,7 +160,9 @@ it.each([false, true])(
     ).toHaveFocus();
     expect(screen.getByRole('status')).toBe(status);
     fireEvent.click(screen.getByRole('button', { name: 'Unclear direction' }));
+    // "Start over" asks in place first: the first press arms it.
     fireEvent.click(screen.getByRole('button', { name: 'Start over' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Clear both answers' }));
     expect(screen.getByRole('heading', { name: 'Where are you in your career?' })).toHaveFocus();
     expect(screen.getByRole('status')).toBe(status);
   }

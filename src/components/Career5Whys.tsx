@@ -1,4 +1,7 @@
 import * as React from 'react';
+import { loadFeature, reportFeatureFailure } from '../lib/lazy-feature';
+import { localDate } from '../lib/local-date';
+import { readProfile } from '../lib/profile';
 import { cn } from '../lib/utils';
 import CareerHeader from './career-5whys/CareerHeader';
 import ExportActions from './career-5whys/ExportActions';
@@ -7,6 +10,7 @@ import {
   buildPrompts,
   type Career5WhysProps,
   createEmptySession,
+  cryptoRandom,
   DEFAULT_HISTORY_LIMIT,
   downloadJson,
   ensureResponsesLength,
@@ -14,9 +18,12 @@ import {
   HISTORY_LIMIT_KEY,
   HISTORY_LIMIT_OPTIONS,
   isBrowser,
-  normalizeSnapshot,
+  type Register,
+  readStoredHistory,
+  sameSnapshot,
   TRACKS,
   toSlug,
+  trackSamples,
   useStoredSession,
   useSynthesis,
   type WhySnapshot,
@@ -35,7 +42,31 @@ export default function Career5Whys({
   const [status, setStatus] = React.useState<string | null>(null);
   const [history, setHistory] = React.useState<WhySnapshot[]>([]);
   const [historyLimit, setHistoryLimit] = React.useState<number>(DEFAULT_HISTORY_LIMIT);
-  const activeTrack = TRACKS[session.track];
+  // Samples speak to students unless a saved profile says otherwise.
+  const [register, setRegister] = React.useState<Register>('student');
+  React.useEffect(() => {
+    const profile = readProfile();
+    if (profile && profile.stage !== 'student' && profile.stage !== 'early') {
+      setRegister('professional');
+    }
+  }, []);
+  const samples = trackSamples(session.track, register);
+
+  // Offer model-written follow-ups only when the browser already has its own
+  // model. This check never downloads anything.
+  const [modelReady, setModelReady] = React.useState(false);
+  React.useEffect(() => {
+    let cancelled = false;
+    void loadFeature(import('../lib/local-ai'))
+      .then(async ({ getBrowserModelCapability }) => {
+        const capability = await getBrowserModelCapability();
+        if (!cancelled) setModelReady(capability.state === 'available');
+      })
+      .catch(reportFeatureFailure);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const historyIsFull = history.length >= historyLimit;
   const {
     surface,
@@ -46,7 +77,7 @@ export default function Career5Whys({
     isComplete,
     whyStatement,
     nextStep,
-  } = useSynthesis(session.responses, session.topic, session.track);
+  } = useSynthesis(session.responses, session.topic, session.track, session.rootIndex);
   const prompts = React.useMemo(
     () => buildPrompts(session.track, session.topic, session.responses),
     [session.track, session.topic, session.responses]
@@ -69,55 +100,60 @@ export default function Career5Whys({
     setStatus(storageNotice);
   }, [storageNotice]);
 
+  // Read the history and its limit together, so a saved limit of 24 is in
+  // place before anything compares the history against it.
   React.useEffect(() => {
     if (!isBrowser()) return;
     try {
-      const savedLimit = window.localStorage.getItem(HISTORY_LIMIT_KEY);
-      if (!savedLimit) return;
-      const parsed = Number(savedLimit);
-      if (HISTORY_LIMIT_OPTIONS.includes(parsed as (typeof HISTORY_LIMIT_OPTIONS)[number])) {
-        setHistoryLimit(parsed);
+      const savedLimit = Number(window.localStorage.getItem(HISTORY_LIMIT_KEY));
+      if (HISTORY_LIMIT_OPTIONS.includes(savedLimit as (typeof HISTORY_LIMIT_OPTIONS)[number])) {
+        setHistoryLimit(savedLimit);
       }
     } catch (err) {
       console.warn('Unable to load snapshot preference', err);
     }
-  }, []);
-
-  React.useEffect(() => {
-    if (!isBrowser()) return;
-    try {
-      const stored = window.localStorage.getItem(HISTORY_KEY);
-      if (!stored) return;
-      const parsed = JSON.parse(stored);
-      if (!Array.isArray(parsed)) return;
-      const normalized = parsed
-        .map((entry) => normalizeSnapshot(entry))
-        .filter(Boolean) as WhySnapshot[];
-      setHistory(normalized);
-    } catch (err) {
-      console.warn('Unable to load why snapshot history', err);
-      setHistory([]);
+    const stored = readStoredHistory();
+    if (stored === null) {
       setStatus('Unable to load snapshot history.');
+      return;
     }
+    setHistory(stored);
   }, []);
 
+  // Another tab may save or delete snapshots. Show what is stored now, so
+  // this tab never works from (or writes back) a stale list.
   React.useEffect(() => {
-    if (!isBrowser()) return;
-    try {
-      window.localStorage.setItem(HISTORY_LIMIT_KEY, String(historyLimit));
-    } catch (err) {
-      console.warn('Unable to persist snapshot limit preference', err);
-    }
-  }, [historyLimit]);
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== HISTORY_KEY) return;
+      const stored = readStoredHistory();
+      if (stored) setHistory(stored);
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
-  React.useEffect(() => {
-    setHistory((previous) => {
-      if (previous.length <= historyLimit) return previous;
-      const trimmed = previous.slice(0, historyLimit);
-      persistHistory(trimmed);
-      return trimmed;
-    });
-  }, [historyLimit, persistHistory]);
+  // The limit is written, and the history trimmed to it, only when the
+  // visitor picks a limit. Doing either on load would write to a fresh
+  // profile, and could trim a longer saved history before its limit loaded.
+  // The trim works on the history as stored now, so snapshots saved in
+  // another tab are not lost.
+  const handleLimitChange = (limit: number) => {
+    setHistoryLimit(limit);
+    if (isBrowser()) {
+      try {
+        window.localStorage.setItem(HISTORY_LIMIT_KEY, String(limit));
+      } catch (err) {
+        console.warn('Unable to persist snapshot limit preference', err);
+      }
+    }
+    const latest = readStoredHistory() ?? history;
+    if (latest.length <= limit) {
+      setHistory(latest);
+      return;
+    }
+    const trimmed = latest.slice(0, limit);
+    if (persistHistory(trimmed)) setHistory(trimmed);
+  };
 
   React.useEffect(() => {
     if (!status) return;
@@ -139,8 +175,10 @@ export default function Career5Whys({
 
   const handleSaveSnapshot = () => {
     if (!isBrowser()) return;
+    // Every snapshot gets its own id, so deleting one never takes the other
+    // snapshots of the same session with it.
     const payload: WhySnapshot = {
-      id: session.id,
+      id: `snapshot_${cryptoRandom()}${Date.now().toString(36)}`,
       timestamp: new Date().toISOString(),
       whyStatement,
       rootReason: root,
@@ -148,10 +186,14 @@ export default function Career5Whys({
       track: session.track,
       topic: session.topic,
       responses: [...session.responses],
+      ...(session.rootIndex !== undefined ? { rootIndex: session.rootIndex } : {}),
       updatedAt: session.updatedAt,
       version: 3,
     };
-    const nextHistory = [payload, ...history].slice(0, historyLimit);
+    // Start from what is stored now: another tab may have saved since this
+    // page loaded.
+    const latest = readStoredHistory() ?? history;
+    const nextHistory = [payload, ...latest].slice(0, historyLimit);
     if (persistHistory(nextHistory)) {
       setHistory(nextHistory);
       setStatus('Saved to local dashboard');
@@ -169,10 +211,7 @@ export default function Career5Whys({
       createdAt: new Date().toISOString(),
     };
     const topicSlug = toSlug(session.topic || TRACKS[session.track].label) || session.track;
-    downloadJson(
-      `career-why-${topicSlug}-${new Date().toISOString().slice(0, 10)}.json`,
-      exportPayload
-    );
+    downloadJson(`career-why-${topicSlug}-${localDate()}.json`, exportPayload);
     setStatus('Export ready. Check your downloads.');
   };
 
@@ -189,12 +228,14 @@ export default function Career5Whys({
       setStatus('No snapshots to export yet.');
       return;
     }
-    downloadJson(`career-why-history-${new Date().toISOString().slice(0, 10)}.json`, history);
+    downloadJson(`career-why-history-${localDate()}.json`, history);
     setStatus('History exported.');
   };
 
-  const handleDeleteSnapshot = (id: string) => {
-    const nextHistory = history.filter((entry) => entry.id !== id);
+  const handleDeleteSnapshot = (snapshot: WhySnapshot) => {
+    // Older snapshots of one session can share an id; the time tells them apart.
+    const latest = readStoredHistory() ?? history;
+    const nextHistory = latest.filter((entry) => !sameSnapshot(entry, snapshot));
     if (persistHistory(nextHistory)) {
       setHistory(nextHistory);
       setStatus('Snapshot removed.');
@@ -213,9 +254,9 @@ export default function Career5Whys({
     const restored = createEmptySession(snapshot.track);
     setSession({
       ...restored,
-      id: snapshot.id,
       topic: snapshot.topic,
       responses: ensureResponsesLength(snapshot.responses),
+      ...(snapshot.rootIndex !== undefined ? { rootIndex: snapshot.rootIndex } : {}),
       updatedAt: new Date().toISOString(),
     });
     setExampleOpen({});
@@ -228,9 +269,16 @@ export default function Career5Whys({
     setStatus('Session cleared.');
   };
 
+  // Changing the lens keeps what the visitor wrote; only the questions
+  // change. Pressing the track already chosen does nothing. "Reset session"
+  // is the one control that clears the work.
   const handleTrackChange = (track: 'career' | 'interest') => {
+    if (track === session.track) return;
     setExampleOpen({});
-    updateSession(createEmptySession(track));
+    updateSession({ track });
+    if (session.topic.trim() || session.responses.some((response) => response.trim())) {
+      setStatus(`Switched to ${TRACKS[track].label}. Your answers are kept.`);
+    }
   };
 
   return (
@@ -244,6 +292,7 @@ export default function Career5Whys({
           progressPercent={progressPercent}
           onTrackChange={handleTrackChange}
           onTopicChange={(topic) => updateSession({ topic })}
+          topicPlaceholder={samples.topicPlaceholder}
         />
         <div aria-live="polite" aria-atomic="true" className="sr-only">
           {status ? status : ''}
@@ -259,8 +308,9 @@ export default function Career5Whys({
               responses={session.responses}
               sequentialCount={sequentialCount}
               prompts={prompts}
-              example={activeTrack.example}
+              example={samples.example}
               exampleOpen={exampleOpen}
+              sharper={modelReady ? { track: session.track, topic: session.topic } : undefined}
               onResponseChange={handleResponseChange}
               onToggleExample={(index) =>
                 setExampleOpen((prev) => ({ ...prev, [index]: !prev[index] }))
@@ -272,6 +322,15 @@ export default function Career5Whys({
               isComplete={isComplete}
               sequentialCount={sequentialCount}
               nextStep={nextStep}
+              answers={session.responses}
+              rootIndex={session.rootIndex}
+              onRootChange={(rootIndex) =>
+                setSession((previous) => ({
+                  ...previous,
+                  rootIndex,
+                  updatedAt: new Date().toISOString(),
+                }))
+              }
             >
               <ExportActions
                 onSaveSnapshot={handleSaveSnapshot}
@@ -286,7 +345,7 @@ export default function Career5Whys({
               history={history}
               historyLimit={historyLimit}
               historyIsFull={historyIsFull}
-              onLimitChange={setHistoryLimit}
+              onLimitChange={handleLimitChange}
               onExportHistory={handleExportHistory}
               onClearHistory={handleClearHistory}
               onRestoreSnapshot={handleRestoreSnapshot}

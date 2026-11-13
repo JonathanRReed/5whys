@@ -26,7 +26,7 @@ type HistoryPanelProps = {
   onClearHistory: () => void;
   onRestoreSnapshot: (snapshot: WhySnapshot) => void;
   onExportSnapshot: (snapshot: WhySnapshot) => void;
-  onDeleteSnapshot: (id: string) => void;
+  onDeleteSnapshot: (snapshot: WhySnapshot) => void;
 };
 
 export default function HistoryPanel({
@@ -57,7 +57,7 @@ export default function HistoryPanel({
           ) : null}
         </div>
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <label
               htmlFor="history-limit"
               className="text-xs uppercase tracking-[0.3em] text-muted-foreground"
@@ -156,7 +156,7 @@ export default function HistoryPanel({
                     <ConfirmButton
                       tone="destructive"
                       confirmLabel={`Delete snapshot: ${entryTitle}?`}
-                      onConfirm={() => onDeleteSnapshot(entry.id)}
+                      onConfirm={() => onDeleteSnapshot(entry)}
                       aria-label={`Delete snapshot: ${entryTitle}`}
                       className="min-h-9 max-w-full break-words px-3 text-left text-xs"
                     >

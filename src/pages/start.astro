@@ -1,4 +1,5 @@
 ---
+import PlateHeader from '../components/PlateHeader.astro';
 import Base from '../layouts/Base.astro';
 import OnboardingWizard from '../components/OnboardingWizard';
 
@@ -13,12 +14,14 @@ const noScriptContext = [
   description="Take a quick career review to choose the right 5 Whys tool for your current goal, from reflection to resume polish, networking practice, or interview prep."
   noScriptContext={noScriptContext}
 >
-  <div class="reveal relative mx-auto w-full max-w-6xl px-4 py-8 sm:py-12">
-    <h1 class="sr-only">Career review: choose your starting point</h1>
-    <p class="sr-only">
-      A two-question review that recommends one of the four career tools based on your career stage
-      and current challenge. Your answers stay in this browser.
-    </p>
+  <div class="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-4 sm:pt-6">
+    <PlateHeader
+      tag="The studio · Start here"
+      roman=""
+      title="Career review"
+      description="Two questions about where you are and what is in the way, then one tool to begin with. Your answers stay in this browser."
+      accent="gold"
+    />
     <OnboardingWizard client:load />
   </div>
 </Base>

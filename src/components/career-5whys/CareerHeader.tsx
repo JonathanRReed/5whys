@@ -13,6 +13,8 @@ type CareerHeaderProps = {
   progressPercent: number;
   onTrackChange: (track: Track) => void;
   onTopicChange: (topic: string) => void;
+  /** The placeholder in the visitor's register. Students by default. */
+  topicPlaceholder?: string;
 };
 
 export default function CareerHeader({
@@ -23,6 +25,7 @@ export default function CareerHeader({
   progressPercent,
   onTrackChange,
   onTopicChange,
+  topicPlaceholder,
 }: CareerHeaderProps) {
   const activeTrack = TRACKS[track];
   // Show what a sentence-shaped topic will be called in the prompts.
@@ -33,7 +36,7 @@ export default function CareerHeader({
     <>
       {showHeader && (
         <header className="space-y-4 text-center">
-          <p className="eyebrow eyebrow-accent justify-self-center">Career 5 Whys</p>
+          <p className="eyebrow eyebrow-accent justify-self-center">The Five Whys</p>
           <h1 className="text-4xl font-semibold tracking-tight">Discover your why</h1>
           <p className="mx-auto max-w-2xl text-muted-foreground">
             Five questions, each one built from your previous answer. Choose a track, follow the
@@ -49,7 +52,7 @@ export default function CareerHeader({
               },
               {
                 title: 'Answer in order',
-                body: 'Each question quotes your last answer and asks why again. The sidebar tracks depth so you can spot gaps quickly.',
+                body: 'Each question builds on your last answer and asks why again. The sidebar tracks depth so you can spot gaps quickly.',
               },
               {
                 title: 'Save or export',
@@ -60,7 +63,10 @@ export default function CareerHeader({
         </header>
       )}
 
-      <Card className="bg-card/98 border-border/55 text-foreground shadow-[0_20px_80px_hsl(var(--background)/0.28)]">
+      <Card
+        data-guide="why-track"
+        className="bg-card/98 border-border/55 text-foreground shadow-[0_20px_80px_hsl(var(--background)/0.28)]"
+      >
         <CardHeader className="space-y-6">
           <div>
             <CardTitle className="text-2xl font-semibold">Select your track</CardTitle>
@@ -76,6 +82,7 @@ export default function CareerHeader({
                   key={key}
                   type="button"
                   onClick={() => onTrackChange(key as Track)}
+                  aria-pressed={isActive}
                   className={cn(
                     'flex-1 rounded-2xl border px-4 py-5 text-left transition-all',
                     'focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-primary',
@@ -102,7 +109,7 @@ export default function CareerHeader({
                 id="career-topic"
                 value={topic}
                 onChange={(event) => onTopicChange(event.target.value)}
-                placeholder={activeTrack.topicPlaceholder}
+                placeholder={topicPlaceholder ?? activeTrack.topicPlaceholder}
                 aria-describedby={readsAs ? 'career-topic-reads-as' : undefined}
                 className="mt-2 bg-overlay/30 border-border/50 text-foreground placeholder:text-muted-foreground"
               />

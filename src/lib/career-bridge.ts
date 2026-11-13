@@ -13,22 +13,43 @@ import {
   ensureResponsesLength,
   normalizeSnapshot,
   type Track,
+  validRootIndex,
   HISTORY_KEY as WHY_HISTORY_KEY,
   SESSION_KEY as WHY_SESSION_KEY,
   type WhySnapshot,
 } from '../components/career-5whys/shared';
+import {
+  type ApplicationDeskData,
+  createDefaultDeskData,
+  type DatedActionStep,
+  type DeskStationId,
+  datedActionSteps,
+  getDesk,
+  loadApplicationDesks,
+  stationsWithContent,
+} from './application-desk';
+import {
+  type ApplicationsData,
+  activeApplicationId,
+  daysUntilDeadline,
+  loadApplications,
+  shortDate,
+  sortApplications,
+} from './applications';
 import { averageRating, computeNextStep, type Ratings } from './networking-advice';
 import { type CareerProfile, readProfile } from './profile';
+import { scoreBullet } from './resume-game/scoring';
+import { STRONG_SCORE } from './resume-game/thresholds';
 
 export type ToolName =
-  | 'Career 5 Whys'
-  | 'Resume Game'
+  | 'The Five Whys'
+  | 'The Resume Game'
   | 'Networking Practice'
   | 'Interview Glow Up';
 
 export const TOOL_URLS: Record<ToolName, string> = {
-  'Career 5 Whys': '/career/',
-  'Resume Game': '/resume-game/',
+  'The Five Whys': '/career/',
+  'The Resume Game': '/resume-game/',
   'Networking Practice': '/networking-practice/',
   'Interview Glow Up': '/interview-glow-up/workspace/',
 };
@@ -43,6 +64,32 @@ function readJson<T>(key: string): T | null {
   }
 }
 
+// Stored data can be hand-edited, imported from an older build, or written
+// by a tool mid-change. Every reader below treats a wrong shape as empty and
+// never throws: one malformed store must not take the dashboard down with it.
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  !!value && typeof value === 'object' && !Array.isArray(value);
+
+/** The objects in a stored list; anything that is not a list is an empty one. */
+const records = (value: unknown): Record<string, unknown>[] =>
+  Array.isArray(value) ? value.filter(isRecord) : [];
+
+const textOr = <T>(value: unknown, fallback: T): string | T =>
+  typeof value === 'string' ? value : fallback;
+
+const numberOr = <T>(value: unknown, fallback: T): number | T =>
+  typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+
+/** Run a reader; if it fails anyway, use what an empty store would give. */
+function safely<T>(read: () => T, empty: T): T {
+  try {
+    return read();
+  } catch (error) {
+    console.error('[career-bridge] A saved store could not be read:', error);
+    return empty;
+  }
+}
+
 const clip = (text: string, max: number): string => {
   const trimmed = text.trim();
   return trimmed.length > max ? `${trimmed.slice(0, max).trimEnd()}...` : trimmed;
@@ -52,7 +99,8 @@ const clip = (text: string, max: number): string => {
 // Resume Game — src/lib/resume-game/session.ts
 // ============================================================================
 
-const RESUME_SESSION_KEY = 'resume-game-session-v2';
+/** Read here; written only by the Resume Game. */
+export const RESUME_SESSION_KEY = 'resume-game-session-v2';
 
 interface ResumeBulletRecord {
   id: string;
@@ -67,15 +115,48 @@ interface ResumeGameData {
   needsRescan?: boolean;
   bullets: ResumeBulletRecord[];
   lastAnalyzedAt: string | null;
+  /** Older sessions also stored retired composite numbers here; they are not read. */
   signalReport?: {
-    visible?: number;
     hardSkills?: string[];
   };
 }
 
 function readResumeGame(): ResumeGameData | null {
-  const data = readJson<ResumeGameData>(RESUME_SESSION_KEY);
-  if (data && Array.isArray(data.bullets)) return data;
+  const data = readJson<unknown>(RESUME_SESSION_KEY);
+  if (isRecord(data) && Array.isArray(data.bullets)) {
+    // A score is a pure function of the line, and the Resume Game works it
+    // out again on load. Do the same here, so a session saved under an older
+    // rubric shows the dashboard the numbers the tool itself would show.
+    const signal = isRecord(data.signalReport) ? data.signalReport : null;
+    return {
+      resumeText: textOr(data.resumeText, undefined),
+      needsRescan: typeof data.needsRescan === 'boolean' ? data.needsRescan : undefined,
+      lastAnalyzedAt: textOr(data.lastAnalyzedAt, null),
+      signalReport: signal
+        ? {
+            hardSkills: Array.isArray(signal.hardSkills)
+              ? signal.hardSkills.filter((skill): skill is string => typeof skill === 'string')
+              : undefined,
+          }
+        : undefined,
+      bullets: records(data.bullets).map((bullet) => {
+        const original = textOr(bullet.original, '');
+        const improved = textOr(bullet.improved, '');
+        const record = {
+          ...bullet,
+          id: textOr(bullet.id, ''),
+          original,
+          improved,
+        } as unknown as ResumeBulletRecord;
+        if (!original && !improved) return record;
+        return {
+          ...record,
+          baselineScore: scoreBullet(original || improved),
+          improvedScore: scoreBullet(improved || original),
+        };
+      }),
+    };
+  }
   if (typeof window === 'undefined') return null;
   try {
     // Match Resume Game's supported legacy fallback without migrating data.
@@ -97,17 +178,20 @@ interface WhySession {
   track: Track;
   topic: string;
   responses: string[];
+  rootIndex?: number;
 }
 
 function readCareer5Whys(): { session: WhySession | null; snapshots: WhySnapshot[] } {
   const sessionRaw = readJson<Partial<WhySession>>(WHY_SESSION_KEY);
   const historyRaw = readJson<unknown[]>(WHY_HISTORY_KEY);
   const session: WhySession | null =
-    sessionRaw && typeof sessionRaw === 'object'
+    sessionRaw && isRecord(sessionRaw)
       ? {
           track: sessionRaw.track === 'interest' ? 'interest' : 'career',
           topic: typeof sessionRaw.topic === 'string' ? sessionRaw.topic : '',
           responses: ensureResponsesLength(sessionRaw.responses),
+          // Which answer the visitor chose as the real reason, when they chose one.
+          rootIndex: validRootIndex((sessionRaw as { rootIndex?: unknown }).rootIndex),
         }
       : null;
   const snapshots = Array.isArray(historyRaw)
@@ -123,9 +207,15 @@ function readCareer5Whys(): { session: WhySession | null; snapshots: WhySnapshot
 const GLOWUP_KEY = 'interview-glow-up-data';
 
 interface GlowUpRaw {
-  roles?: Array<{ id: string; jobTitle?: string; company?: string; updatedAt?: number }>;
-  stories?: Array<{ updatedAt?: number }>;
-  packets?: Array<{ updatedAt?: number }>;
+  roles?: Array<{
+    id: string;
+    jobTitle?: string;
+    company?: string;
+    updatedAt?: number;
+    bullets?: Array<{ status?: string }>;
+  }>;
+  stories?: Array<{ id?: string; updatedAt?: number }>;
+  packets?: Array<{ roleId?: string; topStoryIds?: unknown[]; updatedAt?: number }>;
   currentRoleId?: string | null;
 }
 
@@ -138,8 +228,36 @@ export interface GlowUpSummary {
   lastUpdated: number | null;
 }
 
-function readGlowUp(): GlowUpSummary | null {
-  const data = readJson<GlowUpRaw>(GLOWUP_KEY);
+/** The Glow Up store reduced to the fields read here, each in the shape expected. */
+function readGlowUpRaw(): GlowUpRaw | null {
+  const data = readJson<unknown>(GLOWUP_KEY);
+  if (!isRecord(data)) return null;
+  return {
+    roles: records(data.roles)
+      .filter((role) => typeof role.id === 'string')
+      .map((role) => ({
+        id: role.id as string,
+        jobTitle: textOr(role.jobTitle, undefined),
+        company: textOr(role.company, undefined),
+        updatedAt: numberOr(role.updatedAt, undefined),
+        bullets: records(role.bullets).map((bullet) => ({
+          status: textOr(bullet.status, undefined),
+        })),
+      })),
+    stories: records(data.stories).map((story) => ({
+      id: textOr(story.id, undefined),
+      updatedAt: numberOr(story.updatedAt, undefined),
+    })),
+    packets: records(data.packets).map((packet) => ({
+      roleId: textOr(packet.roleId, undefined),
+      topStoryIds: Array.isArray(packet.topStoryIds) ? packet.topStoryIds : [],
+      updatedAt: numberOr(packet.updatedAt, undefined),
+    })),
+    currentRoleId: textOr(data.currentRoleId, null),
+  };
+}
+
+function readGlowUp(data: GlowUpRaw | null): GlowUpSummary | null {
   if (!data) return null;
   const roles = data.roles ?? [];
   const stories = data.stories ?? [];
@@ -196,23 +314,29 @@ export interface NetworkingSummary {
 
 function readNetworking(): NetworkingSummary | null {
   const versions = readJson<unknown[]>(NETWORKING_VERSIONS_KEY);
-  const sessions = readJson<NetworkingSessionRaw[]>(NETWORKING_SESSIONS_KEY);
-  const draft = readJson<{ text?: string }>(NETWORKING_DRAFT_KEY);
+  const sessions = readJson<unknown>(NETWORKING_SESSIONS_KEY);
+  const draft = readJson<unknown>(NETWORKING_DRAFT_KEY);
   if (!versions && !sessions && !draft) return null;
 
-  const hasDraft = typeof draft?.text === 'string' && !!draft.text.trim();
-  const list = Array.isArray(sessions) ? sessions : [];
-  const rated = list
-    .map((s) => s.ratings)
-    .filter((r): r is Ratings => !!r && typeof r.confidence === 'number');
+  const draftText = isRecord(draft) ? draft.text : undefined;
+  const hasDraft = typeof draftText === 'string' && !!draftText.trim();
+  const list: NetworkingSessionRaw[] = records(sessions).map((session) => ({
+    createdAt: textOr(session.createdAt, undefined),
+    scenarioTitle: textOr(session.scenarioTitle, undefined),
+    ratings: isRecord(session.ratings) ? (session.ratings as Partial<Ratings>) : undefined,
+  }));
+  // A rating counts only when all four parts of it are numbers.
+  const complete = (r: Partial<Ratings> | undefined): r is Ratings =>
+    !!r &&
+    [r.confidence, r.clarity, r.rapport, r.authenticity].every(
+      (value) => typeof value === 'number' && Number.isFinite(value)
+    );
+  const rated = list.map((s) => s.ratings).filter(complete);
   const average = rated.length
     ? Math.round((rated.reduce((sum, r) => sum + averageRating(r), 0) / rated.length) * 10) / 10
     : null;
   const latest = list[0];
-  const latestRatings =
-    latest?.ratings && typeof latest.ratings.confidence === 'number'
-      ? (latest.ratings as Ratings)
-      : null;
+  const latestRatings = latest && complete(latest.ratings) ? latest.ratings : null;
 
   return {
     hasDraft,
@@ -224,6 +348,105 @@ function readNetworking(): NetworkingSummary | null {
     nextStep: latestRatings ? computeNextStep(latestRatings) : null,
     draftedButUnpracticed: list.length === 0 && hasDraft,
   };
+}
+
+// ============================================================================
+// Applications — src/lib/applications.ts
+// ============================================================================
+
+/**
+ * What the dashboard needs per tracked application. Prep state is derived,
+ * never stored on the record: role-scoped facts (decoded posting, packed
+ * packet) come from the Glow Up store the application points at; resume and
+ * practice readiness stay global, because a resume and an intro are the same
+ * across applications.
+ */
+export interface ApplicationSummary {
+  id: string;
+  /** The linked role's title when it exists, else what was typed. */
+  title: string;
+  company: string;
+  deadline: string | null;
+  daysUntil: number | null;
+  isActive: boolean;
+  /** 'YYYY-MM-DD' the visitor marked it sent, or null. A sent application is never overdue. */
+  sentOn?: string | null;
+  roleId: string | null;
+  /** The linked role exists and its posting was actually parsed. */
+  decoded: boolean;
+  /** Stories packed for the linked role's packet. */
+  packetStories: number;
+  /** Which desk stations hold any of the student's work (career-application-desk). */
+  stations: Record<DeskStationId, boolean>;
+  updatedAt: number;
+}
+
+function summarizeApplications(
+  data: ApplicationsData,
+  glow: GlowUpRaw | null,
+  desks: ApplicationDeskData
+): ApplicationSummary[] {
+  const roles = glow?.roles ?? [];
+  const packets = glow?.packets ?? [];
+  const storyIds = new Set(
+    (glow?.stories ?? []).map((s) => s.id).filter((id): id is string => typeof id === 'string')
+  );
+  const activeId = activeApplicationId(data);
+  const summaries = data.applications.map((app) => {
+    const role = app.roleId ? roles.find((r) => r.id === app.roleId) : undefined;
+    const decoded = !!role?.bullets?.some((b) => b.status !== 'ignored');
+    const packet = app.roleId ? packets.find((p) => p.roleId === app.roleId) : undefined;
+    const packetStories = (packet?.topStoryIds ?? []).filter(
+      (id): id is string => typeof id === 'string' && storyIds.has(id)
+    ).length;
+    return {
+      id: app.id,
+      title: role?.jobTitle?.trim() || app.title,
+      company: role?.company?.trim() || app.company,
+      deadline: app.deadline,
+      daysUntil: daysUntilDeadline(app.deadline),
+      isActive: app.id === activeId,
+      sentOn: app.sentOn ?? null,
+      roleId: app.roleId,
+      decoded,
+      packetStories,
+      stations: stationsWithContent(getDesk(desks, app.id)),
+      updatedAt: app.updatedAt,
+    };
+  });
+  return sortApplications(summaries, activeId);
+}
+
+// ============================================================================
+// Application desk — src/lib/application-desk.ts (key: career-application-desk)
+// ============================================================================
+
+/** A dated action-plan step with the application it belongs to, for the dashboard. */
+export interface DashboardActionStep extends DatedActionStep {
+  /** The application's display title (the linked role's title when it exists). */
+  applicationTitle: string;
+  company: string;
+}
+
+/**
+ * Open dated steps from every tracked application's action plan, soonest
+ * first. Desks left behind by a removed application are never read.
+ */
+function readActionSteps(
+  desks: ApplicationDeskData,
+  applications: ApplicationSummary[]
+): DashboardActionStep[] {
+  const byId = new Map(applications.map((app) => [app.id, app]));
+  return (
+    datedActionSteps(desks, byId.keys())
+      // A step whose date passed on an application already sent is not overdue
+      // work: the application went.
+      .filter((step) => !(byId.get(step.applicationId)?.sentOn && step.daysUntil < 0))
+      .map((step) => {
+        const app = byId.get(step.applicationId);
+        return { ...step, applicationTitle: app?.title ?? '', company: app?.company ?? '' };
+      })
+  );
 }
 
 // ============================================================================
@@ -252,8 +475,8 @@ export interface CareerDashboardData {
     needsRescan: boolean;
     lastAnalyzedAt: string | null;
     bulletCount: number;
-    /** Mean of each bullet's latest score. */
-    averageScore: number;
+    /** Lines whose latest score is at or above the Resume Game's strong label. */
+    strongCount: number;
     hardSkills: string[];
   } | null;
   reflection: {
@@ -270,22 +493,43 @@ export interface CareerDashboardData {
   } | null;
   glowup: GlowUpSummary | null;
   networking: NetworkingSummary | null;
+  applications: ApplicationSummary[];
+  /** Open dated action steps across applications, soonest first. */
+  actionSteps: DashboardActionStep[];
+  /**
+   * One quiet line when the loop is actually closed: reflection saved, resume
+   * scored, reps run, and a packet holding a live story. Names the in-focus
+   * deadline when there is one. Null while any stage is still open.
+   */
+  arcLine: string | null;
   recentActivity: Array<{ tool: ToolName; action: string; date: string | null; url: string }>;
   recommendations: Recommendation[];
   nextActions: NextAction[];
 }
 
 export function readCareerDashboard(): CareerDashboardData {
-  const profile = readProfile();
-  const resume = readResumeGame();
-  const why = readCareer5Whys();
-  const glowup = readGlowUp();
-  const networking = readNetworking();
+  const profile = safely(readProfile, null);
+  const resume = safely(readResumeGame, null);
+  const why = safely(readCareer5Whys, { session: null, snapshots: [] });
+  const glowRaw = safely(readGlowUpRaw, null);
+  const glowup = safely(() => readGlowUp(glowRaw), null);
+  const networking = safely(readNetworking, null);
+  const desks = safely(loadApplicationDesks, createDefaultDeskData());
+  const applications = safely(
+    () => summarizeApplications(loadApplications(), glowRaw, desks),
+    [] as ApplicationSummary[]
+  );
+  const actionSteps = safely(() => readActionSteps(desks, applications), []);
 
   // A five whys session auto-saves without the user pressing anything, so a
   // finished chain counts as data even when no snapshot was taken.
   const sessionSynthesis = why.session
-    ? computeSynthesis(why.session.responses, why.session.topic, why.session.track)
+    ? computeSynthesis(
+        why.session.responses,
+        why.session.topic,
+        why.session.track,
+        why.session.rootIndex
+      )
     : null;
   const latestSnapshot = why.snapshots[0] ?? null;
   const reflectionHasDraft = !!(
@@ -301,6 +545,36 @@ export function readCareerDashboard(): CareerDashboardData {
     )
   );
 
+  // The whole loop, honestly: a reflection, a scored resume, at least one
+  // practice rep, and a packet holding a story that still exists.
+  const storyIds = new Set(
+    (glowRaw?.stories ?? []).map((s) => s.id).filter((id): id is string => typeof id === 'string')
+  );
+  const hasPackedPacket = (glowRaw?.packets ?? []).some((p) =>
+    (p.topStoryIds ?? []).some((id) => typeof id === 'string' && storyIds.has(id))
+  );
+  const arcComplete = !!(
+    (why.snapshots.length || sessionSynthesis?.isComplete) &&
+    resume?.bullets.length &&
+    networking?.sessionCount &&
+    hasPackedPacket
+  );
+  const focusedApp = applications.find((a) => a.isActive);
+  const focusedDue = focusedApp?.sentOn
+    ? ` You sent ${focusedApp.title} on ${shortDate(focusedApp.sentOn)}.`
+    : focusedApp && focusedApp.daysUntil !== null
+      ? focusedApp.daysUntil < 0
+        ? ` ${focusedApp.title} is past its deadline.`
+        : focusedApp.daysUntil === 0
+          ? ` ${focusedApp.title} is due today.`
+          : focusedApp.daysUntil === 1
+            ? ` ${focusedApp.title} is due tomorrow.`
+            : ` ${focusedApp.title} is due in ${focusedApp.daysUntil} days.`
+      : '';
+  const arcLine = arcComplete
+    ? `You have done the whole loop: reflection, resume, reps, and a packed packet.${focusedDue}`
+    : null;
+
   const hasData = !!(
     resume?.bullets.length ||
     resume?.resumeText?.trim() ||
@@ -312,31 +586,32 @@ export function readCareerDashboard(): CareerDashboardData {
     glowup?.roleCount ||
     networking?.sessionCount ||
     networking?.versionCount ||
-    networking?.draftedButUnpracticed
+    networking?.draftedButUnpracticed ||
+    applications.length
   );
 
-  const avgScore = resume?.bullets.length
-    ? Math.round(
-        resume.bullets.reduce((s, b) => s + (b.improvedScore ?? 0), 0) / resume.bullets.length
-      )
-    : 0;
+  // A count, not an average: the Resume Game has no resume-level score.
+  const strongCount =
+    resume?.bullets.filter(
+      (b) => typeof b.improvedScore === 'number' && b.improvedScore >= STRONG_SCORE
+    ).length ?? 0;
 
   // ---- Recent activity -----------------------------------------------------
   const recentActivity: CareerDashboardData['recentActivity'] = [];
   if (resume?.lastAnalyzedAt) {
     recentActivity.push({
-      tool: 'Resume Game',
+      tool: 'The Resume Game',
       action: `Analyzed ${resume.bullets.length} bullets`,
       date: resume.lastAnalyzedAt,
-      url: TOOL_URLS['Resume Game'],
+      url: TOOL_URLS['The Resume Game'],
     });
   }
   if (latestSnapshot) {
     recentActivity.push({
-      tool: 'Career 5 Whys',
+      tool: 'The Five Whys',
       action: `Reflected on "${latestSnapshot.topic || 'Career direction'}"`,
       date: latestSnapshot.timestamp,
-      url: TOOL_URLS['Career 5 Whys'],
+      url: TOOL_URLS['The Five Whys'],
     });
   }
   if (networking?.latestSessionDate) {
@@ -373,9 +648,9 @@ export function readCareerDashboard(): CareerDashboardData {
       : latestSnapshot?.nextStep || sessionSynthesis?.nextStep || null;
   if (reflectionNextStep) {
     nextActions.push({
-      tool: 'Career 5 Whys',
+      tool: 'The Five Whys',
       text: reflectionNextStep,
-      href: TOOL_URLS['Career 5 Whys'],
+      href: TOOL_URLS['The Five Whys'],
     });
   }
   if (networking?.nextStep) {
@@ -389,6 +664,51 @@ export function readCareerDashboard(): CareerDashboardData {
   // ---- Recommendations built from what was actually saved -----------------
   const recommendations: Recommendation[] = [];
 
+  // Deadlines outrank everything else. Each tracked application (already
+  // sorted: focused first, then soonest) surfaces its first gap only, capped
+  // so a busy season cannot crowd out the tool pointers below.
+  for (const app of applications.slice(0, 2)) {
+    const name = `"${app.title}${app.company ? ` at ${app.company}` : ''}"`;
+    if (app.sentOn) {
+      // Sent: no deadline to chase. The useful next thing is the interview.
+      recommendations.push({
+        tool: 'Interview Glow Up',
+        text: `${name} was sent on ${shortDate(app.sentOn)}. Practice for the interview while you wait.`,
+        href: '/interview-glow-up/rehearse/',
+        cta: 'Rehearse the interview',
+      });
+      continue;
+    }
+    const when =
+      app.daysUntil === null
+        ? ''
+        : app.daysUntil < 0
+          ? ' The deadline has passed.'
+          : app.daysUntil === 0
+            ? ' It is due today.'
+            : app.daysUntil === 1
+              ? ' It is due tomorrow.'
+              : ` It is due in ${app.daysUntil} days.`;
+    if (!app.decoded) {
+      recommendations.push({
+        tool: 'Interview Glow Up',
+        text: `${name} has no decoded posting.${when}`,
+        href: `${TOOL_URLS['Interview Glow Up']}?tab=decode`,
+        cta: 'Decode it',
+      });
+    } else if (app.packetStories === 0) {
+      const hasStories = (glowup?.storyCount ?? 0) > 0;
+      recommendations.push({
+        tool: 'Interview Glow Up',
+        text: hasStories
+          ? `${name} has nothing packed for the call.${when}`
+          : `${name} is decoded but no story backs it yet.${when}`,
+        href: `${TOOL_URLS['Interview Glow Up']}?tab=${hasStories ? 'packet' : 'stories'}`,
+        cta: hasStories ? 'Pack the packet' : 'Build a story',
+      });
+    }
+  }
+
   const hasResumeAnalysis = !!(
     resume?.lastAnalyzedAt ||
     resume?.bullets.length ||
@@ -397,9 +717,9 @@ export function readCareerDashboard(): CareerDashboardData {
   const resumeNeedsRescan = hasResumeAnalysis && resume?.needsRescan !== false;
   if (resumeNeedsRescan) {
     recommendations.push({
-      tool: 'Resume Game',
+      tool: 'The Resume Game',
       text: 'Your saved resume results need a refresh before using their feedback.',
-      href: TOOL_URLS['Resume Game'],
+      href: TOOL_URLS['The Resume Game'],
       cta: 'Review changed resume',
     });
   }
@@ -426,14 +746,22 @@ export function readCareerDashboard(): CareerDashboardData {
     }
     const weakestScore = weakest?.improvedScore ?? 0;
     if (weakest && weakestScore < 60) {
+      // Lead with what is already there. The low line is the next one to work
+      // on, named by its words, never by its score.
       const excerpt = clip(weakest.original || '', 70);
+      const total = resume.bullets.length;
+      const strong = resume.bullets.filter(
+        (b) => typeof b.improvedScore === 'number' && b.improvedScore >= STRONG_SCORE
+      ).length;
+      const lead =
+        strong > 0
+          ? `${strong} of your ${total} resume ${total === 1 ? 'line is' : 'lines are'} already strong.`
+          : `You have ${total} resume ${total === 1 ? 'line' : 'lines'} to build on.`;
       recommendations.push({
-        tool: 'Resume Game',
-        text: excerpt
-          ? `Your lowest bullet scores ${weakestScore}: "${excerpt}".`
-          : `Your lowest bullet scores ${weakestScore}.`,
-        href: `${TOOL_URLS['Resume Game']}?bullet=${encodeURIComponent(weakest.id)}`,
-        cta: 'Rewrite it',
+        tool: 'The Resume Game',
+        text: excerpt ? `${lead} A good next line to work on: "${excerpt}".` : lead,
+        href: `${TOOL_URLS['The Resume Game']}?bullet=${encodeURIComponent(weakest.id)}`,
+        cta: 'Work on this line',
       });
     }
   }
@@ -457,9 +785,9 @@ export function readCareerDashboard(): CareerDashboardData {
   // A finished chain that was never kept.
   if (sessionSynthesis?.isComplete && reflectionHasDraft) {
     recommendations.push({
-      tool: 'Career 5 Whys',
+      tool: 'The Five Whys',
       text: 'Your five-round reflection is complete but not saved as a snapshot.',
-      href: TOOL_URLS['Career 5 Whys'],
+      href: TOOL_URLS['The Five Whys'],
       cta: 'Save it',
     });
   }
@@ -488,26 +816,26 @@ export function readCareerDashboard(): CareerDashboardData {
       tool: 'Networking Practice',
       text: 'You drafted an intro but never ran it against the timer.',
       href: TOOL_URLS['Networking Practice'],
-      cta: 'Do one two-minute rep',
+      cta: 'Do one timed rep',
     });
   }
 
   // Quiet pointers for tools with nothing saved yet.
   if (!resume?.bullets.length && !resumeNeedsRescan) {
     recommendations.push({
-      tool: 'Resume Game',
+      tool: 'The Resume Game',
       text: resume?.resumeText?.trim()
         ? 'Your resume draft is ready to review.'
         : 'No resume scored yet.',
-      href: TOOL_URLS['Resume Game'],
+      href: TOOL_URLS['The Resume Game'],
       cta: 'Paste yours to see which bullets carry proof',
     });
   }
   if (!why.snapshots.length && !sessionSynthesis?.isComplete) {
     recommendations.push({
-      tool: 'Career 5 Whys',
+      tool: 'The Five Whys',
       text: 'No saved reflection yet.',
-      href: TOOL_URLS['Career 5 Whys'],
+      href: TOOL_URLS['The Five Whys'],
       cta: 'Five rounds of "why" give the other tools a direction',
     });
   }
@@ -521,7 +849,7 @@ export function readCareerDashboard(): CareerDashboardData {
           needsRescan: resumeNeedsRescan,
           lastAnalyzedAt: resume.lastAnalyzedAt ?? null,
           bulletCount: resume.bullets.length,
-          averageScore: avgScore,
+          strongCount,
           hardSkills,
         }
       : null,
@@ -545,8 +873,54 @@ export function readCareerDashboard(): CareerDashboardData {
         : null,
     glowup,
     networking,
+    applications,
+    actionSteps,
+    arcLine,
     recentActivity: recentActivity.slice(0, 5),
     recommendations: recommendations.slice(0, 4),
     nextActions,
   };
+}
+
+/**
+ * The master resume's text, for tools that compare it with a posting. Read
+ * only: this never writes to the Resume Game's session.
+ */
+export function readResumeText(): string {
+  if (typeof window === 'undefined') return '';
+  try {
+    const raw = window.localStorage.getItem(RESUME_SESSION_KEY);
+    if (!raw) return '';
+    const parsed = JSON.parse(raw) as { resumeText?: unknown };
+    return typeof parsed.resumeText === 'string' ? parsed.resumeText : '';
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Resume lines the visitor rewrote in the Resume Game, as the original text
+ * and its new wording. Read only.
+ */
+export function readResumeRewrites(): { original: string; improved: string }[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(RESUME_SESSION_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as { bullets?: unknown };
+    if (!Array.isArray(parsed.bullets)) return [];
+    return parsed.bullets.flatMap((bullet: unknown) => {
+      if (!bullet || typeof bullet !== 'object') return [];
+      const { original, improved, edited } = bullet as Record<string, unknown>;
+      return edited === true &&
+        typeof original === 'string' &&
+        typeof improved === 'string' &&
+        improved.trim() &&
+        improved.trim() !== original.trim()
+        ? [{ original, improved }]
+        : [];
+    });
+  } catch {
+    return [];
+  }
 }

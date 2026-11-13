@@ -26,6 +26,8 @@ const COLORS = {
     gold: '#cda24c',
     iris: '#b195c4',
     love: '#cf7357',
+    lichen: '#a6ba6d',
+    madder: '#ce8d9c',
   } satisfies Record<OgAccent, string>,
 };
 

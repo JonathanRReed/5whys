@@ -40,9 +40,79 @@
   --color-pine: hsl(var(--pine));
   --color-foam: hsl(var(--foam));
   --color-iris: hsl(var(--iris));
+  --color-lichen: hsl(var(--lichen));
+  --color-madder: hsl(var(--madder));
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
+}
+
+/* Alternative typefaces for the Aa menu. Self-hosted under the SIL Open Font
+   License (licences sit beside the files in public/fonts). A browser only
+   downloads a face once something on the page uses it, so visitors on the
+   default faces never fetch these. */
+@font-face {
+  font-family: "Nebula Sans";
+  src: url("/fonts/NebulaSans-Book-latin.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nebula Sans";
+  src: url("/fonts/NebulaSans-BookItalic-latin.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nebula Sans";
+  src: url("/fonts/NebulaSans-Medium-latin.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nebula Sans";
+  src: url("/fonts/NebulaSans-Semibold-latin.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nebula Sans";
+  src: url("/fonts/NebulaSans-Bold-latin.woff2") format("woff2");
+  font-weight: 700 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "OpenDyslexic";
+  src: url("/fonts/OpenDyslexic-400-normal-latin.woff2") format("woff2");
+  font-weight: 100 499;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "OpenDyslexic";
+  src: url("/fonts/OpenDyslexic-400-italic-latin.woff2") format("woff2");
+  font-weight: 100 499;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "OpenDyslexic";
+  src: url("/fonts/OpenDyslexic-700-normal-latin.woff2") format("woff2");
+  font-weight: 500 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "OpenDyslexic";
+  src: url("/fonts/OpenDyslexic-700-italic-latin.woff2") format("woff2");
+  font-weight: 500 900;
+  font-style: italic;
+  font-display: swap;
 }
 
 @theme {
@@ -80,6 +150,21 @@
       opacity: 1;
     }
   }
+}
+
+/* Visitor typeface preference, set as <html data-font> by the boot script and
+   the Aa menu. The two alternatives replace headings, body, and labels alike:
+   a reader who needs a plainer face needs it everywhere. */
+:root[data-font="readable"] {
+  --font-display: "Nebula Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Nebula Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Nebula Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+:root[data-font="dyslexic"] {
+  --font-display: "OpenDyslexic", "Nebula Sans", system-ui, sans-serif;
+  --font-sans: "OpenDyslexic", "Nebula Sans", system-ui, sans-serif;
+  --font-mono: "OpenDyslexic", "Nebula Sans", system-ui, sans-serif;
 }
 
 @utility nav-pill-group {
@@ -362,7 +447,7 @@
     --overlay: 150 7% 14%;
     --popover: 152 8% 11%;
     --popover-foreground: 75 11% 91%;
-    --primary: 150 44% 42%;
+    --primary: 150 44% 46%;
     --primary-foreground: 150 40% 7%;
     --secondary: 150 7% 17%;
     --secondary-foreground: 75 11% 91%;
@@ -370,17 +455,24 @@
     --muted-foreground: 100 8% 72%;
     --accent: 40 54% 56%;
     --accent-foreground: 40 45% 9%;
-    --destructive: 6 58% 56%;
+    --destructive: 6 62% 64%;
     --destructive-foreground: 60 12% 96%;
     --love: 14 56% 57%;
     --gold: 40 56% 57%;
     --rose: 14 44% 67%;
     --pine: 150 42% 34%;
-    --foam: 150 48% 45%;
+    --foam: 150 46% 50%;
     --iris: 286 24% 65%;
+    /* Plates V and VI: a lichen yellow-green and a madder red, both from the
+       same dyed-earth family as brass and terracotta. */
+    --lichen: 76 36% 58%;
+    --madder: 346 40% 68%;
     --border: 150 7% 22%;
     --input: 150 7% 22%;
-    --ring: 150 48% 45%;
+    --ring: 150 46% 55%;
+    /* The edge of a text field. A boundary a low-vision reader has to find,
+       so it meets 3:1 against the page, unlike decorative hairlines. */
+    --field-border: 150 8% 42%;
     --radius: 0.5rem;
     --logo-stop-1: color-mix(in srgb, #3f9f78 54%, transparent);
     --logo-stop-2: color-mix(in srgb, #cda24c 48%, transparent);
@@ -406,7 +498,7 @@
     --overlay: 48 24% 90%;
     --popover: 50 40% 98%;
     --popover-foreground: 150 14% 15%;
-    --primary: 150 50% 26%;
+    --primary: 150 52% 23%;
     --primary-foreground: 50 40% 97%;
     --secondary: 48 22% 91%;
     --secondary-foreground: 150 14% 15%;
@@ -422,9 +514,12 @@
     --pine: 150 46% 22%;
     --foam: 150 50% 26%;
     --iris: 286 30% 42%;
+    --lichen: 76 56% 25%;
+    --madder: 346 46% 38%;
     --border: 48 20% 80%;
     --input: 48 20% 80%;
-    --ring: 150 50% 26%;
+    --ring: 150 52% 23%;
+    --field-border: 48 12% 46%;
     --logo-stop-1: color-mix(in srgb, #2c7a57 40%, transparent);
     --logo-stop-2: color-mix(in srgb, #9a7b27 30%, transparent);
     --logo-stop-3: color-mix(in srgb, #fbfaf3 65%, transparent);
@@ -445,11 +540,27 @@
     background-color: hsl(var(--background));
     /* clip, not hidden: hidden would turn <html> into a scroll container */
     overflow-x: clip;
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
+    /* Keep whatever takes focus or is scrolled to clear of the sticky header. */
+    scroll-padding-top: calc(var(--header-h, 4.75rem) + 0.75rem);
+  }
+
+  /* At large text sizes the header wraps and would cover a fifth of a phone
+     screen: it scrolls away with the page instead. */
+  :root[data-header-tall] [data-site-header] {
+    position: static !important;
+  }
+
+  /* A grid child may shrink below its content's width, so long words wrap
+     inside it at large text sizes instead of pushing past the screen edge. */
+  :where(.grid) > :where(*) {
+    min-width: 0;
   }
 
   body {
     @apply bg-background text-foreground antialiased transition-colors duration-300;
+    /* A word longer than its column breaks instead of running off the screen. */
+    overflow-wrap: break-word;
     font-family: var(--font-sans);
     font-feature-settings:
       "cv05" 1,
@@ -597,7 +708,7 @@
   transform-origin: center;
   animation:
     fg-rise 0.6s ease forwards,
-    fg-glow 3.4s ease-in-out 2.4s infinite;
+    fg-glow 3.4s ease-in-out 2.4s 3;
   animation-delay: 1.9s, 2.4s;
 }
 
@@ -824,6 +935,45 @@ input[type="range"]::-moz-range-thumb {
 /* ============================================================================
    Print Stylesheet for Interview Glow Up
    ============================================================================ */
+/* OpenDyslexic sets wide and tall. Headings lose their negative tracking and
+   are normalized by x-height so the type scale does not overflow; the tracked
+   uppercase label relaxes; long words may break rather than push the page
+   sideways. */
+:root[data-font="dyslexic"] {
+  & h1,
+  & h2,
+  & h3,
+  & h4 {
+    letter-spacing: 0;
+    line-height: 1.25;
+    font-size-adjust: 0.44;
+    overflow-wrap: anywhere;
+  }
+
+  & body {
+    line-height: 1.7;
+  }
+
+  & .eyebrow {
+    letter-spacing: 0.06em;
+    line-height: 1.4;
+  }
+}
+
+:root[data-font="readable"] {
+  & h1,
+  & h2,
+  & h3,
+  & h4 {
+    letter-spacing: -0.015em;
+    font-weight: 600;
+  }
+
+  & .eyebrow {
+    letter-spacing: 0.14em;
+  }
+}
+
 @media print {
   /* The dialog scrim and its scroll lock belong to the screen only. */
   [data-slot="dialog-overlay"] {
@@ -930,4 +1080,224 @@ input[type="range"]::-moz-range-thumb {
     border-color: #f9a825 !important;
     background: #fffde7 !important;
   }
+}
+
+/* The clean resume copy exists only for printing (see MachineView). It is
+   plain black on white on purpose: this is the file a student submits. */
+.resume-print {
+  display: none;
+}
+
+@page resume {
+  margin: 0.75in;
+}
+
+@media print {
+  html[data-print="resume"] body > *:not(.resume-print) {
+    display: none !important;
+  }
+
+  html[data-print="resume"] body {
+    background: #fff !important;
+  }
+
+  html[data-print="resume"] .resume-print {
+    display: block;
+    page: resume;
+    color: #000;
+    font-size: 11pt;
+    line-height: 1.35;
+
+    & h1 {
+      margin: 0 0 2pt;
+      font-family: inherit;
+      font-size: 17pt;
+      font-weight: 700;
+      letter-spacing: 0;
+      color: #000;
+    }
+
+    & h2 {
+      margin: 11pt 0 3pt;
+      border-bottom: 0.75pt solid #000;
+      font-family: inherit;
+      font-size: 11.5pt;
+      font-weight: 700;
+      letter-spacing: 0;
+      color: #000;
+      break-after: avoid;
+    }
+
+    & p {
+      margin: 0 0 2pt;
+      color: #000;
+    }
+
+    & ul {
+      margin: 0 0 3pt;
+      padding-left: 1.2em;
+      list-style: disc;
+    }
+
+    & li {
+      margin: 0 0 1.5pt;
+      color: #000;
+    }
+  }
+}
+
+/* Guided mode: the part of the page the current step is about. An outline,
+   not a spotlight, so the rest of the tool stays usable. */
+[data-guide-active] {
+  outline: 2px solid hsl(var(--gold));
+  outline-offset: 4px;
+  border-radius: 0.5rem;
+  scroll-margin-block: 7rem;
+}
+
+/* While the coach is docked to the bottom of a phone, leave room to scroll
+   the last controls clear of it. */
+@media (max-width: 639px) {
+  body:has(aside[aria-label="Guide"]) main {
+    padding-bottom: 7rem;
+  }
+
+  /* The coach owns the bottom edge of a phone while it is open; the
+     scroll-to-top button would sit on top of its controls. */
+  body:has(aside[aria-label="Guide"]) button[aria-label="Scroll to top"] {
+    display: none;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   Access floor, measured in the relaunch walkthrough.
+   ---------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Moving between pages cross-fades in browsers that support it. The
+     browser does this itself; no router script is shipped. */
+  @view-transition {
+    navigation: auto;
+  }
+}
+
+/* Reduced motion means no movement at all, including the small things:
+   header padding, chevrons, colour fades, anything a library animates. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Text fields: an edge that can be found. Unlayered so it holds wherever a
+   component set a fainter hairline. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+textarea,
+select {
+  border-color: hsl(var(--field-border));
+}
+
+input[aria-invalid="true"],
+textarea[aria-invalid="true"],
+select[aria-invalid="true"] {
+  border-color: hsl(var(--destructive));
+}
+
+/* Focus: one ring, full strength, clear of the control so it shows on filled
+   buttons as well as on the page. */
+:where(
+  a,
+  button,
+  input,
+  textarea,
+  select,
+  summary,
+  [tabindex],
+  [role="tab"],
+  [role="radio"]
+):focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Windows High Contrast and other forced-colour modes drop backgrounds and
+   shadows, so state has to be carried by borders and outlines. */
+@media (forced-colors: active) {
+  /* Links drawn as filled buttons lose their fill: give them the same box. */
+  a[class*="bg-primary"],
+  summary,
+  button,
+  [role="tab"],
+  .peer + span,
+  select,
+  input,
+  textarea {
+    border: 1px solid ButtonText;
+  }
+
+  .peer:checked + span,
+  [aria-pressed="true"],
+  [aria-current="page"],
+  [data-state="active"],
+  [data-state="on"],
+  [data-guide-active] {
+    outline: 3px solid Highlight;
+    outline-offset: 1px;
+  }
+
+  :focus-visible {
+    outline: 3px solid Highlight !important;
+    outline-offset: 2px;
+  }
+
+  mark {
+    forced-color-adjust: none;
+    background: Mark;
+    color: MarkText;
+  }
+
+  aside[aria-label="Guide"],
+  [role="dialog"],
+  [role="status"].fixed {
+    border: 2px solid CanvasText;
+  }
+
+  /* Bars and key dots are painted backgrounds, which forced colours remove.
+     Paint them in the system text colour so progress and the key survive. */
+  .forced-fill {
+    forced-color-adjust: none;
+    background-color: CanvasText;
+  }
+
+  /* The ring on a hidden radio's label is a box shadow, which is dropped. */
+  .peer:focus-visible + span {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}
+
+/* Disabled controls: dimmed so the state shows, but never faded below 3:1.
+   Opacity under about 0.75 took filled buttons to 2.3:1. Each disabled
+   button also has a sentence nearby that says what it is waiting for. */
+button:disabled,
+button[aria-disabled="true"] {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+/* In OpenDyslexic, tracked capitals are the hardest text on the page to
+   decode: labels keep their size and colour but read as ordinary words. */
+:root[data-font="dyslexic"] .eyebrow {
+  text-transform: none;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
 }

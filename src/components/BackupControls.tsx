@@ -1,8 +1,13 @@
 import { Check } from 'lucide-react';
 import * as React from 'react';
+import { localDate } from '../lib/applications';
 import {
+  BACKUP_SIZE_MESSAGE,
   type BackupSummary,
+  backupExclusions,
+  describeExclusions,
   downloadBackup,
+  MAX_BACKUP_BYTES,
   parseBackup,
   restoreBackup,
   type StudioBackup,
@@ -16,7 +21,7 @@ type Props = {
   className?: string;
 };
 
-function describe(summary: BackupSummary): string {
+function describe(summary: BackupSummary, stores: StudioBackup['stores']): string {
   const parts: string[] = [];
   if (summary.reflections)
     parts.push(
@@ -32,9 +37,37 @@ function describe(summary: BackupSummary): string {
     );
   if (summary.stories)
     parts.push(`${summary.stories} interview ${summary.stories === 1 ? 'story' : 'stories'}`);
-  if (parts.length === 0) return summary.hasProfile ? 'only your career profile' : 'nothing yet';
+  if (summary.applications)
+    parts.push(
+      `${summary.applications} tracked ${summary.applications === 1 ? 'application' : 'applications'}`
+    );
+  if (summary.applicationDesks)
+    parts.push(
+      `${summary.applicationDesks} application ${summary.applicationDesks === 1 ? 'desk' : 'desks'}`
+    );
+  if (summary.hasResumeDocument) parts.push('your structured resume');
+  if (summary.hasProfile) parts.push('your career profile');
+  const otherStores: [keyof typeof stores, boolean, string][] = [
+    ['career-why-session-v2', true, 'your current reflection'],
+    ['career-why-history-limit', true, 'your reflection history limit'],
+    ['networking-practice-versions', true, 'your saved introductions'],
+    ['networking-practice-draft', true, 'your networking draft'],
+    ['career-why-history', !summary.reflections, 'your reflection history'],
+    ['resume-game-session-v2', !summary.resumeBullets, 'your resume session'],
+    ['networking-practice-sessions', !summary.practiceRounds, 'your practice history'],
+    ['interview-glow-up-data', !summary.stories, 'your interview preparation'],
+    ['career-applications', !summary.applications, 'your application list'],
+    ['career-application-desk', !summary.applicationDesks, 'your application desks'],
+  ];
+  for (const [key, include, label] of otherStores) {
+    if (include && stores[key] !== undefined) parts.push(label);
+  }
+  if (parts.length === 0) return 'nothing yet';
   return parts.join(', ');
 }
+
+// The dashboard can remount this card when its first saved work arrives.
+let importNotice: string | null = null;
 
 /**
  * Export everything the four tools saved as one file, and bring such a file
@@ -47,7 +80,31 @@ export default function BackupControls({ onRestored, className }: Props) {
   const [status, setStatus] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [exported, setExported] = React.useState(false);
+  // Shown after an export until the page closes: the file is now in this
+  // computer's Downloads folder, which clearing the site does not reach.
+  const [carryHome, setCarryHome] = React.useState(false);
+  const [exclusions, setExclusions] = React.useState<string | null>(null);
+  const [importing, setImporting] = React.useState(false);
+  const importBusy = React.useRef(false);
+  const reading = React.useRef(false);
   const exportTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  React.useEffect(() => {
+    if (importNotice) {
+      setStatus(importNotice);
+      importNotice = null;
+    }
+  });
+
+  React.useEffect(() => {
+    let cancelled = false;
+    void backupExclusions().then((leftOut) => {
+      if (!cancelled) setExclusions(describeExclusions(leftOut));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   React.useEffect(() => {
     return () => {
@@ -55,11 +112,15 @@ export default function BackupControls({ onRestored, className }: Props) {
     };
   }, []);
 
-  const handleExport = () => {
-    const backup = downloadBackup();
+  const handleExport = async () => {
+    const backup = await downloadBackup();
+    setExclusions(describeExclusions(await backupExclusions()));
     setError(null);
-    setStatus(`Exported ${describe(summarizeBackup(backup))}. Check your downloads.`);
+    setStatus(
+      `Exported ${describe(summarizeBackup(backup), backup.stores)}. Check your downloads.`
+    );
     setExported(true);
+    setCarryHome(true);
     if (exportTimer.current) clearTimeout(exportTimer.current);
     exportTimer.current = setTimeout(() => {
       setExported(false);
@@ -69,34 +130,44 @@ export default function BackupControls({ onRestored, className }: Props) {
   const handleFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = '';
-    if (!file) return;
+    if (!file || importBusy.current || reading.current) return;
+    reading.current = true;
     setError(null);
     setStatus(null);
     try {
+      if (file.size > MAX_BACKUP_BYTES) throw new Error(BACKUP_SIZE_MESSAGE);
       const backup = parseBackup(await file.text());
       setPending(backup);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not read that file.');
+    } finally {
+      reading.current = false;
     }
   };
 
-  const finishImport = (replace: boolean) => {
-    if (!pending) return;
+  const finishImport = async (replace: boolean) => {
+    if (!pending || importBusy.current || reading.current) return;
+    importBusy.current = true;
+    setImporting(true);
     setError(null);
     setStatus(null);
-    let written: ReturnType<typeof restoreBackup>;
+    let written: Awaited<ReturnType<typeof restoreBackup>>;
     try {
-      written = restoreBackup(pending, replace);
+      written = await restoreBackup(pending, replace);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not save that file in this browser.');
       return;
+    } finally {
+      importBusy.current = false;
+      setImporting(false);
     }
     setPending(null);
-    setStatus(
+    const message =
       written.length === 0
         ? 'That file had nothing to bring in.'
-        : `Brought in ${describe(summarizeBackup(pending))}.`
-    );
+        : `Brought in ${describe(summarizeBackup(pending), pending.stores)}.`;
+    setStatus(message);
+    importNotice = message;
     if (written.length > 0) onRestored?.();
   };
 
@@ -108,6 +179,10 @@ export default function BackupControls({ onRestored, className }: Props) {
           <p className="mt-1 text-sm text-foreground">
             Everything stays in this browser. To keep a copy, or move it to another device, export
             it as one file and import it there.
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            The file holds everything you wrote, in plain text that anyone can open. Keep it
+            somewhere private.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -124,6 +199,7 @@ export default function BackupControls({ onRestored, className }: Props) {
           </button>
           <button
             type="button"
+            disabled={importing}
             onClick={() => fileRef.current?.click()}
             className="rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
           >
@@ -134,22 +210,34 @@ export default function BackupControls({ onRestored, className }: Props) {
             type="file"
             accept="application/json,.json"
             onChange={handleFile}
+            // The "Import a file" button opens it; a second, invisible Tab stop helps no one.
+            tabIndex={-1}
             className="sr-only"
             aria-label="Import a 5 Whys Career Studio export file"
           />
         </div>
       </div>
+      {exclusions && <p className="mt-2 text-sm text-muted-foreground">{exclusions}</p>}
+      {carryHome && (
+        <p className="mt-2 text-sm text-foreground" data-testid="export-carry-home">
+          Send this file to yourself, then delete it from this computer's Downloads folder. It is
+          plain text with your writing in it.
+        </p>
+      )}
 
       {pending && (
         <div className="mt-4 rounded-xl border border-gold/40 bg-gold/8 p-4 text-sm">
           <p className="text-foreground">
-            This file holds {describe(summarizeBackup(pending))}
-            {pending.exportedAt ? `, exported ${pending.exportedAt.slice(0, 10)}` : ''}. How should
-            it come in?
+            This file holds {describe(summarizeBackup(pending), pending.stores)}
+            {pending.exportedAt && !Number.isNaN(Date.parse(pending.exportedAt))
+              ? `, exported ${localDate(new Date(pending.exportedAt))}`
+              : ''}
+            . How should it come in?
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button
               type="button"
+              disabled={importing}
               onClick={() => finishImport(false)}
               className="rounded-lg bg-foam px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-foam/90 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
             >
@@ -157,6 +245,7 @@ export default function BackupControls({ onRestored, className }: Props) {
             </button>
             <button
               type="button"
+              disabled={importing}
               onClick={() => finishImport(true)}
               className="rounded-lg border border-destructive/40 bg-destructive/8 px-4 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/15 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
             >
@@ -164,6 +253,7 @@ export default function BackupControls({ onRestored, className }: Props) {
             </button>
             <button
               type="button"
+              disabled={importing}
               onClick={() => setPending(null)}
               className="rounded-lg px-4 py-2 text-sm text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
             >

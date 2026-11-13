@@ -1,47 +1,67 @@
 import * as React from 'react';
-import { isStudentLike, readProfile } from '../lib/profile';
-import type { BulletFields, BulletRecord, StoredResumeSession } from '../lib/resume-game';
+import { loadFeature, reportFeatureFailure } from '../lib/lazy-feature';
+import { localDate } from '../lib/local-date';
+import { readProfile } from '../lib/profile';
+import type { ResumeDoc } from '../lib/resume-doc';
 import {
+  bulletRewrites,
+  docMatchesText,
+  isResumeLimitError,
+  listedLineTexts,
+  rewriteText,
+} from '../lib/resume-doc';
+import type { BulletFields, BulletRecord, Register, StoredResumeSession } from '../lib/resume-game';
+import {
+  analyzeResumeText,
   applyFieldChange,
   buildDeepSignalReport,
+  buildReviewReport,
   createBulletRecord,
   decodeEntities,
-  detectResumeStructure,
   downloadTextFile,
   EMPTY_SESSION,
   EMPTY_SIGNAL_REPORT,
   exportDocx,
-  POWER_VERB_PATTERN,
+  FIRST_JOB_SAMPLE_RESUME,
   PROFESSIONAL_PLACEHOLDER,
   PROFESSIONAL_SAMPLE_RESUME,
+  REVIEW_FILE_BASE,
+  registerForStage,
+  STRONG_SCORE,
   STUDENT_PLACEHOLDER,
   STUDENT_SAMPLE_RESUME,
   useResumeSession,
 } from '../lib/resume-game';
-import { cn } from '../lib/utils';
+import { cn, scrollBehavior } from '../lib/utils';
 import BeforeAfter from './resume-game/BeforeAfter';
 import BulletEditor from './resume-game/BulletEditor';
 import BulletList from './resume-game/BulletList';
+import FirstResumeBuilder from './resume-game/FirstResumeBuilder';
+import MachineView from './resume-game/MachineView';
+import PostingMatch from './resume-game/PostingMatch';
+import ResumeFileActions from './resume-game/ResumeFile';
 import ResumeHeader from './resume-game/ResumeHeader';
 import ResumeInput from './resume-game/ResumeInput';
 import ReviewLines from './resume-game/ReviewLines';
 import ScanResults from './resume-game/ScanResults';
 import Scoreboard from './resume-game/Scoreboard';
 import ShareScoreCard from './resume-game/ShareScoreCard';
+import Announcer, { useAnnouncer } from './shared/Announcer';
 
 // Analysis is synchronous and instant. This brief transition only exists so
 // the button press has visible feedback; it is not a fake progress display.
 const SCAN_TRANSITION_MS = 300;
 const STATUS_RESET_MS = 3500;
 
-function slugify(value: string) {
-  if (!value) return '';
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80);
-}
+const STUDENT_SAMPLES = [
+  { id: 'first-job', label: 'First job' },
+  { id: 'college', label: 'College student' },
+] as const;
+
+const scoredStatus = (count: number) =>
+  count === 0
+    ? 'No achievement lines found. Add bullets that start with what you did.'
+    : `Scored ${count === 1 ? '1 bullet' : `${count} bullets`}. Pick one below to rewrite it.`;
 
 type ResumeGameProps = {
   showHeader?: boolean;
@@ -51,15 +71,17 @@ type ResumeGameProps = {
 export default function ResumeGame({ showHeader = true, className }: ResumeGameProps) {
   const { session, setSession, storageNotice } = useResumeSession();
   const [isScanning, setIsScanning] = React.useState(false);
+  const [announcement, announce] = useAnnouncer();
   const [scanComplete, setScanComplete] = React.useState(false);
   const needsRescan = session.needsRescan ?? false;
   const [status, setStatus] = React.useState<string | null>(null);
-  const [studentRegister, setStudentRegister] = React.useState(false);
+  // Student examples until the visitor's saved profile says otherwise.
+  const [register, setRegister] = React.useState<Register>('student');
   const scanTimeoutRef = React.useRef<number | null>(null);
   const deepLinkHandled = React.useRef(false);
 
   React.useEffect(() => {
-    setStudentRegister(isStudentLike(readProfile()));
+    setRegister(registerForStage(readProfile()?.stage));
   }, []);
 
   const setSessionState = React.useCallback(
@@ -92,29 +114,19 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
 
   const resumeText = session.resumeText;
   const bullets = session.bullets;
+  // What the visitor changed, for the clean copy of the uploaded resume. Each
+  // rewrite is bound to the line it came from, so equal lines stay separate.
+  const rewrites = React.useMemo(() => bulletRewrites(bullets), [bullets]);
+  // The posting is compared with the resume as it will be exported: the
+  // original text with each rewritten line in its new wording.
+  const matchText = React.useMemo(() => rewriteText(resumeText, rewrites), [rewrites, resumeText]);
   const selectedBulletId = session.selectedBulletId;
   const selectedBullet = bullets.find((bullet) => bullet.id === selectedBulletId) ?? null;
   const signalReport = session.signalReport ?? EMPTY_SIGNAL_REPORT;
 
-  // Single-pass memoized computation of overall resume metrics to avoid repeated array filtering,
-  // reduces overhead during state updates in ResumeGame.
-  const { averageScore, quantifiedBullets, verbCoverage } = React.useMemo(() => {
-    if (!bullets.length) return { averageScore: 0, quantifiedBullets: 0, verbCoverage: 0 };
-    let totalScore = 0;
-    let quantifiedCount = 0;
-    let verbCount = 0;
-    for (let i = 0; i < bullets.length; i++) {
-      const bullet = bullets[i];
-      totalScore += bullet.improvedScore;
-      if (/\d/.test(bullet.improved)) quantifiedCount++;
-      if (POWER_VERB_PATTERN.test(bullet.improved.toLowerCase())) verbCount++;
-    }
-    return {
-      averageScore: Math.round(totalScore / bullets.length),
-      quantifiedBullets: quantifiedCount,
-      verbCoverage: Math.round((verbCount / bullets.length) * 100),
-    };
-  }, [bullets]);
+  // The share card is only offered when every scored line is strong.
+  const allStrong =
+    bullets.length > 0 && bullets.every((bullet) => bullet.improvedScore >= STRONG_SCORE);
 
   React.useEffect(() => {
     if (!storageNotice) return;
@@ -147,7 +159,7 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     window.requestAnimationFrame(() => {
       document
         .getElementById('bullet-editor')
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        ?.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
     });
   }, [bullets, setSelectedBulletId]);
 
@@ -158,25 +170,20 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     []
   );
 
+  // The structured copy of an uploaded file, for the machine view. Pasted
+  // text has no layout to inspect, so it stays null until a file is loaded.
+  const [resumeDoc, setResumeDoc] = React.useState<ResumeDoc | null>(null);
+
   const analyzeResume = React.useCallback(() => {
-    const structure = detectResumeStructure(resumeText);
-    const records = structure.bullets.map((line, index) => createBulletRecord(line, index));
-    const skipped = Object.values(structure.skipped).reduce((sum, n) => sum + n, 0);
-    const report = buildDeepSignalReport(records, resumeText, structure.note, skipped);
-    setSessionState((previous) => ({
-      ...previous,
-      bullets: records,
-      selectedBulletId: records[0]?.id ?? null,
-      signalReport: report,
-      lastAnalyzedAt: new Date().toISOString(),
-      needsRescan: false,
-    }));
-    setStatus(
-      records.length === 0
-        ? 'No achievement lines found. Add bullets that start with what you did.'
-        : `Scored ${records.length === 1 ? '1 bullet' : `${records.length} bullets`}. Pick one below to rewrite it.`
-    );
-  }, [resumeText, setSessionState]);
+    // The file's own sections say which lines are a skills list, wherever
+    // the text puts them, while the text is still the file's.
+    const analysis = analyzeResumeText(resumeText, {
+      listedLines:
+        resumeDoc && docMatchesText(resumeDoc, resumeText) ? listedLineTexts(resumeDoc) : [],
+    });
+    setSessionState((previous) => ({ ...previous, ...analysis }));
+    setStatus(scoredStatus(analysis.bullets.length));
+  }, [resumeDoc, resumeText, setSessionState]);
 
   const handleScan = () => {
     if (!resumeText.trim() || isScanning) return;
@@ -200,6 +207,31 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
   const [isLoadingFile, setIsLoadingFile] = React.useState(false);
   const [fileError, setFileError] = React.useState<string | null>(null);
   const uploadSequence = React.useRef(0);
+
+  // Restore the structured copy saved on this device. Reading never writes:
+  // it is only saved again after an upload or a repair the visitor made.
+  React.useEffect(() => {
+    let cancelled = false;
+    void loadFeature(import('../lib/local-db'))
+      .then(async ({ getResumeDoc }) => {
+        const saved = await getResumeDoc<ResumeDoc>();
+        if (!cancelled && saved) setResumeDoc((current) => current ?? saved.doc);
+      })
+      .catch(reportFeatureFailure);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const keepResumeDoc = React.useCallback((doc: ResumeDoc | null) => {
+    setResumeDoc(doc);
+    void loadFeature(import('../lib/local-db'))
+      .then(async ({ saveResumeDoc, deleteResumeDoc }) => {
+        if (doc) await saveResumeDoc(doc);
+        else await deleteResumeDoc();
+      })
+      .catch(reportFeatureFailure);
+  }, []);
 
   React.useEffect(
     () => () => {
@@ -226,9 +258,37 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     }
     setIsLoadingFile(true);
     try {
-      const { extractTextFromFile } = await import('../lib/resume-game/extractors');
-      const text = await extractTextFromFile(file);
+      // The structured copy knows which lines are bullets and which visual
+      // lines wrap, so the editor gets whole bullets from it, read once. When
+      // the layout cannot be read, the plain extractor is used instead: it
+      // gives the clear messages for scanned, locked, or damaged files.
+      let doc: ResumeDoc | null = null;
+      let text = '';
+      const name = file.name.toLowerCase();
+      if (name.endsWith('.pdf') || name.endsWith('.docx')) {
+        try {
+          const engine = await loadFeature(import('../lib/resume-doc'));
+          doc = name.endsWith('.pdf')
+            ? await engine.extractPdf(file)
+            : await engine.extractDocx(new Uint8Array(await file.arrayBuffer()), file.name);
+          text = engine.toEditorText(doc);
+          // Kept with the copy, so a later edit to the paste field is noticed.
+          doc = { ...doc, sourceText: text };
+        } catch (error) {
+          // A file refused for its size stays refused: the plain reader must
+          // not take it instead.
+          if (isResumeLimitError(error)) throw error;
+          doc = null;
+        }
+        if (sequence !== uploadSequence.current) return;
+      }
+      if (!text.trim()) {
+        doc = null;
+        const { extractTextFromFile } = await loadFeature(import('../lib/resume-game/extractors'));
+        text = await extractTextFromFile(file);
+      }
       if (sequence !== uploadSequence.current) return;
+      keepResumeDoc(doc);
       setResumeTextValue(text);
       setStatus('File loaded. Review the text below before analyzing.');
     } catch (error) {
@@ -237,6 +297,67 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     } finally {
       if (sequence === uploadSequence.current) setIsLoadingFile(false);
     }
+  };
+
+  // "Start from nothing": the form opens from its button, from
+  // ?start=blank (the Application Desk links there), or because it was open
+  // when the visitor last typed in it.
+  const [builderOpen, setBuilderOpen] = React.useState(false);
+  const [builderFocus, setBuilderFocus] = React.useState(false);
+  const [builderMessage, announceBuilder] = useAnnouncer();
+  // The form's announcer stays in the page once the form has opened, so the
+  // message after "Use this as my resume" is heard after the form is gone.
+  const [builderSeen, setBuilderSeen] = React.useState(false);
+  React.useEffect(() => {
+    if (builderOpen) setBuilderSeen(true);
+  }, [builderOpen]);
+  React.useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('start') === 'blank') setBuilderOpen(true);
+  }, []);
+  React.useEffect(() => {
+    if (session.draft?.open) setBuilderOpen(true);
+  }, [session.draft?.open]);
+
+  const closeBuilder = () => {
+    setBuilderOpen(false);
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('start')) {
+      url.searchParams.delete('start');
+      window.history.replaceState(window.history.state, '', url);
+    }
+    // Only a form the visitor typed in is saved, so only that one is updated.
+    if (session.draft?.open) {
+      setSessionState((previous) =>
+        previous.draft ? { ...previous, draft: { ...previous.draft, open: false } } : previous
+      );
+    }
+  };
+
+  // The built resume goes in exactly as pasted text does, already analyzed.
+  const useBuiltResume = (text: string) => {
+    cancelScan();
+    cancelUpload();
+    keepResumeDoc(null);
+    const analysis = analyzeResumeText(text);
+    setSessionState((previous) => ({
+      ...previous,
+      resumeText: text,
+      ...analysis,
+      draft: previous.draft ? { ...previous.draft, open: false } : previous.draft,
+    }));
+    setScanComplete(true);
+    closeBuilder();
+    setStatus(`Your resume is in the box. ${scoredStatus(analysis.bullets.length)}`);
+    announceBuilder(`Your resume is in the box. ${scoredStatus(analysis.bullets.length)}`);
+    window.requestAnimationFrame(() => {
+      document.getElementById('bullet-editor')?.scrollIntoView?.({
+        behavior: scrollBehavior(),
+        block: 'start',
+      });
+      document.querySelector<HTMLElement>('[data-bullet-list] button')?.focus({
+        preventScroll: true,
+      });
+    });
   };
 
   const handleTextChange = (value: string) => {
@@ -250,8 +371,7 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
       const nextBullets = previous.bullets.map((bullet: BulletRecord) =>
         bullet.id === id ? applyFieldChange(bullet, field, value) : bullet
       );
-      // Keep the report in sync with edits so the health score and signal
-      // strength reflect the current state of the bullets.
+      // Keep the stored report in sync with edits.
       return {
         ...previous,
         bullets: nextBullets,
@@ -265,50 +385,25 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     });
   };
 
-  const markdownReport = React.useCallback(() => {
-    const original = bullets.map((bullet, index) => `${index + 1}. ${bullet.original}`);
-    const improved = bullets.map((bullet, index) => `${index + 1}. ${bullet.improved}`);
-    const healthLine =
-      typeof signalReport.benchmarkScore === 'number'
-        ? `\n- Resume health score: ${signalReport.benchmarkScore}/100`
-        : '';
-    return `# Resume Game Report
+  const reviewName = React.useCallback(
+    () =>
+      `${REVIEW_FILE_BASE}-${(session.lastAnalyzedAt ?? new Date().toISOString()).slice(0, 10)}`,
+    [session.lastAnalyzedAt]
+  );
 
-## Scores
-- Visible value: ${signalReport.visible}%
-- Average bullet score: ${averageScore}/100
-- Quantified bullets: ${quantifiedBullets}/${bullets.length || 0}${healthLine}
+  const reviewText = React.useCallback(() => buildReviewReport(bullets, localDate()), [bullets]);
 
-## Original Bullets
-${original.join('\n')}
-
-## Improved Bullets
-${improved.join('\n')}
-`;
-  }, [averageScore, bullets, quantifiedBullets, signalReport.visible, signalReport.benchmarkScore]);
-
-  const exportBase = React.useMemo(() => {
-    const headline =
-      bullets[0]?.improved ||
-      bullets[0]?.original ||
-      resumeText.split('\n').find((line) => line.trim()) ||
-      'resume-session';
-    const slug = slugify(headline).slice(0, 60) || 'resume-session';
-    const stamped = (session.lastAnalyzedAt ?? new Date().toISOString()).slice(0, 10);
-    return `resume-game-${slug}-${stamped}`;
-  }, [bullets, resumeText, session.lastAnalyzedAt]);
-
-  const handleExportMarkdown = React.useCallback(async () => {
-    downloadTextFile(`${exportBase}.md`, markdownReport());
-  }, [exportBase, markdownReport]);
+  const handleExportMarkdown = React.useCallback(() => {
+    downloadTextFile(`${reviewName()}.md`, reviewText());
+  }, [reviewName, reviewText]);
 
   const handleExportDocx = React.useCallback(async () => {
-    await exportDocx(`${exportBase}.docx`, markdownReport());
-  }, [exportBase, markdownReport]);
+    await exportDocx(`${reviewName()}.docx`, reviewText());
+  }, [reviewName, reviewText]);
 
   const resumeOutOfDate = needsRescan && scanComplete && resumeText.trim().length > 0;
-  const sampleResume = studentRegister ? STUDENT_SAMPLE_RESUME : PROFESSIONAL_SAMPLE_RESUME;
-  const placeholder = studentRegister ? STUDENT_PLACEHOLDER : PROFESSIONAL_PLACEHOLDER;
+  const sampleResume = register === 'student' ? STUDENT_SAMPLE_RESUME : PROFESSIONAL_SAMPLE_RESUME;
+  const placeholder = register === 'student' ? STUDENT_PLACEHOLDER : PROFESSIONAL_PLACEHOLDER;
 
   return (
     <div
@@ -320,7 +415,29 @@ ${improved.join('\n')}
     >
       <ResumeHeader showHeader={showHeader} />
 
+      {builderSeen && <Announcer message={builderMessage} />}
+      {builderOpen && (
+        <FirstResumeBuilder
+          draft={session.draft ?? null}
+          onDraftChange={(draft) => setSessionState((previous) => ({ ...previous, draft }))}
+          onUse={useBuiltResume}
+          onClose={() => {
+            closeBuilder();
+            announceBuilder('Back to paste or upload. What you typed in the form is kept.');
+          }}
+          currentText={resumeText}
+          announce={announceBuilder}
+          focusOnOpen={builderFocus}
+        />
+      )}
+
       <ResumeInput
+        hidden={builderOpen}
+        onStartBlank={() => {
+          setBuilderFocus(true);
+          setBuilderOpen(true);
+        }}
+        samples={register === 'student' ? STUDENT_SAMPLES : undefined}
         resumeText={resumeText}
         isScanning={isScanning}
         scanComplete={scanComplete}
@@ -333,26 +450,39 @@ ${improved.join('\n')}
         onTextChange={handleTextChange}
         onFileUpload={handleFileUpload}
         onScan={handleScan}
-        onLoadSample={() => {
+        onLoadSample={(id) => {
           cancelScan();
           cancelUpload();
-          setResumeTextValue(sampleResume);
+          setResumeTextValue(id === 'first-job' ? FIRST_JOB_SAMPLE_RESUME : sampleResume);
+          keepResumeDoc(null);
           setStatus('Sample resume loaded. Run the analysis to see suggestions.');
         }}
         onClear={() => {
           cancelScan();
           cancelUpload();
-          setSessionState(() => ({ ...EMPTY_SESSION }));
+          // The start-from-nothing form has its own Start over.
+          setSessionState((previous) => ({ ...EMPTY_SESSION, draft: previous.draft }));
           setScanComplete(false);
+          keepResumeDoc(null);
           setStatus('Workspace cleared. Paste a fresh resume to begin.');
         }}
       />
 
+      {resumeDoc && (
+        <MachineView
+          doc={resumeDoc}
+          onChange={keepResumeDoc}
+          rewrites={rewrites}
+          text={resumeText}
+        />
+      )}
+
+      <PostingMatch resumeText={matchText} />
+
       {!scanComplete && resumeText.trim() && (
         <div className="rounded-2xl border border-dashed border-border/35 bg-overlay/15 p-8 text-center">
           <p className="text-sm text-muted-foreground">
-            Click &quot;Analyze resume&quot; above to see your signal report, highlighted text, and
-            scoring breakdown.
+            Press &quot;Analyze resume&quot; above to score each line and see what it is missing.
           </p>
         </div>
       )}
@@ -398,11 +528,23 @@ ${improved.join('\n')}
           <BulletList
             bullets={bullets}
             selectedBulletId={selectedBulletId}
-            onSelect={setSelectedBulletId}
+            onSelect={(id) => {
+              setSelectedBulletId(id);
+              const chosen = bullets.find((b) => b.id === id);
+              if (chosen) {
+                const line =
+                  chosen.original.length > 60
+                    ? `${chosen.original.slice(0, 57).trimEnd()}...`
+                    : chosen.original.replace(/[.\s]+$/, '');
+                announce(`Rewriting: ${line}. Scores ${chosen.improvedScore}/100.`);
+              }
+            }}
           />
+          <Announcer message={announcement} />
           <BulletEditor
             bullet={selectedBullet}
             index={bullets.findIndex((b) => b.id === selectedBulletId)}
+            register={register}
             onFieldChange={updateBulletField}
           />
         </div>
@@ -412,24 +554,22 @@ ${improved.join('\n')}
 
       {scanComplete && bullets.length > 0 && (
         <Scoreboard
-          averageScore={averageScore}
-          quantifiedBullets={quantifiedBullets}
-          totalBullets={bullets.length}
-          verbCoverage={verbCoverage}
-          signalReport={signalReport}
+          bullets={bullets}
           onExportMarkdown={handleExportMarkdown}
           onExportDocx={handleExportDocx}
         />
       )}
 
-      {scanComplete && bullets.length > 0 && (
-        <ShareScoreCard
-          bullets={bullets}
-          averageScore={averageScore}
-          signalReport={signalReport}
-          verbCoverage={verbCoverage}
-        />
+      {!resumeDoc && !builderOpen && resumeText.trim() && (
+        <ResumeFileActions text={resumeText} rewrites={rewrites}>
+          <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
+            A one-column copy of the resume in the box, with standard headings and real bullets.
+            Lines you rewrite above go into it in their new wording. It is made on this device.
+          </p>
+        </ResumeFileActions>
       )}
+
+      {scanComplete && !needsRescan && allStrong && <ShareScoreCard bullets={bullets} />}
     </div>
   );
 }

@@ -77,7 +77,9 @@ it('distinguishes actual visible records even when topics and saved minutes or t
   expect(target).toHaveTextContent(`${restingName}?`);
   expect(props.onDeleteSnapshot).not.toHaveBeenCalled();
   fireEvent.click(target);
-  expect(props.onDeleteSnapshot).toHaveBeenCalledExactlyOnceWith('private-two');
+  expect(props.onDeleteSnapshot).toHaveBeenCalledExactlyOnceWith(
+    expect.objectContaining({ id: 'private-two' })
+  );
 });
 
 it('keeps the selected snapshot topic in the second-press confirmation', () => {
@@ -100,27 +102,26 @@ it('keeps untitled and legacy timestamp fallbacks in resting and armed names', (
   expect(props.onDeleteSnapshot).not.toHaveBeenCalled();
 });
 
-it.each(['Escape', 'blur', 'timeout'])(
-  'retains the target context after %s cancels deletion',
-  (cancel) => {
-    vi.useFakeTimers();
-    const props = panelProps([snapshot('private-one'), snapshot('private-two')]);
-    render(<HistoryPanel {...props} />);
-    const button = screen.getByRole('button', { name: /^Delete snapshot: .*snapshot 2 of 2/ });
-    const name = button.getAttribute('aria-label');
-    fireEvent.click(button);
-    expect(button).toHaveAccessibleName(`${name}?`);
-    if (cancel === 'Escape') fireEvent.keyDown(button, { key: 'Escape' });
-    else if (cancel === 'blur') fireEvent.blur(button);
-    else act(() => vi.advanceTimersByTime(4001));
-    expect(button).toHaveAccessibleName(name);
-    expect(props.onDeleteSnapshot).not.toHaveBeenCalled();
-    fireEvent.click(button);
-    expect(props.onDeleteSnapshot).not.toHaveBeenCalled();
-    fireEvent.click(button);
-    expect(props.onDeleteSnapshot).toHaveBeenCalledExactlyOnceWith('private-two');
-  }
-);
+it.each(['Escape', 'blur'])('retains the target context after %s cancels deletion', (cancel) => {
+  vi.useFakeTimers();
+  const props = panelProps([snapshot('private-one'), snapshot('private-two')]);
+  render(<HistoryPanel {...props} />);
+  const button = screen.getByRole('button', { name: /^Delete snapshot: .*snapshot 2 of 2/ });
+  const name = button.getAttribute('aria-label');
+  fireEvent.click(button);
+  expect(button).toHaveAccessibleName(`${name}?`);
+  if (cancel === 'Escape') fireEvent.keyDown(button, { key: 'Escape' });
+  else if (cancel === 'blur') fireEvent.blur(button);
+  else act(() => vi.advanceTimersByTime(4001));
+  expect(button).toHaveAccessibleName(name);
+  expect(props.onDeleteSnapshot).not.toHaveBeenCalled();
+  fireEvent.click(button);
+  expect(props.onDeleteSnapshot).not.toHaveBeenCalled();
+  fireEvent.click(button);
+  expect(props.onDeleteSnapshot).toHaveBeenCalledExactlyOnceWith(
+    expect.objectContaining({ id: 'private-two' })
+  );
+});
 
 it('keeps an armed target bound to its record when another visible snapshot is removed', () => {
   const first = snapshot('private-one');
@@ -134,7 +135,9 @@ it('keeps an armed target bound to its record when another visible snapshot is r
   });
   expect(screen.getByText(/Snapshot 1 of 1/)).toBeVisible();
   fireEvent.click(target);
-  expect(props.onDeleteSnapshot).toHaveBeenCalledExactlyOnceWith('private-two');
+  expect(props.onDeleteSnapshot).toHaveBeenCalledExactlyOnceWith(
+    expect.objectContaining({ id: 'private-two' })
+  );
 });
 
 it('leaves empty history without snapshot actions and disables exporting all', () => {

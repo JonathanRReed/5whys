@@ -24,7 +24,7 @@ describe('resume file import', () => {
 
   it('does not mistake a PDF without a text layer for resume content', async () => {
     await expect(extractTextFromFile(pdfFile('0 0 0 rg 0 0 100 100 re f'))).rejects.toThrow(
-      /selectable text|text layer/i
+      /no text to read.*picture of text/i
     );
   });
 

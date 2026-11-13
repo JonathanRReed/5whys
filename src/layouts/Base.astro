@@ -1,15 +1,18 @@
 ---
 import { siteConfig, baseSchemas } from '../config/site';
 import Seo from '../components/Seo.astro';
-import { ClientRouter } from 'astro:transitions';
 import Navigation from '../components/Navigation';
-import '@fontsource-variable/fraunces/full.css';
+import UpdateNotice from '../components/UpdateNotice';
+// Upright headings use weight and optical size only, so they load the cut
+// with those two axes: 67 KB in place of 121 KB on every page.
+import '@fontsource-variable/fraunces/opsz.css';
 import '@fontsource-variable/fraunces/full-italic.css';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
 import '../styles/globals.css';
 import themeInit from '../scripts/theme-init.js?raw';
 import { ogImageFor } from '../config/og';
+import offlineRegistration from '../../scripts/offline/register.js?raw';
 
 const {
   title = siteConfig.siteName,
@@ -66,7 +69,7 @@ const defaultNoScriptContext = [
   '5 Whys Career Studio is a static, browser-first set of career tools from Jonathan R. Reed. The site helps people slow down practical career work without creating an account: clarify a decision with the five whys method, turn rough resume bullets into stronger evidence, rehearse networking conversations, and prepare interview stories with more concrete proof.',
   'The public tools are designed around local browser work. Reflection drafts, resume text, practice notes, and exported files stay on the device during normal use. The site can be read as a field guide without JavaScript, while the full interactive editors, timers, scoring panels, saved sessions, and export controls require JavaScript in the browser.',
   'Each page tries to make the next action concrete: define the real reason behind a decision, identify the proof inside a past project, practice a short explanation, preserve useful notes locally, and move only the strongest material into a resume, portfolio page, outreach message, or interview answer.',
-  'Useful starting points are the career reflection page for decision clarity, the resume game for bullet-level proof, the networking practice studio for short speaking reps, the interview workspace for story preparation, the privacy page for local-storage boundaries, and the subprocessor page for the current hosting and analytics disclosure.',
+  'Useful starting points are the career reflection page for decision clarity, the resume game for bullet-level proof, the networking practice studio for short speaking reps, the interview workspace for story preparation, the privacy page for local-storage boundaries, and the subprocessor page for the current hosting disclosure.',
 ];
 const pageNoScriptContext = Array.isArray(noScriptContext)
   ? noScriptContext
@@ -92,9 +95,14 @@ const noScriptParagraphs = [...defaultNoScriptContext, ...pageNoScriptContext].f
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/site.webmanifest" />
-    <ClientRouter />
+    <link rel="apple-touch-icon" sizes="180x180" href={import.meta.env.PROD ? '/icons/apple-touch-icon.png' : '/apple-touch-icon.png'} />
+    {import.meta.env.PROD && <>
+      <link rel="manifest" href="/site.webmanifest" />
+      <meta name="apple-mobile-web-app-capable" content="yes" />
+      <meta name="apple-mobile-web-app-title" content="5 Whys" />
+      <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+      <script is:inline set:html={offlineRegistration} />
+    </>}
   </head>
   <body class="min-h-screen bg-background text-foreground transition-colors duration-300">
     <a
@@ -115,6 +123,7 @@ const noScriptParagraphs = [...defaultNoScriptContext, ...pageNoScriptContext].f
     </div>
     <div class="relative flex min-h-screen flex-col">
       <Navigation client:load currentPath={Astro.url.pathname} />
+      <UpdateNotice client:idle />
       <noscript>
         <section
           class="relative z-10 mx-auto mt-6 w-full max-w-6xl px-4"
@@ -143,7 +152,7 @@ const noScriptParagraphs = [...defaultNoScriptContext, ...pageNoScriptContext].f
           </div>
         </section>
       </noscript>
-      <main id="main-content" class="relative z-10 flex-1" transition:name="page-content">
+      <main id="main-content" tabindex="-1" class="relative z-10 flex-1 focus:outline-hidden">
         <slot />
       </main>
       <footer
@@ -151,7 +160,7 @@ const noScriptParagraphs = [...defaultNoScriptContext, ...pageNoScriptContext].f
         class="relative z-10 mx-auto mt-20 w-full max-w-6xl px-4 transition-colors duration-300"
       >
         <div class="border-t border-border/50 pt-10">
-          <div class="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr]">
+          <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
             <div class="space-y-3">
               <div class="flex items-center gap-2.5">
                 <span
@@ -213,6 +222,13 @@ const noScriptParagraphs = [...defaultNoScriptContext, ...pageNoScriptContext].f
                 </li>
                 <li>
                   <a
+                    href="/about/#workshops"
+                    class="text-muted-foreground transition-colors hover:text-foreground"
+                    >Running a workshop</a
+                  >
+                </li>
+                <li>
+                  <a
                     href="/contact/"
                     class="text-muted-foreground transition-colors hover:text-foreground">Contact</a
                   >
@@ -237,13 +253,33 @@ const noScriptParagraphs = [...defaultNoScriptContext, ...pageNoScriptContext].f
                     >Start here</a
                   >
                 </li>
-                <li>
-                  <a
-                    href="/interview-glow-up/workspace/"
-                    class="text-muted-foreground transition-colors hover:text-foreground"
-                    >Interview workspace</a
-                  >
-                </li>
+              </ul>
+            </nav>
+
+            <nav aria-label="Tools" class="space-y-3">
+              <p class="eyebrow">Tools</p>
+              <ul class="space-y-2.5 text-sm">
+                {
+                  [
+                    ['The Five Whys', '/career/'],
+                    ['The Resume Game', '/resume-game/'],
+                    ['Networking Practice', '/networking-practice/'],
+                    ['Interview Glow Up', '/interview-glow-up/'],
+                    ['The Application Desk', '/application/'],
+                    ['Pay', '/pay/'],
+                    ['Dashboard', '/dashboard/'],
+                    ['Clear this device', '/dashboard/#storage-title'],
+                  ].map(([name, href]) => (
+                    <li>
+                      <a
+                        href={href}
+                        class="text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        {name}
+                      </a>
+                    </li>
+                  ))
+                }
               </ul>
             </nav>
 
@@ -285,11 +321,12 @@ const noScriptParagraphs = [...defaultNoScriptContext, ...pageNoScriptContext].f
                 >Jonathan R. Reed</a
               >
             </p>
-            <p class="eyebrow text-[0.62rem]">No account · Local-only · Open source</p>
+            <p class="eyebrow text-[0.72rem]">No account · Local-only · Open source</p>
           </div>
         </div>
       </footer>
       <script src="../scripts/reveal.ts"></script>
+      <script src="../scripts/device-cleared.ts"></script>
     </div>
   </body>
 </html>

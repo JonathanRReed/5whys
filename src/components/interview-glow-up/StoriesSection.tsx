@@ -1,11 +1,13 @@
 import * as React from 'react';
 import {
+  type Audience,
   getGeneralQuestions,
-  getQuestionsForSkill,
   getSkillName,
   type QuestionPrompt,
+  questionFits,
+  questionsFor,
   resolveQuestionText,
-  SKILL_BANK,
+  usesStudentExamples,
 } from '../../lib/glowup-banks';
 import {
   createStory,
@@ -17,12 +19,19 @@ import {
   readinessLabel,
   readinessOf,
   type Story,
+  skillCounts,
   toggleStoryInPacket,
   updateStory,
 } from '../../lib/glowup-store';
+import { isNonAnswer, isRealAnswer, NON_ANSWER_FOLLOW_UP } from '../../lib/non-answer';
 import { cn } from '../../lib/utils';
+import Announcer, { useAnnouncer } from '../shared/Announcer';
 import { LightbulbIcon, PencilIcon, WarningIcon, XIcon } from './icons';
 import SkillSelect from './SkillSelect';
+
+/** The story being written, kept by the workspace so a tab switch does not drop it. */
+export type StoryEditor = { editingId: string | null; formData: Partial<Story> };
+export const CLOSED_EDITOR: StoryEditor = { editingId: null, formData: {} };
 
 type Props = {
   data: GlowUpData;
@@ -30,9 +39,41 @@ type Props = {
   currentRole: DecodedRole | undefined;
   currentPacket: InterviewPacket | undefined;
   onGoToDecode: () => void;
+  audience?: Audience;
+  /** Supplied by the workspace so an unsaved story survives switching tabs. */
+  editor?: StoryEditor;
+  onEditorChange?: React.Dispatch<React.SetStateAction<StoryEditor>>;
 };
 
+/** The one line the cheat sheet shows: the proof's first sentence, kept short. */
+export function proofLine(proof: string): string {
+  const text = proof.replace(/\s+/g, ' ').trim();
+  if (!text) return '';
+  const sentence = (text.match(/^[^.!?]+[.!?]?/)?.[0] ?? text).trim();
+  if (sentence.length <= 100) return sentence;
+  const cut = sentence.slice(0, 100);
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(' '), 60)).trimEnd()}\u2026`;
+}
+
 const MAX_SKILL_SUGGESTIONS = 8;
+
+/** Placeholders and prompts in the visitor's register. */
+const EXAMPLES = {
+  student: {
+    trigger: 'Club sign-up fix, campus job rush',
+    hook: 'The club sign-up sheet kept losing people halfway through...',
+    proof: 'A grade, a before and after, what an instructor or manager said...',
+    proofHint:
+      'Numbers you can stand behind, feedback, or a before and after. No business numbers? A grade, the size of the job, or what an instructor said counts too.',
+  },
+  work: {
+    trigger: 'Holiday schedule, freight backlog',
+    hook: 'Trucks were sitting half unloaded at the end of every shift...',
+    proof: 'Hours saved, errors caught, a schedule that held, what a manager or customer said...',
+    proofHint:
+      'Numbers you can stand behind, feedback, or a before and after: hours saved, counts that matched, a schedule that held.',
+  },
+} as const;
 
 export default function StoriesSection({
   data,
@@ -40,38 +81,65 @@ export default function StoriesSection({
   currentRole,
   currentPacket,
   onGoToDecode,
+  audience = 'student',
+  editor: liftedEditor,
+  onEditorChange,
 }: Props) {
-  const [editingId, setEditingId] = React.useState<string | null>(null);
-  const [formData, setFormData] = React.useState<Partial<Story>>({});
+  const student = usesStudentExamples(audience);
+  const examples = student ? EXAMPLES.student : EXAMPLES.work;
+  const [ownEditor, setOwnEditor] = React.useState<StoryEditor>(CLOSED_EDITOR);
+  const { editingId, formData } = liftedEditor ?? ownEditor;
+  const setEditor = onEditorChange ?? setOwnEditor;
+  const setFormData = (next: Partial<Story>) => setEditor((prev) => ({ ...prev, formData: next }));
   const [customQuestion, setCustomQuestion] = React.useState('');
   const [showGeneralQuestions, setShowGeneralQuestions] = React.useState(false);
+  const [announcement, announce] = useAnnouncer();
+  // Where focus goes when the editor opens or closes: the editor's heading, or
+  // back to the start of the list it replaced.
+  const editorHeadingRef = React.useRef<HTMLHeadingElement>(null);
+  const newStoryRef = React.useRef<HTMLButtonElement>(null);
+  const focusAfterRender = (target: React.RefObject<HTMLElement | null>) =>
+    window.requestAnimationFrame(() => target.current?.focus());
 
   const recentStories = [...data.stories].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 6);
 
   const startNew = (skillId?: string) => {
-    setEditingId('new');
+    focusAfterRender(editorHeadingRef);
     setCustomQuestion('');
     setShowGeneralQuestions(false);
-    setFormData({
-      primarySkillId: skillId ?? '',
-      otherSkillIds: [],
-      trigger: '',
-      hook: '',
-      proofSnippet: '',
-      play: '',
-      proof: '',
-      confidence: 30,
-      readiness: 'rough',
-      questionPrompts: [],
-      tags: [],
+    setEditor({
+      editingId: 'new',
+      formData: {
+        primarySkillId: skillId ?? '',
+        otherSkillIds: [],
+        trigger: '',
+        hook: '',
+        proofSnippet: '',
+        play: '',
+        proof: '',
+        confidence: 30,
+        readiness: 'rough',
+        questionPrompts: [],
+        tags: [],
+      },
     });
   };
 
   const saveStory = () => {
-    if (!formData.primarySkillId || !formData.play) return;
+    if (!formData.primarySkillId || !isRealAnswer(formData.play)) return;
     const readiness = formData.readiness ?? readinessOf(formData);
+    // The proof is asked for once. Its first line is what the cheat sheet
+    // shows; an older story keeps its own line while its proof is unchanged.
+    const original = data.stories.find((story) => story.id === editingId);
+    const proof = formData.proof ?? '';
+    const proofSnippet =
+      original?.proofSnippet && (original.proof || original.proofSnippet) === proof
+        ? original.proofSnippet
+        : proofLine(proof);
     const payload = {
       ...formData,
+      proof,
+      proofSnippet,
       readiness,
       confidence: READINESS.find((r) => r.id === readiness)?.confidence ?? 60,
     };
@@ -86,15 +154,20 @@ export default function StoriesSection({
     } else if (editingId) {
       setData(updateStory(data, editingId, payload));
     }
-    setEditingId(null);
-    setFormData({});
+    announce(
+      editingId === 'new' && currentPacket ? 'Story saved and added to the packet.' : 'Story saved.'
+    );
+    focusAfterRender(newStoryRef);
+    setEditor(CLOSED_EDITOR);
   };
 
   const cancelEdit = () => {
-    setEditingId(null);
-    setFormData({});
+    focusAfterRender(newStoryRef);
+    setEditor(CLOSED_EDITOR);
   };
 
+  const playIsPlaceholder = isNonAnswer(formData.play);
+  const canSave = Boolean(formData.primarySkillId && isRealAnswer(formData.play));
   const playSentences = (formData.play ?? '').split(/[.!?]+/).filter((s) => s.trim()).length;
   const hasNumbers = /[$%#0-9]/.test(formData.proof ?? '');
   const topGaps = currentRole ? getTopGaps(data, currentRole.bullets) : [];
@@ -105,9 +178,17 @@ export default function StoriesSection({
   const coveredSkillIds = [formData.primarySkillId, ...(formData.otherSkillIds ?? [])].filter(
     (id): id is string => Boolean(id)
   );
+  // Skills this posting names lead the skill list. A technical question is
+  // offered only when the posting asks for that technology, or the story is
+  // itself tagged with it: a Python question never turns up under "Attention
+  // to detail" for an operations job.
+  const postingSkillIds = currentRole
+    ? skillCounts(currentRole.bullets).counts.map((entry) => entry.skillId)
+    : [];
+  const filter = { audience, postingSkillIds: [...postingSkillIds, ...coveredSkillIds] };
   const skillQuestionSuggestions: QuestionPrompt[] = [];
   for (const skillId of coveredSkillIds) {
-    for (const q of getQuestionsForSkill(skillId)) {
+    for (const q of questionsFor(skillId, filter)) {
       if (!attachedPromptsSet.has(q.id) && !skillQuestionSuggestions.some((x) => x.id === q.id)) {
         skillQuestionSuggestions.push(q);
       }
@@ -115,7 +196,7 @@ export default function StoriesSection({
   }
   const visibleSkillSuggestions = skillQuestionSuggestions.slice(0, MAX_SKILL_SUGGESTIONS);
   const generalSuggestions = showGeneralQuestions
-    ? getGeneralQuestions().filter((q) => !attachedPromptsSet.has(q.id))
+    ? getGeneralQuestions().filter((q) => !attachedPromptsSet.has(q.id) && questionFits(q, filter))
     : [];
 
   const attachQuestion = (idOrText: string) => {
@@ -142,9 +223,11 @@ export default function StoriesSection({
 
   return (
     <div className="space-y-6">
+      <Announcer message={announcement} />
       {!editingId && (
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3" data-guide="stories-start">
           <button
+            ref={newStoryRef}
             type="button"
             onClick={() => startNew()}
             className="rounded-lg bg-foam px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-foam/90 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
@@ -159,6 +242,7 @@ export default function StoriesSection({
                   key={skillId}
                   type="button"
                   onClick={() => startNew(skillId)}
+                  aria-label={`Start a story for ${getSkillName(skillId)}`}
                   className="rounded-full border border-destructive/30 bg-destructive/8 px-3 py-1 text-sm text-destructive hover:bg-destructive/15 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
                 >
                   {getSkillName(skillId)}
@@ -172,9 +256,13 @@ export default function StoriesSection({
       {editingId && (
         <div className="space-y-4 rounded-xl border border-foam/30 bg-foam/5 p-5">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-foreground">
+            <h2
+              ref={editorHeadingRef}
+              tabIndex={-1}
+              className="text-lg font-semibold text-foreground focus-visible:outline-hidden"
+            >
               {editingId === 'new' ? 'New story' : 'Edit story'}
-            </h3>
+            </h2>
             <button
               type="button"
               onClick={cancelEdit}
@@ -185,42 +273,100 @@ export default function StoriesSection({
             </button>
           </div>
 
-          <p className="text-xs text-muted-foreground">
-            Know STAR? It maps cleanly: Situation and Task become your Trigger and Hook, Action is
-            your Play, Result is your Proof.
-          </p>
-
-          <details className="rounded-lg border border-gold/30 bg-gold/5 px-4 py-3">
-            <summary className="cursor-pointer text-sm font-medium text-foreground">
-              No work experience yet? Build from what you have.
-            </summary>
-            <div className="mt-3 space-y-2 text-xs leading-relaxed text-muted-foreground">
-              <p>Stories do not need a job title behind them. These all count:</p>
-              <ul className="list-inside list-disc space-y-1 pl-2">
-                <li>
-                  <strong>Class projects:</strong> what you built, the part you owned, the decision
-                  you made when the plan broke.
-                </li>
-                <li>
-                  <strong>Group work:</strong> the time you coordinated four schedules, split the
-                  work, or salvaged a project a week before the deadline.
-                </li>
-                <li>
-                  <strong>Part-time jobs:</strong> handling a rush, an angry customer, training the
-                  new hire.
-                </li>
-                <li>
-                  <strong>Clubs and volunteering:</strong> the event you organized, the budget you
-                  managed, the members you recruited.
-                </li>
-              </ul>
-              <p>
-                Proof without business metrics: a grade, the scope (people, hours, budget), a before
-                and after state, classmates adopting your work, or instructor feedback. "Professor
-                used our project as next semester's example" is a receipt.
+          <div className="space-y-1 text-xs leading-relaxed text-muted-foreground">
+            <p>Tell it in the order you would say it out loud:</p>
+            <ol className="list-inside list-decimal space-y-0.5 pl-2">
+              <li>
+                <strong className="text-foreground">The situation</strong> (the hook): what was
+                going on, in a sentence.
+              </li>
+              <li>
+                <strong className="text-foreground">What you did</strong> (the play).
+              </li>
+              <li>
+                <strong className="text-foreground">What came of it</strong> (the proof).
+              </li>
+            </ol>
+            <p>
+              Give it a short name too (the trigger), so it comes back to mind in the room. If you
+              know STAR: Situation and Task are the hook, Action is the play, Result is the proof.
+            </p>
+            {editingId === 'new' && (
+              <p className="text-foreground">
+                Not saved yet. It stays here if you switch tabs; press Save to keep it.
               </p>
-            </div>
-          </details>
+            )}
+          </div>
+
+          {student ? (
+            <details className="rounded-lg border border-gold/30 bg-gold/5 px-4 py-3">
+              <summary className="cursor-pointer text-sm font-medium text-foreground">
+                No work experience yet? Build from what you have.
+              </summary>
+              <div className="mt-3 space-y-2 text-xs leading-relaxed text-muted-foreground">
+                <p>Stories do not need a job title behind them. These all count:</p>
+                <ul className="list-inside list-disc space-y-1 pl-2">
+                  <li>
+                    <strong>Class projects:</strong> what you made, the part you owned, the decision
+                    you made when the plan broke.
+                  </li>
+                  <li>
+                    <strong>Group work:</strong> the time you lined up everyone's schedules, split
+                    the work, or rescued a project a week before it was due.
+                  </li>
+                  <li>
+                    <strong>Campus and part-time jobs:</strong> handling a rush, an unhappy
+                    customer, training the new hire.
+                  </li>
+                  <li>
+                    <strong>Clubs and volunteering:</strong> the event you organized, the budget you
+                    kept, the members you recruited.
+                  </li>
+                </ul>
+                <p>
+                  Proof without business numbers: a grade, the size of the job (people, hours,
+                  budget), a before and after, classmates using what you made, or what an instructor
+                  said.
+                </p>
+              </div>
+            </details>
+          ) : (
+            <details className="rounded-lg border border-gold/30 bg-gold/5 px-4 py-3">
+              <summary className="cursor-pointer text-sm font-medium text-foreground">
+                Where to find stories from your work
+              </summary>
+              <div className="mt-3 space-y-2 text-xs leading-relaxed text-muted-foreground">
+                <p>The everyday parts of a job make good stories. Look at:</p>
+                <ul className="list-inside list-disc space-y-1 pl-2">
+                  <li>
+                    <strong>A shift that went wrong:</strong> a no-show, a late truck, a register
+                    down at the rush, and what you did.
+                  </li>
+                  <li>
+                    <strong>A schedule:</strong> one you built, fixed, or kept together when people
+                    called out.
+                  </li>
+                  <li>
+                    <strong>Customers:</strong> a complaint you turned around, or a regular you
+                    kept.
+                  </li>
+                  <li>
+                    <strong>Inventory and counts:</strong> a count that would not match until you
+                    found why.
+                  </li>
+                  <li>
+                    <strong>A process you fixed:</strong> how it worked before, what you changed,
+                    and who uses it now.
+                  </li>
+                  <li>
+                    <strong>People:</strong> someone you trained, coached, or had a hard
+                    conversation with.
+                  </li>
+                </ul>
+                <p>Say it in the words this posting uses, but only for work you really did.</p>
+              </div>
+            </details>
+          )}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
@@ -228,14 +374,18 @@ export default function StoriesSection({
                 htmlFor="story-primary-skill"
                 className="mb-1 block text-sm font-medium text-foreground"
               >
-                Primary Skill *
+                Primary skill <span aria-hidden="true">*</span>
+                <span className="sr-only">(required)</span>
               </label>
               <SkillSelect
                 id="story-primary-skill"
+                required
+                aria-describedby={canSave ? undefined : 'story-save-missing'}
                 value={formData.primarySkillId ?? null}
                 onChange={(skillId) => setFormData({ ...formData, primarySkillId: skillId ?? '' })}
                 placeholder="Select skill..."
                 className="w-full"
+                first={postingSkillIds}
               />
             </div>
             <fieldset>
@@ -285,7 +435,7 @@ export default function StoriesSection({
               Other skills this story shows
             </p>
             <p className="mb-1 text-xs text-muted-foreground">
-              One story usually proves 2-3 skills. Tag them so the story surfaces for more
+              One story often shows more than one skill. Tag each one so the story comes up for more
               questions.
             </p>
             <div className="flex flex-wrap items-center gap-2">
@@ -306,7 +456,7 @@ export default function StoriesSection({
                         ),
                       })
                     }
-                    className="text-foam/70 hover:text-foam"
+                    className="inline-flex min-h-6 min-w-6 items-center justify-center text-foam hover:text-foreground"
                   >
                     &times;
                   </button>
@@ -320,27 +470,28 @@ export default function StoriesSection({
                 className="h-8 text-xs"
                 exclude={[formData.primarySkillId ?? '', ...(formData.otherSkillIds ?? [])]}
                 resetAfterSelect
+                first={postingSkillIds}
               />
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label
                 htmlFor="story-trigger"
                 className="mb-1 block text-sm font-medium text-foreground"
               >
-                Trigger (1-3 words)
+                A short name for it (trigger)
               </label>
               <p className="mb-1 text-xs text-muted-foreground">
-                A short label you use to recall this story quickly.
+                A few words that bring this story back to mind.
               </p>
               <input
                 id="story-trigger"
                 type="text"
                 value={formData.trigger ?? ''}
                 onChange={(e) => setFormData({ ...formData, trigger: e.target.value })}
-                placeholder="API redesign, capstone demo"
+                placeholder={examples.trigger}
                 className={inputClass}
               />
             </div>
@@ -349,36 +500,17 @@ export default function StoriesSection({
                 htmlFor="story-hook"
                 className="mb-1 block text-sm font-medium text-foreground"
               >
-                Hook (~25 words)
+                The situation (hook)
               </label>
               <p className="mb-1 text-xs text-muted-foreground">
-                The setup: what was the situation or problem?
+                What was going on, or what was wrong, in a sentence.
               </p>
               <input
                 id="story-hook"
                 type="text"
                 value={formData.hook ?? ''}
                 onChange={(e) => setFormData({ ...formData, hook: e.target.value })}
-                placeholder="Our legacy API kept failing, or: our group project was a week behind..."
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="story-proof-snippet"
-                className="mb-1 block text-sm font-medium text-foreground"
-              >
-                Proof Snippet (~10 words)
-              </label>
-              <p className="mb-1 text-xs text-muted-foreground">
-                The result in one line: a number, a grade, a before and after.
-              </p>
-              <input
-                id="story-proof-snippet"
-                type="text"
-                value={formData.proofSnippet ?? ''}
-                onChange={(e) => setFormData({ ...formData, proofSnippet: e.target.value })}
-                placeholder="40% faster, or: shipped on time, top grade in section"
+                placeholder={examples.hook}
                 className={inputClass}
               />
             </div>
@@ -389,7 +521,10 @@ export default function StoriesSection({
               htmlFor="story-play"
               className="mb-1 flex items-center justify-between text-sm font-medium text-foreground"
             >
-              <span>Play (What You Did) *</span>
+              <span>
+                What you did (play) <span aria-hidden="true">*</span>
+                <span className="sr-only">(required)</span>
+              </span>
               {playSentences > 4 && (
                 <span className="flex items-center gap-1 text-xs text-gold">
                   <WarningIcon className="h-3 w-3" />
@@ -398,19 +533,24 @@ export default function StoriesSection({
               )}
             </label>
             <p className="mb-1 text-xs text-muted-foreground">
-              The core of your story: your actions, decisions, and approach. "I", not "we".
+              The heart of the story: what you did and decided. Say "I", not "we".
             </p>
             <textarea
               id="story-play"
+              required
+              aria-describedby={canSave ? undefined : 'story-save-missing'}
               value={formData.play ?? ''}
               onChange={(e) => setFormData({ ...formData, play: e.target.value })}
-              placeholder="What was the challenge? What exactly did you do?"
+              placeholder="What exactly did you do, and what did you decide?"
               rows={4}
               className={cn(
                 'w-full rounded-lg border bg-overlay/30 px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2',
                 playSentences > 4 ? 'border-gold/50' : 'border-border/50'
               )}
             />
+            {playIsPlaceholder && (
+              <p className="mt-1 text-sm text-foreground">{NON_ANSWER_FOLLOW_UP}</p>
+            )}
           </div>
 
           <div>
@@ -418,33 +558,31 @@ export default function StoriesSection({
               htmlFor="story-proof"
               className="mb-1 flex items-center justify-between text-sm font-medium text-foreground"
             >
-              <span>Proof (The Receipt)</span>
+              <span>What came of it (proof)</span>
               {!hasNumbers && formData.proof && formData.proof.length > 10 && (
                 <span className="flex items-center gap-1 text-xs text-gold">
                   <LightbulbIcon className="h-3 w-3" />
-                  Can you quantify this?
+                  Is there a number you can stand behind?
                 </span>
               )}
             </label>
-            <p className="mb-1 text-xs text-muted-foreground">
-              Numbers, feedback quotes, or concrete evidence. No business metrics? Grades, scope,
-              before and after states, and instructor feedback count too.
-            </p>
+            <p className="mb-1 text-xs text-muted-foreground">{examples.proofHint}</p>
             <textarea
               id="story-proof"
               value={formData.proof ?? ''}
               onChange={(e) => setFormData({ ...formData, proof: e.target.value })}
-              placeholder="Time saved, revenue, a grade, adoption by classmates, specific praise..."
+              placeholder={examples.proof}
               rows={3}
               className={inputClass}
             />
           </div>
 
           <div className="space-y-2 rounded-lg border border-border/40 bg-overlay/15 p-4">
-            <h4 className="text-sm font-medium text-foreground">Questions this story answers</h4>
+            <h3 className="text-sm font-medium text-foreground">Questions this story answers</h3>
             <p className="text-xs text-muted-foreground">
               Attach the interview questions you would answer with this story. They show up in the
-              HUD and the packet so you rehearse question-first.
+              packet and on the HUD, the one-screen cheat sheet for the call, so you practice from
+              the question.
             </p>
 
             {attachedPrompts.length > 0 && (
@@ -459,7 +597,7 @@ export default function StoriesSection({
                       type="button"
                       aria-label={`Detach question: ${resolveQuestionText(idOrText)}`}
                       onClick={() => detachQuestion(idOrText)}
-                      className="text-muted-foreground hover:text-destructive"
+                      className="inline-flex min-h-6 min-w-6 items-center justify-center text-muted-foreground hover:text-destructive"
                     >
                       &times;
                     </button>
@@ -519,7 +657,7 @@ export default function StoriesSection({
               </div>
             )}
 
-            <div className="flex gap-2 pt-1">
+            <div className="flex flex-wrap gap-2 pt-1">
               <input
                 type="text"
                 aria-label="Add your own interview question"
@@ -533,7 +671,7 @@ export default function StoriesSection({
                   }
                 }}
                 placeholder="Add your own question..."
-                className="flex-1 rounded-lg border border-border/50 bg-overlay/30 px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+                className="min-w-0 flex-[1_1_12rem] rounded-lg border border-border/50 bg-overlay/30 px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
               />
               <button
                 type="button"
@@ -560,23 +698,40 @@ export default function StoriesSection({
             <button
               type="button"
               onClick={saveStory}
-              disabled={!formData.primarySkillId || !formData.play}
+              data-guide="story-save"
+              disabled={!canSave}
+              aria-describedby={canSave ? undefined : 'story-save-missing'}
               className="rounded-lg bg-foam px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-foam/90 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
             >
               {editingId === 'new' && currentPacket ? 'Save and add to packet' : 'Save story'}
             </button>
           </div>
+          {!canSave && (
+            <p id="story-save-missing" className="text-xs text-muted-foreground">
+              {!formData.primarySkillId && !formData.play
+                ? 'To save, choose the skill this story proves and write what you did.'
+                : !formData.primarySkillId
+                  ? 'To save, choose the skill this story proves.'
+                  : playIsPlaceholder
+                    ? 'To save, say a little more about what you did.'
+                    : 'To save, write what you did.'}
+            </p>
+          )}
         </div>
       )}
 
       {!editingId && recentStories.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Recent Stories
-          </h3>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Recent stories
+          </h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {recentStories.map((story) => (
-              <div key={story.id} className="rounded-xl border border-border/30 bg-overlay/15 p-4">
+              <div
+                key={story.id}
+                className="rounded-xl border border-border/30 bg-overlay/15 p-4"
+                data-guide="story-card"
+              >
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <span className="rounded-full bg-foam/15 px-2 py-0.5 text-xs font-medium text-foam">
@@ -600,14 +755,18 @@ export default function StoriesSection({
                     <button
                       type="button"
                       onClick={() => {
-                        setEditingId(story.id);
-                        setFormData(story);
+                        focusAfterRender(editorHeadingRef);
+                        // Older stories may hold their proof only in the short line.
+                        setEditor({
+                          editingId: story.id,
+                          formData: { ...story, proof: story.proof || story.proofSnippet },
+                        });
                         setCustomQuestion('');
                         setShowGeneralQuestions(false);
                       }}
                       className="rounded-lg border border-border/50 bg-overlay/30 px-2 py-1 text-xs text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                     >
-                      Edit
+                      Edit <span className="sr-only">story: {story.trigger || 'Untitled'}</span>
                     </button>
                     {currentPacket && (
                       <button
@@ -618,13 +777,14 @@ export default function StoriesSection({
                         className={cn(
                           'rounded-lg border px-2 py-1 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2',
                           currentPacket.topStoryIds.includes(story.id)
-                            ? 'border-foam/50 bg-foam/15 text-foam hover:bg-foam/25'
+                            ? 'border-foam/50 bg-foam/15 text-foam hover:border-foam'
                             : 'border-border/50 bg-overlay/30 text-foreground hover:bg-overlay/50'
                         )}
                       >
                         {currentPacket.topStoryIds.includes(story.id)
                           ? 'In packet'
                           : 'Add to packet'}
+                        <span className="sr-only">: {story.trigger || 'Untitled'}</span>
                       </button>
                     )}
                   </div>
@@ -650,8 +810,8 @@ export default function StoriesSection({
           <p className="text-sm font-medium text-foreground">No stories yet</p>
           <p className="mt-1 text-sm text-muted-foreground">
             {currentRole
-              ? 'Start with a gap above, or click "+ New story". Know STAR? Situation and Task map to the Trigger and Hook, Action is the Play, Result is the Proof.'
-              : 'Stories work best against a real posting, so the skills it tests become your list.'}
+              ? 'Start with a gap above, or press "+ New story".'
+              : 'Stories work best against a real posting, so the skills it asks for become your list.'}
           </p>
           {!currentRole && (
             <button
@@ -663,8 +823,9 @@ export default function StoriesSection({
             </button>
           )}
           <p className="mt-2 text-xs text-muted-foreground">
-            No work experience yet? Class projects, internships, club events, part-time jobs, and
-            volunteering all produce stories.
+            {student
+              ? 'No work experience yet? Class projects, internships, club events, part-time jobs, and volunteering all produce stories.'
+              : 'Any job produces stories: a hard shift, a schedule you fixed, a customer you kept, a count that finally matched.'}
           </p>
         </div>
       )}

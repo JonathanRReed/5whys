@@ -5,11 +5,15 @@ tone) and `DESIGN.md` (visual rules) before changing anything a user sees.
 
 ## What this is
 
-A static Astro 7 site with React 19 islands. Four career tools for students and
+A static Astro 7 site with React 19 islands. Career tools for students and
 early-career people, plus a career review at `/start/` and a dashboard. Every
-piece of user data lives in `localStorage`; nothing is sent to a server, the
-site sets no cookies, and that promise is repeated on the homepage. Do not add
-analytics, forms, or fetches that would make it false.
+piece of user data lives on the visitor's device (`localStorage` for small
+data, IndexedDB for recordings, the resume, and downloaded models); nothing is
+sent to a server, the site sets no cookies, and that promise is repeated on
+the homepage. Do not add analytics, forms, or fetches that would make it
+false. The relaunch in progress is specified in
+`docs/superpowers/specs/2026-11-12-relaunch-design.md`; read it before adding
+a feature.
 
 ## Commands
 
@@ -55,7 +59,21 @@ CI runs typecheck, lint, unit tests, build, the Playwright flows, and a
 - **Islands hydrate from empty state.** Read `localStorage` in an effect, never
   in a `useState` initializer, or React throws hydration error 418.
 - **Theme lives in one place.** The palette is only in `globals.css`. The boot
-  script sets `data-theme`; it does not carry colors. No cookies.
+  script sets `data-theme` and `data-font`; it does not carry colors. No
+  cookies.
+- **Three typefaces.** The Aa menu offers the default faces, Nebula Sans, and
+  OpenDyslexic (`src/lib/typeface.ts`). OpenDyslexic sets nearly twice as wide
+  as Inter. Anything a visitor sees must be checked in it at phone width.
+- **No third-party requests.** Site code fetches only from its own origin.
+  Models, fonts, and data are self-hosted. Nothing downloads a model without a
+  button that states the size.
+- **A model never scores.** On-device AI writes suggestions, questions, and
+  transcripts. Every number comes from a rule the visitor can inspect, and
+  there is no "ATS score" or pass rate anywhere. Every AI feature has a
+  rule-based version that works with no model.
+- **AI must not invent.** A generated rewrite that adds a number, name, or
+  tool the visitor did not write is rejected or shown with the addition
+  flagged (`src/lib/local-ai`).
 - **Copy is spare.** No em dashes, no exclamation-mark enthusiasm, no invented
   stats ("2 min"). If a number appears in copy, the code must compute it.
 - **Paths.** Interview Glow Up lives at `/interview-glow-up/`; the old

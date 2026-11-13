@@ -11,6 +11,9 @@ export type Ratings = {
   authenticity: number;
 };
 
+/** The ratings the visitor has set so far. A key that is missing is not rated. */
+export type PartialRatings = Partial<Ratings>;
+
 export const RATING_FIELDS = [
   {
     key: 'confidence' as const,
@@ -58,4 +61,31 @@ export function computeNextStep(ratings: Ratings): string {
 
 export function averageRating(ratings: Ratings): number {
   return (ratings.confidence + ratings.clarity + ratings.rapport + ratings.authenticity) / 4;
+}
+
+/** The labels of the ratings the visitor has not set yet, in display order. */
+export function missingRatingLabels(ratings: PartialRatings): string[] {
+  return RATING_FIELDS.filter(({ key }) => typeof ratings[key] !== 'number').map(
+    ({ label }) => label
+  );
+}
+
+/** All four ratings when the visitor has set every one, otherwise null. */
+export function completeRatings(ratings: PartialRatings): Ratings | null {
+  const { confidence, clarity, rapport, authenticity } = ratings;
+  if (
+    typeof confidence !== 'number' ||
+    typeof clarity !== 'number' ||
+    typeof rapport !== 'number' ||
+    typeof authenticity !== 'number'
+  ) {
+    return null;
+  }
+  return { confidence, clarity, rapport, authenticity };
+}
+
+/** "Confidence", "Confidence and Rapport", "Confidence, Clarity and Rapport". */
+export function joinLabels(labels: string[]): string {
+  if (labels.length <= 1) return labels.join('');
+  return `${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]}`;
 }

@@ -1,3 +1,5 @@
+import type { ResumeDraft } from './first-resume';
+
 export type BulletFields = { verb: string; task: string; impact: string; quantifier: string };
 
 export type RepetitiveVerb = {
@@ -11,9 +13,7 @@ export type KeywordDensityItem = {
 };
 
 export type SignalReport = {
-  visible: number;
-  hidden: number;
-  /** Measure-like numbers inside the scored bullets (years and phones excluded). */
+  /** Numbers inside the scored lines that say what they count. */
   numbers: number;
   /** Bullets that open with an action verb. */
   verbs: number;
@@ -30,13 +30,14 @@ export type SignalReport = {
   skippedLines?: number;
   weakWordCount?: number;
   repetitiveVerbs?: RepetitiveVerb[];
-  impactCoverage?: number;
   keywordDensity?: KeywordDensityItem[];
-  benchmarkScore?: number;
-  uniqueVerbCount?: number;
-  quantifiedBulletPercent?: number;
-  avgBulletLength?: number;
-  passiveVoicePercent?: number;
+  /*
+   * Older sessions also stored composite numbers ("visible", "hidden",
+   * "benchmarkScore", "impactCoverage", "uniqueVerbCount",
+   * "quantifiedBulletPercent", "avgBulletLength", "passiveVoicePercent").
+   * They are retired: such sessions still load, and those fields are
+   * dropped on load and never shown.
+   */
 };
 
 export type BulletRecord = {
@@ -63,4 +64,9 @@ export type StoredResumeSession = {
   selectedBulletId: string | null;
   lastAnalyzedAt: string | null;
   signalReport: SignalReport;
+  /**
+   * The "start from nothing" form while it is being filled in. Optional:
+   * older sessions have none, and it is only saved once the visitor types.
+   */
+  draft?: ResumeDraft;
 };

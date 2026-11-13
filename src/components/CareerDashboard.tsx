@@ -1,13 +1,18 @@
 import * as React from 'react';
+import { shortDate } from '../lib/applications';
 import { type CareerDashboardData, readCareerDashboard } from '../lib/career-bridge';
-import { FOCUS_LABELS, STAGE_LABELS } from '../lib/profile';
+import { FOCUS_LABELS, STAGE_LABELS, stageAnswer } from '../lib/profile';
+import { STRONG_SCORE } from '../lib/resume-game/thresholds';
 import { cn } from '../lib/utils';
+import ApplicationsPanel, { NewApplicationForm } from './ApplicationsPanel';
 import BackupControls from './BackupControls';
+import StoragePanel from './StoragePanel';
+import ErrorBoundary from './shared/ErrorBoundary';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
 const TOOL_LINKS = [
   {
-    name: 'Career 5 Whys',
+    name: 'The Five Whys',
     url: '/career/',
     desc: 'Clarify your core motivation',
     color: 'text-foam',
@@ -15,7 +20,7 @@ const TOOL_LINKS = [
     icon: 'M7 8h10M7 12h4',
   },
   {
-    name: 'Resume Game',
+    name: 'The Resume Game',
     url: '/resume-game/',
     desc: 'Score and rewrite bullets',
     color: 'text-love',
@@ -33,10 +38,26 @@ const TOOL_LINKS = [
   {
     name: 'Networking Practice',
     url: '/networking-practice/',
-    desc: 'Rehearse your pitch',
+    desc: 'Time and rate your introduction',
     color: 'text-gold',
     bg: 'bg-gold/12',
     icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
+  },
+  {
+    name: 'The Application Desk',
+    url: '/application/',
+    desc: 'Work one posting from start to send',
+    color: 'text-lichen',
+    bg: 'bg-lichen/12',
+    icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2',
+  },
+  {
+    name: 'Pay',
+    url: '/pay/',
+    desc: 'Put an offer in plain terms',
+    color: 'text-madder',
+    bg: 'bg-madder/12',
+    icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 9v1m9-5a9 9 0 11-18 0 9 9 0 0118 0z',
   },
 ];
 
@@ -52,10 +73,15 @@ function formatDate(iso: string | null): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+/** "today", "3 days ago", or "on Nov 12": a date that reads inside a sentence. */
+function scoredWhen(iso: string): string {
+  const when = formatDate(iso);
+  return /^[A-Z][a-z]{2} \d/.test(when) ? `on ${when}` : when.toLowerCase();
+}
+
 /**
  * One line naming what the visitor has actually saved, in the order they
- * would have made it. Counts belong in a sentence; only a real 0-100 score
- * earns its own numeral.
+ * would have made it. Counts belong in a sentence.
  */
 function ledgerSentence(data: CareerDashboardData): string {
   const parts: string[] = [];
@@ -98,16 +124,69 @@ function ledgerSentence(data: CareerDashboardData): string {
   return `You have ${parts.slice(0, -1).join(', ')}, and ${parts[parts.length - 1]}.`;
 }
 
+/** The dashboard's data, or null when even the summary could not be read. */
+function readSafely(): CareerDashboardData | null {
+  try {
+    return readCareerDashboard();
+  } catch (error) {
+    console.error('[dashboard] The summary could not be read:', error);
+    return null;
+  }
+}
+
+/** Shown in place of the summary when it cannot be drawn. The controls below it still work. */
+function SummaryUnavailable() {
+  return (
+    <div role="alert" className="rounded-2xl border border-gold/40 bg-gold/8 p-5 text-sm">
+      <p className="font-medium text-foreground">This summary could not be read.</p>
+      <p className="mt-1 text-muted-foreground">
+        Something saved on this device is not in the shape the dashboard expects. Your saved work
+        has not been changed. You can still export it, import a backup, or clear this device below.
+      </p>
+    </div>
+  );
+}
+
 export default function CareerDashboard() {
-  const [data, setData] = React.useState<CareerDashboardData | null>(null);
+  // undefined while loading; null when the summary could not be read.
+  const [data, setData] = React.useState<CareerDashboardData | null | undefined>(undefined);
+  // Counts every re-read, so the storage panel measures again.
+  const [revision, setRevision] = React.useState(0);
+  const refresh = React.useCallback(() => {
+    setData(readSafely());
+    setRevision((n) => n + 1);
+  }, []);
+  // An import replaces saved work, so a summary that failed to draw gets
+  // another try with the new data. Other changes keep it mounted, with its
+  // forms and focus.
+  const [imports, setImports] = React.useState(0);
+  const restored = React.useCallback(() => {
+    refresh();
+    setImports((n) => n + 1);
+  }, [refresh]);
 
   React.useEffect(() => {
-    setData(readCareerDashboard());
+    setData(readSafely());
+    // Work is often done in another tab while this one stays open: read
+    // again when storage changes and when the visitor comes back to it.
+    const reread = () => setData(readSafely());
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') reread();
+    };
+    window.addEventListener('storage', reread);
+    window.addEventListener('focus', reread);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.removeEventListener('storage', reread);
+      window.removeEventListener('focus', reread);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, []);
 
-  if (!data) {
+  if (data === undefined) {
     return (
-      <div className="mx-auto w-full max-w-6xl space-y-8">
+      // As tall as the page it becomes, so the footer does not jump when it loads.
+      <div className="mx-auto min-h-[100svh] w-full max-w-6xl space-y-8">
         <div className="space-y-2">
           <div className="h-8 w-48 animate-pulse rounded-lg bg-overlay/40" />
           <div className="h-4 w-72 animate-pulse rounded-lg bg-overlay/30" />
@@ -121,32 +200,93 @@ export default function CareerDashboard() {
     );
   }
 
-  if (!data.hasData) {
-    return <EmptyState onRestored={() => setData(readCareerDashboard())} />;
+  if (data && !data.hasData) {
+    return <EmptyState onRestored={restored} revision={revision} />;
   }
 
+  // Export, import and clear sit outside the summary's error boundary: if a
+  // saved store cannot be summarized, they are how the visitor recovers.
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8">
+      <ErrorBoundary key={imports} fallback={<SummaryUnavailable />}>
+        {data ? <Summary data={data} onChanged={refresh} /> : <SummaryUnavailable />}
+      </ErrorBoundary>
+
+      <BackupControls onRestored={restored} />
+
+      <StoragePanel revision={revision} />
+
+      {/* Quick links */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {TOOL_LINKS.map((tool) => (
+          <a
+            key={tool.name}
+            href={tool.url}
+            className={cn(
+              'group flex flex-col gap-3 rounded-2xl border border-border/35 bg-overlay/25 p-5',
+              'transition-all duration-300 hover:-translate-y-0.5 hover:border-border/60 hover:bg-overlay/40 hover:shadow-[0_20px_50px_-24px_hsl(var(--background)/0.8)]'
+            )}
+          >
+            <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl', tool.bg)}>
+              <svg
+                aria-hidden="true"
+                className={cn('h-5 w-5', tool.color)}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.8}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d={tool.icon} />
+              </svg>
+            </div>
+            <div>
+              <p className="font-medium text-foreground">{tool.name}</p>
+              <p className="text-xs text-muted-foreground">{tool.desc}</p>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Everything the dashboard summarizes from saved work. */
+function Summary({ data, onChanged }: { data: CareerDashboardData; onChanged: () => void }) {
+  return (
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-2">
-          <h2 className="text-3xl font-semibold tracking-tight">Career Dashboard</h2>
-          <p className="text-muted-foreground">
-            Your progress across all tools. Everything stays on your device.
-          </p>
+          <h2 className="text-2xl font-semibold tracking-tight">Where things stand</h2>
         </div>
         {data.profile && (
           <a
             href="/start/"
             className="inline-flex items-center gap-2 self-start rounded-full border border-border/40 bg-overlay/25 px-3 py-1.5 text-xs text-muted-foreground transition hover:border-border/60 hover:text-foreground"
           >
-            <span className="font-medium text-foreground">{STAGE_LABELS[data.profile.stage]}</span>
+            <span className="font-medium text-foreground">
+              {STAGE_LABELS[stageAnswer(data.profile)]}
+            </span>
             <span aria-hidden="true">·</span>
             <span>{FOCUS_LABELS[data.profile.focus]}</span>
             <span className="text-foam">Change</span>
           </a>
         )}
       </div>
+
+      {/* One quiet line when the whole loop is actually closed. */}
+      {data.arcLine && <p className="text-sm text-foam">{data.arcLine}</p>}
+
+      {/* Applications first: they are the deadlines the other work serves. */}
+      <ApplicationsPanel
+        applications={data.applications}
+        readiness={{
+          resumeScored: (data.resume?.bulletCount ?? 0) > 0,
+          practiceRounds: data.networking?.sessionCount ?? 0,
+          storyCount: data.glowup?.storyCount ?? 0,
+        }}
+        onChanged={onChanged}
+      />
 
       {/* Next actions: the steps the tools themselves produced */}
       {data.nextActions.length > 0 && (
@@ -208,10 +348,47 @@ export default function CareerDashboard() {
         </div>
       )}
 
-      {/* What is on file. A sentence, not a wall of rings: three of the four
-          values here are counts, and a progress ring around a count reads as a
-          proportion it does not have. The resume score is the one real 0-100
-          measure, so it is the only figure given its own weight. */}
+      {/* Dated steps from each application's action plan, soonest first. */}
+      {data.actionSteps.length > 0 && (
+        <section aria-labelledby="dated-steps-title" className="space-y-3">
+          <h2 id="dated-steps-title" className="text-xl font-semibold">
+            Steps you gave a date
+          </h2>
+          <ul className="divide-y divide-border/30 rounded-xl border border-border/40">
+            {data.actionSteps.slice(0, 6).map((step) => (
+              <li key={`${step.applicationId}-${step.stepId}`}>
+                <a
+                  href={`/application/?id=${encodeURIComponent(step.applicationId)}&station=qualifications`}
+                  className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-4 py-3 text-sm transition-colors hover:bg-overlay/30 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam"
+                >
+                  <span className="min-w-0 text-foreground">
+                    {step.text}
+                    <span className="ml-2 text-muted-foreground">
+                      for {step.applicationTitle}
+                      {step.company ? ` at ${step.company}` : ''}
+                    </span>
+                  </span>
+                  <span className="text-xs tabular-nums text-muted-foreground">
+                    {shortDate(step.due)},{' '}
+                    {step.daysUntil < 0
+                      ? `${-step.daysUntil} ${step.daysUntil === -1 ? 'day' : 'days'} overdue`
+                      : step.daysUntil === 0
+                        ? 'today'
+                        : step.daysUntil === 1
+                          ? 'tomorrow'
+                          : `in ${step.daysUntil} days`}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* What is on file. A sentence, not a wall of rings: the values here are
+          counts, and a progress ring around a count reads as a proportion it
+          does not have. The resume is described the same way, as a count of
+          strong lines; each line's own score lives in the Resume Game. */}
       <section className="border-y border-border/40 py-6">
         <p className="eyebrow text-muted-foreground">On file</p>
         <p className="mt-3 max-w-3xl text-pretty text-lg leading-relaxed text-foreground">
@@ -222,20 +399,22 @@ export default function CareerDashboard() {
             Saved resume results need a fresh analysis before their scores can guide you.
           </p>
         )}
-        {data.resume && data.resume.bulletCount > 0 && !data.resume.needsRescan && (
-          <p className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-muted-foreground">
-            <span className="font-display text-4xl leading-none text-love">
-              {Math.max(0, Math.min(100, Math.round(data.resume.averageScore)))}
-            </span>
-            <span className="text-sm">
-              average bullet score across {data.resume.bulletCount}{' '}
-              {data.resume.bulletCount === 1 ? 'line' : 'lines'}
+        {/* A count of strong lines is worth saying once there is one. "0 of 2
+            are strong" tells a first-timer only that they failed. */}
+        {data.resume &&
+          data.resume.bulletCount > 0 &&
+          data.resume.strongCount > 0 &&
+          !data.resume.needsRescan && (
+            <p className="mt-4 text-sm text-muted-foreground">
+              {data.resume.strongCount} of {data.resume.bulletCount} resume{' '}
+              {data.resume.bulletCount === 1 ? 'line is' : 'lines are'} strong, {STRONG_SCORE} or
+              more
               {data.resume.lastAnalyzedAt
-                ? `, ${formatDate(data.resume.lastAnalyzedAt).toLowerCase()}`
+                ? `, scored ${scoredWhen(data.resume.lastAnalyzedAt)}`
                 : ''}
-            </span>
-          </p>
-        )}
+              .
+            </p>
+          )}
       </section>
 
       {/* Skills */}
@@ -272,7 +451,7 @@ export default function CareerDashboard() {
                 {data.reflection.latestTopic}
               </p>
             )}
-            <blockquote className="border-l-2 border-foam/50 pl-4 text-sm leading-relaxed text-foreground">
+            <blockquote className="rounded-lg bg-foam/8 px-4 py-3 font-display text-base leading-relaxed text-foreground">
               {data.reflection.whyStatement}
             </blockquote>
             {data.reflection.rootReason && (
@@ -300,9 +479,9 @@ export default function CareerDashboard() {
             <CardTitle className="text-lg">Recent activity</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {data.recentActivity.map((activity, i) => (
+            {data.recentActivity.map((activity) => (
               <a
-                key={i}
+                key={`${activity.tool}-${activity.action}-${activity.date}`}
                 href={activity.url}
                 className="flex items-center justify-between rounded-xl border border-border/30 bg-overlay/20 px-4 py-3 transition hover:border-border/50 hover:bg-overlay/30"
               >
@@ -318,70 +497,24 @@ export default function CareerDashboard() {
           </CardContent>
         </Card>
       )}
-
-      <BackupControls onRestored={() => setData(readCareerDashboard())} />
-
-      {/* Quick links */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {TOOL_LINKS.map((tool) => (
-          <a
-            key={tool.name}
-            href={tool.url}
-            className={cn(
-              'group flex flex-col gap-3 rounded-2xl border border-border/35 bg-overlay/25 p-5',
-              'transition-all duration-300 hover:-translate-y-0.5 hover:border-border/60 hover:bg-overlay/40 hover:shadow-[0_20px_50px_-24px_hsl(var(--background)/0.8)]'
-            )}
-          >
-            <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl', tool.bg)}>
-              <svg
-                aria-hidden="true"
-                className={cn('h-5 w-5', tool.color)}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.8}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d={tool.icon} />
-              </svg>
-            </div>
-            <div>
-              <p className="font-medium text-foreground">{tool.name}</p>
-              <p className="text-xs text-muted-foreground">{tool.desc}</p>
-            </div>
-          </a>
-        ))}
-      </div>
     </div>
   );
 }
 
-function EmptyState({ onRestored }: { onRestored: () => void }) {
+function EmptyState({ onRestored, revision }: { onRestored: () => void; revision: number }) {
   return (
     <div className="mx-auto w-full max-w-2xl space-y-8 text-center">
-      {/* Large themed icon */}
-      <div className="flex justify-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-foam/12">
-          <svg
-            aria-hidden="true"
-            className="h-8 w-8 text-foam"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1.5}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-            />
-          </svg>
-        </div>
-      </div>
       <div className="space-y-3">
-        <h2 className="text-3xl font-semibold tracking-tight">Nothing saved yet</h2>
+        <h2
+          id="dashboard-empty-heading"
+          tabIndex={-1}
+          className="text-2xl font-semibold tracking-tight focus:outline-hidden"
+        >
+          Nothing saved yet
+        </h2>
         <p className="text-muted-foreground">
-          This page summarizes work you save in the four tools, and it all stays in this browser.
-          Take the short career review to pick a starting point.
+          This page summarizes work you save in the tools, and it all stays in this browser. Take
+          the short career review to pick a starting point.
         </p>
       </div>
 
@@ -404,7 +537,21 @@ function EmptyState({ onRestored }: { onRestored: () => void }) {
         </a>
       </div>
 
+      <div className="rounded-2xl border border-border/40 bg-overlay/15 p-6 text-left">
+        <p className="eyebrow text-muted-foreground">Have a deadline already?</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Track the application here and the tools fill in the prep.
+        </p>
+        <NewApplicationForm idPrefix="empty-app" onCreated={onRestored} />
+      </div>
+
       <BackupControls onRestored={onRestored} className="text-left" />
+
+      {/* Recordings and models can exist with no written work; they must
+          always be measurable and deletable from here. */}
+      <div className="text-left">
+        <StoragePanel revision={revision} />
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         {TOOL_LINKS.map((tool) => (

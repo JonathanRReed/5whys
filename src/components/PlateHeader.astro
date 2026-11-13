@@ -17,7 +17,7 @@ interface Props {
   title: string;
   /** One line: what the visitor leaves with. */
   description: string;
-  accent?: 'foam' | 'gold' | 'iris' | 'love';
+  accent?: 'foam' | 'gold' | 'iris' | 'love' | 'lichen' | 'madder';
 }
 
 const { tag, roman, title, description, accent = 'foam' } = Astro.props as Props;
@@ -48,7 +48,7 @@ const { tag, roman, title, description, accent = 'foam' } = Astro.props as Props
         eyebrow, so it is hidden rather than read out twice. */}
     <span
       class="plate-numeral hidden select-none pt-1 text-[3.4rem] leading-none sm:block"
-      style="color:hsl(var(--plate-accent)/0.7)"
+      style="color:hsl(var(--plate-accent)/0.85)"
       aria-hidden="true">{roman}</span
     >
   </div>

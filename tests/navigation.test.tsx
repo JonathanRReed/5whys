@@ -54,7 +54,11 @@ it('still scrolls when no main landmark is present', () => {
 it('links compact tools trigger button to its dropdown container via aria-controls', () => {
   render(<Navigation currentPath="/" />);
   const [compactToolsBtn] = screen.getAllByRole('button', { name: /tools/i });
+  // Only while the menu exists: a reference to a missing id helps no one.
+  expect(compactToolsBtn).not.toHaveAttribute('aria-controls');
+  fireEvent.click(compactToolsBtn);
   expect(compactToolsBtn).toHaveAttribute('aria-controls', 'compact-tools-menu');
+  expect(document.getElementById('compact-tools-menu')).not.toBeNull();
 });
 
 it('closes open compact tools menu when Escape key is pressed', () => {
@@ -64,7 +68,8 @@ it('closes open compact tools menu when Escape key is pressed', () => {
   // Open compact tools menu
   fireEvent.click(compactToolsBtn);
   expect(compactToolsBtn).toHaveAttribute('aria-expanded', 'true');
-  expect(screen.getAllByRole('link', { name: 'Resume Game' }).length).toBeGreaterThan(1);
+  // The tools live only in this menu now, so opening it is what shows the link.
+  expect(screen.getAllByRole('link', { name: 'The Resume Game' }).length).toBeGreaterThan(0);
 
   // Press Escape
   fireEvent.keyDown(window, { key: 'Escape' });
@@ -167,14 +172,14 @@ it('dismisses compact tools when focus moves backward to its neighboring Dashboa
   expect(trigger).toHaveAttribute('aria-expanded', 'false');
 });
 
-it('dismisses compact tools when focus leaves the last link for the theme toggle', () => {
+it('dismisses compact tools when focus leaves the last link for the display settings button', () => {
   const { container } = render(<Navigation currentPath="/" />);
   const trigger = screen.getAllByRole('button', { name: /tools/i })[0];
-  const themeToggle = screen.getByRole('button', { name: /switch to .* theme/i });
+  const themeToggle = screen.getByRole('button', { name: 'Aa, display settings' });
   fireEvent.click(trigger);
   const menu = container.querySelector('#compact-tools-menu');
   if (!menu) throw new Error('Expected compact tools menu');
-  const lastLink = within(menu as HTMLElement).getByRole('link', { name: 'Interview' });
+  const lastLink = within(menu as HTMLElement).getByRole('link', { name: 'Pay' });
   act(() => lastLink.focus());
   expect(trigger).toHaveAttribute('aria-expanded', 'true');
 
@@ -205,10 +210,10 @@ it('keeps internal pointer presses open and allows each tool link to activate', 
   const { container } = render(<Navigation currentPath="/" />);
   const trigger = screen.getAllByRole('button', { name: /tools/i })[0];
   const destinations = [
-    ['Career 5 Whys', '/career/'],
-    ['Resume Game', '/resume-game/'],
-    ['Networking', '/networking-practice/'],
-    ['Interview', '/interview-glow-up/'],
+    ['The Five Whys', '/career/'],
+    ['The Resume Game', '/resume-game/'],
+    ['Networking Practice', '/networking-practice/'],
+    ['Interview Glow Up', '/interview-glow-up/'],
   ];
 
   for (const [name, href] of destinations) {

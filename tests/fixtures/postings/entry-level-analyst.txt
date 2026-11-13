@@ -1,0 +1,29 @@
+Junior Business Analyst
+Corvid Health Partners | Hybrid (Raleigh, NC)
+
+Job Summary
+Corvid Health Partners is hiring a junior business analyst to support our revenue operations team. In this role you will turn claims and billing data into reports that managers use every week.
+
+Key Responsibilities
+1. Gather requirements from stakeholders in billing, finance, and clinical operations
+2. Build and maintain reports and dashboards in Power BI
+3. Write SQL to pull and reconcile claims data from the data warehouse
+4. Document business processes and recommend improvements
+5. Track project tasks in Jira and join weekly sprint planning
+
+Minimum Qualifications
+- Bachelor's degree in business, information systems, or a related field
+- 0 to 2 years of experience in an analyst role, including internships
+- Working knowledge of SQL and Microsoft Excel
+- Strong attention to detail and problem-solving skills
+
+Preferred Qualifications
+- Experience with Power BI or Tableau
+- Familiarity with healthcare billing or HIPAA requirements
+- Exposure to Agile or Scrum teams
+
+What We Offer
+- Health insurance, dental insurance, and a 401(k) match
+- Tuition reimbursement
+
+You will wear many hats in a dynamic environment. Salary is commensurate with experience.

@@ -3,6 +3,7 @@ import Base from '../layouts/Base.astro';
 import PlateHeader from '../components/PlateHeader.astro';
 import ResumeGameApp from '../components/ResumeGame';
 import ErrorBoundary from '../components/shared/ErrorBoundary';
+import GuideCoach from '../components/shared/GuideCoach';
 
 const resumeSchemas = [
   {
@@ -14,7 +15,7 @@ const resumeSchemas = [
         name: 'How does the resume scoring work?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'The Resume Game analyzes each bullet for action verbs, quantifiers, task clarity, and measurable impact. It then generates a score from 0-100 and suggests improvements.',
+          text: 'The Resume Game scores each line out of 100 for four parts it shows you: what you did, what the work was, what happened because of it, and a number that says what it counts. It then asks questions about the parts that are missing.',
         },
       },
       {
@@ -38,19 +39,19 @@ const resumeSchemas = [
 ];
 
 const resumeNoScriptContext = [
-  'Resume Bullet Game is the proof-building tool in 5 Whys Career Studio. It focuses on one practical problem: many resume bullets describe responsibility without showing evidence. The interactive version scores each line for action verbs, measurable signal, scope, clarity, and impact. The point is to make the useful work easy for a recruiter, hiring manager, or interviewer to understand. A loud bullet does not help if nobody can tell what you did.',
+  'Resume Bullet Game is the proof-building tool in 5 Whys Career Studio. It focuses on one practical problem: many resume bullets describe responsibility without showing evidence. The interactive version scores each line for four parts: what you did, what the work was, what happened because of it, and a number that says what it counts. The point is to make the useful work easy for a hiring manager or interviewer to understand. A loud bullet does not help if nobody can tell what you did.',
   'Without JavaScript, you can still use the same review pattern manually. Take one bullet at a time and check whether it names the action, the object of the work, the constraint or audience, and the result. Stronger bullets usually include a specific verb, a system or process, a scale marker, and an outcome. Weak bullets often hide behind words like helped, worked on, responsible for, supported, assisted, or managed without explaining what changed.',
-  'A practical rewrite flow is simple: paste or write the existing bullet, underline the real contribution, add a concrete scope detail, replace generic verbs with accurate action, and make the outcome visible if it is known. If a number would be fake, use a bounded qualitative signal instead: faster review cycles, fewer manual steps, clearer handoff, safer release process, better support coverage, cleaner audit trail, or more reliable onboarding.',
+  'A practical rewrite flow is simple: paste or write the existing bullet, underline the real contribution, say where or for whom, start with the word for what you actually did, and make the outcome visible if it is known. If a number would be fake, say what changed instead: shorter waits, fewer mistakes, a schedule that held, or a process other people started using.',
   'Resume text can include employers, clients, systems, metrics, and personal history. That is why the tool keeps everything in the browser during normal use. Exported files are controlled by whatever software you open them in after leaving the page. Review every generated or rewritten bullet before sending it anywhere, and keep the final voice direct, specific, and honest.',
 ];
 ---
 
 <Base
-  title="Resume Bullet Game"
-  description="Score each resume bullet for action, clarity, and measurable impact, then rewrite weak lines into recruiter-ready career evidence."
+  title="The Resume Game"
+  description="Score each resume line for what you did and what happened because of it, then rewrite the weak ones in your own words."
   breadcrumbs={[
     { label: 'Home', href: '/' },
-    { label: 'Resume Game', href: '/resume-game/' },
+    { label: 'The Resume Game', href: '/resume-game/' },
   ]}
   structuredData={resumeSchemas}
   noScriptContext={resumeNoScriptContext}
@@ -63,6 +64,7 @@ const resumeNoScriptContext = [
       description="Paste a resume and every achievement line is scored for action, result, and measure. Rewrite the weak ones and watch the score move."
       accent="gold"
     />
+    <GuideCoach client:load tool="resume-game" />
     <section class="mx-auto w-full max-w-6xl">
       <ErrorBoundary client:load>
         <ResumeGameApp
@@ -73,109 +75,53 @@ const resumeNoScriptContext = [
       </ErrorBoundary>
     </section>
 
-    {/* Quick Stats */}
-    <section
-      class="mx-auto grid w-full max-w-6xl grid-cols-2 gap-3 sm:grid-cols-4 reveal"
-      aria-label="Resume game quick stats"
-    >
-      <div
-        class="flex items-center gap-3 rounded-xl border border-border/50 bg-card/50 px-4 py-3"
-      >
-        <div
-          class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/15"
-        >
-          <svg
-            class="h-4 w-4 text-gold"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            stroke-width="1.8"
+    <section class="mx-auto w-full max-w-6xl" aria-labelledby="ats-heading">
+      <div class="grid gap-x-14 gap-y-6 border-t border-border/40 pt-8 lg:grid-cols-[0.8fr_1.2fr]">
+        <div class="space-y-3">
+          <span class="eyebrow" style="color: hsl(var(--gold))">A question everyone asks</span>
+          <h2
+            id="ats-heading"
+            class="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"
-            ></path>
-          </svg>
+            What an applicant tracking system reads
+          </h2>
+          <p class="max-w-md text-sm leading-relaxed text-muted-foreground">
+            Most employers file applications in software before a person reads them. There is no
+            universal score, and no site can tell you how a given employer's system will rank you.
+            These are the things that are true of nearly all of them.
+          </p>
         </div>
-        <div>
-          <p class="text-xs font-semibold text-foreground">Bullet scoring 0-100</p>
-          <p class="text-[10px] text-muted-foreground">Instant feedback</p>
-        </div>
-      </div>
-      <div
-        class="flex items-center gap-3 rounded-xl border border-border/50 bg-card/50 px-4 py-3"
-      >
-        <div
-          class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/15"
-        >
-          <svg
-            class="h-4 w-4 text-gold"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            stroke-width="1.8"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"></path>
-          </svg>
-        </div>
-        <div>
-          <p class="text-xs font-semibold text-foreground">Power verb detection</p>
-          <p class="text-[10px] text-muted-foreground">Action signal</p>
-        </div>
-      </div>
-      <div
-        class="flex items-center gap-3 rounded-xl border border-border/50 bg-card/50 px-4 py-3"
-      >
-        <div
-          class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/15"
-        >
-          <svg
-            class="h-4 w-4 text-gold"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            stroke-width="1.8"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
-            ></path>
-          </svg>
-        </div>
-        <div>
-          <p class="text-xs font-semibold text-foreground">File upload support</p>
-          <p class="text-[10px] text-muted-foreground">PDF, DOCX, TXT</p>
-        </div>
-      </div>
-      <div
-        class="flex items-center gap-3 rounded-xl border border-border/50 bg-card/50 px-4 py-3"
-      >
-        <div
-          class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/15"
-        >
-          <svg
-            class="h-4 w-4 text-gold"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            stroke-width="1.8"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M10.125 2.25h-4.5c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125v-9M10.125 2.25h.375a1.125 1.125 0 011.125 1.125v9M10.125 2.25c.621 0 1.125.504 1.125 1.125v9m-1.125-10.125h1.5"
-            ></path>
-          </svg>
-        </div>
-        <div>
-          <p class="text-xs font-semibold text-foreground">Export improved version</p>
-          <p class="text-[10px] text-muted-foreground">Save best lines</p>
-        </div>
+        <ul class="max-w-[68ch] border-t border-border/40 text-sm leading-relaxed">
+          {
+            [
+              [
+                'It reads text, in the order the file stores it.',
+                'Two columns, tables and text boxes can come out scrambled or not at all. One column is safest. Upload your file above to see the order yours is read in.',
+              ],
+              [
+                'It looks for ordinary headings.',
+                'Education, Experience, Skills, Projects. A clever heading may not be recognized as a section.',
+              ],
+              [
+                'It may miss what is in the header or footer.',
+                'Keep your name, email and phone in the body of the page.',
+              ],
+              [
+                'A person searches it with the posting\'s words.',
+                'Where the posting\'s wording is true of you, use it. Do not paste in words that are not.',
+              ],
+              [
+                'Send a Word file or a text-based PDF.',
+                'A scan or a photo of a resume has no text to read.',
+              ],
+            ].map(([point, detail]) => (
+              <li class="border-b border-border/40 py-3">
+                <span class="block font-medium text-foreground">{point}</span>
+                <span class="block text-muted-foreground">{detail}</span>
+              </li>
+            ))
+          }
+        </ul>
       </div>
     </section>
 
@@ -189,7 +135,7 @@ const resumeNoScriptContext = [
           id="resume-guide-heading"
           class="mt-3 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
         >
-          Turn busy lines into proof
+          From what you did to what it shows
         </h2>
       </div>
 
@@ -201,6 +147,7 @@ const resumeNoScriptContext = [
             class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-gold/15"
           >
             <svg
+              aria-hidden="true"
               class="h-5 w-5 text-gold"
               fill="none"
               viewBox="0 0 24 24"
@@ -216,16 +163,16 @@ const resumeNoScriptContext = [
           </div>
           <h3 class="text-xl font-semibold text-foreground">When to use it</h3>
           <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Use the Resume Bullet Game when a line sounds busy but does not yet prove impact. Paste
-            one bullet at a time and rewrite it until the evidence is easy to scan. It works for
-            early drafts, final polish, and quick reviews before applications.
+            Use the Resume Game when a line says you were busy but not what came of it. Paste your
+            resume, or a few lines, and rewrite one at a time until a reader can see what you did.
+            It works for a first draft, a last look, and a quick check before you apply.
           </p>
           <div
             class="mt-4 rounded-lg border border-gold/20 bg-gold/6 p-3"
           >
             <p class="eyebrow" style="color: hsl(var(--gold))">Tip</p>
             <p class="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-              Start with your weakest bullet. Biggest gains hide where you are most vague.
+              Start with the line you are least sure of. That is usually where a small change shows most.
             </p>
           </div>
         </article>
@@ -237,6 +184,7 @@ const resumeNoScriptContext = [
             class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-gold/15"
           >
             <svg
+              aria-hidden="true"
               class="h-5 w-5 text-gold"
               fill="none"
               viewBox="0 0 24 24"
@@ -265,7 +213,8 @@ const resumeNoScriptContext = [
           >
             <p class="eyebrow" style="color: hsl(var(--gold))">Tip</p>
             <p class="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-              Aim for 80+ on your top three bullets first.
+              A line with no number can still score strong if it says what happened because of
+              the work.
             </p>
           </div>
         </article>
@@ -277,6 +226,7 @@ const resumeNoScriptContext = [
             class="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-gold/15"
           >
             <svg
+              aria-hidden="true"
               class="h-5 w-5 text-gold"
               fill="none"
               viewBox="0 0 24 24"
@@ -292,14 +242,13 @@ const resumeNoScriptContext = [
           </div>
           <h3 class="text-xl font-semibold text-foreground">How to revise</h3>
           <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Rewrite one part at a time. Start with the verb, add the system or audience, name the
-            measurable result, then trim words that do not help a recruiter understand scope. The
-            rewrite should still sound like your work. It should just be easier to check.
+            Rewrite one part at a time. Start with what you did, say what the work was, then what
+            happened because of it, and add a number only if you have a true one. The rewrite
+            should still sound like your work. It should just be easier to check.
           </p>
           <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-            When numbers are not available, use concrete scope instead: the team affected, the
-            process improved, the decision made, or the risk reduced. Specific context usually reads
-            stronger than inflated language.
+            No number? Say what changed instead: what got faster or easier, what stopped going
+            wrong, or who used what you made. Plain, specific words read better than big ones.
           </p>
           <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
             Save the strongest rewrite, then compare it against the role before sending.

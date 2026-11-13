@@ -1,106 +1,99 @@
-import { BUZZWORDS, getVerbStrength, matchesTerm, suggestStrongerVerb } from './constants';
-import { analyzeReadability } from './readability';
-import { hasOutcomeLink, hasQualitativeOutcome, hasQuantifier } from './scoring';
+import { BUZZWORDS, matchesTerm } from './constants';
+import { analyzeReadability, findPassivePhrases } from './readability';
+import { findNumbers, resultKind, scoreParts } from './scoring';
 import { normalizeLine } from './text';
 import type { BulletRecord } from './types';
+import { honestVerbQuestion, leadingAction } from './verbs';
 
 export type BulletSuggestion = {
   type:
     | 'missing-verb'
     | 'weak-verb'
-    | 'buzzword'
-    | 'missing-number'
+    | 'thin-task'
     | 'missing-impact'
+    | 'missing-number'
+    | 'buzzword'
     | 'too-long'
-    | 'passive-voice'
-    | 'too-short'
-    | 'readability';
+    | 'passive-voice';
   message: string;
+  /** A question about the visitor's own work. Never a word to paste in. */
   fix?: string;
+  /** Worked example for students, and for anyone who has not said. */
   studentExample?: string;
-  professionalExample?: string;
+  /** Worked example from store, shift, warehouse, office, care, or customer work. */
+  workExample?: string;
 };
 
 /**
- * Context-sensitive verb suggestions: read what the bullet is about and
- * offer verbs that fit that kind of work instead of a generic trio.
- */
-function suggestVerbsFor(text: string): string {
-  const lower = text.toLowerCase();
-  if (/(research|lab|data|survey|analysis|thesis|experiment)/.test(lower)) {
-    return 'Researched, Analyzed, Presented';
-  }
-  if (/(club|event|meeting|volunteer|fundrais|chapter|committee)/.test(lower)) {
-    return 'Organized, Coordinated, Recruited';
-  }
-  if (/(code|app|website|software|script|prototype|bug)/.test(lower)) {
-    return 'Built, Programmed, Automated';
-  }
-  if (/(tutor|teach|train|mentor|grading|course)/.test(lower)) {
-    return 'Taught, Tutored, Mentored';
-  }
-  if (/(customer|cash|store|shift|inventory|front desk)/.test(lower)) {
-    return 'Operated, Resolved, Trained';
-  }
-  if (/(social|instagram|tiktok|newsletter|post|content|campaign)/.test(lower)) {
-    return 'Wrote, Scheduled, Grew';
-  }
-  return 'Led, Built, Organized, Analyzed';
-}
-
-/**
- * A metric prompt that reads the bullet and asks for the number most likely
- * to exist for that kind of work, plus the scope fallback when no metric
- * exists. One suggestion, not two.
+ * A question that reads the line and asks for the count most likely to
+ * exist for that kind of work. Asking is all it does: a count the visitor
+ * does not have stays out.
  */
 function metricPromptFor(text: string): string {
   const lower = text.toLowerCase();
   if (/(social|instagram|tiktok|newsletter|post|followers|content)/.test(lower)) {
-    return 'How many posts a week, how many followers or subscribers, or how much did reach change?';
+    return 'Did you count anything: posts a week, followers, or people who saw it?';
   }
-  if (/(team|group|club|committee|volunteers)/.test(lower)) {
-    return 'How many people? How often did you meet or ship?';
+  if (/(truck|freight|shipment|order|inventory|stock|pallet|delivery|deliveries)/.test(lower)) {
+    return 'Did you count anything: trucks, orders, or items a shift or a week?';
+  }
+  if (/(customer|caller|call|patient|guest|client|register|cash)/.test(lower)) {
+    return 'Did you count anything: customers, calls, or patients a shift or a day?';
   }
   if (/(event|meeting|workshop|session|game|performance)/.test(lower)) {
-    return 'How many events? How many attendees?';
+    return 'Did you count anything: how many events, or how many people came?';
   }
-  if (/(customer|client|patient|student|user)/.test(lower)) {
-    return 'How many per shift, per week, or per semester?';
+  if (/(student|class|course|tutor)/.test(lower)) {
+    return 'Did you count anything: students a week, sessions, or hours?';
   }
-  if (/(code|app|report|dashboard|script|process)/.test(lower)) {
-    return 'How many users, hours saved, or steps removed?';
+  if (/(report|spreadsheet|schedule|process|form|system)/.test(lower)) {
+    return 'Did you count anything: hours saved, steps removed, or how often it ran?';
   }
-  return 'Count something real: people, hours, items, dollars, or frequency. No metric? Team size, audience, or before and after is still evidence.';
+  return 'Did you count anything: people served, items, hours, dollars, or how often? If you did not count it, leave it out.';
 }
 
-// Pre-compiled regex patterns to eliminate inline compilation overhead when analyzing bullet suggestion triggers
-const CHANGE_WORD_PATTERN =
-  /\b(improved|reduced|increased|streamlined|automated|saved|cut|grew|doubled|eliminated)\w*\b/i;
-const PASSIVE_FRAGMENT_PATTERN = /\b(was|were|been|being|is|are|be)\s+\w+(?:ed|en)\b/i;
+/** A question about what happened, fitted to the line when it can be. */
+function resultQuestionFor(text: string): string {
+  const lower = text.toLowerCase();
+  if (/(social|instagram|tiktok|post|newsletter|content)/.test(lower)) {
+    return 'What happened because you did this? Did more people come, sign up, or follow along?';
+  }
+  if (/(inventory|stock|freight|truck|shelf|shelves|warehouse|pallet)/.test(lower)) {
+    return 'What happened because you did this? Was stock easier to find, were counts right, did trucks get done sooner?';
+  }
+  // The register comes first: "a cash drawer per shift" is about the cash.
+  if (/(register|cash|customer|counter|guest|caller|patient)/.test(lower)) {
+    return 'What happened because you did this? Did lines move faster, did orders go out right, did people come back?';
+  }
+  if (/(schedule|shift|staff)/.test(lower)) {
+    return 'What happened because you did this? Were shifts covered, was overtime lower, did fewer people miss work?';
+  }
+  return 'What happened because you did this? What got faster, easier, or fixed, and who noticed?';
+}
 
-// Example pairs rotate by bullet so a six-bullet resume does not show the
-// same sentence six times.
+// Example pairs rotate by line so a six-line resume does not show the same
+// sentence six times.
 const NUMBER_EXAMPLES = {
   student: [
     'Graded weekly problem sets for a 90-student linear algebra course and held 2 office hours per week.',
     'Ran sound for every home basketball game across two seasons, handling setup and teardown solo.',
     'Posted 3 times a week for the campus radio Instagram, growing followers from 240 to 610 in a semester.',
   ],
-  professional: [
-    'Cut invoice processing from 4 days to 1 by batching approvals across 3 departments.',
-    'Became the go-to reviewer for release notes, turning a two-owner bottleneck into a same-day review.',
-    'Onboarded 14 enterprise accounts in one quarter with zero missed kickoff dates.',
+  work: [
+    'Unloaded and stocked 3 trucks a week, with every pallet on the floor by noon.',
+    'Answered 60 to 80 customer calls a shift and logged each one before closing it.',
+    'Checked in 25 patients each morning at the front desk and confirmed their insurance.',
   ],
 };
 
 const IMPACT_EXAMPLES = {
   student: [
-    'Rebuilt the club sign-up form, doubling completed registrations at the fall activities fair.',
+    'Rebuilt the club sign-up form, so twice as many people finished signing up at the fall fair.',
     'Reorganized the supply closet so volunteers could set up in 10 minutes instead of 30.',
   ],
-  professional: [
-    'Standardized the deploy checklist, ending the weekly rollback pattern the team had lived with for a quarter.',
-    'Renegotiated the courier contract, saving the office $4,800 a year.',
+  work: [
+    'Rebuilt the weekly schedule so every shift was covered without overtime for three months.',
+    'Set up a returns shelf by the register, so customers stopped waiting for a manager.',
   ],
 };
 
@@ -111,7 +104,10 @@ const pick = <T>(list: T[], seed: string): T => {
 };
 
 /**
- * @param seed rotates the worked examples; pass the bullet's position in the
+ * Suggestions for one line, most useful first. Each is a question about
+ * what the visitor actually did; none proposes a grander verb or a number.
+ *
+ * @param seed rotates the worked examples; pass the line's position in the
  * list so neighbours show different sentences. Defaults to the text itself.
  */
 export function generateBulletSuggestions(
@@ -120,45 +116,88 @@ export function generateBulletSuggestions(
 ): BulletSuggestion[] {
   const exampleSeed = String(seed);
   const suggestions: BulletSuggestion[] = [];
-  const { fields } = bullet;
-  // Analyze the current state of the bullet, so suggestions clear as the
-  // user fills in fields instead of nagging about the original forever.
+  // Read the line as it reads now, so suggestions clear as fields fill in.
   const current = normalizeLine(bullet.improved) || normalizeLine(bullet.original);
+  if (!current) return suggestions;
+  const parts = scoreParts(current);
+  const opening = leadingAction(current);
   const readability = analyzeReadability(current);
-  const firstWord = current.split(/\s+/)[0] ?? '';
 
-  // Missing verb
-  if (!fields.verb.trim()) {
+  if (!opening) {
     suggestions.push({
       type: 'missing-verb',
-      message: firstWord
-        ? `This line starts with "${firstWord}" instead of an action verb.`
-        : 'This line has no action verb.',
-      fix: `Try: ${suggestVerbsFor(current)}.`,
+      message: 'This line does not start with what you did.',
+      fix: 'What did you do here? Start the line with that word, the one you would use telling a friend.',
       studentExample:
-        'Organized a 3-day club fundraiser with 12 volunteers, raising $1,400 for the local food bank.',
-      professionalExample:
-        'Led the migration of 40 client accounts to a new billing system with zero missed invoices.',
+        '"Social media for the radio station" becomes "Wrote and scheduled posts for the campus radio Instagram."',
+      workExample:
+        '"Opening and closing duties" becomes "Opened and closed the store four days a week, counting both registers."',
     });
-  }
-
-  // Weak verb
-  if (fields.verb.trim() && getVerbStrength(fields.verb) === 'weak') {
-    const stronger = suggestStrongerVerb(fields.verb);
+  } else if (opening.involvement) {
     suggestions.push({
       type: 'weak-verb',
-      message: `"${fields.verb}" describes involvement, not contribution. Name what you actually did.`,
-      fix: stronger
-        ? `Try "${stronger}", or the verb you would use telling a friend about it.`
-        : `Try: ${suggestVerbsFor(current)}, or the verb you would use telling a friend about it.`,
+      message: `"${opening.text}" says you were there, not what you did.`,
+      fix: honestVerbQuestion(current) ?? 'What did you do yourself? Start the line with that.',
       studentExample:
-        '"Responsible for social media" becomes "Wrote and scheduled 3 posts a week for the campus radio Instagram."',
-      professionalExample:
-        '"Assisted with onboarding" becomes "Built the onboarding checklist now used for every new hire."',
+        '"Helped with events" becomes "Set up chairs and ran the sign-in table at three welcome week events."',
+      workExample:
+        '"Helped with inventory" becomes "Counted and logged the back room every Sunday for the monthly inventory."',
     });
   }
 
-  // Buzzwords: traits claimed instead of shown
+  if (parts.work.points < parts.work.max) {
+    suggestions.push({
+      type: 'thin-task',
+      message: 'Say a little more about the work.',
+      fix: 'What was it, where, for whom, or how often?',
+      studentExample:
+        '"Worked the register" becomes "Worked the register at the campus cafe during the lunch rush."',
+      workExample:
+        '"Stocked shelves" becomes "Stocked the dairy and frozen aisles on the overnight shift."',
+    });
+  }
+
+  const numbers = findNumbers(current);
+  const measure = numbers.find((item) => item.kind === 'measure');
+  const kind = resultKind(current);
+  const resulted = kind === 'result';
+  if (!resulted) {
+    suggestions.push({
+      type: 'missing-impact',
+      message:
+        kind === 'aim'
+          ? 'This says what the work was for. It does not say whether that happened.'
+          : kind === 'failed'
+            ? 'This says the work did not reach its goal. If something else came of it, say what.'
+            : 'Nothing here says what happened because of the work.',
+      fix: resultQuestionFor(current),
+      studentExample: pick(IMPACT_EXAMPLES.student, exampleSeed),
+      workExample: pick(IMPACT_EXAMPLES.work, exampleSeed),
+    });
+  }
+
+  // A line that already says what happened is not asked for a number; it
+  // only hears about a number that is there but says nothing.
+  const scope = numbers.find((item) => item.kind === 'scope');
+  const bare = numbers.find((item) => item.kind === 'bare');
+  if (!measure && (!resulted || bare || scope)) {
+    suggestions.push({
+      type: 'missing-number',
+      message: bare
+        ? `"${bare.text}" is here, but nothing says what it counts.`
+        : scope
+          ? `"${scope.text}" is the size of the group. It shows scale, but it is not a result.`
+          : 'No number here. That is fine if you do not have a true one.',
+      fix: bare
+        ? `Add the word for what ${bare.text} counts, for example "${bare.text} orders a shift", or leave it out.`
+        : scope && !resulted
+          ? 'What changed for that group because of your work?'
+          : metricPromptFor(current),
+      studentExample: pick(NUMBER_EXAMPLES.student, exampleSeed),
+      workExample: pick(NUMBER_EXAMPLES.work, exampleSeed),
+    });
+  }
+
   const buzzword = BUZZWORDS.find((b) => matchesTerm(current, b));
   if (buzzword) {
     suggestions.push({
@@ -166,97 +205,35 @@ export function generateBulletSuggestions(
       message: `"${buzzword}" is a claim anyone can make. Cut it and show the work that proves it.`,
       studentExample:
         '"Detail-oriented team player" becomes "Caught and fixed 3 gradebook errors before final grades posted."',
-      professionalExample:
-        '"Results-driven leader" becomes "Took over a stalled migration and shipped it in 6 weeks."',
+      workExample:
+        '"Hard-working team player" becomes "Covered 14 open shifts in one month after two coworkers left."',
     });
   }
 
-  // Missing quantifier (years and dates do not count as measures)
-  const hasNumber = hasQuantifier(current) || hasQuantifier(fields.quantifier);
-  if (!hasNumber && !hasQualitativeOutcome(current)) {
-    suggestions.push({
-      type: 'missing-number',
-      message:
-        'Make the evidence more specific. Use a real measure, adoption, or a concrete change you can explain.',
-      fix: metricPromptFor(current),
-      studentExample: pick(NUMBER_EXAMPLES.student, exampleSeed),
-      professionalExample: pick(NUMBER_EXAMPLES.professional, exampleSeed),
-    });
-  }
-
-  // Missing impact
-  if (!fields.impact.trim() && !hasOutcomeLink(current)) {
-    const changeWord = current.match(CHANGE_WORD_PATTERN)?.[0];
-    suggestions.push({
-      type: 'missing-impact',
-      message:
-        'The action is here; the result is not. What changed because of this work, and for whom?',
-      fix: changeWord
-        ? `You mention "${changeWord}". Say what changed and for whom in the result field.`
-        : fields.quantifier.trim()
-          ? `Tie your number (${fields.quantifier.trim()}) to the outcome it produced.`
-          : 'Finish the thought: "...which meant ___ for the team, customer, or class."',
-      studentExample: pick(IMPACT_EXAMPLES.student, exampleSeed),
-      professionalExample: pick(IMPACT_EXAMPLES.professional, exampleSeed),
-    });
-  }
-
-  // Too long
   if (readability.wordCount > 32) {
     suggestions.push({
       type: 'too-long',
-      message: `At ${readability.wordCount} words this reads as a paragraph. Keep one action and one outcome; move the rest to a second bullet.`,
+      message: `At ${readability.wordCount} words this reads as a paragraph. Keep one action and one result; move the rest to a second line.`,
       studentExample:
         'Analyzed housing survey data in R for a sociology capstone and presented 3 findings to the department.',
-      professionalExample:
-        'Owned the quarterly vendor review and cut the supplier list from 12 to 7.',
+      workExample: 'Ran the weekly vendor returns and cut the backlog from 12 boxes to 2.',
     });
   }
 
-  // Too short
-  if (readability.wordCount > 0 && readability.wordCount < 8) {
-    suggestions.push({
-      type: 'too-short',
-      message: `At ${readability.wordCount} words there is no evidence yet. Add what you worked on, at what scale, and what changed.`,
-      studentExample:
-        '"Worked in the library" becomes "Staffed the library help desk 12 hours weekly, fielding 40+ patron questions per shift."',
-      professionalExample:
-        '"Did reporting" becomes "Built the weekly sales report used by 3 regional managers."',
-    });
-  }
-
-  // Passive voice
   if (readability.passiveVoiceCount > 0) {
-    const passiveFragment = current.match(PASSIVE_FRAGMENT_PATTERN)?.[0];
+    const passiveFragment = findPassivePhrases(current, !!opening && !opening.involvement)[0];
     suggestions.push({
       type: 'passive-voice',
       message: passiveFragment
-        ? `Passive voice hides the actor: "${passiveFragment}". Lead with what you did.`
-        : 'Passive voice hides the actor. Lead with what you did.',
-      fix: 'Rewrite as "Built X", not "X was built".',
+        ? `"${passiveFragment}" hides who did it. Lead with what you did.`
+        : 'This hides who did it. Lead with what you did.',
+      fix: 'Who did it? If it was you, start with what you did.',
       studentExample:
         '"Was given responsibility for the club budget" becomes "Managed the club budget of $2,000 across two semesters."',
-      professionalExample:
-        '"Deployments were handled by me" becomes "Ran all production deployments for a 5-service platform."',
-    });
-  }
-
-  // Readability
-  if (!readability.isReadable && readability.wordCount >= 8 && readability.wordCount <= 32) {
-    suggestions.push({
-      type: 'readability',
-      message: 'Hard to scan. Cut filler, split stacked clauses, and keep one idea per line.',
-      studentExample: 'Tutored calculus twice a week, averaging a 4.8 of 5 session rating.',
-      professionalExample: 'Wrote the API style guide adopted by all 4 backend teams.',
+      workExample:
+        '"Shipments were checked by me" becomes "Checked every inbound shipment against the packing list."',
     });
   }
 
   return suggestions;
-}
-
-export function signalGrade(visible: number): { grade: string; label: string; color: string } {
-  if (visible >= 80) return { grade: 'A', label: 'Excellent signal', color: 'text-love' };
-  if (visible >= 65) return { grade: 'B', label: 'Good signal', color: 'text-foam' };
-  if (visible >= 50) return { grade: 'C', label: 'Moderate signal', color: 'text-gold' };
-  return { grade: 'D', label: 'Weak signal', color: 'text-destructive' };
 }

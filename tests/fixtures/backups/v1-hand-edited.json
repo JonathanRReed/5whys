@@ -1,0 +1,9 @@
+{
+  "format": "5whys-career-studio",
+  "stores": {
+    "career-tools-profile": { "stage": "early", "focus": "interview" },
+    "career-applications": { "applications": [{ "title": "Analyst" }] },
+    "a-key-from-somewhere-else": { "ignored": true },
+    "career-why-history": null
+  }
+}

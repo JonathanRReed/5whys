@@ -138,34 +138,7 @@ const REGEX_SPECIAL_CHARS = /[.*+?^${}()|[\]\\]/g;
 const escapeRegExp = (value: string) => value.replace(REGEX_SPECIAL_CHARS, '\\$&');
 const powerWordsPattern = ACTION_VERBS.map(escapeRegExp).join('|');
 
-export const POWER_VERB_PATTERN = new RegExp(`\\b(${powerWordsPattern})\\b`, 'i');
 export const POWER_VERB_GLOBAL_PATTERN = new RegExp(`\\b(${powerWordsPattern})\\b`, 'gi');
-export const POWER_VERB_START_PATTERN = new RegExp(`^(${powerWordsPattern})\\b`, 'i');
-
-// Verbs of involvement that open many student bullets. They are not power
-// verbs, but a line that starts with one is still an achievement line and
-// the weak-verb rewrite needs to see it.
-export const INVOLVEMENT_VERBS = [
-  'helped',
-  'supported',
-  'assisted',
-  'participated',
-  'worked',
-  'involved',
-  'handled',
-  'performed',
-  'responsible',
-  'aided',
-  'volunteered',
-  'served',
-  'attended',
-  'member',
-  'tasked',
-  'contributed',
-];
-const bulletStartPattern = [...ACTION_VERBS, ...INVOLVEMENT_VERBS].map(escapeRegExp).join('|');
-/** Matches a line that opens with any action or involvement verb. */
-export const BULLET_START_PATTERN = new RegExp(`^(${bulletStartPattern})\\b`, 'i');
 
 const termRegexCache = new Map<string, RegExp>();
 
@@ -203,77 +176,7 @@ export function matchesTerm(
   return pattern.test(text);
 }
 
-// Verb strength tiers. A verb belongs to exactly one tier: weak verbs signal
-// involvement without ownership, strong verbs signal ownership of an outcome,
-// and everything else in ACTION_VERBS is medium. "Managed" is a normal,
-// serviceable verb: medium, never penalized.
-export const POWER_VERBS_WEAK = [
-  'helped',
-  'supported',
-  'assisted',
-  'participated',
-  'worked',
-  'involved',
-  'handled',
-  'performed',
-  'responsible',
-  'aided',
-];
-
-// Every entry here also appears in ACTION_VERBS, so each one is extractable
-// by seedFields and countable by the strong-verb metrics.
-export const POWER_VERBS_STRONG = [
-  'architected',
-  'spearheaded',
-  'pioneered',
-  'transformed',
-  'accelerated',
-  'championed',
-  'orchestrated',
-  'optimized',
-  'engineered',
-  'overhauled',
-  'automated',
-  'launched',
-  'founded',
-  'eliminated',
-  'doubled',
-];
-
-export const POWER_VERBS_STRONG_SET: ReadonlySet<string> = new Set(POWER_VERBS_STRONG);
-const POWER_VERBS_WEAK_SET = new Set(POWER_VERBS_WEAK);
-const INVOLVEMENT_VERBS_SET = new Set(INVOLVEMENT_VERBS);
-
-export function getVerbStrength(verb: string): 'weak' | 'medium' | 'strong' {
-  const lower = verb.trim().toLowerCase();
-  if (POWER_VERBS_STRONG_SET.has(lower)) return 'strong';
-  if (POWER_VERBS_WEAK_SET.has(lower) || INVOLVEMENT_VERBS_SET.has(lower)) return 'weak';
-  return 'medium';
-}
-
-export function suggestStrongerVerb(weakVerb: string): string {
-  const suggestions: Record<string, string> = {
-    helped: 'Enabled',
-    supported: 'Championed',
-    managed: 'Led',
-    worked: 'Built',
-    handled: 'Resolved',
-    performed: 'Delivered',
-    assisted: 'Partnered',
-    participated: 'Contributed',
-    involved: 'Drove',
-    aided: 'Guided',
-    led: 'Directed',
-    created: 'Designed',
-    built: 'Engineered',
-    made: 'Produced',
-    did: 'Executed',
-  };
-  return suggestions[weakVerb.toLowerCase()] || '';
-}
-
-// Hedging phrases, not verbs. Verb quality is handled by the strength tiers
-// above; this list catches constructions that bury the actual contribution.
+// Hedging phrases, not verbs: constructions that bury the actual contribution.
 export const WEAK_WORDS = [
   'responsible for',
   'assisted with',

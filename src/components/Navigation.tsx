@@ -1,13 +1,6 @@
 import * as React from 'react';
-import {
-  applyTheme,
-  isTheme,
-  readAppliedTheme,
-  setTheme,
-  THEME_STORAGE_KEY,
-  type Theme,
-} from '../lib/theme';
-import { cn } from '../lib/utils';
+import { cn, scrollBehavior } from '../lib/utils';
+import DisplayMenu from './DisplayMenu';
 
 type NavigationProps = {
   currentPath?: string;
@@ -15,27 +8,33 @@ type NavigationProps = {
 
 const navLinks = [
   { href: '/', label: 'Home' },
-  { href: '/start/', label: 'Start Here' },
+  { href: '/start/', label: 'Start here' },
   { href: '/dashboard/', label: 'Dashboard' },
-  { href: '/career/', label: 'Career 5 Whys' },
-  { href: '/resume-game/', label: 'Resume Game' },
-  { href: '/networking-practice/', label: 'Networking' },
-  { href: '/interview-glow-up/', label: 'Interview' },
+  { href: '/career/', label: 'The Five Whys' },
+  { href: '/resume-game/', label: 'The Resume Game' },
+  { href: '/networking-practice/', label: 'Networking Practice' },
+  { href: '/interview-glow-up/', label: 'Interview Glow Up' },
+  { href: '/application/', label: 'The Application Desk' },
+  { href: '/pay/', label: 'Pay' },
 ];
 
 export default function Navigation({ currentPath = '/' }: NavigationProps) {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [compactToolsOpen, setCompactToolsOpen] = React.useState(false);
-  const [activeTheme, setActiveTheme] = React.useState<Theme>('night');
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [showScrollTop, setShowScrollTop] = React.useState(false);
   const compactToolsTrigger = React.useRef<HTMLButtonElement>(null);
   const compactToolsMenu = React.useRef<HTMLDivElement>(null);
   const mobileMenuTrigger = React.useRef<HTMLButtonElement>(null);
+  const mobileMenu = React.useRef<HTMLElement>(null);
 
   React.useEffect(() => {
     const onScroll = () => {
-      setIsScrolled(window.scrollY > 24);
+      // The header is a little shorter once the page has scrolled, which moves
+      // the page by a few pixels. With one threshold, a page resting right at
+      // it flipped back and forth for ever, and nothing on it held still. It
+      // now shrinks past 48px and only grows back near the very top.
+      setIsScrolled((was) => (was ? window.scrollY > 8 : window.scrollY > 48));
       setShowScrollTop(window.scrollY > 400);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -44,7 +43,7 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
   }, []);
 
   const scrollToTop = React.useCallback(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: scrollBehavior() });
     const mainContent = document.getElementById('main-content');
     if (mainContent) {
       if (!mainContent.hasAttribute('tabindex')) {
@@ -52,20 +51,6 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
       }
       mainContent.focus({ preventScroll: true });
     }
-  }, []);
-
-  // The boot script has already applied the saved theme before hydration;
-  // pick it up for the toggle icon, and follow changes made in other tabs.
-  React.useEffect(() => {
-    const applied = readAppliedTheme();
-    if (applied) setActiveTheme(applied);
-    const onStorage = (event: StorageEvent) => {
-      if (event.key !== THEME_STORAGE_KEY || !isTheme(event.newValue)) return;
-      applyTheme(event.newValue);
-      setActiveTheme(event.newValue);
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
   }, []);
 
   React.useEffect(() => {
@@ -116,11 +101,23 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
     };
   }, [compactToolsOpen]);
 
-  const toggleTheme = React.useCallback(() => {
-    const next: Theme = activeTheme === 'night' ? 'dawn' : 'night';
-    setTheme(next);
-    setActiveTheme(next);
-  }, [activeTheme]);
+  // The phone menu covers the page, so Tab must not walk into the page behind
+  // it. When focus leaves the menu (and its toggle), the menu closes.
+  React.useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onFocusIn = (event: FocusEvent) => {
+      const target = event.target;
+      if (
+        target instanceof Node &&
+        !mobileMenu.current?.contains(target) &&
+        !mobileMenuTrigger.current?.contains(target)
+      ) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('focusin', onFocusIn);
+    return () => document.removeEventListener('focusin', onFocusIn);
+  }, [menuOpen]);
 
   const isActive = React.useCallback(
     (href: string) => {
@@ -130,14 +127,36 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
     [currentPath]
   );
 
-  const isNight = activeTheme === 'night';
-
   const mainLinks = navLinks.filter(
     (l) => l.href === '/' || l.href === '/start/' || l.href === '/dashboard/'
   );
   const toolsLinks = navLinks.filter(
     (l) => l.href !== '/' && l.href !== '/start/' && l.href !== '/dashboard/'
   );
+  // The header's real height, for the page to scroll focused things clear of
+  // it. At large text sizes it wraps to two rows; once it would take more than
+  // a fifth of the screen it stops being sticky, so it cannot cover the work.
+  const headerRef = React.useRef<HTMLElement>(null);
+  React.useEffect(() => {
+    const header = headerRef.current;
+    if (!header || typeof ResizeObserver === 'undefined') return undefined;
+    const root = document.documentElement;
+    const measure = () => {
+      const height = header.getBoundingClientRect().height;
+      const tall = height > window.innerHeight * 0.2;
+      root.style.setProperty('--header-h', tall ? '0px' : `${Math.ceil(height)}px`);
+      root.toggleAttribute('data-header-tall', tall);
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(header);
+    window.addEventListener('resize', measure);
+    measure();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, []);
+
   const [toolsOpen, setToolsOpen] = React.useState(toolsLinks.some((l) => isActive(l.href)));
   const compactToolsActive = toolsLinks.some((l) => isActive(l.href));
 
@@ -146,14 +165,17 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
       className={cn(
         'sticky top-0 z-40 w-full border-b transition-all duration-300',
         isScrolled
-          ? 'border-border/50 bg-background/97 shadow-[0_18px_42px_-34px_hsl(var(--background)/0.95)]'
-          : 'border-border/28 bg-background/94'
+          ? 'border-border/50 bg-background shadow-[0_18px_42px_-34px_hsl(var(--background)/0.95)]'
+          : 'border-border/28 bg-background'
       )}
+      ref={headerRef}
+      data-site-header
     >
       <nav
         aria-label="Primary"
         className={cn(
-          'mx-auto flex max-w-6xl items-center justify-between px-4 transition-all duration-300',
+          // Wraps rather than pushing the Aa and menu buttons off screen at large text sizes.
+          'mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-y-2 px-4 transition-all duration-300',
           isScrolled ? 'py-2.5' : 'py-3.5'
         )}
       >
@@ -221,7 +243,7 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
           <span className="grid leading-none">
             <span className="font-display text-base font-semibold tracking-tight">5 Whys</span>
             <span
-              className="hidden text-[0.6rem] font-medium uppercase tracking-[0.24em] text-muted-foreground sm:block"
+              className="hidden text-[0.72rem] font-medium uppercase tracking-[0.24em] text-muted-foreground sm:block"
               style={{ fontFamily: 'var(--font-mono)' }}
             >
               Career Studio
@@ -229,8 +251,9 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
           </span>
         </a>
 
-        {/* Compact tablet nav */}
-        <div className="relative hidden md:flex xl:hidden">
+        {/* Main links, with the six tools behind one menu so the bar stays
+            the same width however many plates there are. */}
+        <div className="relative hidden md:flex">
           <div className="flex items-center gap-1 rounded-full border border-border/38 bg-overlay/42 px-2 py-1">
             {mainLinks.map(({ href, label }) => {
               const active = isActive(href);
@@ -261,7 +284,7 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
               ref={compactToolsTrigger}
               onClick={() => setCompactToolsOpen((open) => !open)}
               aria-expanded={compactToolsOpen}
-              aria-controls="compact-tools-menu"
+              aria-controls={compactToolsOpen ? 'compact-tools-menu' : undefined}
               className={cn(
                 'inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition-colors duration-200',
                 compactToolsActive || compactToolsOpen
@@ -322,76 +345,9 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
           )}
         </div>
 
-        {/* Desktop nav */}
-        <div className="hidden items-center gap-1 rounded-full border border-border/38 bg-overlay/42 px-2 py-1 xl:flex">
-          {navLinks.map(({ href, label }) => {
-            const active = isActive(href);
-            return (
-              <a
-                key={href}
-                href={href}
-                aria-current={active ? 'page' : undefined}
-                className={cn(
-                  'relative rounded-full px-3.5 py-2 text-sm font-medium transition-colors duration-200',
-                  active
-                    ? 'bg-background/54 text-foreground shadow-[inset_0_0_0_1px_hsl(var(--border)/0.26)]'
-                    : 'text-foreground/78 hover:bg-background/34 hover:text-foreground'
-                )}
-              >
-                {label}
-                {active && (
-                  <span
-                    className="absolute bottom-1 left-4 right-4 h-[2px] rounded-full bg-foam"
-                    aria-hidden="true"
-                  />
-                )}
-              </a>
-            );
-          })}
-        </div>
-
-        {/* Right side: theme + mobile menu */}
+        {/* Right side: display settings + mobile menu */}
         <div className="flex items-center gap-2">
-          {/* Theme toggle */}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-foreground/78 transition-colors hover:bg-overlay/35 hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label={isNight ? 'Switch to light theme' : 'Switch to dark theme'}
-            title={isNight ? 'Switch to light theme' : 'Switch to dark theme'}
-          >
-            {isNight ? (
-              <svg
-                aria-hidden="true"
-                className="h-[1.1rem] w-[1.1rem]"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.8}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"
-                />
-              </svg>
-            ) : (
-              <svg
-                aria-hidden="true"
-                className="h-[1.1rem] w-[1.1rem]"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.8}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"
-                />
-              </svg>
-            )}
-          </button>
+          <DisplayMenu />
 
           {/* Mobile menu toggle */}
           <button
@@ -431,12 +387,14 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
       )}
 
       {/* Mobile nav panel */}
-      <div
+      <nav
         id="primary-navigation"
+        ref={mobileMenu}
+        aria-label="Menu"
         aria-hidden={!menuOpen}
         inert={!menuOpen ? true : undefined}
         className={cn(
-          'fixed inset-y-0 right-0 z-50 w-72 flex-col gap-1 border-l border-border/25 bg-background/98 px-4 pb-4 pt-20 md:hidden transition-transform duration-300 ease-out',
+          'fixed inset-y-0 right-0 z-50 flex w-72 max-w-full flex-col gap-1 overflow-y-auto border-l border-border/25 bg-background/98 px-4 pb-4 pt-20 md:hidden transition-transform duration-300 ease-out',
           menuOpen ? 'translate-x-0' : 'translate-x-full pointer-events-none'
         )}
       >
@@ -546,7 +504,7 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
             })}
           </div>
         )}
-      </div>
+      </nav>
       {showScrollTop && (
         <button
           type="button"

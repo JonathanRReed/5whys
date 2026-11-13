@@ -89,7 +89,7 @@ for (const theme of ['night', 'dawn']) {
     });
     await page.getByRole('button', { name: 'Replace everything here' }).click();
     await expect(page.getByRole('alert')).toContainText('Your previous saved work was restored.');
-    await expect(page.getByRole('status')).not.toContainText('Brought in');
+    await expect(page.getByRole('status').filter({ hasText: 'Brought in' })).toHaveCount(0);
     for (const [key, value] of Object.entries(original)) {
       expect(await readStorage(page, key)).toBe(value);
     }
@@ -103,7 +103,9 @@ for (const theme of ['night', 'dawn']) {
     await page.evaluate(() => sessionStorage.setItem('allow-backup-import', 'yes'));
     await page.getByRole('button', { name: 'Replace everything here' }).click();
     await expect(page.getByRole('alert')).toHaveCount(0);
-    await expect(page.getByRole('status')).toContainText('Brought in 1 reflection.');
+    await expect(page.getByRole('status').filter({ hasText: 'Brought in' })).toContainText(
+      'Brought in 1 reflection, your career profile.'
+    );
     expect(await readStorage(page, 'career-why-history')).toContain('imported-reflection');
     expect(await readStorage(page, 'career-tools-profile')).toContain('interview');
     expect(await readStorage(page, 'resume-game-session-v2')).toBeNull();
@@ -112,3 +114,86 @@ for (const theme of ['night', 'dawn']) {
     expect(errors).toEqual([]);
   });
 }
+
+for (const theme of ['night', 'dawn']) {
+  test(`malformed application data leaves all saved work intact (${theme}, phone typeface)`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.addInitScript((theme) => {
+      localStorage.setItem('career-tools-theme', theme);
+      localStorage.setItem('career-tools-font', 'dyslexic');
+      localStorage.setItem(
+        'career-tools-profile',
+        JSON.stringify({ stage: 'student', focus: 'resume' })
+      );
+      localStorage.setItem(
+        'career-applications',
+        JSON.stringify({
+          version: 1,
+          applications: [
+            {
+              id: 'saved',
+              title: 'Lab assistant',
+              company: 'Water lab',
+              createdAt: 1,
+              updatedAt: 1,
+            },
+          ],
+          activeId: 'saved',
+        })
+      );
+      localStorage.setItem(
+        'career-why-history',
+        JSON.stringify([{ id: 'saved-reflection', topic: 'Biology' }])
+      );
+    }, theme);
+    await page.goto('/dashboard/');
+    await waitForHydration(page);
+    const before = await page.evaluate(() => ({ ...localStorage }));
+    await page.getByLabel('Import a 5 Whys Career Studio export file').setInputFiles({
+      name: 'malformed.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(
+        JSON.stringify({
+          format: '5whys-career-studio',
+          version: 1,
+          stores: {
+            'career-tools-profile': { stage: 'early', focus: 'interview' },
+            'career-applications': 'x',
+          },
+        })
+      ),
+    });
+    await expect(page.getByRole('alert')).toHaveText(
+      'That file contains invalid data for "career-applications". Your saved work was not changed.'
+    );
+    await expect(page.getByRole('button', { name: 'Replace everything here' })).toHaveCount(0);
+    expect(await page.evaluate(() => ({ ...localStorage }))).toEqual(before);
+    await page.getByRole('alert').scrollIntoViewIfNeeded();
+    await page.screenshot({ path: testInfo.outputPath(`malformed-backup-${theme}.png`) });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true
+    );
+  });
+}
+
+test('restoring the first saved work keeps the import confirmation visible', async ({ page }) => {
+  await page.goto('/dashboard/');
+  await waitForHydration(page);
+  await page.getByLabel('Import a 5 Whys Career Studio export file').setInputFiles({
+    name: 'backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(
+      JSON.stringify({
+        format: '5whys-career-studio',
+        version: 1,
+        stores: { 'career-applications': { applications: [{ title: 'First application' }] } },
+      })
+    ),
+  });
+  await page.getByRole('button', { name: 'Add to what is here' }).click();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Brought in 1 tracked application.' })
+  ).toBeVisible();
+});

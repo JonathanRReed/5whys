@@ -1,4 +1,5 @@
-import JSZip from 'jszip';
+import { loadFeature } from '../lazy-feature';
+import { MAX_RESUME_TEXT, ResumeLimitError } from '../resume-doc/limits';
 
 export async function extractTextFromFile(file: File): Promise<string> {
   if (file.size > 5 * 1024 * 1024) {
@@ -7,7 +8,13 @@ export async function extractTextFromFile(file: File): Promise<string> {
   const ext = file.name.split('.').pop()?.toLowerCase() || '';
 
   if (ext === 'txt' || ext === 'md' || ext === 'markdown' || ext === 'text') {
-    return file.text();
+    const text = await file.text();
+    if (text.length > MAX_RESUME_TEXT) {
+      throw new ResumeLimitError(
+        'This file contains too much text. Upload only your resume or paste the text.'
+      );
+    }
+    return text;
   }
 
   if (ext === 'docx') {
@@ -23,9 +30,10 @@ export async function extractTextFromFile(file: File): Promise<string> {
 
 async function extractDocx(file: File): Promise<string> {
   try {
-    const arrayBuffer = await file.arrayBuffer();
-    const zip = await JSZip.loadAsync(arrayBuffer);
-    const xml = await zip.file('word/document.xml')?.async('text');
+    // The same ZIP, expansion, and text limits as the structured reader: a
+    // file that reader refused for its size is refused here too.
+    const { readDocxDocumentXml } = await loadFeature(import('../resume-doc/docx'));
+    const xml = await readDocxDocumentXml(new Uint8Array(await file.arrayBuffer()));
     if (!xml) {
       throw new Error(
         'This DOCX file appears corrupted or empty. Try: (1) Re-save in Word, (2) Use .txt format, or (3) Copy-paste text directly.'
@@ -46,6 +54,10 @@ async function extractDocx(file: File): Promise<string> {
       .replace(/ \n/g, '\n')
       .trim();
 
+    if (text.length > MAX_RESUME_TEXT) {
+      throw new ResumeLimitError('This DOCX contains too much text.');
+    }
+
     if (text.length < 20) {
       throw new Error(
         'DOCX extracted very little text. Try: (1) Re-save in Word, (2) Use .txt format, or (3) Copy-paste text directly.'
@@ -55,8 +67,9 @@ async function extractDocx(file: File): Promise<string> {
     return text;
   } catch (err) {
     if (
-      err instanceof Error &&
-      (err.message.startsWith('This DOCX') || err.message.startsWith('DOCX extracted'))
+      err instanceof ResumeLimitError ||
+      (err instanceof Error &&
+        (err.message.startsWith('This DOCX') || err.message.startsWith('DOCX extracted')))
     ) {
       throw err;
     }
@@ -67,6 +80,6 @@ async function extractDocx(file: File): Promise<string> {
 }
 
 async function extractPdf(file: File): Promise<string> {
-  const { readPdfText } = await import('./pdf-extractor');
+  const { readPdfText } = await loadFeature(import('./pdf-extractor'));
   return readPdfText(file);
 }

@@ -52,8 +52,8 @@ function EmptyState() {
       </div>
       <p className="mt-3 text-sm font-medium text-foreground">No saved sessions yet</p>
       <p className="mt-1 max-w-md text-sm text-muted-foreground">
-        Draft your intro, run a rep, and tap{' '}
-        <strong className="font-semibold text-foreground">Save Session</strong>. Each entry stores
+        Draft your intro, run a rep, and press{' '}
+        <strong className="font-semibold text-foreground">Save this rep</strong>. Each entry stores
         the exact words you practiced, so you can watch the intro evolve.
       </p>
     </div>
@@ -69,7 +69,7 @@ export default function SessionHistory({
   return (
     <section className="w-full space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-2xl font-semibold text-gold">Recent Sessions</h2>
+        <h2 className="text-2xl font-semibold text-gold">Recent sessions</h2>
         <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
           <span>Stored locally in your browser</span>
           <Button
@@ -110,7 +110,11 @@ export default function SessionHistory({
             })).filter((entry) => entry.value.length > 0);
 
             return (
-              <Card key={session.id} className="border-border/60 bg-overlay/30">
+              <Card
+                key={session.id}
+                className="border-border/60 bg-overlay/30"
+                data-guide="saved-rep"
+              >
                 <CardContent className="flex flex-col gap-4 py-4 md:flex-row md:items-start md:justify-between">
                   <div className="min-w-0 flex-1">
                     <div className="text-sm uppercase tracking-[0.3em] text-muted-foreground">
@@ -165,6 +169,14 @@ export default function SessionHistory({
                     </div>
                     <ConfirmButton
                       tone="destructive"
+                      aria-label={`Delete rep: ${session.scenarioTitle}, ${new Date(
+                        session.createdAt
+                      ).toLocaleString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                      })}`}
                       confirmLabel="Delete rep?"
                       onConfirm={() => onRemoveSession(session.id)}
                       className="w-full border-border text-foreground sm:w-auto hover:bg-destructive/10 hover:text-destructive hover:border-destructive/40"

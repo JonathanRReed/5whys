@@ -1,10 +1,11 @@
+import { hasWages } from './pay';
 /**
  * Open Graph image definitions. Each entry becomes /og/<slug>.png at build
  * time (see src/pages/og/[slug].png.ts). Base.astro picks the image for the
  * current path with ogImageFor(); pages can still pass an explicit `image`.
  */
 
-export type OgAccent = 'foam' | 'gold' | 'iris' | 'love';
+export type OgAccent = 'foam' | 'gold' | 'iris' | 'love' | 'lichen' | 'madder';
 
 export interface OgPage {
   /** Small uppercase line above the title. */
@@ -14,7 +15,7 @@ export interface OgPage {
   /** One supporting sentence. */
   description: string;
   accent: OgAccent;
-  /** Roman numeral for the four tool plates; omitted on other pages. */
+  /** Roman numeral for the tool plates; omitted on other pages. */
   plate?: string;
 }
 
@@ -23,7 +24,7 @@ export const OG_PAGES: Record<string, OgPage> = {
     eyebrow: 'A field guide to professional life',
     title: 'Find the real reason. Then build the proof.',
     description:
-      'Four career tools that stay in your browser: reflect, score a resume, rehearse an intro, prepare interview stories.',
+      'Six career tools that stay in your browser: reflect, score a resume, rehearse an intro, prepare interview stories, work an application, weigh the pay.',
     accent: 'foam',
   },
   start: {
@@ -52,7 +53,7 @@ export const OG_PAGES: Record<string, OgPage> = {
     eyebrow: 'Plate III · Rehearse',
     plate: 'III',
     title: 'Practice the conversation before it matters.',
-    description: 'Real scenarios, a two-minute timer, and honest self-ratings after every rep.',
+    description: 'Real scenarios, a timer, and honest self-ratings after every rep.',
     accent: 'iris',
   },
   'interview-glow-up': {
@@ -62,6 +63,25 @@ export const OG_PAGES: Record<string, OgPage> = {
     description:
       'Turn a job description into the skills it tests and a packet of stories that answer them.',
     accent: 'love',
+  },
+  application: {
+    eyebrow: 'Plate V · Apply',
+    plate: 'V',
+    title: 'Paste the posting once. Work it through.',
+    description:
+      'What it asks for, where you stand, two bullets, a letter, and a last check before you send.',
+    accent: 'lichen',
+  },
+  pay: {
+    eyebrow: 'Plate VI · Weigh',
+    plate: 'VI',
+    title: hasWages
+      ? 'What the job tends to pay, and what the offer comes to.'
+      : 'What the offer comes to.',
+    description: hasWages
+      ? 'Dated percentiles from public wage data, and an offer put into plain hourly and yearly terms.'
+      : 'An offer put into plain hourly, weekly and yearly terms.',
+    accent: 'madder',
   },
   dashboard: {
     eyebrow: 'Your studio',
@@ -92,6 +112,9 @@ const PATH_TO_SLUG: Record<string, string> = {
   '/networking-practice/': 'networking-practice',
   '/interview-glow-up/': 'interview-glow-up',
   '/interview-glow-up/workspace/': 'interview-glow-up',
+  '/interview-glow-up/rehearse/': 'interview-glow-up',
+  '/application/': 'application',
+  '/pay/': 'pay',
   '/dashboard/': 'dashboard',
   '/about/': 'about',
   '/privacy/': 'privacy',

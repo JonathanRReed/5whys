@@ -37,7 +37,9 @@ export default function WorkspaceTabs({ showHUD, onLaunchHUD, counts }: Props) {
     <div className="flex flex-wrap items-center gap-2 border-b border-border/30 pb-2">
       <TabsList
         variant="line"
-        className="h-auto w-full flex-wrap justify-start gap-2 bg-transparent p-0"
+        // The list grows with its tabs: a fixed height let wrapped tabs spill
+        // over the buttons below on a phone.
+        className="h-auto w-full flex-wrap justify-start gap-2 bg-transparent p-0 group-data-[orientation=horizontal]/tabs:h-auto"
       >
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -46,15 +48,17 @@ export default function WorkspaceTabs({ showHUD, onLaunchHUD, counts }: Props) {
             <TabsTrigger
               key={tab.id}
               value={tab.id}
+              data-guide={`tab-${tab.id}`}
               className={cn(
-                'group/step flex flex-none items-center gap-2 rounded-xl border border-transparent px-4 py-2.5 text-sm font-semibold',
+                // May shrink and wrap its label, so at large text sizes it stays on screen.
+                'group/step flex h-auto max-w-full flex-none items-center gap-2 rounded-xl border border-transparent px-4 py-2.5 text-left text-sm font-semibold',
                 'hover:bg-overlay/40 hover:text-foreground',
                 'after:hidden'
               )}
             >
               {tab.step ? (
                 <span
-                  className="flex size-5 items-center justify-center rounded-full bg-overlay/50 text-xs group-data-[state=active]/step:bg-primary-foreground/20"
+                  className="flex size-5 items-center justify-center rounded-full bg-overlay/50 text-xs group-data-[state=active]/step:bg-primary-foreground/10"
                   aria-hidden="true"
                 >
                   {tab.step}
@@ -62,9 +66,9 @@ export default function WorkspaceTabs({ showHUD, onLaunchHUD, counts }: Props) {
               ) : (
                 <Icon className="size-4" aria-hidden="true" />
               )}
-              <span>{tab.label}</span>
+              <span className="min-w-0">{tab.label}</span>
               {count > 0 && (
-                <span className="rounded-full bg-overlay/50 px-1.5 text-xs text-foreground group-data-[state=active]/step:bg-primary-foreground/20 group-data-[state=active]/step:text-primary-foreground">
+                <span className="rounded-full bg-overlay/50 px-1.5 text-xs text-foreground group-data-[state=active]/step:bg-primary-foreground/10 group-data-[state=active]/step:text-primary-foreground">
                   {count}
                 </span>
               )}
@@ -79,7 +83,7 @@ export default function WorkspaceTabs({ showHUD, onLaunchHUD, counts }: Props) {
           className="flex w-full items-center justify-center gap-2 rounded-xl border border-iris/40 sm:ml-auto sm:w-auto sm:justify-start bg-iris/10 px-4 py-2.5 text-sm font-semibold text-iris transition-colors hover:bg-iris/20 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-iris focus-visible:ring-offset-2"
         >
           <TargetIcon className="size-4" />
-          <span>Open the HUD</span>
+          <span>Open the cheat sheet (HUD)</span>
         </button>
       )}
     </div>

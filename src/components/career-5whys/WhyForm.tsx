@@ -1,7 +1,10 @@
 import { useId } from 'react';
+import type { FollowUpWhyInput } from '../../lib/local-ai';
+import { isNonAnswer, isRealAnswer } from '../../lib/non-answer';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Textarea } from '../ui/textarea';
+import SharperWhy from './SharperWhy';
 import { condenseAnswer, getAnswerNudge, type TrackExample } from './shared';
 
 type WhyFormProps = {
@@ -12,6 +15,8 @@ type WhyFormProps = {
   exampleOpen: Record<number, boolean>;
   onResponseChange: (index: number, value: string) => void;
   onToggleExample: (index: number) => void;
+  /** Set only when the browser's own model is ready to write follow-ups. */
+  sharper?: Pick<FollowUpWhyInput, 'track' | 'topic'>;
 };
 
 export default function WhyForm({
@@ -22,6 +27,7 @@ export default function WhyForm({
   exampleOpen,
   onResponseChange,
   onToggleExample,
+  sharper,
 }: WhyFormProps) {
   const exampleIdPrefix = useId();
   return (
@@ -32,6 +38,7 @@ export default function WhyForm({
         const locked = index > sequentialCount;
         const previousAnswer = index > 0 ? (responses[index - 1] ?? '') : '';
         const nudge = locked ? null : getAnswerNudge(response, previousAnswer);
+        const placeholderAnswer = isNonAnswer(response);
         const exampleAnswer = example.answers[index] ?? '';
         const examplePrevious = index > 0 ? condenseAnswer(example.answers[index - 1] ?? '') : '';
         const exampleId = `${exampleIdPrefix}-example-depth-${index}`;
@@ -41,19 +48,22 @@ export default function WhyForm({
             className="bg-card/98 border-border/55 text-foreground shadow-inner shadow-background/16"
           >
             <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                   Depth {index + 1}
                 </p>
-                <CardTitle className="text-lg text-foreground">{prompt}</CardTitle>
+                <CardTitle id={`${exampleId}-question`} className="text-lg text-foreground">
+                  {prompt}
+                </CardTitle>
               </div>
               <span className="rounded-full border border-border/50 px-4 py-1 text-xs text-muted-foreground">
-                {response.trim().length ? 'Captured' : 'Pending'}
+                {isRealAnswer(response) ? 'Captured' : placeholderAnswer ? 'Not yet' : 'Pending'}
               </span>
             </CardHeader>
             <CardContent className="space-y-4">
               <Textarea
                 aria-label={`Depth ${index + 1} response`}
+                aria-describedby={`${exampleId}-question`}
                 value={response}
                 onChange={(event) => onResponseChange(index, event.target.value)}
                 placeholder="Document your reasoning. Be specific and concrete."
@@ -65,16 +75,41 @@ export default function WhyForm({
                   Complete the previous depth before continuing.
                 </p>
               )}
-              {nudge && <p className="text-xs leading-relaxed text-gold">{nudge}</p>}
+              {nudge && (
+                <p
+                  className={
+                    placeholderAnswer
+                      ? 'text-sm leading-relaxed text-foreground'
+                      : 'text-xs leading-relaxed text-gold'
+                  }
+                >
+                  {nudge}
+                </p>
+              )}
+              {sharper &&
+                !locked &&
+                index > 0 &&
+                isRealAnswer(previousAnswer) &&
+                !response.trim() && (
+                  <SharperWhy
+                    track={sharper.track}
+                    topic={sharper.topic}
+                    answers={responses.slice(0, index)}
+                  />
+                )}
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => onToggleExample(index)}
+                data-guide={`why-example-${index}`}
                 aria-expanded={isExampleVisible}
                 aria-controls={exampleId}
-                className="w-full justify-between rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+                className="h-auto min-h-9 w-full justify-between gap-3 rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-left text-sm font-medium whitespace-normal text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
               >
-                {isExampleVisible ? 'Hide worked example' : 'Show a worked example'}
+                <span>
+                  {isExampleVisible ? 'Hide worked example' : 'Show a worked example'}{' '}
+                  <span className="sr-only">for depth {index + 1}</span>
+                </span>
                 <span aria-hidden>{isExampleVisible ? '−' : '+'}</span>
               </Button>
               <div

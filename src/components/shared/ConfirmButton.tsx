@@ -13,13 +13,12 @@ type Props = {
   'aria-label'?: string;
 };
 
-const ARM_TIMEOUT_MS = 4000;
-
 /**
  * A destructive action that asks in place instead of opening a browser
  * dialog. The first press arms the button and states exactly what will be
- * lost; the second press does it. Arming disarms itself after a few seconds
- * and on blur, so a stray click never leaves a loaded gun on the page.
+ * lost; the second press does it. It stays armed until the visitor confirms,
+ * presses Escape, or moves focus away, so nobody is raced by a timer and a
+ * stray click never leaves a loaded gun on the page.
  *
  * DESIGN.md bans reaching for a modal first, and a native confirm() cannot be
  * themed, cannot name the stakes in the product's voice, and reads as a bug
@@ -34,11 +33,8 @@ export default function ConfirmButton({
   'aria-label': ariaLabel,
 }: Props) {
   const [armed, setArmed] = React.useState(false);
-  const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const disarm = React.useCallback(() => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = null;
     setArmed(false);
   }, []);
 
@@ -47,7 +43,6 @@ export default function ConfirmButton({
   const handleClick = () => {
     if (!armed) {
       setArmed(true);
-      timeoutRef.current = setTimeout(() => setArmed(false), ARM_TIMEOUT_MS);
       return;
     }
     disarm();

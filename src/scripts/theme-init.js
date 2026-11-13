@@ -4,7 +4,7 @@
 // this script just decides which theme attribute to set.
 (() => {
   const KEY = 'career-tools-theme';
-  const root = document.documentElement;
+  const FONT_KEY = 'career-tools-font';
 
   const read = () => {
     try {
@@ -16,8 +16,21 @@
     return window.matchMedia('(prefers-color-scheme: light)').matches ? 'dawn' : 'night';
   };
 
+  // The typeface choice: absent means the default faces.
+  const readFont = () => {
+    try {
+      const stored = window.localStorage.getItem(FONT_KEY);
+      if (stored === 'readable' || stored === 'dyslexic') return stored;
+    } catch {
+      /* storage unavailable: keep the default faces */
+    }
+    return null;
+  };
+
   const apply = (doc, theme) => {
     doc.documentElement.dataset.theme = theme;
+    const font = readFont();
+    if (font) doc.documentElement.dataset.font = font;
     doc.documentElement.classList.add('js');
   };
 
@@ -28,10 +41,4 @@
   if (document.cookie.includes(KEY + '=')) {
     document.cookie = KEY + '=; max-age=0; path=/; SameSite=Lax';
   }
-
-  // Astro's ClientRouter swaps in a server-rendered <html data-theme="night">
-  // on every navigation; stamp the chosen theme on the incoming document first.
-  document.addEventListener('astro:before-swap', (event) => {
-    apply(event.newDocument, read());
-  });
 })();

@@ -1,3 +1,4 @@
+import { joinLabels } from '../../lib/networking-advice';
 import type { PracticeReflection } from '../../utils/storage';
 import { SESSION_LIMIT } from '../../utils/storage';
 import { Button } from '../ui/button';
@@ -11,7 +12,8 @@ type Props = {
   onResetReview: () => void;
   sessionsAtCapacity: boolean;
   draftEmpty: boolean;
-  ratingsTouched: boolean;
+  /** Labels of the ratings not set yet. Empty when all four are rated. */
+  missingRatings: string[];
 };
 
 const REFLECTION_FIELDS = [
@@ -48,7 +50,7 @@ export default function ReflectionPanel({
   onResetReview,
   sessionsAtCapacity,
   draftEmpty,
-  ratingsTouched,
+  missingRatings,
 }: Props) {
   return (
     <div className="space-y-6">
@@ -68,9 +70,10 @@ export default function ReflectionPanel({
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3" data-guide="rep-actions">
         <Button
           onClick={onSaveSession}
+          data-guide="rep-save"
           disabled={draftEmpty}
           className="bg-gold text-background hover:bg-gold/80 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
         >
@@ -81,15 +84,16 @@ export default function ReflectionPanel({
           className="border-border/60 text-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
           onClick={onResetReview}
         >
-          Reset
+          Reset <span className="sr-only">this review</span>
         </Button>
         {draftEmpty ? (
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground" data-guide="rep-not-ready">
             Write your intro above to save this rep. The history stores your actual words.
           </p>
-        ) : !ratingsTouched ? (
-          <p className="text-xs text-muted-foreground">
-            Move at least one slider so the rep is rated before it is saved.
+        ) : missingRatings.length > 0 ? (
+          <p className="text-xs text-muted-foreground" data-guide="rep-not-ready">
+            Rate all four to save this rep. {joinLabels(missingRatings)}{' '}
+            {missingRatings.length === 1 ? 'is' : 'are'} not rated yet.
           </p>
         ) : null}
         {sessionsAtCapacity ? (

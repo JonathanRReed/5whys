@@ -3,11 +3,12 @@ import Base from '../../layouts/Base.astro';
 import PlateHeader from '../../components/PlateHeader.astro';
 import InterviewGlowUpWorkspace from '../../components/interview-glow-up/InterviewGlowUpWorkspace';
 import ErrorBoundary from '../../components/shared/ErrorBoundary';
+import GuideCoach from '../../components/shared/GuideCoach';
 ---
 
 <Base
-  title="Interview Workspace"
-  description="Decode job descriptions, build proof-based stories, manage a story vault, and create an interview packet with panic-proof HUD mode."
+  title="Interview Glow Up · Workspace"
+  description="Decode a job posting, write interview stories you can prove, keep a library of them, and build a packet with a one-screen cheat sheet for the call."
   breadcrumbs={[
     { label: 'Home', href: '/' },
     { label: 'Interview Glow Up', href: '/interview-glow-up/' },
@@ -20,10 +21,11 @@ import ErrorBoundary from '../../components/shared/ErrorBoundary';
       tag="Plate IV · Prepare"
       roman="IV"
       title="Interview Workspace"
-      description="Decode the job, build stories that prove the skills it tests, then pack the best five for the call."
+      description="Decode the job posting, write stories that prove the skills it tests, then pack your best ones for the call."
       accent="love"
     />
-    <section class="mx-auto w-full max-w-7xl">
+    <GuideCoach client:load tool="interview-glow-up" />
+    <section class="mx-auto min-h-[70svh] w-full max-w-7xl">
       <ErrorBoundary client:load>
         <InterviewGlowUpWorkspace client:load />
       </ErrorBoundary>
@@ -32,21 +34,19 @@ import ErrorBoundary from '../../components/shared/ErrorBoundary';
       <article
         class="rounded-3xl border border-border/35 bg-overlay/25 p-6"
       >
-        <h2 class="text-xl font-semibold text-foreground">Decode the role</h2>
+        <h2 class="text-xl font-semibold text-foreground">Decode the job</h2>
         <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Start by pulling signals from the job description: responsibilities, tools, risks, team
-          context, and proof the interviewer will expect. That keeps prep tied to the role you
-          actually applied for.
+          Start with the job posting: what it requires, what is nice to have, the duties, and the
+          tools it names. That keeps your preparation tied to the job you actually applied for.
         </p>
       </article>
       <article
         class="rounded-3xl border border-border/35 bg-overlay/25 p-6"
       >
-        <h2 class="text-xl font-semibold text-foreground">Map your stories</h2>
+        <h2 class="text-xl font-semibold text-foreground">Write your stories</h2>
         <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Add examples that show decisions, tradeoffs, results, and lessons learned. The workspace
-          helps you connect each story to a role signal so you are not searching for evidence during
-          the conversation.
+          Add true examples of what you did and what came of it. Each story is tagged with the
+          skills it shows, so you are not searching your memory during the conversation.
         </p>
       </article>
       <article
@@ -54,8 +54,8 @@ import ErrorBoundary from '../../components/shared/ErrorBoundary';
       >
         <h2 class="text-xl font-semibold text-foreground">Use the packet</h2>
         <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-          The final packet is meant to be compact. Keep the strongest points, trim filler, and use
-          the HUD as a calm reminder of the evidence you want to bring into the interview.
+          The packet is meant to be short. Keep your strongest stories, cut the rest, and use the
+          HUD, a one-screen cheat sheet for the call, as a calm reminder of what you want to say.
         </p>
       </article>
     </section>
@@ -64,35 +64,17 @@ import ErrorBoundary from '../../components/shared/ErrorBoundary';
     >
       <h2 class="text-xl font-semibold text-foreground">How to work the packet</h2>
       <p>
-        The workspace is most useful when you treat it like a rehearsal bench. Paste the role,
-        choose the signals that matter, attach stories with real outcomes, and leave weaker examples
-        out of the packet. By the end you are working from evidence you can point at.
+        Treat the workspace like a practice bench. Paste the job posting, see what it tests, attach
+        stories with real results, and leave weaker examples out of the packet. By the end you are
+        working from things you can point to.
       </p>
       <p>
-        After the first pass, read the packet from the interviewer's point of view. Each story
-        should make the decision, constraint, result, and lesson easy to understand without extra
-        context. If a section feels vague, return to the story vault and add a clearer result or a
-        better example before the call.
+        After the first pass, read the packet as the interviewer would. Each story should make the
+        situation, what you did, and what came of it easy to follow without extra explanation. If a
+        story feels vague, go back to the Library and add a clearer result or a better example
+        before the call. Then practice saying them out loud in the rehearsal room.
       </p>
       <p>A smaller packet is easier to remember under pressure.</p>
-    </section>
-    <section class="sr-only" aria-label="Interview workspace search context">
-      <h2>Interview preparation workspace context</h2>
-      <p>
-        The Interview Glow Up workspace is a client-rendered preparation surface for decoding a job
-        description, identifying role signals, collecting proof-based stories, and assembling a
-        compact interview packet. The route supports candidates who need to turn scattered project
-        notes into interview-ready evidence before a hiring conversation. It keeps the visible
-        workflow focused on the interactive workspace while this static description gives crawlers
-        and assistive technology a durable explanation of the page purpose.
-      </p>
-      <p>
-        The workspace connects three preparation tasks: reading the role for responsibilities,
-        tools, risk areas, and team context; mapping personal examples to the signals that matter;
-        and trimming those examples into a packet that can be reviewed before the call. It is meant
-        for technical interviews, research conversations, customer engineering calls, and other
-        hiring settings where specific evidence is more useful than memorized answers.
-      </p>
     </section>
   </div>
 </Base>

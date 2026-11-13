@@ -40,8 +40,8 @@ export default function InterviewGlowUpAdvice() {
       {/* v1.3 Positioning Banner */}
       <div className="flex items-center gap-3 rounded-2xl border border-gold/35 bg-gold/8 px-5 py-4">
         <ClockIcon className="h-6 w-6 shrink-0 text-gold" />
-        <p className="text-sm font-medium text-foreground sm:text-base">
-          <strong>Got an interview tomorrow?</strong> Build your cheat sheet in 20 minutes.
+        <p className="min-w-0 text-sm font-medium text-foreground sm:text-base">
+          <strong>Got an interview tomorrow?</strong> Build your cheat sheet tonight.
         </p>
       </div>
 
@@ -62,16 +62,16 @@ export default function InterviewGlowUpAdvice() {
           />
         </svg>
         <span>
-          <strong>Privacy first:</strong> No data leaves your browser. Everything is stored locally
-          on your device.
+          <strong>Private by design:</strong> nothing you write leaves this browser. Everything is
+          stored on this device.
         </span>
       </div>
 
       {/* Intro */}
       <Section title="It's normal to feel nervous">
         <p className="leading-relaxed">
-          If interviews make you anxious, you're not alone. Most people treat interviews like an
-          exam, triggering fight, flight, or freeze mode.
+          If interviews make you anxious, you are not alone. An interview can feel like an exam, and
+          that is when people freeze.
         </p>
         <p className="mt-3 leading-relaxed">
           It is also fixable. With the right preparation, you can walk in calm and ready to have a
@@ -106,16 +106,16 @@ export default function InterviewGlowUpAdvice() {
           so they are rooting for you to be the person who ends the search.
         </p>
         <Callout variant="default">
-          <p className="font-medium">The Three Checks Every Interviewer Makes:</p>
+          <p className="font-medium">Three things every interviewer is checking:</p>
           <ol className="mt-2 list-inside list-decimal space-y-1 pl-2">
             <li>
-              <strong>Can you do the job?</strong> (Skills & experience)
+              <strong>Can you do the job?</strong> (Skills and experience)
             </li>
             <li>
-              <strong>Will you do the job?</strong> (Motivation & work ethic)
+              <strong>Will you do the job?</strong> (Motivation and effort)
             </li>
             <li>
-              <strong>Will you fit in?</strong> (Culture & collaboration)
+              <strong>How do you work with people?</strong> (Day to day, and when things go wrong)
             </li>
           </ol>
         </Callout>
@@ -147,98 +147,128 @@ export default function InterviewGlowUpAdvice() {
         </div>
       </Section>
 
-      {/* Decode the JD */}
-      <Section title="Decode the job description">
+      {/* Read the posting */}
+      <Section title="Read the job posting for what it tests">
         <p className="leading-relaxed">
-          The job description is your cheat sheet. It tells you exactly what skills they're testing.
-          Hidden under corporate jargon, every bullet maps to 1-2 skills.
+          The job posting is your study guide. Under the jargon, most lines point to a skill you can
+          show with a story, and the decoder sorts each line into what is required, what is nice to
+          have, and the duties of the job.
         </p>
-        <Callout variant="tip">
-          <p className="font-medium">
-            Example: "Own the end-to-end development lifecycle for key features"
-          </p>
-          <p className="mt-2 text-sm">
-            <strong>Skills:</strong> Ownership, Technical Execution, Project Management
-          </p>
-          <p className="mt-1 text-sm">
-            <strong>Likely question:</strong> "Tell me about a feature you owned from start to
-            finish."
-          </p>
-        </Callout>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Callout variant="tip">
+            <p className="font-medium">
+              A student posting: "Schedule and confirm volunteers each week"
+            </p>
+            <p className="mt-2 text-sm">
+              <strong>Skills:</strong> Scheduling, Communication
+            </p>
+            <p className="mt-1 text-sm">
+              <strong>Likely question:</strong> "Walk me through how you would schedule and confirm
+              volunteers each week."
+            </p>
+          </Callout>
+          <Callout variant="tip">
+            <p className="font-medium">
+              An operations posting: "Coordinate daily shipment schedules with carriers"
+            </p>
+            <p className="mt-2 text-sm">
+              <strong>Skills:</strong> Logistics, Scheduling, Vendor and carrier coordination
+            </p>
+            <p className="mt-1 text-sm">
+              <strong>Likely question:</strong> "Tell me about a time you had to coordinate
+              schedules with people outside your team."
+            </p>
+          </Callout>
+        </div>
         <p className="mt-4 leading-relaxed">
-          Once you decode the JD, most of the questions stop being surprises.
+          Once you have read the posting this way, most of the questions stop being surprises.
         </p>
       </Section>
 
       {/* Play + Proof */}
-      <Section title="The Play + Proof method">
+      <Section title="Stories with proof">
         <p className="leading-relaxed">
-          For each skill, you need <strong>one strong story</strong>. Structure it with Play +
-          Proof:
+          For each skill the posting tests, you want <strong>one true story</strong> you can tell in
+          a minute or two. Each story has four parts:
         </p>
-        <div className="mt-4 space-y-4">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="rounded-xl border border-border/50 bg-overlay/30 p-4">
-            <p className="flex items-center gap-2 font-semibold text-foreground">
-              <TargetIcon className="h-4 w-4 text-foam" /> Play (What You Did)
-            </p>
+            <p className="font-semibold text-foreground">Trigger</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              The specific action you took. Keep it concise, 2-3 sentences max.
+              A short name that brings the story back to mind, such as "holiday schedule".
+            </p>
+          </div>
+          <div className="rounded-xl border border-border/50 bg-overlay/30 p-4">
+            <p className="font-semibold text-foreground">Hook</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              The situation in a sentence: what was going on, or what was wrong.
             </p>
           </div>
           <div className="rounded-xl border border-border/50 bg-overlay/30 p-4">
             <p className="flex items-center gap-2 font-semibold text-foreground">
-              <ChartIcon className="h-4 w-4 text-iris" /> Proof (The Receipt)
+              <TargetIcon className="h-4 w-4 text-foam" /> Play
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              The measurable result. Numbers, time saved, revenue impact, or specific praise you
-              received.
+              What you did and decided. Keep it short, and say "I", not "we".
+            </p>
+          </div>
+          <div className="rounded-xl border border-border/50 bg-overlay/30 p-4">
+            <p className="flex items-center gap-2 font-semibold text-foreground">
+              <ChartIcon className="h-4 w-4 text-iris" /> Proof
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              What came of it: a number you can stand behind, a before and after, a problem that
+              stopped, or what someone said.
             </p>
           </div>
         </div>
         <Callout variant="default">
           <p className="text-sm">
-            <strong>Example:</strong> "I refactored the authentication system to use JWT tokens
-            (Play), which reduced login failures by 40% and support tickets by 25% (Proof)."
+            <strong>From a job:</strong> "Trucks were sitting half unloaded at the end of every
+            shift, so I set a dock schedule with the distribution center and moved breaks around it
+            (Play). From then on the trucks were worked the same day (Proof)."
           </p>
           <p className="mt-2 text-sm">
-            <strong>Student example:</strong> "Our capstone group was three weeks behind, so I split
-            the app into modules and took the data layer myself (Play). We demoed on time, and the
-            professor now uses our project as the example for next semester (Proof)."
+            <strong>From school:</strong> "Our club kept losing volunteers between sign-up and the
+            event, so I rebuilt the sign-up form and sent a reminder the day before (Play). Fewer
+            people missed their shifts, and the club still uses the form (Proof)."
+          </p>
+          <p className="mt-2 text-sm">
+            Know STAR? Situation and Task are the Hook, Action is the Play, and Result is the Proof.
           </p>
         </Callout>
       </Section>
 
       {/* Student On-Ramp */}
-      <Section title="No industry experience? You still have proof">
+      <Section title="Still in school? You still have proof">
         <p className="leading-relaxed">
-          Play + Proof does not care where the story happened. It cares that you did something
-          specific and can show the receipt. If you are still in school, you have four story sources
-          most candidates ignore:
+          A story does not care where it happened. It cares that you did something specific and can
+          say what came of it. Students have four sources most people overlook:
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
             <p className="text-sm font-semibold text-foreground">Class projects</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              The part you owned, the decision you made when the plan broke, the bug you found at
-              2am before the demo.
+              The part you owned, the decision you made when the plan broke, the mistake you caught
+              the night before it was due.
             </p>
           </div>
           <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
             <p className="text-sm font-semibold text-foreground">Internships</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Even a small ticket counts if you can explain the context, your change, and what
-              happened after it shipped.
+              Even a small task counts if you can say why it mattered, what you did, and what
+              happened after.
             </p>
           </div>
           <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
             <p className="text-sm font-semibold text-foreground">Clubs and volunteering</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              The event you organized, the budget you managed, the members you recruited. That is
+              The event you organized, the budget you kept, the members you recruited. That is
               leadership and ownership, named plainly.
             </p>
           </div>
           <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
-            <p className="text-sm font-semibold text-foreground">Part-time jobs</p>
+            <p className="text-sm font-semibold text-foreground">Campus and part-time jobs</p>
             <p className="mt-1 text-sm text-muted-foreground">
               Handling a rush, an unhappy customer, training a new hire. Interviewers trust these
               stories because they are hard to fake.
@@ -246,14 +276,52 @@ export default function InterviewGlowUpAdvice() {
           </div>
         </div>
         <Callout variant="tip">
-          <p className="font-medium">What counts as Proof without business metrics:</p>
+          <p className="font-medium">Proof without business numbers:</p>
           <ul className="mt-2 list-inside list-disc space-y-1 pl-2 text-sm">
-            <li>Grades and instructor feedback ("used as the example for next semester")</li>
-            <li>Scope: four teammates, a ten-week build, a $2,000 budget, 60 attendees</li>
-            <li>A before and after state: "sign-ups took 3 forms, now they take 1"</li>
-            <li>Adoption: classmates or club members actually using what you made</li>
+            <li>A grade, or what an instructor said about the work</li>
+            <li>The size of the job: how many people, how long, how much money</li>
+            <li>A before and after: "sign-ups took three forms, now they take one"</li>
+            <li>People actually using what you made</li>
           </ul>
         </Callout>
+      </Section>
+
+      {/* Career changers */}
+      <Section title="Changing careers? Your last job is full of proof">
+        <p className="leading-relaxed">
+          Running a shift, a store, or a crew is real work, and most of it carries over. The job is
+          to say it in the new field's words, and only for work you really did.
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
+            <p className="text-sm font-semibold text-foreground">Schedules and shifts</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              A schedule you built, or kept together when people called out.
+            </p>
+          </div>
+          <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
+            <p className="text-sm font-semibold text-foreground">Customers</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              A complaint you turned around, or an account you kept.
+            </p>
+          </div>
+          <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
+            <p className="text-sm font-semibold text-foreground">Inventory and counts</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              A count that would not match until you found out why.
+            </p>
+          </div>
+          <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
+            <p className="text-sm font-semibold text-foreground">A process you fixed</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              How it worked before, what you changed, and who uses it now.
+            </p>
+          </div>
+        </div>
+        <p className="mt-4 leading-relaxed">
+          Expect to be asked why you are changing fields and about leaving your last job. The
+          rehearsal room asks both, so you can practice saying them plainly.
+        </p>
       </Section>
 
       {/* Normalize Nerves */}
@@ -286,14 +354,14 @@ export default function InterviewGlowUpAdvice() {
           Ready to build your interview packet?
         </h3>
         <p className="max-w-lg text-muted-foreground">
-          Decode a real job description, create your Play + Proof stories, and generate a
-          panic-proof cheat sheet you can use during the interview.
+          Decode a real job posting, write the stories it calls for, and build the HUD: a one-screen
+          cheat sheet for the call.
         </p>
         <a
           href="/interview-glow-up/workspace/"
           className="mt-2 inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-22px_hsl(var(--primary))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
-          Open the Workspace
+          Open the workspace
           <svg
             aria-hidden="true"
             className="h-4 w-4"

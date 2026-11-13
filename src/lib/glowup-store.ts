@@ -9,6 +9,17 @@
  * The data structure is already JSON-serializable for easy migration.
  */
 
+import { localDate } from './local-date';
+import { isRealAnswer } from './non-answer';
+import { hiringCondition } from './posting/conditions';
+import {
+  isPostingSection,
+  isSourceSpan,
+  type PostingSection,
+  type RequirementOrigin,
+  type SourceSpan,
+} from './posting/types';
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -63,6 +74,20 @@ export interface DecodedBullet {
    * so consumers should guard for undefined.
    */
   suggestion?: { skillId: string; matchedKeywords?: string[] }[];
+  /**
+   * Posting section from the posting engine. Absent in saves made before the
+   * engine; loadData fills `unclassified`.
+   */
+  section?: PostingSection;
+  /**
+   * Offsets of the source sentence in the role's `parsedJdText`. Null when
+   * unknown (older saves) or when the student wrote the line.
+   */
+  sourceSpan?: SourceSpan | null;
+  /** The student confirmed this requirement. loadData fills false. */
+  confirmed?: boolean;
+  /** Who wrote the line. loadData fills `parsed`, which every older save is. */
+  origin?: RequirementOrigin;
 }
 
 export interface DecodedRole {
@@ -74,9 +99,19 @@ export interface DecodedRole {
   /** Exact source used for requirement analysis; absent in legacy saves. */
   parsedJdText?: string;
   bullets: DecodedBullet[];
+  /**
+   * Which posting parser produced the bullets: POSTING_ENGINE_VERSION for
+   * the section-aware engine, absent for the original line-based decode, so
+   * the interface can offer to re-sort an older role. loadData leaves it
+   * absent rather than filling it, so an older save exports unchanged.
+   */
+  postingEngineVersion?: number;
   createdAt: number;
   updatedAt: number;
 }
+
+/** Stamp for roles decoded by src/lib/posting. */
+export const POSTING_ENGINE_VERSION = 1;
 
 export interface Story {
   id: string;
@@ -116,6 +151,12 @@ export interface InterviewPacket {
   notes: string; // mission/fit/why-us combined
   panicAnswer?: string; // Generic safe story if stumped
   companyIntel?: CompanyIntel;
+  /**
+   * Freeform paste-back from the visitor's own AI (the BYO flow builds the
+   * prompt locally; nothing is sent anywhere by this site). Stored verbatim
+   * and never parsed, merged, or scored.
+   */
+  aiQuestions?: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -133,7 +174,7 @@ export interface GlowUpData {
 // Constants
 // ============================================================================
 
-const STORAGE_KEY = 'interview-glow-up-data';
+export const STORAGE_KEY = 'interview-glow-up-data';
 const CURRENT_VERSION = 1;
 
 // ============================================================================
@@ -167,27 +208,36 @@ export function loadData(): GlowUpData {
     }
 
     const parsed = JSON.parse(raw) as GlowUpData;
+    if (!parsed || typeof parsed !== 'object') {
+      return createDefaultData();
+    }
 
     // Version migration (future-proofing)
     if (parsed.version !== CURRENT_VERSION) {
-      return migrateData(parsed);
+      return normalizeData(migrateData(parsed));
     }
 
-    return parsed;
+    return normalizeData(parsed);
   } catch (error) {
     console.error('[GlowUp] Failed to load data:', error);
     return createDefaultData();
   }
 }
 
-export function saveData(data: GlowUpData): void {
-  if (typeof window === 'undefined') return;
+/**
+ * Write the workspace. Returns false when the browser refused (storage full
+ * or blocked), so the page never says "Saved" for an edit that was not kept.
+ */
+export function saveData(data: GlowUpData): boolean {
+  if (typeof window === 'undefined') return false;
 
   try {
     const json = JSON.stringify(data);
     localStorage.setItem(STORAGE_KEY, json);
+    return true;
   } catch (error) {
     console.error('[GlowUp] Failed to save data:', error);
+    return false;
   }
 }
 
@@ -200,14 +250,18 @@ export function clearAllData(): void {
 // Export/Import
 // ============================================================================
 
-export function exportJSON(): void {
-  const data = loadData();
+/**
+ * Download the workspace as a backup file. Pass the data on screen when it
+ * may be newer than what storage holds, for example after a failed save.
+ */
+export function exportJSON(current?: GlowUpData): void {
+  const data = current ?? loadData();
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
 
   const a = document.createElement('a');
   a.href = url;
-  a.download = `interview-glow-up-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `interview-glow-up-backup-${localDate()}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -224,6 +278,85 @@ function migrateData(oldData: GlowUpData): GlowUpData {
   return {
     ...oldData,
     version: CURRENT_VERSION,
+  };
+}
+
+/**
+ * Hand-edited backups and older saves can arrive with whole collections,
+ * per-record arrays, or string fields missing, and the sections iterate and
+ * call string methods on those fields blind. One missing `otherSkillIds`
+ * used to take the whole workspace down. Fill in the shape; leave the
+ * content alone.
+ */
+function normalizeData(data: GlowUpData): GlowUpData {
+  const asArray = <T>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : []);
+  const asString = (value: unknown): string => (typeof value === 'string' ? value : '');
+  const asNumber = (value: unknown): number => (typeof value === 'number' ? value : 0);
+  return {
+    ...data,
+    roles: asArray<DecodedRole>(data.roles).map(({ postingEngineVersion, ...role }) => ({
+      ...role,
+      // Absent means the original line-based decode; only a malformed value is dropped.
+      ...(typeof postingEngineVersion === 'number' ? { postingEngineVersion } : {}),
+      jobTitle: asString(role.jobTitle),
+      company: asString(role.company),
+      rawJdText: asString(role.rawJdText),
+      createdAt: asNumber(role.createdAt),
+      updatedAt: asNumber(role.updatedAt),
+      bullets: asArray<DecodedBullet>(role.bullets).map((bullet) => ({
+        ...bullet,
+        text: asString(bullet.text),
+        status: bullet.status === 'ignored' ? 'ignored' : 'active',
+        primarySkillId: typeof bullet.primarySkillId === 'string' ? bullet.primarySkillId : null,
+        secondarySkillIds: asArray<string>(bullet.secondarySkillIds),
+        suggestion: asArray<{ skillId?: unknown; matchedKeywords?: unknown }>(bullet.suggestion)
+          .filter((s) => s && typeof s === 'object')
+          .map((s) => ({
+            skillId: asString(s.skillId),
+            matchedKeywords: asArray<string>(s.matchedKeywords),
+          })),
+        section: isPostingSection(bullet.section) ? bullet.section : 'unclassified',
+        sourceSpan: isSourceSpan(bullet.sourceSpan) ? bullet.sourceSpan : null,
+        confirmed: bullet.confirmed === true,
+        origin: bullet.origin === 'student' ? 'student' : 'parsed',
+      })),
+    })),
+    stories: asArray<Story>(data.stories).map((story) => ({
+      ...story,
+      primarySkillId: asString(story.primarySkillId),
+      otherSkillIds: asArray<string>(story.otherSkillIds),
+      trigger: asString(story.trigger),
+      hook: asString(story.hook),
+      proofSnippet: asString(story.proofSnippet),
+      play: asString(story.play),
+      proof: asString(story.proof),
+      confidence: asNumber(story.confidence) || 60,
+      questionPrompts: asArray<string>(story.questionPrompts),
+      tags: asArray<string>(story.tags),
+      createdAt: asNumber(story.createdAt),
+      updatedAt: asNumber(story.updatedAt),
+    })),
+    packets: asArray<InterviewPacket>(data.packets).map((packet) => ({
+      ...packet,
+      roleId: asString(packet.roleId),
+      mode: packet.mode === 'review' || packet.mode === 'hud' ? packet.mode : 'prep',
+      topStoryIds: asArray<string>(packet.topStoryIds),
+      customQuestions: asArray<string>(packet.customQuestions),
+      notes: asString(packet.notes),
+      ...(packet.companyIntel && typeof packet.companyIntel === 'object'
+        ? {
+            companyIntel: {
+              keywords: asArray<string>(packet.companyIntel.keywords),
+              notes: asString(packet.companyIntel.notes),
+              links: asArray<string>(packet.companyIntel.links),
+            },
+          }
+        : {}),
+      createdAt: asNumber(packet.createdAt),
+      updatedAt: asNumber(packet.updatedAt),
+    })),
+    currentRoleId: typeof data.currentRoleId === 'string' ? data.currentRoleId : null,
+    currentPacketId: typeof data.currentPacketId === 'string' ? data.currentPacketId : null,
   };
 }
 
@@ -346,6 +479,34 @@ export function updatePacket(
 // Query Helpers
 // ============================================================================
 
+/** Sections that hold requirements, in the order the room asks about them. */
+const REQUIREMENT_SECTIONS: readonly PostingSection[] = ['required', 'responsibility', 'preferred'];
+
+/**
+ * The lines of a posting that count as requirements. When the visitor has
+ * confirmed any, only those; otherwise the lines sorted as required, a duty,
+ * or preferred. Never a dismissed or ignored line, and never an unsorted one
+ * (a header, an address, a description of the employer). Ordered required,
+ * duties, preferred, then anything confirmed from another section, keeping
+ * posting order within each.
+ */
+export function requirementBullets(bullets: readonly DecodedBullet[]): DecodedBullet[] {
+  // A condition of hiring (age, licence, work authorization) is not a skill
+  // to tell a story about or be asked to prove.
+  const live = bullets.filter((b) => b.status !== 'ignored' && !hiringCondition(b.text));
+  const confirmed = live.filter((b) => b.confirmed === true);
+  const pool = confirmed.length > 0 ? confirmed : live;
+  const rank = (b: DecodedBullet) => {
+    const index = REQUIREMENT_SECTIONS.indexOf(b.section ?? 'unclassified');
+    return index === -1 ? REQUIREMENT_SECTIONS.length : index;
+  };
+  return pool
+    .filter((b) => confirmed.length > 0 || rank(b) < REQUIREMENT_SECTIONS.length)
+    .map((b, order) => ({ b, order }))
+    .sort((x, y) => rank(x.b) - rank(y.b) || x.order - y.order)
+    .map(({ b }) => b);
+}
+
 /**
  * Skill frequency across a set of bullets. Takes the bullet array directly so
  * callers can pass either a saved role's bullets or the unsaved editor state;
@@ -356,23 +517,39 @@ export function getSkillFrequencyMap(bullets: DecodedBullet[]): Map<string, numb
 
   for (const bullet of bullets) {
     if (bullet.status === 'ignored') continue;
-
-    if (bullet.primarySkillId) {
-      freq.set(bullet.primarySkillId, (freq.get(bullet.primarySkillId) || 0) + 1);
-    }
-    for (const skillId of bullet.secondarySkillIds) {
-      freq.set(skillId, (freq.get(skillId) || 0) + 1);
-    }
+    // One line counts once per skill, however it is tagged.
+    const skills = new Set(
+      [bullet.primarySkillId, ...(bullet.secondarySkillIds ?? [])].filter((id): id is string =>
+        Boolean(id)
+      )
+    );
+    for (const skillId of skills) freq.set(skillId, (freq.get(skillId) || 0) + 1);
   }
 
   return freq;
 }
 
-/** Count of active bullets that carry at least one skill tag. */
-export function getTaggedBulletCount(bullets: DecodedBullet[]): number {
-  return bullets.filter(
-    (b) => b.status === 'active' && (b.primarySkillId || b.secondarySkillIds.length > 0)
-  ).length;
+export interface SkillCount {
+  skillId: string;
+  /** Requirement lines that test this skill. */
+  count: number;
+}
+
+/**
+ * What a posting tests, as counts over its requirement lines: "Scheduling,
+ * 4 of 15 requirements". One line can test several skills, so the counts
+ * are not shares and do not add up to the total.
+ */
+export function skillCounts(bullets: readonly DecodedBullet[]): {
+  counts: SkillCount[];
+  total: number;
+} {
+  const requirements = requirementBullets(bullets);
+  const freq = getSkillFrequencyMap(requirements);
+  const counts = [...freq.entries()]
+    .map(([skillId, count]) => ({ skillId, count }))
+    .sort((a, b) => b.count - a.count);
+  return { counts, total: requirements.length };
 }
 
 export function getTopGaps(
@@ -380,10 +557,12 @@ export function getTopGaps(
   bullets: DecodedBullet[],
   count: number = 3
 ): string[] {
-  const freq = getSkillFrequencyMap(bullets);
+  const freq = getSkillFrequencyMap(requirementBullets(bullets));
   const storySkills = new Set<string>();
 
   for (const story of data.stories) {
+    // "idk" is not a story yet, so it cannot close a gap.
+    if (!isRealAnswer(story.play)) continue;
     storySkills.add(story.primarySkillId);
     for (const id of story.otherSkillIds) storySkills.add(id);
   }
@@ -447,4 +626,18 @@ export function toggleStoryInPacket(
       s.id === storyId && !inPacket ? { ...s, lastUsedAt: Date.now() } : s
     ),
   };
+}
+
+/**
+ * Before a link opens the interview tools for one application, make that
+ * application's role the current one, so they open on its posting and packet
+ * and not the last role worked on. Reads the store fresh and writes only when
+ * the role exists and is not already current.
+ */
+export function openRole(roleId: string | null | undefined): void {
+  if (!roleId) return;
+  const data = loadData();
+  if (data.currentRoleId === roleId) return;
+  const next = switchRole(data, roleId);
+  if (next !== data) saveData(next);
 }

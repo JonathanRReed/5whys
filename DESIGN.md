@@ -28,6 +28,8 @@ utilities read `bg-foam/15` or `border-border/40`. Never write an arbitrary
 - **Accent / Gold**: 40 54% 56% — warm brass
 - **Love**: 14 56% 57% — terracotta
 - **Iris**: 286 24% 65% — muted plum
+- **Lichen**: 76 36% 58% — yellow-green, Plate V
+- **Madder**: 346 40% 68% — dyed red, Plate VI
 - **Muted-foreground**: 100 8% 72% — readable secondary text
 - **Border**: 150 7% 22% — subtle separation
 
@@ -39,6 +41,8 @@ utilities read `bg-foam/15` or `border-border/40`. Never write an arbitrary
 - **Accent / Gold**: 36 64% 36% / 36 66% 38% — bronze
 - **Love**: 14 56% 41% — deep terracotta
 - **Iris**: 286 30% 42% — deep plum
+- **Lichen**: 76 56% 25% — deep olive
+- **Madder**: 346 46% 38% — deep madder
 - **Border**: 48 20% 80% — light separation
 
 ### Rules
@@ -58,6 +62,9 @@ Self-hosted via `@fontsource-variable/*` (no CDN, on-brand for privacy-first).
   (Fraunces italic with opsz/SOFT/WONK axes) to emphasize one word in a heading.
 - **Body / UI**: Inter Variable
 - **Mono (labels, indices, data)**: JetBrains Mono Variable
+- **Visitor typefaces**: the Aa menu swaps all three roles for Nebula Sans
+  (readability) or OpenDyslexic. Both are self-hosted in `public/fonts`. Layouts
+  must hold in OpenDyslexic, which is far wider than Inter.
 - **Scale**: confident jumps for display; tight ratio for body
 - **Body line length**: max ~70ch
 - **Hierarchy**: typeface + scale + weight, not color
@@ -82,7 +89,7 @@ a shadow on floating ones.
 
 ### Buttons
 
-- Primary: bg-[hsl(var(--primary))], rounded-full, px-5 py-2.5
+- Primary: bg-[hsl(var(--primary))], rounded-lg (8px) everywhere, px-5 py-2.5. One shape for every button; only the top navigation uses pills.
 - Ghost: transparent bg, hover:bg-[hsl(var(--overlay)/0.3)]
 - Outline: border only, subtle hover
 
@@ -91,6 +98,21 @@ a shadow on floating ones.
 - Border: hsl(var(--border)/0.5)
 - Focus: ring-[hsl(var(--foam)/0.3)]
 - Font-size: 16px minimum (prevent zoom on mobile)
+
+### The specimen
+
+The signature pattern of the relaunch. A posting or a resume is shown the way a
+field guide shows a leaf: the thing itself, with labels attached to its parts.
+
+- The source text is always visible, unaltered, beside what was read from it.
+- Every finding or requirement points at the exact line or sentence it came
+  from: a `<mark>` in the posting, a numbered bar on the resume page.
+- One color per category, shared by the specimen and its list, with a key.
+- Findings say what was seen and where. They never give a score.
+- Hovering or focusing an item highlights its place in the specimen.
+
+Used in the Application Desk (`PostingStation`) and the Resume Game
+(`MachineView`). Spend the boldness there and keep everything around it quiet.
 
 ## Layout
 
@@ -105,7 +127,12 @@ a shadow on floating ones.
 - Easing: ease-out with exponential curves
 - No layout property animations (no width/height/top/left)
 - Respect prefers-reduced-motion
-- Motion conveys state only: hover feedback, focus rings, loading skeletons
+- Motion conveys state or answers an action: hover feedback, focus rings,
+  loading, and a change the visitor just caused (a posting lifting into
+  requirement tags, a row filling, a rewrite replacing a line). Nothing moves
+  on its own except one orchestrated moment on the homepage.
+- Prefer CSS and the View Transitions API, with plain rendering as the
+  fallback. No client router.
 
 ## Absolute Bans
 

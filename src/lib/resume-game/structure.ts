@@ -1,5 +1,6 @@
-import { BULLET_START_PATTERN } from './constants';
+import { looksLikeHeading, type ResumeSectionKind, sectionOf } from '../posting/resume-lines';
 import { normalizeLine } from './text';
+import { startsWithVerb } from './verbs';
 
 /**
  * Resume structure detection.
@@ -9,6 +10,11 @@ import { normalizeLine } from './text';
  * name, a phone number, and "B.A. Communications, 2026" as weak achievements.
  * This module sorts lines into bullets and everything else, and explains
  * what it skipped so the student can see the reasoning.
+ *
+ * Lines are read inside their sections, found from heading lines. Nothing
+ * under a skills or certifications heading is scored, bulleted or not: "-
+ * Inventory Control" in a Core Skills sidebar names a skill, it does not
+ * describe work, and grading it as a weak achievement would be unearned.
  */
 
 export type SkippedKind = 'contact' | 'heading' | 'education' | 'dates' | 'skills' | 'other';
@@ -16,6 +22,11 @@ export type SkippedKind = 'contact' | 'heading' | 'education' | 'dates' | 'skill
 export interface ResumeStructure {
   /** Lines to score, glyphs stripped. */
   bullets: string[];
+  /**
+   * Positions in `text.split('\n')` of every line that went into a bullet,
+   * wrapped continuations included. The highlighter marks only these.
+   */
+  achievementLines: number[];
   /** Lines left out of scoring, by reason. */
   skipped: Record<SkippedKind, number>;
   /** True when the text carried bullet markers and they were used. */
@@ -45,14 +56,17 @@ const wordCount = (line: string) => line.split(/\s+/).filter(Boolean).length;
 const isAllCaps = (line: string) => /[A-Z]/.test(line) && line === line.toUpperCase();
 
 function classify(line: string, index: number, wordsInLine: number): SkippedKind | 'bullet' {
-  if (EMAIL.test(line) || PHONE.test(line) || URL.test(line)) return 'contact';
+  if (EMAIL.test(line) || PHONE.test(line)) return 'contact';
+  // A project address inside a sentence about the work ("Built example.com
+  // for a campus club") is part of an achievement; a bare link row is contact.
+  if (URL.test(line) && !(startsWithVerb(line) && wordsInLine >= 5)) return 'contact';
   // A short first line without digits or a verb is almost always the name.
   if (
     index === 0 &&
     wordsInLine <= 4 &&
     !SECTION_WORDS.test(line.replace(/[:\s]+$/, '')) &&
     !/\d/.test(line) &&
-    !BULLET_START_PATTERN.test(line)
+    !startsWithVerb(line)
   ) {
     return 'contact';
   }
@@ -64,8 +78,7 @@ function classify(line: string, index: number, wordsInLine: number): SkippedKind
   // "Member, Marketing Club, 2024 - 2025" is a title line, not an achievement,
   // even though it opens with an involvement verb.
   if (DATE_RANGE.test(line) && wordsInLine <= 10 && /[|,•·]/.test(line)) return 'dates';
-  const startsWithVerb = BULLET_START_PATTERN.test(line);
-  if (!startsWithVerb) {
+  if (!startsWithVerb(line)) {
     if (EDUCATION.test(line) && wordsInLine <= 14) return 'education';
     if (DATE_RANGE.test(line) && wordsInLine <= 14) return 'dates';
     if (
@@ -82,11 +95,34 @@ function classify(line: string, index: number, wordsInLine: number): SkippedKind
   return 'bullet';
 }
 
-export function detectResumeStructure(text: string): ResumeStructure {
-  const rawLines = text
-    .split('\n')
-    .map((line) => line.replace(/\s+/g, ' ').trim())
-    .filter(Boolean);
+export interface StructureOptions {
+  /**
+   * Lines a structured copy of the file placed in a skills or certifications
+   * section. They are left out wherever the text puts them, for a layout
+   * whose sidebar is read between experience lines.
+   */
+  listedLines?: Iterable<string>;
+}
+
+/** Sections whose lines list things rather than describe work. */
+const LIST_SECTIONS: ReadonlySet<ResumeSectionKind> = new Set(['skills', 'certification']);
+
+const listKey = (line: string) => line.replace(GLYPH, '').replace(/\s+/g, ' ').trim().toLowerCase();
+
+export function detectResumeStructure(
+  text: string,
+  options: StructureOptions = {}
+): ResumeStructure {
+  const listed = new Set(Array.from(options.listedLines ?? [], listKey));
+  const sourceLines: number[] = [];
+  const rawLines: string[] = [];
+  text.split('\n').forEach((source, position) => {
+    const line = source.replace(/\s+/g, ' ').trim();
+    if (!line) return;
+    rawLines.push(line);
+    sourceLines.push(position);
+  });
+  const achievementLines: number[] = [];
   const skipped: Record<SkippedKind, number> = {
     contact: 0,
     heading: 0,
@@ -101,18 +137,41 @@ export function detectResumeStructure(text: string): ResumeStructure {
 
   const bullets: string[] = [];
   let continuingBullet = false;
+  let section: ResumeSectionKind | null = null;
   rawLines.forEach((line, index) => {
+    const glyph = GLYPH.test(line);
+    // A short first line in capitals is the name, unless it names a section.
+    const heading =
+      !glyph && looksLikeHeading(line) && !(index === 0 && sectionOf(line) === 'other');
+    if (heading) {
+      section = sectionOf(line);
+      skipped.heading += 1;
+      continuingBullet = false;
+      return;
+    }
+    // A job title with dates ends a list that ran on without a heading.
+    if (!glyph && section && LIST_SECTIONS.has(section) && DATE_RANGE.test(line)) section = null;
+    else if ((section && LIST_SECTIONS.has(section)) || listed.has(listKey(line))) {
+      skipped[section === 'certification' ? 'education' : 'skills'] += 1;
+      continuingBullet = false;
+      return;
+    }
     if (usedGlyphs) {
       if (GLYPH.test(line)) {
         const normalized = normalizeLine(line);
-        if (normalized) bullets.push(normalized);
+        if (normalized) {
+          bullets.push(normalized);
+          achievementLines.push(sourceLines[index]);
+        }
         continuingBullet = Boolean(normalized);
       } else {
         const kind = classify(line, index, wordCount(line));
         // PDF extraction can put the result on its own line. Join only a
         // plausible continuation; headings and contact/title lines end it.
         const previous = bullets[bullets.length - 1];
-        const startsAchievement = kind === 'bullet' && BULLET_START_PATTERN.test(line);
+        // With markers in use, an unmarked line that starts in lowercase is a
+        // wrapped continuation, never a new achievement.
+        const startsAchievement = kind === 'bullet' && startsWithVerb(line) && !/^[a-z]/.test(line);
         const isContinuation =
           continuingBullet &&
           !startsAchievement &&
@@ -123,8 +182,10 @@ export function detectResumeStructure(text: string): ResumeStructure {
           (kind === 'bullet' || kind === 'other');
         if (isContinuation) {
           bullets[bullets.length - 1] = `${previous} ${line}`;
+          achievementLines.push(sourceLines[index]);
         } else if (startsAchievement) {
           bullets.push(line);
+          achievementLines.push(sourceLines[index]);
           continuingBullet = true;
         } else {
           continuingBullet = false;
@@ -144,8 +205,10 @@ export function detectResumeStructure(text: string): ResumeStructure {
       return;
     }
     const kind = classify(normalized, index, wordCount(normalized));
-    if (kind === 'bullet') bullets.push(normalized);
-    else skipped[kind] += 1;
+    if (kind === 'bullet') {
+      bullets.push(normalized);
+      achievementLines.push(sourceLines[index]);
+    } else skipped[kind] += 1;
   });
 
   const skippedTotal = Object.values(skipped).reduce((sum, n) => sum + n, 0);
@@ -168,8 +231,8 @@ export function detectResumeStructure(text: string): ResumeStructure {
   } else if (usedGlyphs) {
     note = `Scored the ${bullets.length === 1 ? '1 bulleted line' : `${bullets.length} bulleted lines`}.${skippedText}`;
   } else {
-    note = `No bullet markers found, so the ${bullets.length === 1 ? '1 line' : `${bullets.length} lines`} that read as achievements were scored.${skippedText}`;
+    note = `No bullet markers found, so the ${bullets.length === 1 ? '1 line that reads as an achievement was' : `${bullets.length} lines that read as achievements were`} scored.${skippedText}`;
   }
 
-  return { bullets, skipped, usedGlyphs, note };
+  return { bullets, achievementLines, skipped, usedGlyphs, note };
 }

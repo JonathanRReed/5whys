@@ -6,9 +6,16 @@ import {
   readinessLabel,
   type Story,
 } from '../../lib/glowup-store';
+import { isRealAnswer } from '../../lib/non-answer';
 import { cn } from '../../lib/utils';
 import { ChartIcon, WarningIcon } from '../interview-glow-up/icons';
 import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
+import { PrinterIcon } from './icons';
+import { roleHeading } from './PacketPrint';
+
+/** Controls whose own Enter and Space must win over the HUD's shortcuts. */
+const INTERACTIVE =
+  'button, a[href], select, summary, [role="button"], [role="link"], [role="radio"], [role="checkbox"]';
 
 // ============================================================================
 // Types
@@ -19,13 +26,21 @@ interface InterviewHUDProps {
   stories: Story[];
   role: DecodedRole | undefined;
   onClose: () => void;
+  /** Print this cheat sheet as a plain sheet. */
+  onPrint?: () => void;
 }
 
 // ============================================================================
 // HUD Component
 // ============================================================================
 
-export default function InterviewHUD({ packet, stories, role, onClose }: InterviewHUDProps) {
+export default function InterviewHUD({
+  packet,
+  stories,
+  role,
+  onClose,
+  onPrint,
+}: InterviewHUDProps) {
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedIndex, setSelectedIndex] = React.useState(0);
@@ -92,6 +107,15 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
         }
         return;
       }
+      // A focused button, link, or toggle activates itself on Enter and
+      // Space; the shortcuts only apply when focus is on the HUD itself.
+      if (
+        (e.key === ' ' || e.key === 'Enter') &&
+        e.target instanceof Element &&
+        e.target.closest(INTERACTIVE)
+      ) {
+        return;
+      }
 
       switch (e.key) {
         case ' ':
@@ -153,14 +177,21 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
     <Dialog open onOpenChange={(next) => !next && onClose()}>
       <DialogContent
         ref={containerRef}
+        tabIndex={-1}
         showCloseButton={false}
+        // Start on the sheet itself, so Space searches and Enter expands
+        // instead of pressing the first button.
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          containerRef.current?.focus();
+        }}
         className="flex h-dvh max-h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-0 bg-background p-0 text-foreground shadow-none top-0 left-0 sm:max-w-none print:relative print:h-auto print:max-h-none print:overflow-visible print:bg-white print:text-black"
       >
         <DialogTitle className="sr-only">
-          Interview HUD for {role?.jobTitle ?? 'this packet'}
+          One-screen cheat sheet (HUD) for {roleHeading(role)}
         </DialogTitle>
         {/* Top Bar */}
-        <header className="flex items-center justify-between border-b border-border/40 bg-card px-6 py-4 print:bg-gray-100 print:border-gray-300">
+        <header className="flex flex-wrap items-center justify-between gap-y-2 border-b border-border/40 bg-card px-6 py-4 print:bg-gray-100 print:border-gray-300">
           <div className="flex items-center gap-4">
             <button
               type="button"
@@ -181,7 +212,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
             </button>
             <div>
               <h1 className="text-lg font-bold text-foreground print:text-black">
-                {role?.company ?? 'Interview'}: {role?.jobTitle ?? 'Packet'}
+                {roleHeading(role)}
               </h1>
               <div className="mt-1 flex gap-2">
                 {keywords.map((kw, i) => (
@@ -195,11 +226,21 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
               </div>
             </div>
           </div>
+          {onPrint && (
+            <button
+              type="button"
+              onClick={onPrint}
+              className="ml-auto mr-4 inline-flex min-h-9 shrink-0 items-center gap-2 rounded-lg border border-border/50 px-3 text-sm text-muted-foreground hover:bg-overlay/25 hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-iris print:hidden"
+            >
+              <PrinterIcon className="h-4 w-4" />
+              Print the cheat sheet
+            </button>
+          )}
           <div className="hidden md:flex items-center gap-3 text-sm text-muted-foreground print:hidden">
             <kbd className="rounded bg-overlay/25 px-2 py-0.5">Space</kbd> Search
             <kbd className="rounded bg-overlay/25 px-2 py-0.5">↑↓</kbd> Navigate
             <kbd className="rounded bg-overlay/25 px-2 py-0.5">Enter</kbd> Expand
-            <kbd className="rounded bg-overlay/25 px-2 py-0.5">P</kbd> Panic
+            <kbd className="rounded bg-overlay/25 px-2 py-0.5">P</kbd> Fallback story
             <kbd className="rounded bg-overlay/25 px-2 py-0.5">Esc</kbd> Close
           </div>
         </header>
@@ -217,7 +258,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search stories by skill, keyword..."
-                  className="w-full rounded-xl border border-border/80 bg-overlay/15 px-4 py-3 text-lg text-foreground placeholder:text-muted-foreground/60 focus:border-iris focus:outline-hidden"
+                  className="w-full rounded-xl border border-border/80 bg-overlay/15 px-4 py-3 text-lg text-foreground placeholder:text-muted-foreground focus:border-iris focus:outline-hidden"
                 />
               </div>
             )}
@@ -227,7 +268,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
               <div className="mb-6 rounded-xl border-2 border-destructive/50 bg-destructive/10 p-4 md:p-6">
                 <div className="mb-2 flex flex-wrap items-center gap-2">
                   <WarningIcon className="h-6 w-6 text-destructive" />
-                  <span className="text-lg font-bold text-destructive">PANIC ANSWER</span>
+                  <span className="text-lg font-bold text-destructive">Fallback story</span>
                 </div>
                 <p className="text-lg leading-relaxed text-foreground">{packet.panicAnswer}</p>
               </div>
@@ -270,8 +311,8 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
                             <span className="rounded-full bg-iris/20 px-2 py-0.5 text-xs font-semibold text-iris">
                               {getSkillName(story.primarySkillId)}
                             </span>
-                            <span className="text-xs text-muted-foreground/60">
-                              {readinessLabel(story)}
+                            <span className="text-xs text-muted-foreground">
+                              {isRealAnswer(story.play) ? readinessLabel(story) : 'Not written yet'}
                             </span>
                           </div>
                           <p className="mt-2 text-lg font-semibold text-foreground">
@@ -282,7 +323,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
                             <ChartIcon className="h-4 w-4 inline" /> {story.proofSnippet}
                           </p>
                         </div>
-                        <div className="text-muted-foreground/50">
+                        <div className="text-muted-foreground">
                           {isExpanded ? (
                             <svg
                               aria-hidden="true"
@@ -325,20 +366,20 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
                       >
                         <div className="space-y-4">
                           <div>
-                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                               Play
                             </p>
                             <p className="mt-1 text-foreground leading-relaxed">{story.play}</p>
                           </div>
                           <div>
-                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                               Proof
                             </p>
                             <p className="mt-1 text-foam leading-relaxed">{story.proof}</p>
                           </div>
                           {story.questionPrompts.length > 0 && (
                             <div>
-                              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                                 Questions this story answers
                               </p>
                               <ul className="mt-1 space-y-1">
@@ -362,7 +403,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
           {/* Right Column - Questions to Ask */}
           <div className="w-full md:w-80 shrink-0 border-l border-border/40 bg-overlay/20 p-6 print:bg-gray-50 print:border-gray-300">
             <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground print:text-gray-600">
-              Questions to Ask
+              Questions to ask them
             </h2>
             <ul className="space-y-3">
               {packet.customQuestions.filter(Boolean).map((q, i) => (
@@ -377,7 +418,7 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
             </ul>
 
             {packet.customQuestions.filter(Boolean).length === 0 && (
-              <p className="text-sm text-muted-foreground/60">No questions added yet.</p>
+              <p className="text-sm text-muted-foreground">No questions added yet.</p>
             )}
 
             {/* Notes */}
@@ -400,12 +441,12 @@ export default function InterviewHUD({ packet, stories, role, onClose }: Intervi
             <button
               type="button"
               onClick={() => setPanicMode(true)}
-              className="flex items-center gap-2 text-sm text-destructive/70 hover:text-destructive"
+              className="flex items-center gap-2 min-h-6 text-sm text-destructive hover:underline"
             >
               <WarningIcon className="h-4 w-4" />
               <span>
-                Press <kbd className="rounded bg-overlay/25 px-1.5 py-0.5 text-xs">P</kbd> for panic
-                answer
+                Press <kbd className="rounded bg-overlay/25 px-1.5 py-0.5 text-xs">P</kbd> for your
+                fallback story
               </span>
             </button>
           </footer>

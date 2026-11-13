@@ -13,8 +13,8 @@ export default function ResumeHeader({ showHeader = true }: Props) {
       </p>
       <h1 className="text-4xl font-semibold tracking-tight">Resume Game</h1>
       <p className="mx-auto max-w-2xl text-sm text-muted-foreground">
-        Score every bullet for action, evidence, and outcome. Rewrite weak lines into specific,
-        quantified statements a reader can verify at a glance.
+        Score every line for what you did, what the work was, what happened because of it, and a
+        number if you have a true one. Rewrite the weak ones and watch the score move.
       </p>
       <QuickStartTiles
         className="max-w-4xl"
@@ -25,11 +25,11 @@ export default function ResumeHeader({ showHeader = true }: Props) {
           },
           {
             title: 'Run the analysis',
-            body: 'Scoring runs instantly in your browser. Verbs and numbers get highlighted; every bullet gets a 0-100 score.',
+            body: 'Scoring runs in your browser. Every line gets one score out of 100, with its four parts shown.',
           },
           {
-            title: 'Export the wins',
-            body: 'Download the improved set as Markdown or DOCX once the scores feel interview-ready.',
+            title: 'Download the review',
+            body: 'A Word or Markdown file of each line, its score, and your rewrites. It is a review, not a resume.',
           },
         ]}
       />
