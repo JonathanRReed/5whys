@@ -106,3 +106,34 @@ describe('ninth review round', () => {
     expect(doc.lines.filter((line) => line.bullet)).toHaveLength(found.length);
   });
 });
+
+describe('tenth review round', () => {
+  it('throws away a model answer that adds what the visitor did not write', async () => {
+    const { grounded } = await import('../src/lib/local-ai');
+    const calls: boolean[] = [];
+    const task = async (_input: string, options?: { rulesOnly?: boolean }) => {
+      calls.push(Boolean(options?.rulesOnly));
+      return options?.rulesOnly
+        ? { value: 'from the rules', source: 'rules' as const, inventedClaims: [] }
+        : {
+            value: 'Why did managing 50 volunteers at Google matter?',
+            source: 'browser-model' as const,
+            inventedClaims: [{ kind: 'number' as const, text: '50', start: 17, end: 19 }],
+          };
+    };
+    const result = await grounded(task as never, 'input' as never);
+    expect(calls).toEqual([false, true]);
+    expect((result as { value: string }).value).toBe('from the rules');
+  });
+
+  it('keeps a clean model answer', async () => {
+    const { grounded } = await import('../src/lib/local-ai');
+    const task = async () => ({
+      value: 'clean',
+      source: 'browser-model' as const,
+      inventedClaims: [],
+    });
+    const result = await grounded(task as never, 'input' as never);
+    expect((result as { value: string }).value).toBe('clean');
+  });
+});

@@ -33,8 +33,14 @@ export default function SharperWhy({ track, topic, answers }: Props) {
     const controller = new AbortController();
     request.current = controller;
     setBusy(true);
-    const { followUpWhy } = await loadFeature(import('../../lib/local-ai'));
-    const next = await followUpWhy({ track, topic, answers }, { signal: controller.signal });
+    const { followUpWhy, grounded } = await loadFeature(import('../../lib/local-ai'));
+    const next = await grounded(
+      followUpWhy,
+      { track, topic, answers },
+      {
+        signal: controller.signal,
+      }
+    );
     if (controller.signal.aborted) return;
     setResult(next);
     setBusy(false);

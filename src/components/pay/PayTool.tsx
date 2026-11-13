@@ -170,6 +170,8 @@ export default function PayTool() {
   // Whether the visitor has changed the worksheet on this visit, so a saved
   // offer loading is not read out.
   const [offerEdited, setOfferEdited] = React.useState(false);
+  const heldDesks = React.useRef<ReturnType<typeof loadApplicationDesks> | null>(null);
+  const [unsaved, setUnsaved] = React.useState(false);
   const offer = appId ? (desks.desks[appId]?.offer ?? createEmptyDesk().offer) : scratch;
   const changeOffer = (changes: Partial<OfferWorksheet>) => {
     setOfferEdited(true);
@@ -177,8 +179,13 @@ export default function PayTool() {
       setScratch((current) => ({ ...current, ...changes }));
       return;
     }
-    const next = updateOfferWorksheet(loadApplicationDesks(), appId, changes);
-    saveApplicationDesks(next);
+    // Build on the store as it is now, so work saved in another tab is kept.
+    // If the browser will not save, build on what this page holds instead, so
+    // the next field does not undo the last one.
+    const next = updateOfferWorksheet(heldDesks.current ?? loadApplicationDesks(), appId, changes);
+    const saved = saveApplicationDesks(next);
+    heldDesks.current = saved ? null : next;
+    setUnsaved(!saved);
     setDesks(next);
   };
   const equivalents = offerEquivalents(offer);
@@ -420,6 +427,12 @@ export default function PayTool() {
             Put an offer or a posted rate into one set of terms. Nothing is assumed: if hours or
             weeks are blank, the figure that needs them stays blank.
           </p>
+          {unsaved && (
+            <p role="alert" className="rounded-lg bg-gold/12 px-3 py-2 text-sm text-foreground">
+              This browser would not save your last change. It is still on this page, but it will be
+              gone when the page closes.
+            </p>
+          )}
           {applications.length > 0 ? (
             <label className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <span>Save with</span>

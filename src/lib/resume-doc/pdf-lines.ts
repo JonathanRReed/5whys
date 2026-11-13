@@ -26,6 +26,9 @@ function isContact(line: ResumeLine): boolean {
 function markGlyphs(doc: ResumeDoc): void {
   const markers = new Set<ResumeLine>();
   for (const line of doc.lines) {
+    // A glyph alone on its line is a marker for the text beside it; the pass
+    // below attaches it. Stripping it here would leave an empty bullet.
+    if (GLYPH.test(line.text.trim())) continue;
     const prefix = line.text.match(PREFIX);
     if (prefix) {
       line.text = line.text.slice(prefix[0].length);
@@ -53,7 +56,11 @@ function markGlyphs(doc: ResumeDoc): void {
     target.items.push(...marker.items);
     markers.add(marker);
   }
-  doc.lines = doc.lines.filter((line) => !markers.has(line));
+  // A marker that found its text is folded into it. One that found none is
+  // decoration, not a line of the resume.
+  doc.lines = doc.lines.filter(
+    (line) => !markers.has(line) && !/^[•◦○●▪·]$/.test(line.text.trim())
+  );
 }
 
 function groupContinuations(lines: ResumeLine[]): void {

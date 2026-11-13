@@ -46,6 +46,7 @@ export type {
 } from './task-types';
 export {
   followUpWhy,
+  grounded,
   interviewFollowUp,
   likelyQuestions,
   messageVariants,

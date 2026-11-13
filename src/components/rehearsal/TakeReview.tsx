@@ -103,8 +103,8 @@ export default function TakeReview({
   }, [take.text, take.segments, take.durationSeconds]);
 
   const askFollowUp = async () => {
-    const { interviewFollowUp } = await loadFeature(import('../../lib/local-ai'));
-    setFollowUp(await interviewFollowUp({ question: take.question, answer: take.text }));
+    const { interviewFollowUp, grounded } = await loadFeature(import('../../lib/local-ai'));
+    setFollowUp(await grounded(interviewFollowUp, { question: take.question, answer: take.text }));
   };
 
   const spoken = Boolean(take.audio);

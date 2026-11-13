@@ -48,8 +48,8 @@ export default function AiQuestions({ setData, role, packet }: Props) {
   // the list lands in the same freeform box, which the tools never score.
   const writeHere = async () => {
     setBusy(true);
-    const { likelyQuestions } = await loadFeature(import('../../lib/local-ai'));
-    const result = await likelyQuestions({
+    const { likelyQuestions, grounded } = await loadFeature(import('../../lib/local-ai'));
+    const result = await grounded(likelyQuestions, {
       jobTitle: role.jobTitle || undefined,
       company: role.company || undefined,
       // Only real requirements, never the address or the pitch.

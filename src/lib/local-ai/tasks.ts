@@ -308,3 +308,18 @@ export function interviewFollowUp(
     options
   );
 }
+
+/**
+ * Run a task for a place that shows its result as plain text, with nowhere to
+ * flag an addition. If the model's answer still names a number, a person, or
+ * a tool the visitor did not write, it is thrown away and the rules answer.
+ */
+export async function grounded<Input, Output>(
+  task: (input: Input, options?: TaskOptions) => Promise<AiResult<Output>>,
+  input: Input,
+  options?: TaskOptions
+): Promise<AiResult<Output>> {
+  const result = await task(input, options);
+  if (result.inventedClaims.length === 0) return result;
+  return task(input, { ...options, rulesOnly: true });
+}
