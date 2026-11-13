@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { isNonAnswer, isRealAnswer, NON_ANSWER_FOLLOW_UP } from '../../lib/non-answer';
+import { isNonAnswer, isRealAnswer, nonAnswerFollowUp } from '../../lib/non-answer';
 import { isStudentLike, readProfile } from '../../lib/profile';
 
 export const WHY_COUNT = 5;
@@ -491,13 +491,13 @@ export function isNearRepeat(current: string, previous: string): boolean {
 export function getAnswerNudge(current: string, previous: string): string | null {
   const trimmed = current.trim();
   if (!trimmed) return null;
-  if (isNonAnswer(trimmed)) return NON_ANSWER_FOLLOW_UP;
+  if (isNonAnswer(trimmed)) return nonAnswerFollowUp(trimmed);
   if (previous.trim() && isNearRepeat(trimmed, previous.trim())) {
     return 'This mostly restates your last answer. Go one level down: what does it protect, cost, or prove?';
   }
   const wordCount = trimmed.split(/\s+/).length;
   if (wordCount < 8) {
-    return 'Short answer. Push one level deeper: name a value, a constraint, a moment, a person, or a fear.';
+    return 'This counts. To make it stronger, name a value, a constraint, a moment, a person, or a fear.';
   }
   return null;
 }

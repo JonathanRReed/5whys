@@ -64,35 +64,42 @@ export default function WhyStepper({ responses, sequentialCount }: WhyStepperPro
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-semibold">Logic tree</CardTitle>
           <p className="text-sm text-muted-foreground">
-            See how each answer branches from the previous one.
+            Your answers in order. Each one is built on the one above it.
           </p>
         </CardHeader>
         <CardContent className="space-y-5">
           {responses.map((response, index) => {
-            const previous = responses[index - 1];
             const isFocus = index === sequentialCount - 1 && response.trim().length > 0;
+            const isNext = index === sequentialCount;
             return (
               <div key={index} className="relative pl-6">
                 {index !== 0 && (
                   <span className="absolute left-2 top-0 h-full w-px bg-border/50" aria-hidden />
                 )}
                 <div className="relative rounded-xl border border-border/50 bg-overlay/20 px-4 py-3">
-                  <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                    Why {index + 1}
+                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                    <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                      Why {index + 1}
+                    </p>
+                    {isFocus && (
+                      <span className="rounded-full border border-primary/60 bg-primary/15 px-2.5 py-0.5 text-xs text-foreground">
+                        Latest answer
+                      </span>
+                    )}
+                    {isNext && (
+                      <span className="rounded-full border border-border/60 px-2.5 py-0.5 text-xs text-muted-foreground">
+                        Answer this next
+                      </span>
+                    )}
+                  </div>
+                  <p
+                    className={cn(
+                      'mt-2 line-clamp-4 text-sm break-words',
+                      response.trim().length ? 'text-foreground' : 'text-muted-foreground'
+                    )}
+                  >
+                    {response.trim().length ? response : 'No answer yet'}
                   </p>
-                  <p className="mt-2 text-sm text-foreground">
-                    {response.trim().length ? response : 'Awaiting insight'}
-                  </p>
-                  {isFocus && (
-                    <span className="absolute -top-2 right-3 rounded-full border border-primary/60 bg-primary/20 px-3 py-0.5 text-[0.72rem] uppercase tracking-widest text-primary">
-                      current node
-                    </span>
-                  )}
-                  {previous && !response && (
-                    <span className="mt-2 block text-[0.72rem] uppercase tracking-wide text-iris/80">
-                      add continuation
-                    </span>
-                  )}
                 </div>
               </div>
             );

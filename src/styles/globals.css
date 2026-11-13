@@ -437,6 +437,15 @@
 /* eslint-disable-next-line at-rule-no-unknown */
 
 @layer base {
+  /* Tailwind's focus-ring gap is white unless told otherwise, which shows as
+     a bright outline around every focused field in Night. The gap takes the
+     page colour in both themes. */
+  *,
+  ::before,
+  ::after {
+    --tw-ring-offset-color: hsl(var(--background));
+  }
+
   :root {
     /* Night — Evergreen & Brass. Warm, green-tinted charcoal neutrals; a deep
        pine signature and a warm brass accent. No blue anywhere. */

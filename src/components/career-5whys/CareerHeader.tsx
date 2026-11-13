@@ -52,7 +52,7 @@ export default function CareerHeader({
               },
               {
                 title: 'Answer in order',
-                body: 'Each question builds on your last answer and asks why again. The sidebar tracks depth so you can spot gaps quickly.',
+                body: 'Each question is built from your last answer, so the next one opens once you have written a few words. A sentence is enough.',
               },
               {
                 title: 'Save or export',

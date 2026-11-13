@@ -23,7 +23,7 @@ import {
   toggleStoryInPacket,
   updateStory,
 } from '../../lib/glowup-store';
-import { isNonAnswer, isRealAnswer, NON_ANSWER_FOLLOW_UP } from '../../lib/non-answer';
+import { isNonAnswer, isRealAnswer, nonAnswerFollowUp } from '../../lib/non-answer';
 import { cn } from '../../lib/utils';
 import Announcer, { useAnnouncer } from '../shared/Announcer';
 import { LightbulbIcon, PencilIcon, WarningIcon, XIcon } from './icons';
@@ -549,7 +549,7 @@ export default function StoriesSection({
               )}
             />
             {playIsPlaceholder && (
-              <p className="mt-1 text-sm text-foreground">{NON_ANSWER_FOLLOW_UP}</p>
+              <p className="mt-1 text-sm text-foreground">{nonAnswerFollowUp(formData.play)}</p>
             )}
           </div>
 

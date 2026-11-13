@@ -173,7 +173,7 @@ describe('getAnswerNudge', () => {
   it('returns short answer prompt when word count is less than 8 words', () => {
     const nudge = getAnswerNudge('I want to build software.', '');
     expect(nudge).toBe(
-      'Short answer. Push one level deeper: name a value, a constraint, a moment, a person, or a fear.'
+      'This counts. To make it stronger, name a value, a constraint, a moment, a person, or a fear.'
     );
   });
 

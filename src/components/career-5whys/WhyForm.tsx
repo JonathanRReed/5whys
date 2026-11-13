@@ -1,11 +1,16 @@
 import { useId } from 'react';
 import type { FollowUpWhyInput } from '../../lib/local-ai';
-import { isNonAnswer, isRealAnswer } from '../../lib/non-answer';
+import {
+  isNonAnswer,
+  isRealAnswer,
+  MIN_ANSWER_WORDS,
+  NON_ANSWER_FOLLOW_UP,
+} from '../../lib/non-answer';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Textarea } from '../ui/textarea';
 import SharperWhy from './SharperWhy';
-import { condenseAnswer, getAnswerNudge, type TrackExample } from './shared';
+import { condenseAnswer, getAnswerNudge, type TrackExample, WHY_COUNT } from './shared';
 
 type WhyFormProps = {
   responses: string[];
@@ -39,6 +44,19 @@ export default function WhyForm({
         const previousAnswer = index > 0 ? (responses[index - 1] ?? '') : '';
         const nudge = locked ? null : getAnswerNudge(response, previousAnswer);
         const placeholderAnswer = isNonAnswer(response);
+        const answered = isRealAnswer(response);
+        // The rule is on screen before anyone trips over it. A reply that is
+        // only short gets the rule inside its own nudge instead.
+        const showRule =
+          !locked && !answered && (!response.trim() || nudge === NON_ANSWER_FOLLOW_UP);
+        const ruleId = `${exampleIdPrefix}-rule-${index}`;
+        const statusLabel = answered
+          ? 'Answered'
+          : locked
+            ? 'Locked'
+            : placeholderAnswer
+              ? 'Needs more'
+              : 'Your turn';
         const exampleAnswer = example.answers[index] ?? '';
         const examplePrevious = index > 0 ? condenseAnswer(example.answers[index - 1] ?? '') : '';
         const exampleId = `${exampleIdPrefix}-example-depth-${index}`;
@@ -47,7 +65,7 @@ export default function WhyForm({
             key={index}
             className="bg-card/98 border-border/55 text-foreground shadow-inner shadow-background/16"
           >
-            <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <CardHeader className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div className="min-w-0">
                 <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                   Depth {index + 1}
@@ -56,23 +74,41 @@ export default function WhyForm({
                   {prompt}
                 </CardTitle>
               </div>
-              <span className="rounded-full border border-border/50 px-4 py-1 text-xs text-muted-foreground">
-                {isRealAnswer(response) ? 'Captured' : placeholderAnswer ? 'Not yet' : 'Pending'}
+              <span
+                className={
+                  answered
+                    ? 'shrink-0 self-start whitespace-nowrap rounded-full border border-primary/60 bg-primary/15 px-4 py-1 text-xs text-foreground'
+                    : 'shrink-0 self-start whitespace-nowrap rounded-full border border-border/50 px-4 py-1 text-xs text-muted-foreground'
+                }
+              >
+                {statusLabel}
               </span>
             </CardHeader>
             <CardContent className="space-y-4">
               <Textarea
                 aria-label={`Depth ${index + 1} response`}
-                aria-describedby={`${exampleId}-question`}
+                aria-describedby={
+                  showRule || locked ? `${exampleId}-question ${ruleId}` : `${exampleId}-question`
+                }
                 value={response}
                 onChange={(event) => onResponseChange(index, event.target.value)}
-                placeholder="Document your reasoning. Be specific and concrete."
+                placeholder={
+                  locked ? '' : 'A sentence or two in your own words. Be specific and concrete.'
+                }
                 disabled={locked}
-                className="min-h-[120px] resize-none border-border/50 bg-overlay/30 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2 disabled:opacity-60"
+                className="min-h-[120px] resize-none border-border/50 bg-overlay/30 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-foam disabled:opacity-60"
               />
               {locked && (
-                <p className="text-xs text-muted-foreground">
-                  Complete the previous depth before continuing.
+                <p id={ruleId} className="text-sm text-muted-foreground">
+                  Answer depth {index} first. This question is built from it.
+                </p>
+              )}
+              {showRule && (
+                <p id={ruleId} className="text-sm text-muted-foreground">
+                  {MIN_ANSWER_WORDS} words or more counts as an answer
+                  {index < WHY_COUNT - 1
+                    ? ` and opens depth ${index + 2}.`
+                    : ' and finishes the chain.'}
                 </p>
               )}
               {nudge && (
@@ -80,7 +116,7 @@ export default function WhyForm({
                   className={
                     placeholderAnswer
                       ? 'text-sm leading-relaxed text-foreground'
-                      : 'text-xs leading-relaxed text-gold'
+                      : 'text-sm leading-relaxed text-muted-foreground'
                   }
                 >
                   {nudge}

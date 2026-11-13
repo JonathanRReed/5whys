@@ -220,11 +220,40 @@ describe('Five Whys non-answers', () => {
         onToggleExample={() => {}}
       />
     );
-    expect(screen.queryByText('Captured')).not.toBeInTheDocument();
-    expect(screen.getByText('Not yet')).toBeInTheDocument();
+    expect(screen.queryByText('Answered')).not.toBeInTheDocument();
+    expect(screen.getByText('Needs more')).toBeInTheDocument();
+    expect(
+      screen.getByText(/3 words or more counts as an answer and opens depth 2/)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Answer depth 1 first. This question is built from it.')
+    ).toBeInTheDocument();
     expect(screen.getByText(NON_ANSWER_FOLLOW_UP)).toBeInTheDocument();
     expect(screen.getByLabelText('Depth 2 response')).toBeDisabled();
     expect(getAnswerNudge('nothing', '')).toBe(NON_ANSWER_FOLLOW_UP);
+  });
+
+  it('states the rule before the visitor writes, and counts down a short reply', () => {
+    const props = {
+      sequentialCount: 0,
+      prompts: buildPrompts('career', 'Nursing', []),
+      example: TRACKS.career.example,
+      exampleOpen: {},
+      onResponseChange: () => {},
+      onToggleExample: () => {},
+    };
+    const { rerender } = render(<WhyForm {...props} responses={['', '', '', '', '']} />);
+    expect(screen.getByText('Your turn')).toBeInTheDocument();
+    expect(screen.getByText(/3 words or more counts as an answer/)).toBeInTheDocument();
+    rerender(<WhyForm {...props} responses={['test this', '', '', '', '']} />);
+    expect(
+      screen.getByText('Add 1 more word. 3 words or more counts as an answer.')
+    ).toBeInTheDocument();
+    expect(screen.queryByText(NON_ANSWER_FOLLOW_UP)).not.toBeInTheDocument();
+    // A held key is not three words, however long it runs.
+    const mash = 'ejbueoirnoirbnn'.repeat(4);
+    expect(isNonAnswer(`${mash} ${mash} ${mash}`)).toBe(true);
+    expect(isNonAnswer('I like helping people')).toBe(false);
   });
 });
 
