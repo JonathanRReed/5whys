@@ -79,7 +79,7 @@ it('walks a student from nothing to a scored resume', () => {
   expect(preview).not.toHaveTextContent('Education');
 
   fireEvent.click(screen.getByRole('button', { name: 'Next: Skills' }));
-  type('Skills (optional)', 'Spanish, Google Sheets');
+  type('List your skills (optional)', 'Spanish, Google Sheets');
   fireEvent.click(screen.getByRole('button', { name: 'Use this as my resume' }));
 
   // In the box, exactly as if pasted, and already scored.

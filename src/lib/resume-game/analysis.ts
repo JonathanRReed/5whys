@@ -11,7 +11,7 @@ import type {
   SignalReport,
   StoredResumeSession,
 } from './types';
-import { gerundToPast, isVerbWord, leadingAction } from './verbs';
+import { gerundToPast, isVerbWord, leadingAction, sameVerb } from './verbs';
 
 // ============================================================================
 // Weak Word Detection
@@ -327,6 +327,12 @@ export function buildBullet(fields: BulletFields): string {
 
   if (verb && task.toLowerCase().startsWith(`${verb.toLowerCase()} `)) {
     task = task.slice(verb.length).trim();
+  }
+  // The new verb takes the place of another form of itself: "Watched" with
+  // the work "Watch my cousin" is "Watched my cousin", never "Watched Watch".
+  const taskFirst = firstWord(task);
+  if (verb && !/\s/.test(verb) && taskFirst && sameVerb(verb, taskFirst)) {
+    task = task.slice(taskFirst.length).trim();
   }
   if (verb && result.toLowerCase().startsWith(`${verb.toLowerCase()} `) && !task) {
     result = result.slice(verb.length).trim();

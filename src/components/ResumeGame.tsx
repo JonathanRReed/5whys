@@ -78,11 +78,15 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
   const [status, setStatus] = React.useState<string | null>(null);
   // Student examples until the visitor's saved profile says otherwise.
   const [register, setRegister] = React.useState<Register>('student');
+  // High school examples in the start-from-nothing form for a first job.
+  const [firstJob, setFirstJob] = React.useState(false);
   const scanTimeoutRef = React.useRef<number | null>(null);
   const deepLinkHandled = React.useRef(false);
 
   React.useEffect(() => {
-    setRegister(registerForStage(readProfile()?.stage));
+    const profile = readProfile();
+    setRegister(registerForStage(profile?.stage));
+    setFirstJob(profile?.firstJob === true);
   }, []);
 
   const setSessionState = React.useCallback(
@@ -429,6 +433,7 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
           currentText={resumeText}
           announce={announceBuilder}
           focusOnOpen={builderFocus}
+          schoolExample={firstJob ? 'highSchool' : 'college'}
         />
       )}
 
