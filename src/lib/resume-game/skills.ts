@@ -41,9 +41,44 @@ const SOFT_SKILLS_ENTRIES = SOFT_SKILLS.map((skill) => ({
   lowerSkill: skill.toLowerCase(),
 }));
 
+/**
+ * Fast-path substring pre-filters for context-gated skills.
+ *
+ * Performance optimization: Complex regular expressions with `[\s\S]*` (like
+ * `unity`, `chef`, `sas`, `sketch`, `notion`, `lambda`, `sem`) perform linear or
+ * backtracking scans across full resume text. If none of the trigger keywords
+ * (e.g., 'unity', 'c#') appear in `lowerText`, we can immediately skip RegExp evaluation.
+ */
+const SKILL_CONTEXT_FAST_CHECK: Record<string, string[]> = {
+  spring: ['spring'],
+  go: ['go', 'golang'],
+  r: ['r', 'rstudio'],
+  express: ['express'],
+  chef: ['chef'],
+  shell: ['shell', 'bash', 'zsh', 'unix'],
+  oracle: ['oracle', 'pl/sql'],
+  unity: ['unity', 'c#'],
+  sas: ['sas'],
+  lean: ['lean', 'six sigma'],
+  sketch: ['sketch'],
+  notion: ['notion'],
+  lambda: ['lambda', 'serverless'],
+  sem: ['sem'],
+  premiere: ['premiere'],
+  git: ['git'],
+  documentation: ['documentation'],
+};
+
 function skillPresent(text: string, skill: string, lowerText: string, lowerSkill: string): boolean {
   const gate = SKILL_CONTEXT[skill];
-  if (gate) return gate.test(text);
+  if (gate) {
+    const fastCheck = SKILL_CONTEXT_FAST_CHECK[skill];
+    // Fast path: Skip expensive regex evaluation if no required substring exists in lowerText.
+    if (fastCheck && !fastCheck.some((sub) => lowerText.includes(sub))) {
+      return false;
+    }
+    return gate.test(text);
+  }
   return matchesTerm(text, skill, lowerText, lowerSkill);
 }
 
