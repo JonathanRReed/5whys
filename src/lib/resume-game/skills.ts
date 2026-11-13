@@ -6,6 +6,27 @@ import { HARD_SKILLS, matchesTerm, SOFT_SKILLS } from './constants';
  * "R. Smith" is an initial, and "go" is a verb unless it sits in a language
  * list. Everything else matches on word boundaries as before.
  */
+// Fast-path substring precheck map for context-gated skills to avoid executing RegExp evaluation when key tokens are absent.
+const SKILL_GATE_PRECHECK: Record<string, string[]> = {
+  spring: ['spring'],
+  go: ['go'],
+  r: ['r', 'rstudio'],
+  express: ['express'],
+  chef: ['chef'],
+  shell: ['shell', 'bash', 'zsh'],
+  oracle: ['oracle', 'pl/sql'],
+  unity: ['unity'],
+  sas: ['sas'],
+  lean: ['lean', 'six sigma'],
+  sketch: ['sketch'],
+  notion: ['notion'],
+  lambda: ['lambda'],
+  sem: ['sem'],
+  premiere: ['premiere'],
+  git: ['git'],
+  documentation: ['documentation'],
+};
+
 const SKILL_CONTEXT: Record<string, RegExp> = {
   spring: /spring\s*(boot|framework|mvc|cloud|security|data)\b/i,
   go: /\bgolang\b|\bgo\s*(?:lang|programming|routines?)\b|\b(?:python|java|rust|typescript|javascript|c\+\+|c#|kotlin|swift|ruby|r|scala)\s*(?:,|\/|and|&)\s*go\b(?=\s*(?:,|\/|;|\.|and|&|$))|\bgo\s*(?:,|\/)\s*(?:python|java|rust|typescript|javascript|c\+\+|c#|kotlin|swift|ruby|r|scala)\b/i,
@@ -42,6 +63,10 @@ const SOFT_SKILLS_ENTRIES = SOFT_SKILLS.map((skill) => ({
 }));
 
 function skillPresent(text: string, skill: string, lowerText: string, lowerSkill: string): boolean {
+  const precheck = SKILL_GATE_PRECHECK[skill];
+  if (precheck && !precheck.some((kw) => lowerText.includes(kw))) {
+    return false;
+  }
   const gate = SKILL_CONTEXT[skill];
   if (gate) return gate.test(text);
   return matchesTerm(text, skill, lowerText, lowerSkill);
