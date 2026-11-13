@@ -82,7 +82,9 @@ export default function BulletEditor({
                     <span className="font-medium text-foreground">{PART_LABELS[key]}</span>
                     <span
                       className={
-                        parts[key].points === parts[key].max ? 'text-love' : 'text-muted-foreground'
+                        parts[key].points === parts[key].max
+                          ? 'font-semibold text-foam'
+                          : 'text-muted-foreground'
                       }
                     >
                       {parts[key].points} of {parts[key].max}

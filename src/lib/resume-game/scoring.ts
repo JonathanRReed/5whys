@@ -64,6 +64,11 @@ const ORDINAL = /^\d+(?:st|nd|rd|th)$/i;
 // "GPA 3.6", "GPA: 3.6/4.0", "3.6 GPA", "3.8 cumulative GPA".
 const GPA =
   /\bGPA\b\s*(?::\s*|of\s+)?\d\.\d{1,2}(?:\s*\/\s*\d(?:\.\d{1,2})?)?|\b\d\.\d{1,2}(?:\s*\/\s*\d(?:\.\d{1,2})?)?\s+(?:[a-z]+\s+)?GPA\b/gi;
+// A reference code is a name, not an amount: a regulation or form number
+// ("AR 710-2", "CTA 50-900", "FM 3-21.8") or a code with a letter fixed to
+// its digits ("92Y", "92Ys", "3D"). "4K" and "10x" are amounts, and stay.
+const REFERENCE_CODE = /\b[A-Z]{1,6}(?:\s+Form)?\s+\d+(?:[-.]\d+)+[A-Za-z]?\b/g;
+const LETTER_CODE = /\b\d+(?![kKmMxX]\b)(?![kKmM]\s)[A-Z][A-Za-z]*\b/g;
 const BARE_NUMBER_CLEAN_PATTERN = /[$€£₹₦¥,%kKmMxX]/g;
 const SYMBOL = /[$€£₹₦¥%]|\d[kKmMxX]$/;
 const MONEY_OR_PERCENT = /[$€£₹₦¥%]/;
@@ -89,7 +94,10 @@ const COUNT_ADJECTIVE =
   /^(?:new|more|other|additional|extra|returning|first-time|unique|active|total|regular|repeat|weekly|daily|monthly)$/i;
 
 const PEOPLE =
-  /^(?:person|people|persons|members?|associates?|employees?|staff|workers?|volunteers?|cashiers?|servers?|reports|teammates?|tutors?|interns?|managers?|leads?|crew|students?|engineers?|designers?|agents?|nurses?|aides?|drivers?|clerks?)$/i;
+  /^(?:person|people|persons|members?|associates?|employees?|staff|workers?|volunteers?|cashiers?|servers?|reports|teammates?|tutors?|interns?|managers?|leads?|crew|students?|engineers?|designers?|agents?|nurses?|aides?|drivers?|clerks?|soldiers?|children|kids|sons?|daughters?|grandchildren|siblings)$/i;
+// One's own family is who the work was for, never a measure of it.
+const FAMILY = /^(?:children|kids|sons?|daughters?|grandchildren|siblings)$/i;
+const OWN_FAMILY_BEFORE = /\b(?:raised|raising|my|our|his|her|their)\s+$/i;
 const GROUP_OF = /\b(?:team|staff|crew|group|department|class|unit|shift) of\s*$/i;
 const WITH_BEFORE = /\bwith\s+(?:a |an |the |about |around |over )?$/i;
 const SUPERVISING_BEFORE =
@@ -108,7 +116,12 @@ const blank = (match: string) => ' '.repeat(match.length);
  * are positions in the original line.
  */
 function stripNonMeasures(text: string): string {
-  return text.replace(DATE_RANGE, blank).replace(PHONE, blank).replace(GPA, blank);
+  return text
+    .replace(DATE_RANGE, blank)
+    .replace(PHONE, blank)
+    .replace(GPA, blank)
+    .replace(REFERENCE_CODE, blank)
+    .replace(LETTER_CODE, blank);
 }
 
 type Candidate = { token: string; index: number; word: boolean };
@@ -180,6 +193,7 @@ export function findNumberSpans(text: string): NumberSpan[] {
     const span = { token, start: index, end: index + token.length };
     const symbol = SYMBOL.test(token) || /^\s*(?:percent|per cent)\b/i.test(after);
     const isScope =
+      (!!unit && FAMILY.test(unit) && OWN_FAMILY_BEFORE.test(before)) ||
       (hyphenUnit !== undefined && unitIsPeople) ||
       (unitIsPeople && (GROUP_OF.test(before) || WITH_BEFORE.test(before))) ||
       (unitIsPeople && SUPERVISING_BEFORE.test(before)) ||
@@ -276,7 +290,7 @@ const RESULT_PATTERNS: RegExp[] = [
   // A change, with an object: "cut shrink", "grew followers". "To cut" is an
   // aim, read below.
   new RegExp(
-    `(?<!\\b(?:to|will|would|could|should|might|can)\\s)\\b(?:${CHANGE_VERBS})\\s+(?!(?:to|for|with|in|on|at|and|or)\\b)[\\w$€£₹₦¥]`,
+    `(?<!\\b(?:to|will|would|could|should|might|can)\\s)\\b(?:${CHANGE_VERBS})\\s+(?!(?:to|for|with|in|on|at|and|or)\\b)(?!(?:(?:my|our|his|her|their|a|two|three|four|five|\\d+)\\s+)?(?:children|kids|sons?|daughters?|family|grandchildren|siblings)\\b)[\\w$€£₹₦¥]`,
     'i'
   ),
   /,\s*(?:cutting|reducing|decreasing|lowering|shortening|halving|increasing|growing|raising|doubling|tripling|saving|boosting|lifting|eliminating|preventing|ending|improving|stopping|recovering|freeing up|speeding up|delivering|earning|winning|bringing|keeping|getting)\b/i,
