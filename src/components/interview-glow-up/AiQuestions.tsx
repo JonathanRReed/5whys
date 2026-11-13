@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { audienceForProfile } from '../../lib/glowup-banks';
+import { audienceForProfile, tidyQuestionText } from '../../lib/glowup-banks';
 import {
   type DecodedRole,
   type GlowUpData,
@@ -59,7 +59,7 @@ export default function AiQuestions({ setData, role, packet }: Props) {
     const list = result.value.questions
       .map(
         (q, index) =>
-          `${index + 1}. ${q.question}${q.requirement ? `\n   Tests: ${q.requirement}` : ''}`
+          `${index + 1}. ${tidyQuestionText(q.question)}${q.requirement ? `\n   Tests: ${q.requirement}` : ''}`
       )
       .join('\n');
     // Build on the workspace as it is now: the visitor may have typed in the
@@ -82,16 +82,9 @@ export default function AiQuestions({ setData, role, packet }: Props) {
         Questions they will probably ask
       </h3>
       <p className="text-xs text-muted-foreground">
-        This prompt is built from the posting you decoded. Paste it into whatever AI you already
-        use, then bring the answer back. This site sends nothing anywhere.
+        A list built on this device from the posting you decoded. The rehearsal room offers these
+        questions when you start a session.
       </p>
-      <button
-        type="button"
-        onClick={() => handleCopy(prompt, 'ai-questions-prompt')}
-        className="rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
-      >
-        {copiedKey === 'ai-questions-prompt' ? 'Copied' : 'Copy the prompt'}
-      </button>
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
@@ -99,20 +92,35 @@ export default function AiQuestions({ setData, role, packet }: Props) {
           disabled={busy}
           className="rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2 disabled:opacity-60"
         >
-          {busy ? 'Writing' : 'Or write a list on this device'}
+          {busy ? 'Writing' : 'Write a list on this device'}
         </button>
         <span role="status" className="text-xs text-muted-foreground">
           {written}
         </span>
       </div>
+      <details className="rounded-lg border border-border/30 px-3 py-2">
+        <summary className="cursor-pointer text-sm text-foreground">
+          Or ask an AI you already use
+        </summary>
+        <div className="mt-2 space-y-2">
+          <p className="text-xs text-muted-foreground">
+            Copy this prompt, paste it into that AI, then paste its answer in the box below. This
+            site sends nothing anywhere.
+          </p>
+          <button
+            type="button"
+            onClick={() => handleCopy(prompt, 'ai-questions-prompt')}
+            className="rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+          >
+            {copiedKey === 'ai-questions-prompt' ? 'Copied' : 'Copy the prompt'}
+          </button>
+        </div>
+      </details>
       <div>
         <div className="mb-1 flex items-center justify-between gap-2">
           <label htmlFor="ai-answer" className="block text-sm text-muted-foreground">
-            The answer it gave you
+            Your list of likely questions
           </label>
-          <span className="rounded-full bg-iris/15 px-2 py-0.5 text-xs text-iris">
-            From your AI
-          </span>
         </div>
         <textarea
           id="ai-answer"
@@ -121,12 +129,13 @@ export default function AiQuestions({ setData, role, packet }: Props) {
             const value = e.target.value;
             setData((latest) => updatePacket(latest, packet.id, { aiQuestions: value }));
           }}
-          placeholder="Paste the list here..."
+          placeholder="One question to a line..."
           rows={6}
           className="w-full rounded-lg border border-border/50 bg-overlay/30 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
         />
         <p className="mt-1 text-xs text-muted-foreground">
-          Saved as pasted. The tools never read or score it.
+          Saved as written. Nothing scores it. The rehearsal room lists each question in it and asks
+          only the ones you tick.
         </p>
       </div>
     </div>

@@ -54,6 +54,8 @@ test('the likely-questions prompt is built locally and the answer saves', async 
   await page.goto('/interview-glow-up/workspace/?tab=packet');
   await waitForHydration(page);
 
+  // The on-device list comes first; an outside AI is the second choice.
+  await page.getByText('Or ask an AI you already use').click();
   await page.getByRole('button', { name: 'Copy the prompt' }).click();
   await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
 
@@ -63,20 +65,21 @@ test('the likely-questions prompt is built locally and the answer saves', async 
   expect(prompt).toContain('Google');
   expect(prompt).toContain('Write SQL queries');
 
-  // The paste-back persists under its "from your AI" label.
-  await page.getByLabel('The answer it gave you').fill('1. Tell me about a time you used SQL.');
+  // The paste-back persists.
+  await page
+    .getByLabel('Your list of likely questions')
+    .fill('1. Tell me about a time you used SQL.');
   await page.waitForTimeout(400);
   await page.reload();
   await waitForHydration(page);
-  await expect(page.getByLabel('The answer it gave you')).toHaveValue(
+  await expect(page.getByLabel('Your list of likely questions')).toHaveValue(
     '1. Tell me about a time you used SQL.'
   );
-  await expect(page.getByText('From your AI')).toBeVisible();
 
   // A list can also be written here, with no model, from the question bank.
-  await page.getByRole('button', { name: 'Or write a list on this device' }).click();
+  await page.getByRole('button', { name: 'Write a list on this device' }).click();
   await expect(page.getByText('From the built-in rules')).toBeVisible();
-  await expect(page.getByLabel('The answer it gave you')).toHaveValue(
+  await expect(page.getByLabel('Your list of likely questions')).toHaveValue(
     /^1\. Tell me about a time you used SQL\.\n\n1\. /
   );
 });

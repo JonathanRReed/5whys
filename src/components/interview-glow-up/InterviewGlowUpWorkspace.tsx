@@ -7,6 +7,9 @@ import {
   exportJSON,
   type GlowUpData,
   loadData,
+  mergeGlowUp,
+  readStoredJson,
+  STORAGE_KEY,
   saveData,
 } from '../../lib/glowup-store';
 import { readProfile } from '../../lib/profile';
@@ -16,7 +19,12 @@ import DecodeSection, { type SaveState } from './DecodeSection';
 import InterviewHUD from './InterviewHUD';
 import PacketPrint from './PacketPrint';
 import PacketSection from './PacketSection';
-import StoriesSection, { CLOSED_EDITOR, newStoryEditor, type StoryEditor } from './StoriesSection';
+import StoriesSection, {
+  CLOSED_EDITOR,
+  newStoryEditor,
+  type StoryEditor,
+  storyEditorFromAnswer,
+} from './StoriesSection';
 import TrackApplication from './TrackApplication';
 import VaultSection from './VaultSection';
 import WorkspaceHeader from './WorkspaceHeader';
@@ -71,11 +79,33 @@ export default function InterviewGlowUpWorkspace() {
   // an import on the dashboard, may have saved newer work in the meantime,
   // and an unload flush would silently overwrite it.
   const loadedJsonRef = React.useRef<string | null>(null);
-  const dirtyRef = React.useRef(false);
+  const touchedRef = React.useRef(false);
+  // What storage held when this tab last read or wrote it: the raw text, to
+  // notice another tab's write, and the data, to merge against.
+  const baseRef = React.useRef<{ raw: string | null; data: GlowUpData } | null>(null);
+
+  /**
+   * Write this tab's data. When another tab wrote since we last read, merge
+   * record by record instead of overwriting: what this tab changed wins,
+   * everything else keeps the newer copy. Returns what was written, or null
+   * when the browser refused.
+   */
+  const commit = React.useCallback((ours: GlowUpData): GlowUpData | null => {
+    const base = baseRef.current;
+    const raw = readStoredJson();
+    const toWrite = base && raw !== base.raw ? mergeGlowUp(base.data, ours, loadData()) : ours;
+    if (!saveData(toWrite)) return null;
+    baseRef.current = { raw: readStoredJson(), data: toWrite };
+    return toWrite;
+  }, []);
 
   React.useEffect(() => {
-    let loaded = loadData();
-    if (loaded.currentRoleId) loaded = ensurePacketForRole(loaded, loaded.currentRoleId);
+    const raw = readStoredJson();
+    const stored = loadData();
+    baseRef.current = { raw, data: stored };
+    const loaded = stored.currentRoleId
+      ? ensurePacketForRole(stored, stored.currentRoleId)
+      : stored;
     loadedJsonRef.current = JSON.stringify(loaded);
     setData(loaded);
     setAudience(audienceForProfile(readProfile()));
@@ -85,7 +115,14 @@ export default function InterviewGlowUpWorkspace() {
     // Go straight to stories only once the posting is decoded; before that
     // the next step (parsing) is on Decode the job.
     const decoded = Boolean(role?.bullets.some((b) => b.status === 'active'));
-    if (fromUrl) setActiveTab(fromUrl);
+    // "Use as a story draft" in the rehearsal room opens the editor here on
+    // a kept answer. Nothing is saved until the visitor presses Save.
+    const draftId = new URLSearchParams(window.location.search).get('draft');
+    const answer = draftId ? (loaded.answers ?? []).find((a) => a.id === draftId) : undefined;
+    if (answer) {
+      setStoryEditor(storyEditorFromAnswer(answer));
+      setActiveTab('stories');
+    } else if (fromUrl) setActiveTab(fromUrl);
     else if (decoded && loaded.stories.length === 0) setActiveTab('stories');
   }, []);
 
@@ -93,38 +130,65 @@ export default function InterviewGlowUpWorkspace() {
   // a quick tab switch or a closed laptop never drops the last edit.
   React.useEffect(() => {
     if (!hydrated) return;
-    if (!dirtyRef.current) {
+    if (!touchedRef.current) {
       if (JSON.stringify(data) === loadedJsonRef.current) return;
-      dirtyRef.current = true;
+      touchedRef.current = true;
     }
+    // Nothing new since the last write (or since another tab's change was read in).
+    if (baseRef.current && JSON.stringify(data) === JSON.stringify(baseRef.current.data)) return;
     latestRef.current = data;
     setSaveState('saving');
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
-      // "Saved" only when the browser kept it.
-      setSaveState(saveData(data) ? 'saved' : 'failed');
       saveTimeoutRef.current = null;
+      const written = commit(data);
+      latestRef.current = null;
+      // "Saved" only when the browser kept it.
+      setSaveState(written ? 'saved' : 'failed');
+      // Another tab's newer work was merged in: show it.
+      if (written && written !== data) setData(written);
     }, SAVE_DEBOUNCE_MS);
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
-  }, [data, hydrated]);
+  }, [data, hydrated, commit]);
 
   React.useEffect(() => {
+    // Only an edit that has not reached storage yet is written; a saved tab
+    // writes nothing on its way out.
     const flush = () => {
-      if (dirtyRef.current && latestRef.current) saveData(latestRef.current);
+      if (!latestRef.current) return;
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+      commit(latestRef.current);
+      latestRef.current = null;
     };
     const onVisibility = () => {
       if (document.visibilityState === 'hidden') flush();
     };
+    // Another tab saved (the desk, an import, a second workspace). With no
+    // edit waiting here, show its version; with one waiting, the next save
+    // merges the two.
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== STORAGE_KEY) return;
+      if (latestRef.current) return;
+      const raw = readStoredJson();
+      if (raw === baseRef.current?.raw) return;
+      const fresh = loadData();
+      baseRef.current = { raw, data: fresh };
+      if (!touchedRef.current) loadedJsonRef.current = JSON.stringify(fresh);
+      setData(fresh);
+    };
     window.addEventListener('pagehide', flush);
+    window.addEventListener('storage', onStorage);
     document.addEventListener('visibilitychange', onVisibility);
     return () => {
       window.removeEventListener('pagehide', flush);
+      window.removeEventListener('storage', onStorage);
       document.removeEventListener('visibilitychange', onVisibility);
       flush();
     };
-  }, []);
+  }, [commit]);
 
   // The browser's own print (Ctrl+P) with the cheat sheet open would print a
   // blank page: print the cheat sheet as a plain sheet instead.
@@ -253,7 +317,8 @@ export default function InterviewGlowUpWorkspace() {
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as Tab)}>
         <WorkspaceTabs
-          showHUD={packetStoryCount > 0}
+          // Pack the proof has its own button at the bottom; one is enough there.
+          showHUD={packetStoryCount > 0 && activeTab !== 'packet'}
           onLaunchHUD={openHUD}
           counts={{
             decode: currentRole

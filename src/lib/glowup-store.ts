@@ -161,11 +161,35 @@ export interface InterviewPacket {
   updatedAt: number;
 }
 
+/**
+ * An answer from the rehearsal room the visitor chose to keep. Written only
+ * when they press Keep, so a visit that only practised writes nothing.
+ */
+export interface KeptAnswer {
+  id: string;
+  /** The role it was practised for, or null when no posting was decoded. */
+  roleId: string | null;
+  question: string;
+  /** The bank question, when it came from the bank. */
+  questionId?: string;
+  /** The posting line the question tested, verbatim, when there was one. */
+  requirement?: string | null;
+  /** Skills the question tests, so a story drafted from it starts tagged. */
+  skillIds: string[];
+  text: string;
+  /** Whether it was typed or spoken (a corrected transcript). */
+  mode: 'typed' | 'spoken';
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface GlowUpData {
   version: number;
   roles: DecodedRole[];
   stories: Story[];
   packets: InterviewPacket[];
+  /** Answers kept from the rehearsal room. Absent in older saves. */
+  answers?: KeptAnswer[];
   currentRoleId: string | null;
   currentPacketId: string | null;
 }
@@ -221,6 +245,16 @@ export function loadData(): GlowUpData {
   } catch (error) {
     console.error('[GlowUp] Failed to load data:', error);
     return createDefaultData();
+  }
+}
+
+/** The workspace exactly as storage holds it, unparsed, to tell whether another tab wrote it. */
+export function readStoredJson(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
   }
 }
 
@@ -355,6 +389,24 @@ function normalizeData(data: GlowUpData): GlowUpData {
       createdAt: asNumber(packet.createdAt),
       updatedAt: asNumber(packet.updatedAt),
     })),
+    // Absent stays absent, so an older save exports unchanged.
+    ...(Array.isArray(data.answers)
+      ? {
+          answers: asArray<KeptAnswer>(data.answers)
+            .filter((a) => a && typeof a === 'object' && typeof a.id === 'string')
+            .map((answer) => ({
+              ...answer,
+              roleId: typeof answer.roleId === 'string' ? answer.roleId : null,
+              question: asString(answer.question),
+              requirement: typeof answer.requirement === 'string' ? answer.requirement : null,
+              skillIds: asArray<string>(answer.skillIds).filter((id) => typeof id === 'string'),
+              text: asString(answer.text),
+              mode: answer.mode === 'spoken' ? 'spoken' : 'typed',
+              createdAt: asNumber(answer.createdAt),
+              updatedAt: asNumber(answer.updatedAt),
+            })),
+        }
+      : {}),
     currentRoleId: typeof data.currentRoleId === 'string' ? data.currentRoleId : null,
     currentPacketId: typeof data.currentPacketId === 'string' ? data.currentPacketId : null,
   };
@@ -552,10 +604,15 @@ export function skillCounts(bullets: readonly DecodedBullet[]): {
   return { counts, total: requirements.length };
 }
 
+/**
+ * Skills the posting tests that no story in the library covers yet, the
+ * most often tested first. Every gap by default: a senior posting can test
+ * eight skills, and hiding all but three hid the one that mattered.
+ */
 export function getTopGaps(
   data: GlowUpData,
   bullets: DecodedBullet[],
-  count: number = 3
+  count: number = Number.POSITIVE_INFINITY
 ): string[] {
   const freq = getSkillFrequencyMap(requirementBullets(bullets));
   const storySkills = new Set<string>();
@@ -579,6 +636,124 @@ export function getTopGaps(
   gaps.sort((a, b) => b[1] - a[1]);
 
   return gaps.slice(0, count).map(([skillId]) => skillId);
+}
+
+// ============================================================================
+// Kept rehearsal answers
+// ============================================================================
+
+/** Keep an answer from the rehearsal room. Returns the data and the kept answer. */
+export function keepAnswer(
+  data: GlowUpData,
+  answer: Omit<KeptAnswer, 'id' | 'createdAt' | 'updatedAt'>
+): { data: GlowUpData; answer: KeptAnswer } {
+  const now = Date.now();
+  const kept: KeptAnswer = { ...answer, id: generateId(), createdAt: now, updatedAt: now };
+  return { data: { ...data, answers: [...(data.answers ?? []), kept] }, answer: kept };
+}
+
+export function deleteAnswer(data: GlowUpData, answerId: string): GlowUpData {
+  return { ...data, answers: (data.answers ?? []).filter((a) => a.id !== answerId) };
+}
+
+/**
+ * Keep an answer straight into storage, for a page that does not hold the
+ * workspace (the rehearsal room). Reads the store fresh, so it never writes
+ * back an older copy over work saved in another tab. Null when the browser
+ * refused the write.
+ */
+export function storeKeptAnswer(
+  answer: Omit<KeptAnswer, 'id' | 'createdAt' | 'updatedAt'>
+): KeptAnswer | null {
+  const { data, answer: kept } = keepAnswer(loadData(), answer);
+  return saveData(data) ? kept : null;
+}
+
+/** Change a kept answer's words in storage, reading the store fresh. */
+export function updateStoredAnswer(answerId: string, text: string): boolean {
+  const data = loadData();
+  const answers = data.answers ?? [];
+  if (!answers.some((a) => a.id === answerId)) return false;
+  return saveData({
+    ...data,
+    answers: answers.map((a) => (a.id === answerId ? { ...a, text, updatedAt: Date.now() } : a)),
+  });
+}
+
+/** Remove a kept answer from storage, reading the store fresh. */
+export function removeStoredAnswer(answerId: string): boolean {
+  const data = loadData();
+  if (!(data.answers ?? []).some((a) => a.id === answerId)) return true;
+  return saveData(deleteAnswer(data, answerId));
+}
+
+// ============================================================================
+// Two tabs, one store: merging instead of overwriting
+// ============================================================================
+
+type Keyed = { id: string };
+
+/**
+ * One collection, three ways: what this tab started from (`base`), what it
+ * holds now (`ours`), and what storage holds now (`theirs`). A record this
+ * tab changed keeps this tab's version; every other record takes storage's,
+ * including records another tab added or deleted. A record this tab deleted
+ * stays deleted unless another tab changed it meanwhile.
+ */
+function mergeRecords<T extends Keyed>(base: T[], ours: T[], theirs: T[]): T[] {
+  const json = (value: unknown) => JSON.stringify(value);
+  const baseById = new Map(base.map((r) => [r.id, r]));
+  const oursById = new Map(ours.map((r) => [r.id, r]));
+  const theirsIds = new Set(theirs.map((r) => r.id));
+  const merged: T[] = [];
+  for (const record of theirs) {
+    const before = baseById.get(record.id);
+    const mine = oursById.get(record.id);
+    if (!mine) {
+      // Deleted here: stays deleted unless it changed elsewhere since.
+      if (before && json(before) === json(record)) continue;
+      merged.push(record);
+      continue;
+    }
+    const changedHere = !before || json(before) !== json(mine);
+    merged.push(changedHere ? mine : record);
+  }
+  for (const record of ours) {
+    if (theirsIds.has(record.id)) continue;
+    // New here. A record that was in the base but is gone from storage was
+    // deleted elsewhere: it comes back only if this tab changed it.
+    const before = baseById.get(record.id);
+    if (!before || json(before) !== json(record)) merged.push(record);
+  }
+  return merged;
+}
+
+/**
+ * Merge this tab's edits onto what storage holds now, record by record, so
+ * an edit in one tab never erases a newer edit, a desk change, or a backup
+ * import saved by another. Pure.
+ */
+export function mergeGlowUp(base: GlowUpData, ours: GlowUpData, theirs: GlowUpData): GlowUpData {
+  const pick = <K extends 'currentRoleId' | 'currentPacketId'>(key: K) =>
+    ours[key] !== base[key] ? ours[key] : theirs[key];
+  const answers = mergeRecords(base.answers ?? [], ours.answers ?? [], theirs.answers ?? []);
+  const merged: GlowUpData = {
+    ...theirs,
+    roles: mergeRecords(base.roles, ours.roles, theirs.roles),
+    stories: mergeRecords(base.stories, ours.stories, theirs.stories),
+    packets: mergeRecords(base.packets, ours.packets, theirs.packets),
+    currentRoleId: pick('currentRoleId'),
+    currentPacketId: pick('currentPacketId'),
+  };
+  if (answers.length > 0 || theirs.answers || ours.answers) merged.answers = answers;
+  // A current id must point at something that still exists.
+  if (merged.currentRoleId && !merged.roles.some((r) => r.id === merged.currentRoleId)) {
+    merged.currentRoleId = null;
+  }
+  if (merged.currentPacketId && !merged.packets.some((p) => p.id === merged.currentPacketId)) {
+    merged.currentPacketId = null;
+  }
+  return merged;
 }
 
 // ============================================================================
