@@ -26,7 +26,7 @@ test('guided mode walks a first-timer through the Resume Game by watching what t
   await expect(page.getByText(/New to this\?/)).toBeVisible();
   await expect(page.getByRole('complementary', { name: 'Guide' })).toHaveCount(0);
 
-  await page.getByRole('radio', { name: 'Guided' }).check();
+  await page.getByRole('radio', { name: /^Guide/ }).check();
   const coach = page.getByRole('complementary', { name: 'Guide' });
   await expect(coach).toContainText('Step 1 of 5');
   await expect(page.getByLabel('Paste resume text')).toHaveAttribute('data-guide-active', '');
@@ -99,7 +99,7 @@ async function walkGuide(
   }
 
   await expect(page.getByText(guide.invitation)).toBeVisible();
-  await page.getByRole('radio', { name: 'Guided' }).check();
+  await page.getByRole('radio', { name: /^Guide/ }).check();
   // Located by CSS so it still reads while a modal hides the rest of the page.
   const coach = page.locator('aside[aria-label="Guide"]');
   const total = guide.steps.length;
@@ -292,7 +292,7 @@ test('guided mode walks a first-timer through the offer worksheet', async ({ pag
 test('the rehearsal guide follows one written answer from start to review', async ({ page }) => {
   await page.goto('/interview-glow-up/rehearse/');
   await waitForHydration(page);
-  await page.getByRole('radio', { name: 'Guided' }).check();
+  await page.getByRole('radio', { name: /^Guide/ }).check();
   const coach = page.getByRole('complementary', { name: 'Guide' });
   await expect(coach).toContainText('Step 1 of 6');
 

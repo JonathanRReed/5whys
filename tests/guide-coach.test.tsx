@@ -25,7 +25,7 @@ it('walks forward when the visitor does the step, and marks its place on the pag
   document.body.appendChild(box);
   render(<GuideCoach tool="resume-game" />);
 
-  fireEvent.click(screen.getByRole('radio', { name: 'Guided' }));
+  fireEvent.click(screen.getByRole('radio', { name: /^Guide/ }));
   const coach = screen.getByRole('complementary', { name: 'Guide' });
   expect(coach).toHaveTextContent('Step 1 of 5');
   expect(coach).toHaveTextContent('Put a resume in');
@@ -43,7 +43,7 @@ it('walks forward when the visitor does the step, and marks its place on the pag
 
 it('can skip a step and be ended, and remembers the choice', () => {
   render(<GuideCoach tool="resume-game" />);
-  fireEvent.click(screen.getByRole('radio', { name: 'Guided' }));
+  fireEvent.click(screen.getByRole('radio', { name: /^Guide/ }));
   fireEvent.click(screen.getByRole('button', { name: 'Skip this step' }));
   expect(screen.getByRole('complementary', { name: 'Guide' })).toHaveTextContent('Step 2 of 5');
   fireEvent.click(screen.getByRole('button', { name: 'End guide' }));

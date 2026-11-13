@@ -324,22 +324,38 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
   return (
     <>
       <div
-        className="mx-auto mb-10 flex w-full max-w-6xl flex-col gap-3 rounded-xl border border-border/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+        className={cn(
+          'mx-auto mb-10 flex w-full max-w-6xl flex-col gap-3 rounded-xl border sm:flex-row sm:items-center sm:justify-between sm:gap-6',
+          // Until the visitor has chosen, the offer is the first thing on the
+          // tool: a quiet line here was read past.
+          chosen ? 'border-border/40 px-4 py-3' : 'border-foam/50 bg-foam/8 px-5 py-5'
+        )}
         data-guide-bar
+        data-guide-offer={chosen ? undefined : ''}
       >
-        <p className="min-w-0 text-sm text-muted-foreground sm:flex-1">
-          {guided
-            ? 'Guided mode is on. The coach follows what you do on this page.'
-            : chosen
-              ? 'You are working on your own. Turn the guide on any time.'
-              : guide.invitation}
-        </p>
+        {chosen ? (
+          <p className="min-w-0 text-sm text-muted-foreground sm:flex-1">
+            {guided
+              ? 'Guided mode is on. The coach follows what you do on this page.'
+              : 'You are working on your own. Turn the guide on any time.'}
+          </p>
+        ) : (
+          <div className="min-w-0 space-y-1 sm:flex-1">
+            <p className="font-display text-lg font-semibold text-foreground">
+              Want to be walked through it?
+            </p>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {guide.invitation} It has {guide.steps.length} steps, shows you where to press, and
+              you can end it at any point.
+            </p>
+          </div>
+        )}
         <fieldset className="m-0 min-w-0 border-0 p-0">
           <legend className="sr-only">How to use this tool</legend>
           <div className="flex gap-1.5">
             {(
               [
-                ['guided', 'Guided'],
+                ['guided', chosen ? 'Guided' : 'Guide me'],
                 ['free', 'On my own'],
               ] as const
             ).map(([mode, label]) => (
@@ -348,15 +364,19 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
                   ref={mode === 'free' ? freeRadioRef : undefined}
                   type="radio"
                   name={`guide-mode-${tool}`}
-                  checked={view.mode === mode}
+                  checked={chosen && view.mode === mode}
                   onChange={() => choose(mode)}
                   className="peer absolute inset-0 cursor-pointer opacity-0"
                 />
                 <span
                   className={cn(
-                    'inline-flex min-h-9 items-center rounded-lg border border-border/50 px-3 text-sm text-muted-foreground transition-colors',
-                    'peer-hover:text-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring',
-                    'peer-checked:border-foam peer-checked:bg-foam/12 peer-checked:text-foreground'
+                    'inline-flex items-center rounded-lg border transition-colors',
+                    'peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2',
+                    chosen
+                      ? 'min-h-9 border-border/50 px-3 text-sm text-muted-foreground peer-hover:text-foreground peer-checked:border-foam peer-checked:bg-foam/12 peer-checked:text-foreground'
+                      : mode === 'guided'
+                        ? 'min-h-11 border-primary bg-primary px-4 text-sm font-semibold text-primary-foreground peer-hover:bg-primary/90'
+                        : 'min-h-11 border-border/60 px-4 text-sm text-foreground peer-hover:bg-overlay/40'
                   )}
                 >
                   {label}
