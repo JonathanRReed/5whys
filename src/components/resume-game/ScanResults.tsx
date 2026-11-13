@@ -1,12 +1,17 @@
 import * as React from 'react';
 import type { BulletRecord, HighlightToken, SignalReport } from '../../lib/resume-game';
 import {
+  careerBreaks,
   generateBulletSuggestions,
   parseHighlightedResume,
   readDatesNote,
+  readPersonalDetailsNote,
+  readSummaryNote,
   summarizeLines,
   summarySentences,
 } from '../../lib/resume-game';
+import { WORDS_PER_PAGE } from '../../lib/resume-game/length';
+import { skillAsWritten } from '../../lib/resume-game/skills';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 type Props = {
@@ -66,6 +71,9 @@ export default function ScanResults({
 
   const tokens = React.useMemo(() => parseHighlightedResume(resumeText), [resumeText]);
   const datesNote = React.useMemo(() => readDatesNote(resumeText), [resumeText]);
+  const breaks = React.useMemo(() => careerBreaks(resumeText), [resumeText]);
+  const personal = React.useMemo(() => readPersonalDetailsNote(resumeText), [resumeText]);
+  const summary = React.useMemo(() => readSummaryNote(resumeText), [resumeText]);
 
   const hasDeepData =
     (signalReport.weakWordCount ?? 0) > 0 ||
@@ -153,9 +161,11 @@ export default function ScanResults({
                 </div>
                 <div>
                   <p className="text-lg font-semibold text-foreground">
-                    {signalReport.estimatedPages}
+                    About {signalReport.estimatedPages}
                   </p>
-                  <p className="text-[0.72rem] text-muted-foreground">Est. pages</p>
+                  <p className="text-[0.72rem] text-muted-foreground">
+                    {signalReport.estimatedPages === 1 ? 'Page' : 'Pages'}
+                  </p>
                 </div>
                 <div>
                   <p className="text-lg font-semibold text-foreground">
@@ -165,11 +175,83 @@ export default function ScanResults({
                 </div>
               </div>
               <p
-                className={`mt-2 text-xs ${signalReport.isOptimalLength ? 'text-love' : 'text-gold'}`}
+                className={`mt-2 text-xs ${signalReport.isOptimalLength ? 'text-foam' : 'text-gold'}`}
               >
                 {signalReport.lengthRecommendation}
               </p>
+              <p className="mt-1 text-xs text-muted-foreground" data-testid="pages-estimate">
+                Pages are estimated from the word count, at about {WORDS_PER_PAGE} words a page.
+                Your layout, font, and spacing can change it.
+              </p>
             </div>
+          )}
+
+          {/* A career break stated plainly: not scored, nothing to rewrite. */}
+          {breaks.length > 0 && (
+            <section
+              aria-labelledby="resume-break-heading"
+              className="rounded-2xl border border-border/35 bg-overlay/30 p-4"
+              data-testid="career-break-note"
+            >
+              <h3
+                id="resume-break-heading"
+                className="text-xs uppercase tracking-[0.3em] text-muted-foreground"
+              >
+                Career break
+              </h3>
+              <ul className="mt-2 space-y-1.5 text-sm leading-relaxed text-foreground">
+                {breaks.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                A career break, stated plainly. It is not scored, and there is nothing to rewrite.
+              </p>
+            </section>
+          )}
+
+          {/* Details US resumes leave out: a fact, never a score. */}
+          {personal && (
+            <section
+              aria-labelledby="resume-personal-heading"
+              className="rounded-2xl border border-border/35 bg-overlay/30 p-4"
+              data-testid="personal-details-note"
+            >
+              <h3
+                id="resume-personal-heading"
+                className="text-xs uppercase tracking-[0.3em] text-muted-foreground"
+              >
+                Personal details
+              </h3>
+              <ul className="mt-2 space-y-1.5 text-sm leading-relaxed text-muted-foreground">
+                {personal.sentences.map((sentence) => (
+                  <li key={sentence}>{sentence}</li>
+                ))}
+              </ul>
+              <p className="mt-2 text-xs text-muted-foreground">
+                For your information only. It does not change any score.
+              </p>
+            </section>
+          )}
+
+          {summary && (
+            <section
+              aria-labelledby="resume-summary-heading"
+              className="rounded-2xl border border-border/35 bg-overlay/30 p-4"
+              data-testid="summary-note"
+            >
+              <h3
+                id="resume-summary-heading"
+                className="text-xs uppercase tracking-[0.3em] text-muted-foreground"
+              >
+                Your summary
+              </h3>
+              <ul className="mt-2 space-y-1.5 text-sm leading-relaxed text-muted-foreground">
+                {summary.sentences.map((sentence) => (
+                  <li key={sentence}>{sentence}</li>
+                ))}
+              </ul>
+            </section>
           )}
 
           {/* Dates: facts about gaps and older roles, never a score. */}
@@ -232,7 +314,7 @@ export default function ScanResults({
                         key={skill}
                         className="rounded-full bg-foam/15 px-2 py-0.5 text-xs text-foam"
                       >
-                        {skill}
+                        {skillAsWritten(resumeText, skill)}
                       </span>
                     ))}
                   </div>

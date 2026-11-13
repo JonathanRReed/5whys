@@ -1,5 +1,7 @@
+import type * as React from 'react';
 import type { BulletRecord, Register } from '../../lib/resume-game';
 import {
+  exampleFor,
   FIELD_PLACEHOLDERS,
   findMeasures,
   generateBulletSuggestions,
@@ -7,6 +9,7 @@ import {
   PART_LABELS,
   RESULT_HINT_EXAMPLE,
   scoreParts,
+  seedFields,
 } from '../../lib/resume-game';
 import Announcer, { useSettledAnnouncement } from '../shared/Announcer';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -26,6 +29,8 @@ type Props = {
     field: 'verb' | 'quantifier' | 'task' | 'impact',
     value: string
   ) => void;
+  /** Other words for this line, asked for from the posting match. */
+  wording?: { terms: string[]; honestUse: string | null } | null;
 };
 
 const fieldClass =
@@ -38,6 +43,7 @@ export default function BulletEditor({
   index,
   register = 'student',
   onFieldChange,
+  wording,
 }: Props) {
   const suggestions = bullet ? generateBulletSuggestions(bullet, index ?? bullet.original) : [];
   const current = bullet ? bullet.improved || bullet.original : '';
@@ -45,12 +51,32 @@ export default function BulletEditor({
   const placeholders = FIELD_PLACEHOLDERS[register];
   const typedNumber = bullet?.fields.quantifier.trim() ?? '';
   const lineMeasure = bullet ? findMeasures(bullet.original)[0] : undefined;
+  // Money reads best as "$1,200 in sales" or "for a $1,200 budget", which
+  // join the line without an odd comma.
+  const money = /^[$€£₹₦¥]\s?\d[\d,.]*[kKmM]?$/.test(typedNumber);
   const numberHint =
     typedNumber && !measureHasWords(typedNumber)
-      ? `Say what ${typedNumber} counts, for example "${typedNumber} orders a shift". It joins the line once it does.`
+      ? money
+        ? `Say what ${typedNumber} was, for example "${typedNumber} in sales" or "for a ${typedNumber} budget". It joins the line once it does.`
+        : `Say what ${typedNumber} counts, for example "${typedNumber} orders a shift". It joins the line once it does.`
       : lineMeasure && !typedNumber
         ? `Your line already counts "${lineMeasure}". Add another only if it is true.`
         : 'Only a number you know is true, with what it counts. Leave it empty if you do not have one.';
+  // The words each field started with. A keyboard visitor who tabs into a
+  // field that still holds them gets them selected, so typing replaces them
+  // instead of running into them.
+  const seeded = bullet ? seedFields(bullet.original) : null;
+  const selectSeeded =
+    (field: 'verb' | 'task' | 'impact') =>
+    (event: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      if (!seeded?.[field] || event.currentTarget.value !== seeded[field]) return;
+      event.currentTarget.select();
+    };
+  const complete = parts
+    ? parts.action.points === parts.action.max &&
+      parts.work.points === parts.work.max &&
+      parts.result.points === parts.result.max
+    : false;
 
   // The score moves as the visitor types; read it once they pause.
   const scoreMessage = useSettledAnnouncement(
@@ -100,8 +126,7 @@ export default function BulletEditor({
                 <p className="text-xs uppercase tracking-[0.3em] text-gold">Suggestions</p>
                 <ul className="mt-2 space-y-3">
                   {suggestions.map((suggestion) => {
-                    const example =
-                      register === 'student' ? suggestion.studentExample : suggestion.workExample;
+                    const example = exampleFor(suggestion, register);
                     return (
                       <li
                         key={suggestion.type}
@@ -136,7 +161,39 @@ export default function BulletEditor({
               </div>
             )}
 
-            <RewriteHelp line={current} />
+            <RewriteHelp
+              line={current}
+              noneFollowUp={
+                complete
+                  ? 'Your line already says what you did, what the work was, and what happened because of it.'
+                  : undefined
+              }
+            />
+
+            {wording && wording.terms.length > 0 && (
+              <div
+                className="space-y-1.5 rounded-2xl border border-foam/40 bg-foam/8 p-4 text-sm"
+                data-testid="wording-hint"
+                tabIndex={-1}
+                id="wording-hint"
+              >
+                <p className="text-foreground">
+                  Words from the posting match, if they are true of this work:{' '}
+                  <span className="font-medium">{wording.terms.join(', ')}</span>.
+                </p>
+                {wording.honestUse && (
+                  <p className="text-xs text-muted-foreground">{wording.honestUse}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Nothing goes into your line until you write it in the fields below.
+                </p>
+              </div>
+            )}
+
+            <p className="text-sm text-muted-foreground" data-testid="line-as-written">
+              <span className="text-foreground">As written: </span>
+              {bullet.original}
+            </p>
 
             <div className="grid gap-4 md:grid-cols-2">
               <div>
@@ -147,11 +204,12 @@ export default function BulletEditor({
                   id={`bullet-${bullet.id}-verb`}
                   value={bullet.fields.verb}
                   onChange={(event) => onFieldChange(bullet.id, 'verb', event.target.value)}
+                  onFocus={selectSeeded('verb')}
                   className={fieldClass}
                   placeholder={placeholders.verb}
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
-                  The word for what you did yourself. It replaces the first word of the line.
+                  The word for what you did yourself. It takes the place of the line's first word.
                 </p>
               </div>
               <div>
@@ -177,11 +235,13 @@ export default function BulletEditor({
                   id={`bullet-${bullet.id}-task`}
                   value={bullet.fields.task}
                   onChange={(event) => onFieldChange(bullet.id, 'task', event.target.value)}
+                  onFocus={selectSeeded('task')}
                   className={`${fieldClass} min-h-[100px]`}
                   placeholder={placeholders.task}
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
-                  What it was, and where or for whom. Do not repeat the first word here.
+                  What it was, and where or for whom. It starts with the line as written; change any
+                  of it.
                 </p>
               </div>
               <div>
@@ -192,6 +252,7 @@ export default function BulletEditor({
                   id={`bullet-${bullet.id}-impact`}
                   value={bullet.fields.impact}
                   onChange={(event) => onFieldChange(bullet.id, 'impact', event.target.value)}
+                  onFocus={selectSeeded('impact')}
                   className={`${fieldClass} min-h-[100px]`}
                   placeholder={placeholders.impact}
                 />

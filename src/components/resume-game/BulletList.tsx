@@ -37,14 +37,14 @@ const BulletItem = React.memo(function BulletItem({ bullet, isSelected, onSelect
         className="overflow-hidden text-sm text-foreground"
         style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}
       >
-        {bullet.original}
+        {/* The line as it reads now, so a rewritten card shows its new wording. */}
+        {bullet.edited && bullet.improved ? bullet.improved : bullet.original}
       </p>
-      <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+      <div className="mt-3 flex items-center justify-between gap-2 text-xs text-muted-foreground">
         <span className={label.color}>{label.label}</span>
-        {bullet.edited ? (
-          <span className={delta >= 0 ? 'text-love' : 'text-destructive'}>
-            {delta >= 0 ? '+' : ''}
-            {delta}
+        {bullet.edited && delta !== 0 ? (
+          <span>
+            {bullet.improvedScore}/100, from {bullet.baselineScore}
           </span>
         ) : (
           <span>{bullet.improvedScore}/100</span>
@@ -58,16 +58,16 @@ export default React.memo(function BulletList({ bullets, selectedBulletId, onSel
   return (
     <Card data-bullet-list>
       <CardHeader className="space-y-1">
-        <CardTitle className="text-xl">Bullets</CardTitle>
+        <CardTitle className="text-xl">Your lines</CardTitle>
         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-          Select to rewrite
+          Pick one to rewrite
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
         {bullets.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border/35 bg-overlay/15 p-6 text-center">
             <p className="text-sm text-muted-foreground">
-              Run the analysis to extract and score your bullets.
+              Run the analysis to find and score your lines.
             </p>
           </div>
         ) : (

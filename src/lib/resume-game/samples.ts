@@ -76,11 +76,17 @@ export const PROFESSIONAL_PLACEHOLDER = `Paste your whole resume, or just the bu
 
 Store, shift, warehouse, office, and customer work all count. Lines like "Responsible for opening and closing" are exactly what this tool is for.`;
 
-/** Which set of examples to show. Students and early-career visitors, and anyone who has not said, get the student set. */
-export type Register = 'student' | 'work';
+/**
+ * Which set of examples to show. Students and early-career visitors, and
+ * anyone who has not said, get the student set. Senior and lead visitors get
+ * examples from running teams and programs; everyone else, from store,
+ * shift, warehouse, office, and care work.
+ */
+export type Register = 'student' | 'work' | 'lead';
 
 export function registerForStage(stage: CareerStage | null | undefined): Register {
-  return !stage || stage === 'student' || stage === 'early' ? 'student' : 'work';
+  if (!stage || stage === 'student' || stage === 'early') return 'student';
+  return stage === 'senior' ? 'lead' : 'work';
 }
 
 /** Placeholders for the four rewrite fields, in the visitor's register. */
@@ -102,5 +108,11 @@ export const FIELD_PLACEHOLDERS: Record<
     task: 'For example: the weekly schedule for the front end',
     impact: 'For example: so every shift was covered without overtime',
     quantifier: 'For example: 40 orders a shift',
+  },
+  lead: {
+    verb: 'For example: Ran, Rebuilt, Hired',
+    task: 'For example: the safety program across two distribution sites',
+    impact: 'For example: so recordable incidents fell over two years',
+    quantifier: 'For example: 38% fewer recordable incidents',
   },
 };

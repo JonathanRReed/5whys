@@ -12,7 +12,7 @@ test('a pasted student resume is scored honestly and a rewrite moves the score',
   await expect(page.getByLabel('Paste resume text')).toHaveValue(/Jordan Lee/);
 
   await page.getByRole('button', { name: 'Analyze resume' }).click();
-  await expect(page.getByText('Scored 4 bullets')).toBeVisible();
+  await expect(page.getByText('Scored 4 lines')).toBeVisible();
   // Name, contact line, headings, and education are left out of scoring.
   await expect(page.getByText(/No bullet markers found/)).toBeVisible();
   await expect(page.getByText(/2 contact, 3 heading, 1 education/)).toBeVisible();

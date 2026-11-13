@@ -55,8 +55,8 @@ export default function BeforeAfter({ bullets }: Props) {
                     </p>
                     <p className="opacity-70">{bullet.original}</p>
                   </div>
-                  <div className="rounded-2xl border border-love/40 bg-love/6 p-4 text-sm text-foreground font-medium">
-                    <p className="text-[0.72rem] uppercase tracking-[0.2em] text-love mb-2">
+                  <div className="rounded-2xl border border-foam/40 bg-foam/6 p-4 text-sm text-foreground font-medium">
+                    <p className="text-[0.72rem] uppercase tracking-[0.2em] text-foam mb-2">
                       After
                     </p>
                     <p>{bullet.improved}</p>

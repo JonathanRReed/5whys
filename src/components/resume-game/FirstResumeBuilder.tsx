@@ -1,6 +1,9 @@
 import * as React from 'react';
 import {
+  actionWordAdvice,
+  applyCapitalFixes,
   assembleResume,
+  capitalFixes,
   checkDraft,
   checkStep,
   DRAFT_STEPS,
@@ -18,6 +21,9 @@ import {
   MAX_LINES,
   MIN_PHONE_DIGITS,
   type ResumeDraft,
+  SCHOOL_EXAMPLES,
+  type SchoolExample,
+  splitActionWord,
 } from '../../lib/resume-game/first-resume';
 import { cn } from '../../lib/utils';
 import ConfirmButton from '../shared/ConfirmButton';
@@ -42,6 +48,8 @@ type Props = {
   announce: (message: string) => void;
   /** Move focus to the form when it opens because the visitor asked for it. */
   focusOnOpen?: boolean;
+  /** Which school to show as the example: high school for a first job. */
+  schoolExample?: SchoolExample;
 };
 
 const INPUT =
@@ -111,7 +119,9 @@ export default function FirstResumeBuilder({
   currentText,
   announce,
   focusOnOpen = false,
+  schoolExample = 'college',
 }: Props) {
+  const schoolPlaceholder = SCHOOL_EXAMPLES[schoolExample];
   const draft = React.useMemo(() => saved ?? emptyDraft(), [saved]);
   const step = DRAFT_STEPS[draft.step] ?? DRAFT_STEPS[0];
   const stepIndex = DRAFT_STEPS.indexOf(step);
@@ -264,6 +274,7 @@ export default function FirstResumeBuilder({
                   id={fieldId.name}
                   label="Your name"
                   autoComplete="name"
+                  autoCapitalize="words"
                   value={draft.name}
                   error={errorFor(fieldId.name)}
                   onChange={(event) => change({ name: event.target.value })}
@@ -295,6 +306,7 @@ export default function FirstResumeBuilder({
                   optional
                   hint="A city and state is enough. Leave out your street address."
                   autoComplete="address-level2"
+                  autoCapitalize="words"
                   placeholder="Fresno, CA"
                   value={draft.city}
                   onChange={(event) => change({ city: event.target.value })}
@@ -329,7 +341,9 @@ export default function FirstResumeBuilder({
                   <Field
                     id={fieldId.school}
                     label="School or program"
-                    placeholder="Fresno City College"
+                    autoCapitalize="words"
+                    spellCheck
+                    placeholder={schoolPlaceholder.school}
                     value={draft.school}
                     error={errorFor(fieldId.school)}
                     onChange={(event) => change({ school: event.target.value })}
@@ -338,7 +352,8 @@ export default function FirstResumeBuilder({
                     id={fieldId.study}
                     label="What you are studying, or studied"
                     optional
-                    placeholder="Business"
+                    spellCheck
+                    placeholder={schoolPlaceholder.study}
                     hint="A major, a certificate, or High school diploma."
                     value={draft.study}
                     onChange={(event) => change({ study: event.target.value })}
@@ -347,7 +362,7 @@ export default function FirstResumeBuilder({
                     id={fieldId.finish}
                     label="When you finish, or finished"
                     optional
-                    placeholder="May 2027"
+                    placeholder={schoolPlaceholder.finish}
                     hint="A month and year, or just the year. A date still ahead reads as expected."
                     value={draft.finish}
                     error={errorFor(fieldId.finish)}
@@ -379,9 +394,9 @@ export default function FirstResumeBuilder({
             {step.id === 'experience' && (
               <div className="space-y-8">
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  One to three things you have done. Anything counts: a job, a club, volunteering, a
-                  class project, caring for family, a team. Each line has three small parts: an
-                  action word, what you did, and what happened because of it.
+                  One to three things you have done. Anything counts: a job, babysitting, a club or
+                  team, volunteering, a class project, caring for family. Each line has three small
+                  parts: an action word, what you did, and what happened because of it.
                 </p>
                 {draft.experiences.map((experience, index) => (
                   <ExperienceFields
@@ -394,6 +409,7 @@ export default function FirstResumeBuilder({
                     errorFor={errorFor}
                     onChange={(next) => changeExperience(index, next)}
                     onLineChange={(lineIndex, next) => changeLine(index, lineIndex, next)}
+                    announce={announce}
                     onAddLine={() => {
                       const lineIndex = experience.lines.length;
                       pendingFocus.current = fieldId.verb(index, lineIndex);
@@ -436,12 +452,19 @@ export default function FirstResumeBuilder({
               <div className="space-y-5">
                 <Field
                   id={fieldId.skills}
-                  label="Skills"
+                  label="List your skills"
                   optional
                   hint="Separate them with commas. List what you could show someone: a language, a program, a tool, a certificate."
                   placeholder="Spanish, Google Sheets, cash handling"
                   value={draft.skills}
                   onChange={(event) => change({ skills: event.target.value })}
+                />
+                <CapitalCheck
+                  draft={draft}
+                  onFix={() => {
+                    onDraftChange(applyCapitalFixes(draft));
+                    announce('Names now start with a capital letter.');
+                  }}
                 />
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   That is the whole resume. Use it and the Resume Game scores each line as you wrote
@@ -513,6 +536,7 @@ type ExperienceProps = {
   errorFor: (field: string) => string | undefined;
   onChange: (next: Partial<DraftExperience>) => void;
   onLineChange: (lineIndex: number, next: Partial<DraftLine>) => void;
+  announce: (message: string) => void;
   onAddLine: () => void;
   onRemoveLine: (lineIndex: number) => void;
   onRemove: () => void;
@@ -525,6 +549,7 @@ function ExperienceFields({
   errorFor,
   onChange,
   onLineChange,
+  announce,
   onAddLine,
   onRemoveLine,
   onRemove,
@@ -568,6 +593,8 @@ function ExperienceFields({
           <Field
             id={fieldId.role(index)}
             label="Your role"
+            autoCapitalize="words"
+            spellCheck
             placeholder={example.role}
             value={experience.role}
             error={errorFor(fieldId.role(index))}
@@ -577,6 +604,8 @@ function ExperienceFields({
             id={fieldId.where(index)}
             label="Where"
             optional
+            autoCapitalize="words"
+            spellCheck
             placeholder={example.where || 'Leave blank if it was at home'}
             value={experience.where}
             onChange={(event) => onChange({ where: event.target.value })}
@@ -634,6 +663,8 @@ function ExperienceFields({
               lineIndex={lineIndex}
               line={line}
               example={example.lines[lineIndex % 2]}
+              current={experience.current}
+              announce={announce}
               canRemove={experience.lines.length > 1}
               errorFor={errorFor}
               onChange={(next) => onLineChange(lineIndex, next)}
@@ -672,6 +703,9 @@ type LineProps = {
   lineIndex: number;
   line: DraftLine;
   example: DraftLine;
+  /** The experience is still going on: a present-tense action word is fine. */
+  current: boolean;
+  announce: (message: string) => void;
   canRemove: boolean;
   errorFor: (field: string) => string | undefined;
   onChange: (next: Partial<DraftLine>) => void;
@@ -683,6 +717,8 @@ function LineFields({
   lineIndex,
   line,
   example,
+  current,
+  announce,
   canRemove,
   errorFor,
   onChange,
@@ -690,22 +726,85 @@ function LineFields({
 }: LineProps) {
   const built = draftBullet(line);
   const filled = Boolean(line.verb || line.task || line.impact);
+  // Set when a sentence typed into the action word was split for the visitor.
+  const [moved, setMoved] = React.useState<string | null>(null);
+  // Advice reads the one action word, not a sentence waiting to be split.
+  const split = splitActionWord(line.verb);
+  const advice =
+    line.verb.trim() && !split?.rest ? actionWordAdvice(split?.verb ?? line.verb, current) : null;
+  const verbId = fieldId.verb(index, lineIndex);
+
+  // A whole sentence in the one-word box moves its rest to "What you did",
+  // but only into an empty box, so nothing the visitor wrote is replaced.
+  const splitVerb = () => {
+    if (line.task.trim() || !split) return;
+    onChange({ verb: split.verb, task: split.rest });
+    if (split.rest) {
+      setMoved(split.rest);
+      announce(`Moved "${split.rest}" to What you did.`);
+      // Tabbing on selects the moved words, so the next key would erase
+      // them. Put the caret after them instead.
+      const taskId = fieldId.task(index, lineIndex);
+      window.requestAnimationFrame(() => {
+        const task = document.getElementById(taskId);
+        if (task instanceof HTMLInputElement && document.activeElement === task) {
+          task.setSelectionRange(task.value.length, task.value.length);
+        }
+      });
+    }
+  };
   return (
     <div className="border-t border-border/30 pt-4">
       <fieldset className="min-w-0 space-y-3">
         <legend className="mb-3 text-sm font-medium">Line {lineIndex + 1}</legend>
         <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]">
-          <Field
-            id={fieldId.verb(index, lineIndex)}
-            label="Action word"
-            placeholder={example.verb}
-            value={line.verb}
-            error={errorFor(fieldId.verb(index, lineIndex))}
-            onChange={(event) => onChange({ verb: event.target.value })}
-          />
+          <div className="min-w-0 space-y-1.5">
+            <Field
+              id={verbId}
+              label="Action word"
+              hint="One word, like Watched, Built, or Ran."
+              autoCapitalize="sentences"
+              spellCheck
+              placeholder={example.verb}
+              value={line.verb}
+              error={errorFor(verbId)}
+              onChange={(event) => {
+                setMoved(null);
+                onChange({ verb: event.target.value });
+              }}
+              onBlur={splitVerb}
+            />
+            {advice?.kind === 'past' && (
+              <div className="space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+                <p>Resumes usually say it the way it already happened: {advice.past}.</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="min-h-11"
+                  onClick={() => {
+                    onChange({
+                      verb: (split?.verb ?? line.verb.trim()).replace(advice.word, advice.past),
+                    });
+                    announce(`Action word is now ${advice.past}.`);
+                  }}
+                >
+                  Use {advice.past}
+                </Button>
+              </div>
+            )}
+            {advice?.kind === 'not-a-verb' && (
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                "{advice.word}" may not read as something you did. A word like Watched, Built, or
+                Ran works best.
+              </p>
+            )}
+          </div>
           <Field
             id={fieldId.task(index, lineIndex)}
             label="What you did"
+            spellCheck
+            hint={moved ? `Moved here from Action word: "${moved}".` : undefined}
             placeholder={example.task}
             value={line.task}
             error={errorFor(fieldId.task(index, lineIndex))}
@@ -716,6 +815,7 @@ function LineFields({
           id={fieldId.impact(index, lineIndex)}
           label="What happened because of it"
           optional
+          spellCheck
           hint={'It follows your line after "so". It does not have to be a number.'}
           placeholder={example.impact || 'Leave blank if you are not sure'}
           value={line.impact}
@@ -743,6 +843,35 @@ function LineFields({
             </Button>
           ))}
       </fieldset>
+    </div>
+  );
+}
+
+/**
+ * Names typed in lowercase, offered back capitalized. A rule the visitor can
+ * read, run with one tap; nothing changes on its own.
+ */
+function CapitalCheck({ draft, onFix }: { draft: ResumeDraft; onFix: () => void }) {
+  const fixes = capitalFixes(draft);
+  if (fixes.length === 0) return null;
+  return (
+    <div
+      className="space-y-3 rounded-xl border border-gold/40 bg-gold/8 p-4"
+      data-testid="capital-check"
+    >
+      <p className="text-sm leading-relaxed text-foreground">
+        Names usually start with a capital letter:{' '}
+        {fixes.map((fix, index) => (
+          <React.Fragment key={fix.field}>
+            {index > 0 && ', '}
+            <span className="font-medium">{fix.to}</span>
+          </React.Fragment>
+        ))}
+        .
+      </p>
+      <Button type="button" variant="outline" className="min-h-11" onClick={onFix}>
+        Fix {fixes.length === 1 ? 'it' : 'them'}
+      </Button>
     </div>
   );
 }

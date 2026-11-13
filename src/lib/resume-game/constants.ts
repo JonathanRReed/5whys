@@ -557,6 +557,12 @@ export const HARD_SKILLS = [
   'nvivo',
   'arcgis',
   'autocad',
+  // Operations and supply chain software
+  'wms',
+  'manhattan wms',
+  'smartsheet',
+  'kronos',
+  'netsuite',
   'solidworks',
   'arduino',
   'raspberry pi',
@@ -583,6 +589,30 @@ export const HARD_SKILLS = [
   'microscopy',
   'titration',
   'elisa',
+];
+
+/**
+ * Methods from running operations, a store, or a team. Shown with the tools
+ * a resume names, but kept out of HARD_SKILLS, which the on-device AI guard
+ * reads as the list of software a rewrite must not invent.
+ */
+export const WORK_METHODS = [
+  's&op',
+  'vendor management',
+  'inventory management',
+  'budgeting',
+  'forecasting',
+  'procurement',
+  'logistics',
+  'supply chain',
+  'payroll',
+  'p&l',
+  'cash handling',
+  'point of sale',
+  'forklift',
+  'osha',
+  'cpr',
+  'first aid',
 ];
 
 export const SOFT_SKILLS = [
