@@ -2,6 +2,7 @@ import * as React from 'react';
 import { loadFeature, reportFeatureFailure } from '../lib/lazy-feature';
 import { readProfile } from '../lib/profile';
 import type { ResumeDoc } from '../lib/resume-doc';
+import { bulletRewrites, isResumeLimitError, rewriteText } from '../lib/resume-doc';
 import type { BulletFields, BulletRecord, Register, StoredResumeSession } from '../lib/resume-game';
 import {
   applyFieldChange,
@@ -93,27 +94,12 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
 
   const resumeText = session.resumeText;
   const bullets = session.bullets;
-  // What the visitor changed, for the clean copy of the uploaded resume.
-  const rewrites = React.useMemo(
-    () =>
-      bullets
-        .filter((bullet) => bullet.edited && bullet.improved.trim())
-        .map((bullet) => ({ original: bullet.original, improved: bullet.improved })),
-    [bullets]
-  );
+  // What the visitor changed, for the clean copy of the uploaded resume. Each
+  // rewrite is bound to the line it came from, so equal lines stay separate.
+  const rewrites = React.useMemo(() => bulletRewrites(bullets), [bullets]);
   // The posting is compared with the resume as it will be exported: the
   // original text with each rewritten line in its new wording.
-  const matchText = React.useMemo(
-    () =>
-      rewrites.reduce(
-        (text, rewrite) =>
-          rewrite.original.trim() && text.includes(rewrite.original)
-            ? text.replace(rewrite.original, () => rewrite.improved)
-            : text,
-        resumeText
-      ),
-    [rewrites, resumeText]
-  );
+  const matchText = React.useMemo(() => rewriteText(resumeText, rewrites), [rewrites, resumeText]);
   const selectedBulletId = session.selectedBulletId;
   const selectedBullet = bullets.find((bullet) => bullet.id === selectedBulletId) ?? null;
   const signalReport = session.signalReport ?? EMPTY_SIGNAL_REPORT;
@@ -274,7 +260,12 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
             ? await engine.extractPdf(file)
             : await engine.extractDocx(new Uint8Array(await file.arrayBuffer()), file.name);
           text = engine.toEditorText(doc);
-        } catch {
+          // Kept with the copy, so a later edit to the paste field is noticed.
+          doc = { ...doc, sourceText: text };
+        } catch (error) {
+          // A file refused for its size stays refused: the plain reader must
+          // not take it instead.
+          if (isResumeLimitError(error)) throw error;
           doc = null;
         }
         if (sequence !== uploadSequence.current) return;
@@ -384,7 +375,14 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
         }}
       />
 
-      {resumeDoc && <MachineView doc={resumeDoc} onChange={keepResumeDoc} rewrites={rewrites} />}
+      {resumeDoc && (
+        <MachineView
+          doc={resumeDoc}
+          onChange={keepResumeDoc}
+          rewrites={rewrites}
+          text={resumeText}
+        />
+      )}
 
       <PostingMatch resumeText={matchText} />
 

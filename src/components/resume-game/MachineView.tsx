@@ -4,7 +4,9 @@ import type { PrintModel, ResumeDoc, ResumeFinding, ResumeLine } from '../../lib
 import {
   checkExport,
   countRewrites,
+  docMatchesText,
   fixList,
+  fromText,
   linearize,
   moveContactToTop,
   normalizeDates,
@@ -20,7 +22,13 @@ type Props = {
   /** Called with the repaired structured copy. The uploaded file is never changed. */
   onChange: (doc: ResumeDoc) => void;
   /** Lines rewritten in the game below. They replace their originals in the clean copy. */
-  rewrites?: readonly { original: string; improved: string }[];
+  rewrites?: readonly { original: string; improved: string; occurrence?: number }[];
+  /**
+   * The resume text the visitor has accepted in the paste field. When it no
+   * longer matches what was read from the file, the clean copy is held back:
+   * it would otherwise carry a resume the visitor has replaced.
+   */
+  text?: string;
 };
 
 const REPAIRS: Partial<
@@ -84,7 +92,8 @@ const baseName = (name: string) => name.replace(/\.[^.]+$/, '') || 'resume';
  * this extractor saw. They are not a verdict about any employer's system, and
  * there is deliberately no score.
  */
-export default function MachineView({ doc, onChange, rewrites }: Props) {
+export default function MachineView({ doc, onChange, rewrites, text }: Props) {
+  const current = React.useMemo(() => text === undefined || docMatchesText(doc, text), [doc, text]);
   const rewriteCount = React.useMemo(() => countRewrites(doc, rewrites), [doc, rewrites]);
   const [activeFinding, setActiveFinding] = React.useState<string | null>(null);
   const [notice, setNotice] = React.useState<string | null>(null);
@@ -131,7 +140,23 @@ export default function MachineView({ doc, onChange, rewrites }: Props) {
     }
   };
 
+  // Read the edited text as the new structured copy. The uploaded file is
+  // never changed; repairs made to the old copy no longer apply.
+  const readEditedText = () => {
+    if (text === undefined) return;
+    try {
+      onChange({ ...fromText(text, doc.file.name), sourceText: text });
+      setActiveFinding(null);
+      setNotice('The clean copy now comes from the text above.');
+    } catch (error) {
+      setNotice(
+        error instanceof Error ? error.message : 'The text above could not be read as a resume.'
+      );
+    }
+  };
+
   const exportDocx = async () => {
+    if (!current) return;
     setExporting(true);
     try {
       const bytes = await toDocx(doc, { rewrites });
@@ -155,7 +180,9 @@ export default function MachineView({ doc, onChange, rewrites }: Props) {
     }
   };
 
-  const printPdf = () => setPrintModel(toPrintModel(doc, { rewrites }));
+  const printPdf = () => {
+    if (current) setPrintModel(toPrintModel(doc, { rewrites }));
+  };
 
   // Print once the clean copy is in the document, then take it out again.
   React.useEffect(() => {
@@ -191,9 +218,11 @@ export default function MachineView({ doc, onChange, rewrites }: Props) {
           Machine view
         </h2>
         <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
-          This is what our extractor read from {doc.file.name}, in the order it read it. Employer
-          systems differ and none publishes a pass mark, so there is no score here: only what was
-          read, and what may be worth fixing.
+          {doc.source === 'text'
+            ? 'This is your edited text as our extractor read it, in order.'
+            : `This is what our extractor read from ${doc.file.name}, in the order it read it.`}{' '}
+          Employer systems differ and none publishes a pass mark, so there is no score here: only
+          what was read, and what may be worth fixing.
         </p>
         <p className="text-sm font-medium text-foreground" data-testid="machine-summary">
           {summarize(doc.findings)}
@@ -372,16 +401,41 @@ export default function MachineView({ doc, onChange, rewrites }: Props) {
           The clean copy is one column with standard headings and real bullets, built from the text
           above. Your uploaded file is never changed.
         </p>
+        {!current && (
+          <div
+            className="space-y-2 rounded-xl border border-gold/50 bg-gold/8 p-4"
+            data-testid="clean-copy-stale"
+          >
+            <p className="text-sm leading-relaxed text-foreground">
+              The text above has changed since{' '}
+              {doc.source === 'text' ? 'this copy was made' : `${doc.file.name} was read`}. This
+              view and the clean copy still show the earlier text, so the download is off until they
+              agree.
+            </p>
+            <Button type="button" size="sm" variant="outline" onClick={readEditedText}>
+              Build the clean copy from the text above
+            </Button>
+          </div>
+        )}
         <p className="text-sm text-foreground" data-testid="clean-copy-rewrites">
           {rewriteCount > 0
             ? `${rewriteCount} ${rewriteCount === 1 ? 'line you rewrote below is' : 'lines you rewrote below are'} in the clean copy in ${rewriteCount === 1 ? 'its' : 'their'} new wording.`
             : 'Lines you rewrite below go into the clean copy in their new wording.'}
         </p>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" onClick={exportDocx} disabled={exporting || !ordered.length}>
+          <Button
+            type="button"
+            onClick={exportDocx}
+            disabled={exporting || !ordered.length || !current}
+          >
             {exporting ? 'Writing the file' : 'Download clean .docx'}
           </Button>
-          <Button type="button" variant="outline" onClick={printPdf} disabled={!ordered.length}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={printPdf}
+            disabled={!ordered.length || !current}
+          >
             Print or save as PDF
           </Button>
           {doc.findings.length > 0 && (

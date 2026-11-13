@@ -80,3 +80,22 @@ it.each(['resolve', 'reject'])(
     expect(stored.bullets).toEqual([]);
   }
 );
+
+it('keeps a size-limit rejection final instead of trying the plain reader', async () => {
+  const { docxBytes, xmlParagraph } = await import('./fixtures/resume-doc');
+  const bytes = await docxBytes(
+    ['Jordan Lee', 'jordan@example.edu', 'A'.repeat(200_001)]
+      .map((line) => xmlParagraph(line))
+      .join('')
+  );
+  extract.mockResolvedValue('Should never be used');
+  render(<ResumeGame />);
+  fireEvent.change(screen.getByLabelText('Upload resume file (PDF, DOCX, TXT, or Markdown)'), {
+    target: { files: [new File([bytes as BlobPart], 'over-text-limit.docx')] },
+  });
+  await expect(screen.findByRole('alert', {}, { timeout: 8000 })).resolves.toHaveTextContent(
+    'too much text'
+  );
+  expect(extract).not.toHaveBeenCalled();
+  expect(screen.getByLabelText('Paste resume text')).toHaveValue('');
+});

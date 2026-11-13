@@ -1,5 +1,6 @@
 import { detectFindings } from './detectors';
 import { geometricLineOrder, logicalLines } from './layout';
+import { MAX_RESUME_TEXT, ResumeLimitError } from './limits';
 import type { ResumeContact, ResumeDoc, ResumeLine, ResumeSection, SectionKind } from './types';
 
 const HEADINGS: Array<[SectionKind, RegExp]> = [
@@ -65,7 +66,8 @@ export function recomputeDoc(doc: ResumeDoc): ResumeDoc {
 }
 
 export function fromText(text: string, name = 'resume.txt'): ResumeDoc {
-  if (text.length > 200_000) throw new Error('This resume contains too much text.');
+  if (text.length > MAX_RESUME_TEXT)
+    throw new ResumeLimitError('This resume contains too much text.');
   const lines: ResumeLine[] = text
     .split(/\r?\n/)
     .map<ResumeLine>((value, index) => ({

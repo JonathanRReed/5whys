@@ -24,10 +24,14 @@ const DATE = new RegExp(
 );
 
 export function datesIn(text: string) {
-  const links = [...text.matchAll(/(?:https?:\/\/|www\.)\S+/gi)].map((match) => ({
-    start: match.index,
-    end: match.index + match[0].length,
-  }));
+  // Addresses are left exactly as written: "jordan.05.2024@example.edu" is
+  // an email, not May 2024, and a link's path is not a date either.
+  const links = [...text.matchAll(/(?:https?:\/\/|www\.)\S+|[^\s<>()|,;:]*@[^\s<>()|,;:]+/gi)].map(
+    (match) => ({
+      start: match.index,
+      end: match.index + match[0].length,
+    })
+  );
   return [...text.matchAll(DATE)]
     .filter((match) => !links.some((link) => match.index >= link.start && match.index < link.end))
     .map((match) => ({

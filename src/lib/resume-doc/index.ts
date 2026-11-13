@@ -17,7 +17,17 @@ export {
 } from './detectors';
 export { extractDocx } from './docx';
 export { toEditorText } from './editor-text';
-export { checkExport, countRewrites, fixList, toDocx, toPrintModel } from './export';
+export {
+  bulletRewrites,
+  checkExport,
+  countRewrites,
+  docMatchesText,
+  fixList,
+  rewriteText,
+  toDocx,
+  toPrintModel,
+} from './export';
+export { isResumeLimitError, MAX_RESUME_TEXT, ResumeLimitError } from './limits';
 export { fromText, recomputeDoc } from './model';
 export { extractPdf } from './pdf';
 export {
