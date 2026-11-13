@@ -1,7 +1,7 @@
 /**
  * Plain-language meanings for the words a first-time visitor may not know.
- * One sentence each, said the way you would tell a friend. The "?" beside a
- * word on a page reads from here, so a term means the same thing everywhere.
+ * One sentence each, said the way you would tell a friend. The "New word?" row
+ * on a page reads from here, so a term means the same thing everywhere.
  */
 export const GLOSSARY = {
   posting: {

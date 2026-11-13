@@ -47,6 +47,7 @@ import { type PostingPay, readPostingPay } from '../../lib/pay/posting-pay';
 import { type ParsedAmount, parseAmount } from '../../lib/pay-input';
 import { cn, focusWhenReady } from '../../lib/utils';
 import Announcer, { useSettledAnnouncement } from '../shared/Announcer';
+import WordHelp from '../shared/WordHelp';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -563,6 +564,7 @@ export default function PayTool() {
             Put an offer or a posted rate into one set of terms. Nothing is assumed: if hours or
             weeks are blank, the figure that needs them stays blank.
           </p>
+          <WordHelp words={['basePay', 'variablePay', 'overtime']} />
           {gone && (
             <p role="alert" className="rounded-lg bg-gold/12 px-3 py-2 text-sm text-foreground">
               The application this worksheet was saved with was removed in another tab, so the

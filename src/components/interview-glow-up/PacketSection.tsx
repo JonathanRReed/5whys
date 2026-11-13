@@ -20,6 +20,7 @@ import {
 } from '../../lib/glowup-store';
 import { isRealAnswer } from '../../lib/non-answer';
 import { cn } from '../../lib/utils';
+import WordHelp from '../shared/WordHelp';
 import AiQuestions from './AiQuestions';
 import { listInWords, missingFromCheatSheet } from './InterviewHUD';
 import { ClipboardIcon, PrinterIcon, TargetIcon } from './icons';
@@ -153,6 +154,7 @@ export default function PacketSection({
 
       {mode === 'prep' && (
         <div className="space-y-6">
+          <WordHelp words={['story', 'packet', 'hud']} />
           <div className="space-y-3">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Stories in this packet

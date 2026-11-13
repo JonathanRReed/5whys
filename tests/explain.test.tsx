@@ -1,6 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import Explain from '../src/components/shared/Explain';
 import { GLOSSARY } from '../src/lib/glossary';
 
 describe('plain-word explanations', () => {
@@ -10,21 +9,21 @@ describe('plain-word explanations', () => {
       expect(`${entry.term} ${entry.means}`, key).not.toMatch(/—|!/);
     }
   });
+});
 
-  it('shows the meaning in place when asked, and hides it again', () => {
-    render(
-      <p>
-        Paste the posting
-        <Explain word="posting" />
-      </p>
-    );
-    const button = screen.getByRole('button', { name: 'What does "job posting" mean?' });
-    expect(button).toHaveAttribute('aria-expanded', 'false');
+describe('words on this page', () => {
+  it('shows one meaning at a time under the row', async () => {
+    const { default: WordHelp } = await import('../src/components/shared/WordHelp');
+    render(<WordHelp words={['basePay', 'variablePay']} />);
+    const base = screen.getByRole('button', { name: /base pay/ });
+    const variable = screen.getByRole('button', { name: /variable pay/ });
     expect(screen.getByRole('note', { hidden: true })).not.toBeVisible();
-    fireEvent.click(button);
-    expect(button).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByRole('note')).toHaveTextContent('The job ad');
-    fireEvent.click(button);
+    fireEvent.click(base);
+    expect(screen.getByRole('note')).toHaveTextContent('before any bonus');
+    fireEvent.click(variable);
+    expect(base).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByRole('note')).toHaveTextContent('not promised');
+    fireEvent.click(variable);
     expect(screen.getByRole('note', { hidden: true })).not.toBeVisible();
   });
 });

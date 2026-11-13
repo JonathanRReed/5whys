@@ -33,6 +33,7 @@ import { POSTING_HANDOFF_KEY } from '../../lib/posting-handoff';
 import { cn } from '../../lib/utils';
 import { withViewTransition } from '../../lib/view-transition';
 import Announcer, { useAnnouncer } from '../shared/Announcer';
+import WordHelp from '../shared/WordHelp';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -303,6 +304,7 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
             Paste the whole job description once. Every other station on this desk works from it,
             and it stays on this device.
           </p>
+          <WordHelp words={['posting', 'decode', 'requirement']} />
         </div>
         <label className="block space-y-2">
           <span className="text-sm text-muted-foreground">Job description</span>

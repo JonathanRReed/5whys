@@ -1,4 +1,5 @@
 import type * as React from 'react';
+import WordHelp from '../shared/WordHelp';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { type WhyOutcome as Outcome, WHY_COUNT } from './shared';
 import WhyOutcome from './WhyOutcome';
@@ -47,6 +48,7 @@ export default function WhySummary({
             ? 'Chain complete: all 5 layers answered'
             : `Depth progress: ${sequentialCount} of ${WHY_COUNT} layers answered`}
         </div>
+        <WordHelp words={['whyStatement', 'snapshot']} className="pt-2" />
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="rounded-2xl border border-border/50 bg-overlay/30 p-5 text-lg leading-relaxed text-foreground">

@@ -20,6 +20,7 @@ import { isNonAnswer, MIN_ANSWER_WORDS } from '../../lib/non-answer';
 import { requirementsFromBullets, summarizeCoverage } from '../../lib/posting';
 import { cn, focusWhenReady } from '../../lib/utils';
 import { sourceLabel } from '../shared/AiText';
+import WordHelp from '../shared/WordHelp';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -225,6 +226,8 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
             ))}
           </div>
         </details>
+
+        <WordHelp words={['hook', 'requirement']} />
 
         {PARTS.map((part) => (
           <div key={part.key} className="space-y-2">
