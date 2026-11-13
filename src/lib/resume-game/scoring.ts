@@ -18,11 +18,15 @@
  *    or reached ("kept payroll within 2% of plan", "kept the store on
  *    plan"), an achievement ("passed", "won", "promoted 9 associates"), a
  *    before and after ("from 240 to 610"), a link ("so families could",
- *    "which meant", "to cut"), or a result phrase ("zero incidents", "best
- *    variance in the district", "used by the other 11 stores").
- * 4. Measure (15). A number that says what it counts: "40 boxes", "3 posts a
- *    week", "6 hours", "2%", "$1,400". A bare number ("30") earns nothing.
- *    Years, date ranges, and phone numbers are not measures. A team size or
+ *    "which meant", "so customers waited less"), a purpose that says how
+ *    much ("to save the lab 6 hours a week"), or a result phrase ("zero
+ *    incidents", "with no shortages", "used by the other 11 stores"). A
+ *    purpose alone ("to raise funds") is an aim, not a result, and earns
+ *    15. A line that says the attempt failed earns nothing here.
+ * 4. Measure (15). A number that says what it counts: "40 boxes", "twenty
+ *    customers", "3 posts a week", "6 hours", "2%", "$1,400", "€500". A bare
+ *    number ("30") earns nothing. Years ("in 2024", "the 2024 season"), date
+ *    ranges, and phone numbers are not measures; "2026 invoices" is. A team size or
  *    headcount ("a 14-person team", "team of 5", "with 62 associates",
  *    "supervised 12 volunteers") is scope, not a result, and earns nothing
  *    here.
@@ -35,6 +39,8 @@ import { STRONG_SCORE } from './thresholds';
 import { hasBuriedVerb, leadingAction } from './verbs';
 
 export const PART_MAX = { action: 20, work: 25, result: 40, measure: 15 } as const;
+/** Result points for a line that says only what the work was for. */
+export const AIM_POINTS = 15;
 /** What each part is called wherever it is shown. */
 export const PART_LABELS = {
   action: 'What you did',
@@ -45,7 +51,7 @@ export const PART_LABELS = {
 export { STRONG_SCORE };
 
 // A number that reads as a measure: counts, money, percentages, multipliers.
-const NUMBER_TOKEN = /\$?\d[\d,]*(?:\.\d+)?%?(?:[kKmMxX]\b)?/g;
+const NUMBER_TOKEN = /[$€£₹₦¥]?\d[\d,]*(?:\.\d+)?%?(?:[kKmMxX]\b)?/g;
 const YEAR = /^(?:19|20)\d{2}$/;
 const DATE_RANGE = /\b(?:19|20)\d{2}\s*(?:[-–—]|to)\s*(?:(?:19|20)\d{2}|present|current|now)\b/gi;
 const PHONE = /(?:\+?\d{1,2}[\s.-])?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}/g;
@@ -54,8 +60,29 @@ const ORDINAL = /^\d+(?:st|nd|rd|th)$/i;
 // "GPA 3.6", "GPA: 3.6/4.0", "3.6 GPA", "3.8 cumulative GPA".
 const GPA =
   /\bGPA\b\s*(?::\s*|of\s+)?\d\.\d{1,2}(?:\s*\/\s*\d(?:\.\d{1,2})?)?|\b\d\.\d{1,2}(?:\s*\/\s*\d(?:\.\d{1,2})?)?\s+(?:[a-z]+\s+)?GPA\b/gi;
-const BARE_NUMBER_CLEAN_PATTERN = /[$,%kKmMxX]/g;
-const SYMBOL = /[$%]|\d[kKmMxX]$/;
+const BARE_NUMBER_CLEAN_PATTERN = /[$€£₹₦¥,%kKmMxX]/g;
+const SYMBOL = /[$€£₹₦¥%]|\d[kKmMxX]$/;
+const MONEY_OR_PERCENT = /[$€£₹₦¥%]/;
+
+// Number words name an amount as surely as digits do: "twenty customers"
+// counts the same as "20 customers". "One" is left out on its own, because
+// "one of the", "the one person", and "one-on-one" are not counts.
+const SMALL_NUMBER_WORDS =
+  'two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen';
+const TENS_WORDS = 'twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety';
+const NUMBER_WORD = new RegExp(
+  `\\b(?:(?:${TENS_WORDS})(?:[- ](?:one|${SMALL_NUMBER_WORDS}))?(?:\\s+(?:hundred|thousand))?|(?:one|a)\\s+(?:hundred|thousand|dozen)|(?:${SMALL_NUMBER_WORDS})(?:\\s+(?:hundred|thousand))?|one(?=\\s+(?:percent|per cent)\\b)|hundreds|thousands|dozens)\\b`,
+  'gi'
+);
+const HAS_NUMBER_WORD = new RegExp(NUMBER_WORD.source, 'i');
+// A word that shows a year is a date, not a count: "in 2024", "fall 2025".
+const DATE_BEFORE =
+  /\b(?:in|since|from|by|during|until|through|of|for|the|fall|spring|summer|winter|autumn|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december|class|year|season|fy|cohort)\s*$/i;
+// Plural words after a year-like number that are still about time.
+const TIME_UNIT = /^(?:seasons?|semesters?|terms?|years?|graduates?|cohorts?|grads?)$/i;
+// Small words a count can carry before what it counts: "200 new members".
+const COUNT_ADJECTIVE =
+  /^(?:new|more|other|additional|extra|returning|first-time|unique|active|total|regular|repeat|weekly|daily|monthly)$/i;
 
 const PEOPLE =
   /^(?:person|people|persons|members?|associates?|employees?|staff|workers?|volunteers?|cashiers?|servers?|reports|teammates?|tutors?|interns?|managers?|leads?|crew|students?|engineers?|designers?|agents?|nurses?|aides?|drivers?|clerks?)$/i;
@@ -80,11 +107,43 @@ function stripNonMeasures(text: string): string {
   return text.replace(DATE_RANGE, blank).replace(PHONE, blank).replace(GPA, blank);
 }
 
+type Candidate = { token: string; index: number; word: boolean };
+
+function candidates(stripped: string): Candidate[] {
+  const found: Candidate[] = [];
+  for (const match of stripped.matchAll(NUMBER_TOKEN)) {
+    found.push({ token: match[0], index: match.index ?? 0, word: false });
+  }
+  for (const match of stripped.matchAll(NUMBER_WORD)) {
+    found.push({ token: match[0], index: match.index ?? 0, word: true });
+  }
+  return found.sort((a, b) => a.index - b.index);
+}
+
+/** The word after a count, skipping one small describing word. */
+function unitAfter(after: string): { word?: string; text?: string } {
+  const first = after.match(/^\s*\+?\s*([a-z][a-z'-]*)/i);
+  if (!first) return {};
+  if (COUNT_ADJECTIVE.test(first[1])) {
+    const second = after.slice(first[0].length).match(/^\s+([a-z][a-z'-]*)/i);
+    if (second) return { word: second[1], text: `${first[1]} ${second[1]}` };
+  }
+  return { word: first[1], text: first[1] };
+}
+
+/** True when a year-like number counts something instead: "2026 invoices". */
+function yearLikeIsCount(token: string, before: string, unit: string | undefined): boolean {
+  if (/,/.test(token)) return true; // "2,000" is never a year.
+  if (!unit || STOPWORDS.has(unit.toLowerCase())) return false;
+  if (DATE_BEFORE.test(before)) return false;
+  return /s$/i.test(unit) && !TIME_UNIT.test(unit);
+}
+
 /**
  * Every number in a line that could be a count, sorted into a measure (says
  * what it counts), scope (a team size or headcount), or bare (nothing says
  * what it counts). Years, date ranges, phone numbers, GPAs, and ordinals are
- * left out entirely.
+ * left out entirely. Numbers written as words count the same as digits.
  */
 export function findNumbers(text: string): FoundNumber[] {
   return findNumberSpans(text).map(({ text: found, kind }) => ({ text: found, kind }));
@@ -92,41 +151,43 @@ export function findNumbers(text: string): FoundNumber[] {
 
 /** findNumbers, with the position of each number's token in the line. */
 export function findNumberSpans(text: string): NumberSpan[] {
-  if (!/\d/.test(text)) return [];
+  if (!/\d/.test(text) && !HAS_NUMBER_WORD.test(text)) return [];
   const stripped = stripNonMeasures(text);
   const found: NumberSpan[] = [];
-  for (const match of stripped.matchAll(NUMBER_TOKEN)) {
-    const token = match[0];
-    const index = match.index ?? 0;
+  for (const { token, index, word } of candidates(stripped)) {
     const bare = token.replace(BARE_NUMBER_CLEAN_PATTERN, '');
-    if (YEAR.test(bare) && !/[$%]/.test(token)) continue;
     const after = stripped.slice(index + token.length);
-    if (ORDINAL.test(token + (after.match(/^[a-z]{2}/i)?.[0] ?? ''))) continue;
     const before = stripped.slice(0, index);
-    const hyphenUnit = after.match(/^-([a-z]+)/i)?.[1];
-    const nextWord = after.match(/^\s*\+?\s*([a-z][a-z'-]*)/i)?.[1];
-    const unit = hyphenUnit ?? nextWord;
+    const hyphenUnit = word ? undefined : after.match(/^-([a-z]+)/i)?.[1];
+    const next = unitAfter(after);
+    const unit = hyphenUnit ?? next.word;
+    if (!word && YEAR.test(bare) && !MONEY_OR_PERCENT.test(token)) {
+      if (!yearLikeIsCount(token, before, hyphenUnit ?? next.word)) continue;
+    }
+    if (!word && ORDINAL.test(token + (after.match(/^[a-z]{2}/i)?.[0] ?? ''))) continue;
     const unitIsPeople = !!unit && PEOPLE.test(unit);
+    const unitIsStop = !!unit && STOPWORDS.has(unit.toLowerCase());
     const unitText = hyphenUnit
       ? `${token}-${hyphenUnit}`
-      : nextWord
-        ? `${token} ${nextWord}`
+      : next.text && !unitIsStop
+        ? `${token} ${next.text}`
         : token;
 
     const span = { token, start: index, end: index + token.length };
+    const symbol = SYMBOL.test(token) || /^\s*(?:percent|per cent)\b/i.test(after);
     const isScope =
       (hyphenUnit !== undefined && unitIsPeople) ||
       (unitIsPeople && (GROUP_OF.test(before) || WITH_BEFORE.test(before))) ||
       (unitIsPeople && SUPERVISING_BEFORE.test(before)) ||
-      (GROUP_OF.test(before) && !SYMBOL.test(token));
+      (GROUP_OF.test(before) && !symbol);
     if (isScope) {
       found.push({ text: unitText, kind: 'scope', ...span });
       continue;
     }
-    const unitIsWord = !!unit && !STOPWORDS.has(unit.toLowerCase());
+    const unitIsWord = !!unit && !unitIsStop;
     const pairs =
-      /^\s*(?:of|to|out of)\s+\$?\d/i.test(after) || /\b(?:from|of|to)\s+$/i.test(before);
-    if (SYMBOL.test(token) || unitIsWord || pairs) {
+      /^\s*(?:of|to|out of)\s+[$€£₹₦¥]?\d/i.test(after) || /\b(?:from|of|to)\s+$/i.test(before);
+    if (symbol || unitIsWord || pairs) {
       found.push({ text: SYMBOL.test(token) ? token : unitText, kind: 'measure', ...span });
     } else {
       found.push({ text: token, kind: 'bare', ...span });
@@ -151,7 +212,7 @@ export function findQuantifiers(text: string): string[] {
   const tokens = stripNonMeasures(text).match(NUMBER_TOKEN) ?? [];
   return tokens.filter((token) => {
     const bare = token.replace(BARE_NUMBER_CLEAN_PATTERN, '');
-    if (YEAR.test(bare) && !/[$%]/.test(token)) return false;
+    if (YEAR.test(bare) && !MONEY_OR_PERCENT.test(token) && !token.includes(',')) return false;
     if (ORDINAL.test(token)) return false;
     return true;
   });
@@ -182,16 +243,21 @@ export function hasQualitativeOutcome(text: string): boolean {
 }
 
 const CHANGE_VERBS =
-  'cut|reduced|decreased|lowered|shortened|halved|increased|grew|raised|doubled|tripled|saved|boosted|lifted|eliminated|prevented|ended|improved|stopped|recovered|freed up|sped up';
+  'cut|reduced|decreased|lowered|shortened|halved|increased|grew|raised|doubled|tripled|saved|boosted|lifted|eliminated|prevented|ended|improved|stopped|recovered|freed up|sped up|attracted';
 
 const RESULT_PATTERNS: RegExp[] = [
   // Links that lead into what happened.
   /\b(?:resulting in|leading to|which meant|so that|because of (?:this|it|which)|in turn)\b/i,
   /\bwhich (?:led|let|helped|cut|saved|kept|got|made|gave|won|grew|raised|reduced|increased|improved|doubled|freed|ended|stopped|meant)\b/i,
   /\bso (?:[\w'-]+[\s,]+){0,4}?(?:could|can|would|were|was|had|got|stopped|started|no longer|never|did|came|left|finished|always|now)\b/i,
-  /\bto (?:increase|decrease|reduce|cut|save|improve|boost|grow|raise|lower|double|triple|speed up|eliminate|win|secure|keep|meet|exceed|free up|recover|prevent|resolve|end)\b/i,
-  // A change, with an object: "cut shrink", "grew followers".
-  new RegExp(`\\b(?:${CHANGE_VERBS})\\s+(?!(?:to|for|with|in|on|at|and|or)\\b)[\\w$]`, 'i'),
+  // "so customers waited less", "so the line moved faster".
+  /\bso (?:the |our |more |fewer |every |each )?[a-z'-]+(?:\s+[a-z'-]+)?\s+(?!(?:and|or|to|for|with|in|on|at|of)\b)[a-z]{3,}ed\b/i,
+  // A change, with an object: "cut shrink", "grew followers". "To cut" is an
+  // aim, read below.
+  new RegExp(
+    `(?<!\\b(?:to|will|would|could|should|might|can)\\s)\\b(?:${CHANGE_VERBS})\\s+(?!(?:to|for|with|in|on|at|and|or)\\b)[\\w$€£₹₦¥]`,
+    'i'
+  ),
   /,\s*(?:cutting|reducing|decreasing|lowering|shortening|halving|increasing|growing|raising|doubling|tripling|saving|boosting|lifting|eliminating|preventing|ending|improving|stopping|recovering|freeing up|speeding up|delivering|earning|winning|bringing|keeping|getting)\b/i,
   // A state kept or reached: "kept payroll within 2% of plan".
   /\b(?:kept|keeping|got|getting|brought|bringing|finished|completed|delivered|stayed|came in|held)\b[^.;]{0,60}?\b(?:within|on (?:plan|time|schedule|budget|target)|under (?:budget|plan)|ahead of|below (?:plan|budget|target)|above (?:plan|target|goal)|at zero)\b/i,
@@ -201,19 +267,70 @@ const RESULT_PATTERNS: RegExp[] = [
   /\b(?:named|selected as|chosen as) (?:an? |the )?\w+ of the (?:month|year|quarter)\b/i,
   // Result phrases.
   /\bzero [a-z]/i,
-  /\bno (?:missed|lost|late|errors?|complaints?|incidents?|injuries|injury|write-ups?|overtime|returns?)\b/i,
-  /\bwithout (?:a |any )?(?:missed|missing|closing|losing|late|errors?|complaints?|incidents?|downtime|overtime|injur\w*)\b/i,
+  /\bno (?:missed|lost|late|errors?|mistakes?|complaints?|incidents?|accidents?|injuries|injury|write-ups?|overtime|returns?|shortages?|overages?|discrepanc(?:y|ies)|variances?|spills?|breakage|no-shows?)\b/i,
+  /\bwithout (?:a |any )?(?:missed|missing|closing|losing|late|errors?|mistakes?|complaints?|incidents?|accidents?|downtime|overtime|shortages?|overages?|discrepanc(?:y|ies)|injur\w*)\b/i,
   /\b(?:best|highest|lowest|fastest|top|first)\b[^.;]{0,40}\bin (?:the |our |my |its )?(?:district|region|company|store|class|school|state|chain|division|county|league|department)\b/i,
-  /\b(?:on time|ahead of schedule|under budget|on budget|on plan)\b/i,
-  /\bfrom \$?\d[\d,.]*%?(?:\s+[a-z]+)?\s+to \$?\d/i,
+  /\b(?:ahead of schedule|under budget|on budget|on plan)\b/i,
+  /\bfrom [$€£₹₦¥]?\d[\d,.]*%?(?:\s+[a-z]+)?\s+to [$€£₹₦¥]?\d/i,
   /\binstead of\b/i,
-  /\bwithin \$?\d[\d,.]*%?\s*[a-z]/i,
+  /\bwithin [$€£₹₦¥]?\d[\d,.]*%?\s*[a-z]/i,
   /\b(?:\d+|other|every|all) [a-z]+ (?:now )?(?:used|adopted)\b/i,
 ];
 
+// "to cut overtime" says what the work was for. It counts in full only
+// when the line also says how much ("to save the lab 6 hours a week");
+// otherwise it is an aim, and earns part of the result points.
+const PURPOSE_PATTERN =
+  /\bto (?:increase|decrease|reduce|cut|save|improve|boost|grow|raise|lower|double|triple|speed up|eliminate|win|secure|keep|meet|exceed|free up|recover|prevent|resolve|end)\b[^.;]*/i;
+// An aim the line never says was met: "Tried to", "Planned to".
+const ATTEMPT_PATTERN =
+  /\b(?:tried|tries|try|attempted|attempts|attempt|aimed|aims|aim|hoped|hopes|hope|planned|plans|plan|intended|intends|intend|wanted|wants|want|sought|seeks|seek) to\b/i;
+// A line that says the work did not reach its goal has no result to count.
+const FAILED_PATTERN =
+  /\b(?:but|and|yet)\s+(?:it\s+|this\s+|they\s+|we\s+|i\s+)?(?:failed|fell short|did not (?:work|succeed|happen)|didn't (?:work|succeed|happen)|was not|wasn't|were not|weren't|could not|couldn't|never)\b|\bunsuccessful(?:ly)?\b|\bwithout success\b|\b(?:it|this|that) failed\b/i;
+// "On time" is a result when work was finished on time, not when the line
+// is about showing up: "Responsible for being on time" says nothing happened.
+const ON_TIME = /\bon time\b/i;
+const ATTENDANCE_ON_TIME =
+  /\b(?:be|being|been|am|is|are|was|were|arrive[sd]?|arriving|show(?:ed|s|ing)? up|came in|come in|coming in|clock(?:ed|s|ing)? in|report(?:ed|s|ing)? (?:to work|in))\b[^.;]{0,15}\bon time\b/i;
+
+export type ResultKind = 'result' | 'aim' | 'failed' | 'none';
+
+function onTimeResult(text: string): boolean {
+  if (!ON_TIME.test(text) || ATTENDANCE_ON_TIME.test(text)) return false;
+  const opening = leadingAction(text);
+  return !!opening && !opening.involvement;
+}
+
+function purposeKind(text: string): 'result' | 'aim' | null {
+  if (ATTEMPT_PATTERN.test(text)) return null;
+  const clause = text.match(PURPOSE_PATTERN)?.[0];
+  if (!clause) return null;
+  const sized =
+    /\b(?:by|in) half\b/i.test(clause) ||
+    findNumbers(clause).some((item) => item.kind === 'measure');
+  return sized ? 'result' : 'aim';
+}
+
+/**
+ * What the line says happened: a result, only an aim ("to cut overtime"),
+ * an attempt that failed, or nothing.
+ */
+export function resultKind(text: string): ResultKind {
+  if (FAILED_PATTERN.test(text)) return 'failed';
+  if (
+    RESULT_PATTERNS.some((pattern) => pattern.test(text)) ||
+    hasQualitativeOutcome(text) ||
+    onTimeResult(text)
+  ) {
+    return 'result';
+  }
+  return purposeKind(text) ?? 'none';
+}
+
 /** True when the line says what happened because of the work. */
 export function hasResult(text: string): boolean {
-  return RESULT_PATTERNS.some((pattern) => pattern.test(text)) || hasQualitativeOutcome(text);
+  return resultKind(text) === 'result';
 }
 
 /** Kept for callers that ask whether an action connects to a result. */
@@ -275,10 +392,27 @@ export function scoreParts(line: string): ScoreParts {
           : 'Does not say what the work was.',
   };
 
-  const resulted = hasResult(text);
-  const result: ScorePart = resulted
-    ? { points: 40, max: PART_MAX.result, note: 'Says what happened because of the work.' }
-    : { points: 0, max: PART_MAX.result, note: 'Does not say what happened because of the work.' };
+  const kind = resultKind(text);
+  const result: ScorePart =
+    kind === 'result'
+      ? { points: 40, max: PART_MAX.result, note: 'Says what happened because of the work.' }
+      : kind === 'aim'
+        ? {
+            points: AIM_POINTS,
+            max: PART_MAX.result,
+            note: 'Says what the work was for, not what happened.',
+          }
+        : kind === 'failed'
+          ? {
+              points: 0,
+              max: PART_MAX.result,
+              note: 'Says the work did not reach its goal, so there is no result to count.',
+            }
+          : {
+              points: 0,
+              max: PART_MAX.result,
+              note: 'Does not say what happened because of the work.',
+            };
 
   const numbers = findNumbers(text);
   const measured = numbers.find((item) => item.kind === 'measure');
@@ -324,5 +458,5 @@ export function scoreBullet(bullet: string): number {
 export function scoreLabel(score: number) {
   if (score >= STRONG_SCORE) return { label: 'Strong', color: 'text-love' };
   if (score >= 50) return { label: 'Getting there', color: 'text-gold' };
-  return { label: 'Needs more', color: 'text-iris' };
+  return { label: 'Starting point', color: 'text-iris' };
 }

@@ -85,6 +85,12 @@ export type ResumeDoc = {
   contact: ResumeContact;
   plainText: string;
   findings: ResumeFinding[];
+  /**
+   * The editor text this copy produced when the file was read. The paste
+   * field is compared with it to tell whether the visitor has since replaced
+   * or edited the resume. Repairs keep it unchanged.
+   */
+  sourceText?: string;
 };
 export type DateStyle = 'short-month' | 'long-month' | 'numeric';
 export type ExportOptions = {
@@ -92,9 +98,12 @@ export type ExportOptions = {
   bulletLineIds?: ReadonlySet<string>;
   /**
    * Lines the visitor rewrote, as the original text and what replaces it. A
-   * line is matched on its words, ignoring its bullet mark, case and spacing.
+   * line is matched on its words, ignoring its bullet mark, case and spacing,
+   * and only its given occurrence (counted from 0, in reading order; the
+   * first when omitted) is replaced, so equal lines under two employers stay
+   * independent.
    */
-  rewrites?: readonly { original: string; improved: string }[];
+  rewrites?: readonly { original: string; improved: string; occurrence?: number }[];
   /**
    * Bullets that are not in the resume, each placed after one of its lines.
    * One whose line is missing from the copy goes after the last bullet.

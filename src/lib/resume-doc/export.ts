@@ -1,24 +1,110 @@
 import { loadFeature } from '../lazy-feature';
 import { extractDocx } from './docx';
+import { toEditorText } from './editor-text';
 import { logicalLines } from './layout';
 import { contactLineIds, linearize, moveContactToTop, normalizeDates } from './repairs';
 import type { ExportCheck, ExportOptions, PrintModel, PrintParagraph, ResumeDoc } from './types';
 
 const MARKER = /^\s*[-–•*◦○●▪·o]\s+/;
+/** A bullet glyph at the start of a line, with or without a space after it. */
+const LEADING_MARKER = /^\s*(?:[-–•*◦○●▪·]\s*|o\s+)/;
 /** A line reduced to its words, for matching a rewrite to the line it replaces. */
 function lineKey(text: string): string {
-  return text.replace(MARKER, '').replace(/\s+/g, ' ').trim().toLowerCase();
+  return text.replace(LEADING_MARKER, '').replace(/\s+/g, ' ').trim().toLowerCase();
 }
+type Rewrite = NonNullable<ExportOptions['rewrites']>[number];
+
+/**
+ * The rewrites from the game's bullets, in resume order, each bound to the
+ * occurrence of its line it came from. Two equal lines under two employers
+ * stay two lines: rewriting the first never changes the second.
+ */
+export function bulletRewrites(
+  bullets: readonly { original: string; improved: string; edited?: boolean }[]
+): Rewrite[] {
+  const seen = new Map<string, number>();
+  return bullets.flatMap((bullet) => {
+    const key = lineKey(bullet.original);
+    const occurrence = seen.get(key) ?? 0;
+    seen.set(key, occurrence + 1);
+    return bullet.edited && bullet.improved.trim() && key
+      ? [{ original: bullet.original, improved: bullet.improved, occurrence }]
+      : [];
+  });
+}
+
+/**
+ * Which line each rewrite replaces, given the lines in reading order: the
+ * rewrite's occurrence of a line with the same words (the first when no
+ * occurrence is given).
+ */
+function rewriteTargets<T>(
+  items: readonly T[],
+  text: (item: T) => string,
+  rewrites: ExportOptions['rewrites']
+): Map<T, string> {
+  const wanted = new Map<string, string>();
+  for (const entry of rewrites ?? []) {
+    const improved = entry.improved.replace(MARKER, '').trim();
+    if (!improved) continue;
+    wanted.set(`${lineKey(entry.original)}\u0000${entry.occurrence ?? 0}`, improved);
+  }
+  const targets = new Map<T, string>();
+  if (wanted.size === 0) return targets;
+  const seen = new Map<string, number>();
+  for (const item of items) {
+    const key = lineKey(text(item));
+    if (!key) continue;
+    const occurrence = seen.get(key) ?? 0;
+    seen.set(key, occurrence + 1);
+    const improved = wanted.get(`${key}\u0000${occurrence}`);
+    if (improved !== undefined) targets.set(item, improved);
+  }
+  return targets;
+}
+
 /** How many of the resume's lines the given rewrites would replace. */
 export function countRewrites(doc: ResumeDoc, rewrites: ExportOptions['rewrites']): number {
-  const keys = new Set(
-    (rewrites ?? [])
-      .filter(
-        (entry) => entry.improved.trim() && lineKey(entry.improved) !== lineKey(entry.original)
-      )
-      .map((entry) => lineKey(entry.original))
-  );
-  return logicalLines(doc.lines).filter((line) => keys.has(lineKey(line.text))).length;
+  const targets = rewriteTargets(logicalLines(doc.lines), (line) => line.text, rewrites);
+  return [...targets].filter(([line, improved]) => lineKey(improved) !== lineKey(line.text)).length;
+}
+
+/**
+ * Plain resume text with each rewrite in place of the line it came from,
+ * keeping that line's bullet mark. Used to compare a posting with the resume
+ * as it will be exported.
+ */
+export function rewriteText(text: string, rewrites: ExportOptions['rewrites']): string {
+  const lines = text.split('\n');
+  const indexes = lines.map((_, index) => index);
+  const targets = rewriteTargets(indexes, (index) => lines[index], rewrites);
+  if (targets.size === 0) return text;
+  return lines
+    .map((line, index) => {
+      const improved = targets.get(index);
+      if (improved === undefined) return line;
+      const mark = line.match(LEADING_MARKER)?.[0] ?? '';
+      return `${mark}${improved}`;
+    })
+    .join('\n');
+}
+
+function comparable(text: string): string {
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .join('\n');
+}
+
+/**
+ * True while the paste field still holds the text this structured copy was
+ * read as. Once the visitor replaces or edits that text, the clean copy built
+ * from the file would carry a resume they no longer accept.
+ */
+export function docMatchesText(doc: ResumeDoc, text: string): boolean {
+  const accepted = comparable(text);
+  return accepted !== '' && comparable(doc.sourceText ?? toEditorText(doc)) === accepted;
 }
 function cleanCopy(doc: ResumeDoc, options: ExportOptions): ResumeDoc {
   const copy = moveContactToTop(linearize(doc));
@@ -28,14 +114,10 @@ export function toPrintModel(doc: ResumeDoc, options: ExportOptions = {}): Print
   const copy = cleanCopy(doc, options);
   const contactIds = contactLineIds(copy);
   const headings = new Set(copy.sections.map((section) => section.headingLineId));
-  const rewritten = new Map(
-    (options.rewrites ?? [])
-      .filter((entry) => entry.improved.trim())
-      .map((entry) => [lineKey(entry.original), entry.improved.replace(MARKER, '').trim()])
-  );
   const kept = (line: { id: string; bullet: boolean }) =>
     !line.bullet || !options.bulletLineIds || options.bulletLineIds.has(line.id);
   const ordered = logicalLines(copy.lines);
+  const rewritten = rewriteTargets(ordered, (line) => line.text, options.rewrites);
   // Each addition follows its line. If that line is left out of this copy the
   // addition stays in its place, under the same job, and never moves to another.
   const additions = new Map<string, PrintParagraph[]>();
@@ -64,9 +146,7 @@ export function toPrintModel(doc: ResumeDoc, options: ExportOptions = {}): Print
                   : index === 0
                     ? 'name'
                     : 'text',
-            text:
-              rewritten.get(lineKey(line.text)) ??
-              (line.bullet ? line.text.replace(MARKER, '') : line.text),
+            text: rewritten.get(line) ?? (line.bullet ? line.text.replace(MARKER, '') : line.text),
           } satisfies PrintParagraph,
         ]
       : []),

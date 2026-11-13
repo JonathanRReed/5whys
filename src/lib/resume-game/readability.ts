@@ -1,4 +1,5 @@
 import { normalizeLine } from './text';
+import { leadingAction } from './verbs';
 
 // Pre-compiled regex patterns to avoid repeated instantiation on every word/sentence during readability analysis
 const NON_ALPHA_PATTERN = /[^a-z]/g;
@@ -6,8 +7,72 @@ const VOWEL_GROUP_PATTERN = /[aeiouy]+/g;
 const THIRD_LAST_CHAR_VOWEL_PATTERN = /[aeiouy]/;
 const SENTENCE_TERMINATOR_PATTERN = /([.!?])\s+/g;
 
-// Unified, non-capturing passive voice regex avoids creating intermediate match groups on every scan
-const PASSIVE_VOICE_PATTERN = /\b(?:was|were|been|being|is|are|be)\s+\w+(?:ed|en)\b/gi;
+// "was" or "were" plus a past participle: "was given", "were checked".
+const PASSIVE_VOICE_PATTERN = /\b(?:was|were|been|being|is|are|be)\s+([a-z]+(?:ed|en))\b/gi;
+// Words that end like a participle but describe a thing: "was open".
+const NOT_PARTICIPLES = new Set([
+  'open',
+  'often',
+  'even',
+  'seven',
+  'eleven',
+  'ten',
+  'then',
+  'when',
+  'golden',
+  'wooden',
+  'sudden',
+  'citizen',
+  'women',
+  'men',
+  'children',
+  'kitchen',
+  'garden',
+  'red',
+  'need',
+  'seed',
+  'feed',
+  'speed',
+  'based',
+  'interested',
+  'excited',
+  'tired',
+  'experienced',
+  'qualified',
+  'dedicated',
+  'skilled',
+  'talented',
+  'motivated',
+  'detailed',
+  'advanced',
+  'certified',
+  'licensed',
+  'limited',
+  'related',
+  'varied',
+]);
+// "used by all campus clubs" names who used the work; after a line that
+// opens with what the visitor did, it is a result, not a hidden actor.
+const ADOPTION =
+  /^(?:used|adopted|approved|accepted|published|read|shared|chosen|selected|kept|reused)$/i;
+
+/**
+ * The passive phrases in a line ("was given", "were checked"). Adjectives
+ * ("was open") are not passive. When the line already opens with an action,
+ * a clause that says who used the work ("that were used by all clubs") is
+ * left alone.
+ */
+export function findPassivePhrases(text: string, opensWithAction = false): string[] {
+  const found: string[] = [];
+  for (const match of text.matchAll(PASSIVE_VOICE_PATTERN)) {
+    const word = match[1].toLowerCase();
+    if (NOT_PARTICIPLES.has(word)) continue;
+    const after = text.slice((match.index ?? 0) + match[0].length);
+    if (opensWithAction && ADOPTION.test(word) && /^\s+by\b/i.test(after)) continue;
+    found.push(match[0]);
+  }
+  return found;
+}
 
 // Bounded LRU-style syllable cache to avoid re-evaluating regexes and string operations
 // on common resume words across real-time typing and scoring passes.
@@ -81,8 +146,11 @@ export function analyzeReadability(text: string) {
     0.39 * (wordCount / sentenceCount) + 11.8 * (syllableCount / Math.max(1, wordCount)) - 15.59;
 
   // Passive voice detection: was/were/be + past participle, or common passive patterns
-  const passiveMatches = normalized.match(PASSIVE_VOICE_PATTERN);
-  const passiveVoiceCount = passiveMatches ? passiveMatches.length : 0;
+  const opening = leadingAction(normalized);
+  const passiveVoiceCount = findPassivePhrases(
+    normalized,
+    !!opening && !opening.involvement
+  ).length;
   const passiveVoicePercent = (passiveVoiceCount / sentenceCount) * 100;
 
   // A bullet is "readable" if it's concise, not too complex, and not too passive

@@ -8,6 +8,7 @@
  */
 import { HARD_SKILLS, matchesTerm } from '../resume-game/constants';
 import { extractSkills } from '../resume-game/skills';
+import { isVerbWord } from '../resume-game/verbs';
 import type { ClaimKind, InventedClaim } from './types';
 
 export type ClaimCheckOptions = {
@@ -124,6 +125,16 @@ const CURRENCY_PATTERN =
   /[$€£¥]\s?\d[\d,]*(?:\.\d+)?(?:\s?(?:k|m|bn|b|thousand|million|billion)\b)?|\b\d[\d,]*(?:\.\d+)?\s?(?:k|m|thousand|million|billion)?\s?(?:dollars|usd|euros|eur|pounds|gbp)\b/gi;
 const PERCENT_PATTERN = /\d[\d,]*(?:\.\d+)?\s?(?:%|percent\b|per cent\b)/gi;
 const DIGITS_PATTERN = /\d[\d,]*(?:\.\d+)?/g;
+/** "ten percent", "twenty-five per cent". */
+const WORD_PERCENT_PATTERN = new RegExp(
+  `(${NUMBER_WORDS_PATTERN.source})\\s?(?:percent|per cent)\\b`,
+  'gi'
+);
+/** "ten dollars", "five hundred euros". */
+const WORD_CURRENCY_PATTERN = new RegExp(
+  `(${NUMBER_WORDS_PATTERN.source})\\s+(dollars|euros|pounds)\\b`,
+  'gi'
+);
 
 function currencyValue(match: string): number | null {
   const digits = match.match(/\d[\d,]*(?:\.\d+)?/);
@@ -167,6 +178,40 @@ function collectCurrencies(text: string): Map<number, Set<string>> {
     if (value === null || !unit) continue;
     found.set(value, (found.get(value) ?? new Set()).add(unit));
   }
+  for (const match of text.matchAll(WORD_CURRENCY_PATTERN)) {
+    const value = parseNumberWords(match[1]);
+    const unit = currencyUnit(match[2]);
+    if (value === null || !unit) continue;
+    found.set(value, (found.get(value) ?? new Set()).add(unit));
+  }
+  return found;
+}
+
+// Words that make a bare number read as money: "raised 1,400 at the bake sale".
+const MONEY_CONTEXT_BEFORE =
+  /\b(?:raised|raising|earned|earning|collected|collecting|saved|saving|spent|spending|donated|donating|budget(?:ed)?|revenue|sales|tips|funds|fundraising|paid|cost|worth|profit|grossed|netted|invoiced|billed)\b(?:\s+[\w'-]+){0,2}\s+$/i;
+// A number followed by a counted thing ("10 reports") is a count, not money.
+const MONEY_CONTEXT_AFTER =
+  /^\s*(?:$|[.,;:)]|(?:at|for|in|from|during|to|and|by|over|through|on|with)\b)/i;
+
+/**
+ * Amounts the source gives as money without a currency: a number after a
+ * money word with nothing after it that it counts. "Prepared 10 reports"
+ * gives a count, which a rewrite may not turn into ten dollars.
+ */
+function collectMoneyContext(text: string): Set<number> {
+  const found = new Set<number>();
+  for (const match of text.matchAll(DIGITS_PATTERN)) {
+    const index = match.index ?? 0;
+    const before = text.slice(Math.max(0, index - 60), index);
+    const rest = text.slice(index + match[0].length);
+    const scale = rest.match(/^\s?(k|m|thousand|million|billion)\b/i);
+    const after = scale ? rest.slice(scale[0].length) : rest;
+    if (!MONEY_CONTEXT_BEFORE.test(before) || !MONEY_CONTEXT_AFTER.test(after)) continue;
+    let value = parseDigits(match[0]);
+    if (scale) value *= MULTIPLIERS[scale[1].toLowerCase()];
+    if (!Number.isNaN(value)) found.add(value);
+  }
   return found;
 }
 
@@ -196,9 +241,7 @@ function collectValues(text: string): { values: Set<number>; percents: Set<numbe
     const digits = match[0].match(/\d[\d,]*(?:\.\d+)?/);
     if (digits) percents.add(parseDigits(digits[0]));
   }
-  for (const match of text.matchAll(
-    new RegExp(`(${NUMBER_WORDS_PATTERN.source})\\s?(?:percent|per cent)\\b`, 'gi')
-  )) {
+  for (const match of text.matchAll(WORD_PERCENT_PATTERN)) {
     const value = parseNumberWords(match[1]);
     if (value !== null) percents.add(value);
   }
@@ -233,6 +276,43 @@ const MONTH_PATTERN = new RegExp(
     .join('|')})\\b\\.?`,
   'g'
 );
+const YEAR_SOURCE = '((?:19|20)\\d{2})';
+/** "May 2024", "Sept. 2023", "May 1, 2024". Months are capitalized here, as in MONTH_PATTERN. */
+const MONTH_YEAR_PATTERN = new RegExp(
+  `${MONTH_PATTERN.source}\\s*,?\\s+(?:\\d{1,2}(?:st|nd|rd|th)?,?\\s+)?${YEAR_SOURCE}\\b`,
+  'g'
+);
+const SOURCE_MONTH_YEAR_PATTERN = new RegExp(
+  `\\b(${MONTHS.flat().join('|')})\\b\\.?\\s*,?\\s+(?:\\d{1,2}(?:st|nd|rd|th)?,?\\s+)?${YEAR_SOURCE}\\b`,
+  'gi'
+);
+// "05/2024", "5/1/2024", "2024-05".
+const NUMERIC_MONTH_YEAR_PATTERN = /\b(0?[1-9]|1[0-2])[/.-](?:\d{1,2}[/.-])?((?:19|20)\d{2})\b/g;
+const ISO_MONTH_YEAR_PATTERN = /\b((?:19|20)\d{2})-(0[1-9]|1[0-2])\b/g;
+
+function monthOf(name: string): number | undefined {
+  return MONTH_INDEX.get(name.replace(/\.$/, '').toLowerCase());
+}
+
+/**
+ * Every month and year the source gives together, as "month-year" keys.
+ * A date is checked as a unit, so May 2024 and June 2025 do not support
+ * May 2025.
+ */
+function collectMonthYears(text: string): Set<string> {
+  const found = new Set<string>();
+  for (const match of text.matchAll(SOURCE_MONTH_YEAR_PATTERN)) {
+    found.add(`${monthOf(match[1])}-${match[2]}`);
+  }
+  for (const match of text.matchAll(NUMERIC_MONTH_YEAR_PATTERN)) {
+    found.add(`${Number(match[1]) - 1}-${match[2]}`);
+  }
+  for (const match of text.matchAll(ISO_MONTH_YEAR_PATTERN)) {
+    found.add(`${Number(match[2]) - 1}-${match[1]}`);
+  }
+  return found;
+}
+
 const WEEKDAY_PATTERN = /\b(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)s?\b/g;
 const NUMERIC_DATE_PATTERN = /\b\d{1,4}[/.-]\d{1,2}(?:[/.-]\d{2,4})?\b/g;
 const RELATIVE_DATE_PATTERN =
@@ -270,13 +350,90 @@ const OWNERSHIP_GROUPS: readonly { claim: RegExp; support?: RegExp }[] = [
   { claim: /\b(?:ran|running)\b/i, support: /\bruns?\b/i },
 ];
 
+/**
+ * A verb of ownership right after one of these says the visitor assisted:
+ * "helped manage", "assisted in leading". That is not ownership, in the
+ * input or in the output.
+ */
+const ASSISTED_BEFORE =
+  /\b(?:help|helps|helped|helping|assist|assists|assisted|assisting|support|supports|supported|supporting|aided|aiding|learn|learned|learning|shadowed|shadowing|observed|watched)(?:\s+(?:to|in|with|out|the|a|an|my|our|their|his|her))*\s+$/i;
+/** A role word after one of these belongs to someone else: "helped the manager". */
+const ANOTHER_PERSON_BEFORE =
+  /\b(?:the|a|an|my|our|his|her|their|your|its|to|for|with|under|by|helped|assisted|supported)(?:\s+[\w-]+)?\s+$/i;
+/** ...unless the visitor is saying it is their own role: "worked as a shift manager". */
+const OWN_ROLE_BEFORE =
+  /\b(?:as|was|am|became|named|elected|promoted to)\s+(?:(?:an?|the)\s+)?(?:[\w-]+\s+)?$/i;
+
+function textBefore(text: string, index: number): string {
+  const lineStart = Math.max(text.lastIndexOf('\n', index - 1) + 1, index - 80);
+  return text.slice(lineStart, index);
+}
+
+/** The visitor states this ownership as their own act or their own role. */
+function ownsInSource(group: (typeof OWNERSHIP_GROUPS)[number], source: string): boolean {
+  for (const match of source.matchAll(new RegExp(group.claim.source, 'gi'))) {
+    const index = match.index ?? 0;
+    if (ASSISTED_BEFORE.test(textBefore(source, index))) continue;
+    // "was managed by the owner" is someone else's act.
+    if (/^\s+by\b/i.test(source.slice(index + match[0].length))) continue;
+    return true;
+  }
+  if (!group.support) return false;
+  for (const match of source.matchAll(new RegExp(group.support.source, 'gi'))) {
+    const before = textBefore(source, match.index ?? 0);
+    if (OWN_ROLE_BEFORE.test(before) || !ANOTHER_PERSON_BEFORE.test(before)) return true;
+  }
+  return false;
+}
+
 // ============================================================================
 // Proper nouns
 // ============================================================================
 
 const ALWAYS_CAPITALIZED = new Set(['i', "i'm", 'i’m', "i've", "i'd", "i'll", 'ok']);
+// Unicode letters, so "Zoë" is one word and not "Zo".
 const PROPER_NOUN_PATTERN =
-  /(?<![A-Za-z0-9])(?:[A-Z][A-Za-z0-9'’&+#]*(?:[.-][A-Za-z0-9]+)*|[a-z]+[A-Z][A-Za-z0-9]*)/g;
+  /(?<![\p{L}\p{N}])(?:\p{Lu}[\p{L}\p{N}'’&+#]*(?:[.-][\p{L}\p{N}]+)*|\p{Ll}+\p{Lu}[\p{L}\p{N}]*)/gu;
+
+/**
+ * Words that open a sentence without naming anyone. A capitalized first word
+ * outside this list and the verb list may still be ordinary, so it is only
+ * reported when what follows makes it read as a name (see namedAtStart).
+ */
+const ORDINARY_OPENERS = new Set(
+  (
+    'the a an this that these those it its we you they he she our my your their his her ' +
+    'each every all some most many any both either neither what when where why how who whom ' +
+    'whose which if after before while during in on at for with as since once then also and ' +
+    'but or so yet because although though there here today tomorrow yesterday everyone ' +
+    'everybody someone somebody nobody no not by from to of over under through about across ' +
+    'between within without until again still just only even more less other another such ' +
+    'same together people team management staff'
+  ).split(' ')
+);
+/** Verbs that make the word before them read as an employer or a person acting on the visitor. */
+const AGENT_VERBS =
+  /^(?:hired|hires|employed|employs|paid|pays|promoted|named|asked|invited|chose|selected|recruited|thanked|offered|awarded|praised|recognized|appointed|contracted|interviewed|sponsored|funded|commissioned|taught|mentored|trained|engaged|retained|brought|gave|sent|let|chose)$/i;
+const OBJECT_PRONOUN = /^(?:me|us|my|our)$/i;
+/** Common-noun endings: "Attendance grew" names nothing. */
+const COMMON_NOUN_ENDING = /(?:s|tion|sion|ment|ance|ence|ity|ness|ing|ship|ure|ism|ery)$/i;
+
+/**
+ * A capitalized first word reads as a name when it is not an ordinary
+ * opener or a verb and what follows makes it the one acting or owning:
+ * "Acme hired me", "Zoë's team", "Acme asked me".
+ */
+function namedAtStart(word: string, after: string): boolean {
+  const key = wordKey(word);
+  if (ORDINARY_OPENERS.has(key) || isVerbWord(key)) return false;
+  if (/^[’']s\b/.test(word.slice(key.length))) return !COMMON_NOUN_ENDING.test(key);
+  if (COMMON_NOUN_ENDING.test(key)) return false;
+  const [next, following] = after.trim().split(/\s+/);
+  if (!next || !/^\p{Ll}/u.test(next)) return false;
+  const nextWord = next.replace(/[^\p{L}'’-]/gu, '');
+  if (AGENT_VERBS.test(nextWord)) return true;
+  return isVerbWord(nextWord) && OBJECT_PRONOUN.test((following ?? '').replace(/[^\p{L}]/gu, ''));
+}
 const OPENERS = new Set(['"', "'", '“', '‘', '(', '[', '*', '_', ' ', '\t']);
 
 function isSentenceStart(text: string, index: number): boolean {
@@ -298,7 +455,7 @@ function wordKey(word: string): string {
 
 function wordSet(text: string): Set<string> {
   const set = new Set<string>();
-  for (const match of text.matchAll(/[A-Za-z0-9][A-Za-z0-9'’&+#.-]*/g)) {
+  for (const match of text.matchAll(/[\p{L}\p{N}][\p{L}\p{N}'’&+#.-]*/gu)) {
     const key = wordKey(match[0]);
     set.add(key);
     // "next.js" should also count "next"; "co-op" also "co" and "op".
@@ -337,6 +494,8 @@ export function findInventedClaims(
   const lowerSource = source.toLowerCase();
   const { values, percents } = collectValues(source);
   const sourceCurrencies = collectCurrencies(source);
+  const moneyContext = collectMoneyContext(source);
+  const monthYears = collectMonthYears(source);
   const words = wordSet(source);
   const accepted: Span[] = [];
   const add = (span: Span) => {
@@ -351,20 +510,37 @@ export function findInventedClaims(
     if (invented && kinds.has(span.kind)) add(span);
   };
 
+  // The amount must be money in the inputs, not a reused count, and in the
+  // same money: a source that says $400 does not support €400, and one that
+  // says "10 reports" does not support $10.
+  const moneyInvented = (value: number | null, unit: string | null) => {
+    if (value === null) return true;
+    const units = sourceCurrencies.get(value);
+    if (!units && !moneyContext.has(value)) return true;
+    return Boolean(units && unit && !units.has(unit));
+  };
   for (const match of generated.matchAll(CURRENCY_PATTERN)) {
     const value = currencyValue(match[0]);
-    const span = spanOf('currency', match);
-    // The amount must be the visitor's, and so must the money it is in: a
-    // source that says $400 does not support €400.
-    const units = value === null ? undefined : sourceCurrencies.get(value);
-    const unit = currencyUnit(match[0]);
-    const otherMoney = Boolean(units && unit && !units.has(unit));
-    consider(span, value === null || !values.has(value) || otherMoney);
+    consider(spanOf('currency', match), moneyInvented(value, currencyUnit(match[0])));
+  }
+  for (const match of generated.matchAll(WORD_CURRENCY_PATTERN)) {
+    const value = parseNumberWords(match[1]);
+    consider(spanOf('currency', match), moneyInvented(value, currencyUnit(match[2])));
   }
   for (const match of generated.matchAll(PERCENT_PATTERN)) {
     const digits = match[0].match(/\d[\d,]*(?:\.\d+)?/);
     const value = digits ? parseDigits(digits[0]) : Number.NaN;
     consider(spanOf('percentage', match), !percents.has(value));
+  }
+  for (const match of generated.matchAll(WORD_PERCENT_PATTERN)) {
+    const value = parseNumberWords(match[1]);
+    consider(spanOf('percentage', match), value === null || !percents.has(value));
+  }
+  // A month and a year together are one date, checked as a unit.
+  for (const match of generated.matchAll(MONTH_YEAR_PATTERN)) {
+    const month = monthOf(match[0].match(/^[A-Za-z]+/)?.[0] ?? '');
+    const year = match[match.length - 1];
+    consider(spanOf('date', match), !monthYears.has(`${month}-${year}`));
   }
   for (const match of generated.matchAll(NUMERIC_DATE_PATTERN)) {
     // Only shapes that read as dates: 3/14, 2024-05-01, 05.01.24.
@@ -413,9 +589,13 @@ export function findInventedClaims(
   }
 
   for (const group of OWNERSHIP_GROUPS) {
-    if (group.claim.test(source) || group.support?.test(source)) continue;
+    if (ownsInSource(group, source)) continue;
     const global = new RegExp(group.claim.source, 'gi');
-    for (const match of generated.matchAll(global)) consider(spanOf('ownership', match), true);
+    for (const match of generated.matchAll(global)) {
+      // "Helped manage" keeps the visitor's assisting role; it claims nothing.
+      if (ASSISTED_BEFORE.test(textBefore(generated, match.index ?? 0))) continue;
+      consider(spanOf('ownership', match), true);
+    }
   }
 
   for (const match of generated.matchAll(PROPER_NOUN_PATTERN)) {
@@ -424,11 +604,15 @@ export function findInventedClaims(
     if (ALWAYS_CAPITALIZED.has(key)) continue;
     if (words.has(key)) continue;
     const start = match.index ?? 0;
-    const internalCapital = /[A-Z]/.test(word.slice(1)) || /^[a-z]/.test(word);
+    const internalCapital = /\p{Lu}/u.test(word.slice(1)) || /^\p{Ll}/u.test(word);
+    const atStart = isSentenceStart(generated, start);
+    if (word.length === 1 && atStart) continue;
     // A capital at the start of a sentence says nothing, unless the word
-    // could not be an ordinary word (an acronym or "LinkedIn").
-    if (isSentenceStart(generated, start) && !internalCapital) continue;
-    if (word.length === 1 && isSentenceStart(generated, start)) continue;
+    // could not be an ordinary word (an acronym or "LinkedIn") or what
+    // follows makes it a name ("Acme hired me").
+    if (atStart && !internalCapital && !namedAtStart(word, generated.slice(start + word.length))) {
+      continue;
+    }
     consider(spanOf('proper-noun', match), true);
   }
 

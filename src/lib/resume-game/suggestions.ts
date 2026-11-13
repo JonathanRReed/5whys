@@ -1,6 +1,6 @@
 import { BUZZWORDS, matchesTerm } from './constants';
-import { analyzeReadability } from './readability';
-import { findNumbers, hasResult, scoreParts } from './scoring';
+import { analyzeReadability, findPassivePhrases } from './readability';
+import { findNumbers, resultKind, scoreParts } from './scoring';
 import { normalizeLine } from './text';
 import type { BulletRecord } from './types';
 import { honestVerbQuestion, leadingAction } from './verbs';
@@ -61,16 +61,15 @@ function resultQuestionFor(text: string): string {
   if (/(inventory|stock|freight|truck|shelf|shelves|warehouse|pallet)/.test(lower)) {
     return 'What happened because you did this? Was stock easier to find, were counts right, did trucks get done sooner?';
   }
-  if (/(schedule|shift|staff)/.test(lower)) {
-    return 'What happened because you did this? Were shifts covered, was overtime lower, did fewer people miss work?';
-  }
+  // The register comes first: "a cash drawer per shift" is about the cash.
   if (/(register|cash|customer|counter|guest|caller|patient)/.test(lower)) {
     return 'What happened because you did this? Did lines move faster, did orders go out right, did people come back?';
   }
+  if (/(schedule|shift|staff)/.test(lower)) {
+    return 'What happened because you did this? Were shifts covered, was overtime lower, did fewer people miss work?';
+  }
   return 'What happened because you did this? What got faster, easier, or fixed, and who noticed?';
 }
-
-const PASSIVE_FRAGMENT_PATTERN = /\b(was|were|been|being|is|are|be)\s+\w+(?:ed|en)\b/i;
 
 // Example pairs rotate by line so a six-line resume does not show the same
 // sentence six times.
@@ -160,11 +159,17 @@ export function generateBulletSuggestions(
 
   const numbers = findNumbers(current);
   const measure = numbers.find((item) => item.kind === 'measure');
-  const resulted = hasResult(current);
+  const kind = resultKind(current);
+  const resulted = kind === 'result';
   if (!resulted) {
     suggestions.push({
       type: 'missing-impact',
-      message: 'Nothing here says what happened because of the work.',
+      message:
+        kind === 'aim'
+          ? 'This says what the work was for. It does not say whether that happened.'
+          : kind === 'failed'
+            ? 'This says the work did not reach its goal. If something else came of it, say what.'
+            : 'Nothing here says what happened because of the work.',
       fix: resultQuestionFor(current),
       studentExample: pick(IMPACT_EXAMPLES.student, exampleSeed),
       workExample: pick(IMPACT_EXAMPLES.work, exampleSeed),
@@ -185,7 +190,9 @@ export function generateBulletSuggestions(
           : 'No number here. That is fine if you do not have a true one.',
       fix: bare
         ? `Add the word for what ${bare.text} counts, for example "${bare.text} orders a shift", or leave it out.`
-        : metricPromptFor(current),
+        : scope && !resulted
+          ? 'What changed for that group because of your work?'
+          : metricPromptFor(current),
       studentExample: pick(NUMBER_EXAMPLES.student, exampleSeed),
       workExample: pick(NUMBER_EXAMPLES.work, exampleSeed),
     });
@@ -214,7 +221,7 @@ export function generateBulletSuggestions(
   }
 
   if (readability.passiveVoiceCount > 0) {
-    const passiveFragment = current.match(PASSIVE_FRAGMENT_PATTERN)?.[0];
+    const passiveFragment = findPassivePhrases(current, !!opening && !opening.involvement)[0];
     suggestions.push({
       type: 'passive-voice',
       message: passiveFragment

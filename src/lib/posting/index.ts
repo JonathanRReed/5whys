@@ -4,7 +4,12 @@
  * counts, and vague-phrase questions. Pure functions, no network, no DOM.
  */
 
-export { type ConditionKind, type HiringCondition, hiringCondition } from './conditions';
+export {
+  type ConditionKind,
+  type HiringCondition,
+  hiringCondition,
+  splitConditions,
+} from './conditions';
 export {
   type CoverageRow,
   type CoverageState,
@@ -44,6 +49,7 @@ export {
 export { findNearMisses, type NearMiss, type NearMissOptions } from './near-miss';
 export {
   descriptionReason,
+  looksLikeNoise,
   type ParsedPosting,
   type ParseOptions,
   type PostingHeading,

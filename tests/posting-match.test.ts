@@ -38,7 +38,11 @@ describe('generic words are never requirements or matches', () => {
       resume
     );
     expect(evidence.terms).toEqual([]);
-    expect(evidence.excerpts).toEqual([]);
+    // Enrollment is shown by the degree still in progress, not by the words "currently enrolled".
+    expect(evidence.excerpts.flatMap((e) => e.matches)).toEqual([]);
+    expect(evidence.excerpts.map((e) => e.text)).toEqual([
+      'Ohio Valley University, B.S. in Economics, expected May 2028',
+    ]);
   });
 
   it('never produces them as a term from any fixture posting', () => {

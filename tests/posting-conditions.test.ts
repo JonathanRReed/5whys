@@ -5,7 +5,19 @@ describe('conditions of hiring', () => {
   it.each([
     ['We are unable to sponsor visas for this role', 'work-authorization'],
     ['Must be legally authorized to work in the United States', 'work-authorization'],
-    ['US citizenship required', 'work-authorization'],
+    ['US citizenship required', 'citizenship'],
+    ['U.S. citizenship required due to federal contract', 'citizenship'],
+    ['Must be a U.S. citizen or permanent resident', 'citizenship'],
+    ['Citizenship required', 'citizenship'],
+    ['Students on CPT/OPT welcome to apply', 'work-authorization'],
+    ['F-1 students eligible for CPT may apply', 'work-authorization'],
+    ['J-1 visa holders are not eligible', 'work-authorization'],
+    ['We do not sponsor H-1B', 'work-authorization'],
+    ['Must have a valid Social Security number', 'work-authorization'],
+    ['Must provide an SSN at hire', 'work-authorization'],
+    ['Must complete Form I-9 on your first day', 'work-authorization'],
+    ['Will you now or in the future require sponsorship?', 'work-authorization'],
+    ['Candidates must not require sponsorship now or in the future', 'work-authorization'],
     ['Ability to obtain a security clearance', 'security-clearance'],
     ['Native English speaker', 'native-speaker'],
     ['Native speaker of Spanish preferred', 'native-speaker'],
@@ -34,16 +46,55 @@ describe('conditions of hiring', () => {
     'Experience working with young children',
     'Tutored young adults in reading',
     'Conduct background checks for new hires',
+    'Knowledge of CPT and ICD-10 coding',
+    'Accurate CPT coding for outpatient visits',
+    'Opt in to the weekly schedule email',
+    'Volunteer with senior citizens at the community center',
+    'Plan events for corporate sponsors',
   ])('leaves "%s" as a qualification', (text) => {
     expect(hiringCondition(text)).toBeNull();
   });
 
   it('never tells the visitor what their own case is', () => {
-    for (const text of ['Unable to sponsor visas', 'Native English speaker', 'Must be 18+']) {
+    for (const text of [
+      'Unable to sponsor visas',
+      'Native English speaker',
+      'Must be 18+',
+      'US citizenship required',
+      'Students on CPT/OPT welcome to apply',
+    ]) {
       const note = hiringCondition(text)?.note ?? '';
-      expect(note).not.toMatch(/you (?:are|will be) (?:not )?(?:eligible|protected)|illegal/i);
+      expect(note).not.toMatch(
+        /you (?:are|will be) (?:not )?(?:eligible|protected)|illegal|your (?:visa|status) (?:allows|lets|permits)|you (?:can|cannot|may not) work (?:on|with|under)/i
+      );
       expect(note).not.toContain('—');
+      expect(note).not.toContain('!');
     }
+  });
+
+  it('gives citizenship its own note, not one about sponsoring a visa', () => {
+    const note = hiringCondition('US citizenship required')?.note ?? '';
+    expect(note).toMatch(/citizen/i);
+    expect(note).not.toMatch(/would need to sponsor/i);
+    expect(note).toMatch(/international student office/);
+  });
+
+  it('points students on a visa to the international student office', () => {
+    for (const text of ['Students on CPT/OPT welcome to apply', 'We do not sponsor H-1B']) {
+      expect(hiringCondition(text)?.note).toMatch(/international student office/);
+    }
+  });
+
+  it('splits conditions from requirements', async () => {
+    const { splitConditions } = await import('../src/lib/posting');
+    const items = [
+      { text: "Must be at least 18 and have a valid driver's license" },
+      { text: 'Experience with Excel' },
+      { text: 'Students on CPT/OPT welcome to apply' },
+    ];
+    const split = splitConditions(items);
+    expect(split.requirements.map((r) => r.text)).toEqual(['Experience with Excel']);
+    expect(split.conditions).toHaveLength(2);
   });
 });
 

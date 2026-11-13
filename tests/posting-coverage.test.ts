@@ -31,17 +31,14 @@ describe('summarizeCoverage', () => {
       ]),
       resume
     );
-    expect(summary.rows.map((r) => r.state)).toEqual([
-      'evidence',
-      'evidence',
-      'none',
-      'not-checkable',
-    ]);
+    // "Must be 18 years or older" is a condition of hiring: listed apart, not counted.
+    expect(summary.rows.map((r) => r.state)).toEqual(['evidence', 'evidence', 'none']);
+    expect(summary.conditions.map((r) => r.text)).toEqual(['Must be 18 years or older']);
     expect(summary).toMatchObject({
-      confirmedCount: 4,
+      confirmedCount: 3,
       withEvidenceCount: 2,
       withoutEvidenceCount: 1,
-      notCheckableCount: 1,
+      notCheckableCount: 0,
     });
     expect(summary.rows[2].excerpts).toEqual([]);
     expect(summary.rows[2].missingTerms.map((t) => t.key)).toEqual(['gis']);
@@ -63,6 +60,7 @@ describe('summarizeCoverage', () => {
   it('carries no score, weight, or percentage', () => {
     const summary = summarizeCoverage(confirmed(['Write SQL queries']), resume);
     expect(Object.keys(summary).sort()).toEqual([
+      'conditions',
       'confirmedCount',
       'notCheckableCount',
       'partialCount',
@@ -99,5 +97,27 @@ describe('describeCoverage', () => {
       '1 of 1 confirmed requirement has evidence in your resume.'
     );
     expect(describeCoverage(summarizeCoverage([], resume))).toBe('No confirmed requirements yet.');
+  });
+});
+
+describe('launch review: conditions of hiring are not requirements (student F2)', () => {
+  it('lists age, licence, citizenship, and visa lines apart and leaves them out of N of M', () => {
+    const summary = summarizeCoverage(
+      confirmed([
+        "Must be at least 18 and have a valid driver's license",
+        'U.S. citizenship required due to federal contract',
+        'Students on CPT/OPT welcome to apply',
+        'Experience with Excel, including pivot tables',
+      ]),
+      resume
+    );
+    expect(summary.rows.map((r) => r.requirement.text)).toEqual([
+      'Experience with Excel, including pivot tables',
+    ]);
+    expect(summary.conditions).toHaveLength(3);
+    expect(summary.confirmedCount).toBe(1);
+    expect(describeCoverage(summary)).toBe(
+      '1 of 1 confirmed requirement has evidence in your resume.'
+    );
   });
 });

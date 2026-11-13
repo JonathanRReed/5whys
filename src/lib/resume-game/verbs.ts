@@ -86,6 +86,17 @@ const IRREGULAR_PAST: Record<string, string> = {
   threw: 'throw',
   blew: 'blow',
   showed: 'show',
+  babysat: 'babysit',
+  sat: 'sit',
+  swam: 'swim',
+  sang: 'sing',
+  dug: 'dig',
+  hid: 'hide',
+  lit: 'light',
+  sped: 'speed',
+  sewed: 'sew',
+  sewn: 'sew',
+  mowed: 'mow',
 };
 
 // Regular past tenses that look like adjectives or names at the start of a
@@ -180,6 +191,19 @@ const NOT_BASE_VERBS = new Set([
 // Base forms of ordinary work verbs that have no past-tense entry above and
 // would not be derived from ACTION_VERBS (they are recognized as written).
 const EXTRA_BASE = [
+  // First jobs: babysitting, yard work, stores, games, and care.
+  'babysit',
+  'mow',
+  'shelve',
+  'bag',
+  'stack',
+  'rake',
+  'shovel',
+  'wash',
+  'mop',
+  'sweep',
+  'walk',
+  'play',
   'answer',
   'clean',
   'close',
@@ -243,7 +267,63 @@ function baseOfRegularPast(word: string): string[] {
   return forms;
 }
 
-const PAST_FORMS = new Set<string>([...ACTION_VERBS, ...Object.keys(IRREGULAR_PAST)]);
+// What people did at a first job, named outright so none of them depends on
+// the -ed rule below: "Babysat for neighbors on weekends" opens with an action.
+export const FIRST_JOB_VERBS = [
+  'babysat',
+  'played',
+  'coached',
+  'stocked',
+  'served',
+  'tutored',
+  'cashiered',
+  'cleaned',
+  'delivered',
+  'mowed',
+  'walked',
+  'cared',
+  'watched',
+  'bagged',
+  'shelved',
+  'greeted',
+  'raked',
+  'shoveled',
+  'washed',
+  'mopped',
+  'swept',
+  'fed',
+  'drove',
+  'sold',
+  'taught',
+  'folded',
+  'packed',
+  'sorted',
+  'lifeguarded',
+  'refereed',
+  'umpired',
+  'volunteered',
+  'helped',
+  'cooked',
+  'baked',
+  'prepped',
+  'hosted',
+  'bused',
+  'bussed',
+  'loaded',
+  'unloaded',
+  'counted',
+  'opened',
+  'closed',
+  'answered',
+  'translated',
+  'interpreted',
+] as const;
+
+const PAST_FORMS = new Set<string>([
+  ...ACTION_VERBS,
+  ...Object.keys(IRREGULAR_PAST),
+  ...FIRST_JOB_VERBS.filter((verb) => verb !== 'helped'),
+]);
 const BASE_FORMS = new Set<string>(EXTRA_BASE);
 for (const past of ACTION_VERBS) {
   // Only the stem the list itself implies; ambiguous forms are skipped.
@@ -361,6 +441,8 @@ const IRREGULAR_GERUND: Record<string, string> = {
   feeding: 'Fed',
   reading: 'Read',
   telling: 'Told',
+  babysitting: 'Babysat',
+  driving: 'Drove',
 };
 
 const NOT_GERUNDS =

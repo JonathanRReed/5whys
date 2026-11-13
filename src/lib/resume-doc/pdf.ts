@@ -1,6 +1,7 @@
 import type { TextItem } from 'pdfjs-dist/types/src/display/api';
 import { loadFeature } from '../lazy-feature';
 import { createPdfDataFactory } from '../resume-game/pdf-data';
+import { MAX_RESUME_TEXT, ResumeLimitError } from './limits';
 import { recomputeDoc } from './model';
 import { normalizePdfLines } from './pdf-lines';
 import type { BoundingBox, ResumeDoc, ResumeLine, ResumePage, ResumeTextItem } from './types';
@@ -36,7 +37,7 @@ export async function extractPdf(file: File): Promise<ResumeDoc> {
     const extract = async () => {
       const pdf = await loading.promise;
       if (pdf.numPages > 50)
-        throw new Error(
+        throw new ResumeLimitError(
           'This PDF has more than 50 pages. Upload only your resume pages or paste the text.'
         );
       const lines: ResumeLine[] = [];
@@ -71,8 +72,8 @@ export async function extractPdf(file: File): Promise<ResumeDoc> {
             if (!('str' in entry)) continue;
             const item: TextItem = entry;
             length += item.str.length;
-            if (length > 200_000)
-              throw new Error(
+            if (length > MAX_RESUME_TEXT)
+              throw new ResumeLimitError(
                 'This PDF contains too much text. Upload only your resume pages or paste the text.'
               );
             const transform = pdfjs.Util.transform(viewport.transform, item.transform);

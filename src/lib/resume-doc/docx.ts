@@ -1,5 +1,6 @@
 import type JSZip from 'jszip';
 import { loadFeature } from '../lazy-feature';
+import { MAX_RESUME_TEXT, ResumeLimitError } from './limits';
 import { recomputeDoc } from './model';
 import type { LineOrigin, ResumeDoc, ResumeLine } from './types';
 
@@ -28,7 +29,7 @@ function checkZip(bytes: Uint8Array): void {
   let offset = view.getUint32(end + 16, true);
   const centralSize = view.getUint32(end + 12, true);
   if (count > MAX_ENTRIES || count !== view.getUint16(end + 8, true))
-    throw new Error('This DOCX has too many ZIP entries.');
+    throw new ResumeLimitError('This DOCX has too many ZIP entries.');
   if (offset + centralSize !== end) throw new Error('This DOCX has an invalid ZIP directory.');
   let expanded = 0;
   const names = new Set<string>();
@@ -60,7 +61,7 @@ function checkZip(bytes: Uint8Array): void {
       throw new Error('This DOCX has an invalid ZIP path.');
     names.add(name);
     expanded += size;
-    if (expanded > MAX_EXPANDED) throw new Error('This DOCX expands to too much data.');
+    if (expanded > MAX_EXPANDED) throw new ResumeLimitError('This DOCX expands to too much data.');
     offset = next;
   }
   if (offset !== end) throw new Error('This DOCX has an invalid ZIP directory.');
@@ -86,7 +87,7 @@ async function readBounded(entry: JSZip.JSZipObject, remaining: number): Promise
       if (size > remaining) {
         stopped = true;
         stream.pause();
-        reject(new Error('This DOCX expands to too much data.'));
+        reject(new ResumeLimitError('This DOCX expands to too much data.'));
       } else chunks.push(chunk);
     });
     stream.on('error', reject);
@@ -137,17 +138,101 @@ function parseXml(xml: string): XMLDocument {
     throw new Error('This DOCX contains invalid XML.');
   return parsed;
 }
-function paragraphText(element: Element): string {
-  if (isWord(element, 'txbxContent') || isWord(element, 'del')) return '';
+/** Revision content that is no longer part of the document: deleted, or moved elsewhere. */
+function isRemoved(element: Element): boolean {
+  return isWord(element, 'del') || isWord(element, 'moveFrom');
+}
+/** Hyperlink relationship ids and the address each one opens, for one XML part. */
+type Links = ReadonlyMap<string, string>;
+const RELATIONSHIP_NAMESPACES = new Set([
+  'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
+  'http://purl.oclc.org/ooxml/officeDocument/relationships',
+]);
+/** Comparable form of an address: no scheme, no "www.", no trailing slash. */
+function bareAddress(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/^(?:https?:\/\/|mailto:)/, '')
+    .replace(/^www\./, '')
+    .replace(/[/?#]+$/, '');
+}
+/**
+ * The address a visitor would want to keep from a hyperlink's target: web
+ * links as written, email links without "mailto:". Anything else (a file
+ * path, a script) is not shown.
+ */
+function visibleAddress(target: string): string | null {
+  const value = target.trim();
+  if (/^https?:\/\/[^\s<>"]+$/i.test(value)) return value;
+  const email = value.match(/^mailto:([^?\s<>"]+@[^?\s<>"]+)/i)?.[1];
+  return email ? decodeURIComponent(email) : null;
+}
+function paragraphText(element: Element, links: Links): string {
+  if (isWord(element, 'txbxContent') || isRemoved(element)) return '';
   if (isWord(element, 't')) return element.textContent ?? '';
   if (isWord(element, 'tab')) return '\t';
   if (isWord(element, 'br') || isWord(element, 'cr')) return '\n';
   if (isWord(element, 'noBreakHyphen')) return '-';
-  return effectiveChildren(element).map(paragraphText).join('');
+  const text = effectiveChildren(element)
+    .map((child) => paragraphText(child, links))
+    .join('');
+  if (isWord(element, 'hyperlink')) {
+    // The clean copy is plain text, so a label like "Portfolio" would lose
+    // where it pointed. Keep the address beside the label instead.
+    const id = Array.from(element.attributes).find(
+      (attribute) =>
+        attribute.localName === 'id' && RELATIONSHIP_NAMESPACES.has(attribute.namespaceURI ?? '')
+    )?.value;
+    const address = id ? links.get(id) : undefined;
+    if (address && text.trim() && !bareAddress(text).includes(bareAddress(address)))
+      return `${text} (${address})`;
+  }
+  return text;
+}
+/** The external hyperlinks declared in a part's relationships file. */
+async function readLinks(
+  zip: JSZip,
+  part: string,
+  read: (entry: JSZip.JSZipObject) => Promise<Uint8Array>
+): Promise<Links> {
+  const slash = part.lastIndexOf('/');
+  const entry = zip.file(`${part.slice(0, slash)}/_rels/${part.slice(slash + 1)}.rels`);
+  const links = new Map<string, string>();
+  if (!entry) return links;
+  let root: Element;
+  try {
+    root = parseXml(new TextDecoder().decode(await read(entry))).documentElement;
+  } catch (error) {
+    if (error instanceof ResumeLimitError) throw error;
+    // Unreadable relationships: the labels are still read, without addresses.
+    return links;
+  }
+  for (const relationship of Array.from(root.children)) {
+    if (relationship.localName !== 'Relationship') continue;
+    if (!/\/hyperlink$/.test(relationship.getAttribute('Type') ?? '')) continue;
+    if (relationship.getAttribute('TargetMode') !== 'External') continue;
+    const id = relationship.getAttribute('Id');
+    const address = visibleAddress(relationship.getAttribute('Target') ?? '');
+    if (id && address) links.set(id, address);
+  }
+  return links;
+}
+
+/**
+ * The main document part of a DOCX as text, with the same ZIP and expansion
+ * limits as the structured reader. For the plain fallback reader.
+ */
+export async function readDocxDocumentXml(bytes: Uint8Array): Promise<string | null> {
+  if (bytes.length > 5 * 1024 * 1024) throw new ResumeLimitError('This DOCX file is too large.');
+  checkZip(bytes);
+  const { default: Zip } = await loadFeature(import('jszip'));
+  const zip = await Zip.loadAsync(bytes);
+  const entry = zip.file('word/document.xml');
+  return entry ? new TextDecoder().decode(await readBounded(entry, MAX_EXPANDED)) : null;
 }
 
 export async function extractDocx(bytes: Uint8Array, name = 'resume.docx'): Promise<ResumeDoc> {
-  if (bytes.length > 5 * 1024 * 1024) throw new Error('This DOCX file is too large.');
+  if (bytes.length > 5 * 1024 * 1024) throw new ResumeLimitError('This DOCX file is too large.');
   checkZip(bytes);
   const { default: Zip } = await loadFeature(import('jszip'));
   const zip = await Zip.loadAsync(bytes);
@@ -201,6 +286,7 @@ export async function extractDocx(bytes: Uint8Array, name = 'resume.docx'): Prom
       // Unreadable styles: paragraphs with their own numbering are still found.
     }
   }
+  let links: Links = new Map();
   const append = (paragraph: Element, origin: LineOrigin, index: number) => {
     const styleId = attr(descendants(paragraph, 'pStyle')[0], 'val');
     const bullet =
@@ -211,7 +297,7 @@ export async function extractDocx(bytes: Uint8Array, name = 'resume.docx'): Prom
     // Shift+Enter inside a list item is still one bullet: later segments
     // continue the first instead of becoming bullets of their own.
     let first: string | null = null;
-    paragraphText(paragraph)
+    paragraphText(paragraph, links)
       .split('\n')
       .forEach((text, segment) => {
         if (!text.trim()) return;
@@ -219,7 +305,8 @@ export async function extractDocx(bytes: Uint8Array, name = 'resume.docx'): Prom
         const continues = bullet && first !== null ? first : undefined;
         first ??= id;
         textLength += text.length;
-        if (textLength > 200_000) throw new Error('This DOCX contains too much text.');
+        if (textLength > MAX_RESUME_TEXT)
+          throw new ResumeLimitError('This DOCX contains too much text.');
         lines.push({
           id,
           text: text.trimEnd(),
@@ -250,6 +337,11 @@ export async function extractDocx(bytes: Uint8Array, name = 'resume.docx'): Prom
           ? 'utf-16be'
           : 'utf-8';
     const xml = parseXml(new TextDecoder(encoding).decode(data));
+    links = await readLinks(zip, entry.name, async (rels) => {
+      const bytes = await readBounded(rels, MAX_EXPANDED - expanded);
+      expanded += bytes.length;
+      return bytes;
+    });
     const root = xml.documentElement;
     const kind =
       entry.name === 'word/document.xml'
@@ -269,11 +361,14 @@ export async function extractDocx(bytes: Uint8Array, name = 'resume.docx'): Prom
           // Nested boxes are visited by their containing box.
           let parent = box.parentElement;
           let nested = false;
+          let removed = false;
           while (parent && parent !== element) {
             if (isWord(parent, 'txbxContent')) nested = true;
+            // A box inside a tracked deletion or move is no longer in the document.
+            if (isRemoved(parent)) removed = true;
             parent = parent.parentElement;
           }
-          if (!nested) walk(box, { kind: 'text-box', part: entry.name });
+          if (!nested && !removed) walk(box, { kind: 'text-box', part: entry.name });
         }
         return;
       }
@@ -301,7 +396,7 @@ export async function extractDocx(bytes: Uint8Array, name = 'resume.docx'): Prom
           });
         return;
       }
-      if (isWord(element, 'del')) return;
+      if (isRemoved(element)) return;
       for (const child of effectiveChildren(element)) walk(child, origin);
     };
     walk(root, { kind, part: entry.name });
