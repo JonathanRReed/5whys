@@ -6,12 +6,16 @@ Built and maintained by Jonathan R. Reed, whose canonical site is <https://jonat
 
 ## Pages
 
-- [Homepage](https://5whys.jonathanrreed.com/): What the studio is and which tool to open first.
-- [Start](https://5whys.jonathanrreed.com/start/): The 5 Whys exercise itself, for getting past the surface answer.
-- [Resume game](https://5whys.jonathanrreed.com/resume-game/): Rewrite resume bullets until they say something specific.
-- [Networking practice](https://5whys.jonathanrreed.com/networking-practice/): Practice the conversation before it matters.
-- [Interview Glow Up](https://5whys.jonathanrreed.com/interview-glow-up/): Build interview stories from real experience.
-- [Career](https://5whys.jonathanrreed.com/career/): The longer path through the tools.
+- [Homepage](https://5whys.jonathanrreed.com/): What the studio is, and a way in for each situation a visitor arrives with.
+- [Career review](https://5whys.jonathanrreed.com/start/): Two questions that suggest which tool to begin with.
+- [The Five Whys](https://5whys.jonathanrreed.com/career/): Ask why five times to get past the surface answer to a career question.
+- [The Resume Game](https://5whys.jonathanrreed.com/resume-game/): Score and rewrite resume lines, see an uploaded resume the way a parser reads it, and match it to a posting.
+- [Networking Practice](https://5whys.jonathanrreed.com/networking-practice/): Draft, time and review a short introduction.
+- [Interview Glow Up](https://5whys.jonathanrreed.com/interview-glow-up/): How to build interview stories from real experience.
+- [Interview workspace](https://5whys.jonathanrreed.com/interview-glow-up/workspace/): Decode a posting into skills, write stories, and pack them for the interview.
+- [Rehearsal Room](https://5whys.jonathanrreed.com/interview-glow-up/rehearse/): Answer likely questions in writing or out loud and review the answer.
+- [The Application Desk](https://5whys.jonathanrreed.com/application/): Take one posting from decoding to a tailored resume and a letter.
+- [Pay](https://5whys.jonathanrreed.com/pay/): Put an offer into plain hourly, weekly and yearly terms.
 - [Dashboard](https://5whys.jonathanrreed.com/dashboard/): Your saved work, kept in the browser.
 - [About](https://5whys.jonathanrreed.com/about/): Why it exists and how it handles what you type.
 - [Privacy](https://5whys.jonathanrreed.com/privacy/): What stays local and what does not.

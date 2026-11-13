@@ -29,6 +29,10 @@ export async function nightColor() {
 /** Canonical shell URL. Asset selection is driven by references, not directories. */
 export function precachePath(path) {
   if (path === 'models' || path.startsWith('models/')) return null;
+  // The host answers /404.html with a redirect to /404, and a redirect makes
+  // the whole install fail. The not-found page is not part of the offline
+  // shell: a path that is not cached has nothing to show offline anyway.
+  if (path === '404.html') return null;
   return `/${path.replace(/(^|\/)index\.html$/, '$1')}`;
 }
 

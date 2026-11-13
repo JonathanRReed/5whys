@@ -43,7 +43,6 @@ test('precache follows HTML, static imports, default Latin fonts and install ico
     '/_astro/react.hash1234.js',
     '/_astro/shared.hash1234.js',
     '/_astro/style.hash1234.css',
-    '/404.html',
     '/career/',
     '/favicon.ico',
     '/icons/maskable-512.png',
@@ -55,6 +54,8 @@ test('precache follows HTML, static imports, default Latin fonts and install ico
     true
   );
   expect(precachePath('models/index.html')).toBeNull();
+  // The host redirects /404.html, and one redirect fails the whole install.
+  expect(precachePath('404.html')).toBeNull();
 });
 
 test('precache version is deterministic and binds file contents, paths, and worker behavior', () => {
