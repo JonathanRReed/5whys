@@ -23,6 +23,7 @@ import {
   EMPTY_SIGNAL_REPORT,
   exportDocx,
   FIRST_JOB_SAMPLE_RESUME,
+  MAX_RESUME_FILE_MB,
   PROFESSIONAL_PLACEHOLDER,
   PROFESSIONAL_SAMPLE_RESUME,
   REVIEW_FILE_BASE,
@@ -46,6 +47,7 @@ import ReviewLines from './resume-game/ReviewLines';
 import ScanResults from './resume-game/ScanResults';
 import Scoreboard from './resume-game/Scoreboard';
 import ShareScoreCard from './resume-game/ShareScoreCard';
+import type { WordingHint } from './resume-game/WordingHelp';
 import Announcer, { useAnnouncer } from './shared/Announcer';
 
 // Analysis is synchronous and instant. This brief transition only exists so
@@ -60,8 +62,12 @@ const STUDENT_SAMPLES = [
 
 const scoredStatus = (count: number) =>
   count === 0
-    ? 'No achievement lines found. Add bullets that start with what you did.'
-    : `Scored ${count === 1 ? '1 bullet' : `${count} bullets`}. Pick one below to rewrite it.`;
+    ? 'No lines to score were found. Add lines that start with what you did.'
+    : `Scored ${count === 1 ? '1 line' : `${count} lines`}. Pick one below to rewrite it.`;
+
+const SAMPLE_TEXTS = [STUDENT_SAMPLE_RESUME, FIRST_JOB_SAMPLE_RESUME, PROFESSIONAL_SAMPLE_RESUME];
+/** True when the box holds one of the samples exactly as loaded. */
+const isSampleText = (text: string) => SAMPLE_TEXTS.some((sample) => sample.trim() === text.trim());
 
 type ResumeGameProps = {
   showHeader?: boolean;
@@ -77,11 +83,15 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
   const [status, setStatus] = React.useState<string | null>(null);
   // Student examples until the visitor's saved profile says otherwise.
   const [register, setRegister] = React.useState<Register>('student');
+  // High school examples in the start-from-nothing form for a first job.
+  const [firstJob, setFirstJob] = React.useState(false);
   const scanTimeoutRef = React.useRef<number | null>(null);
   const deepLinkHandled = React.useRef(false);
 
   React.useEffect(() => {
-    setRegister(registerForStage(readProfile()?.stage));
+    const profile = readProfile();
+    setRegister(registerForStage(profile?.stage));
+    setFirstJob(profile?.firstJob === true);
   }, []);
 
   const setSessionState = React.useCallback(
@@ -154,6 +164,11 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     const wanted = new URLSearchParams(window.location.search).get('bullet');
     if (!wanted) return;
     deepLinkHandled.current = true;
+    // The link has done its job. Left in the address, a reload would pick
+    // this line again over the one the visitor chose since.
+    const url = new URL(window.location.href);
+    url.searchParams.delete('bullet');
+    window.history.replaceState(window.history.state, '', url);
     if (!bullets.some((bullet) => bullet.id === wanted)) return;
     setSelectedBulletId(wanted);
     window.requestAnimationFrame(() => {
@@ -223,15 +238,40 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     };
   }, []);
 
+  // Set when the structured copy on screen is not the one saved on this
+  // device: a refused write, a full disk, a blocked database. The copy stays
+  // on the page; nothing claims it was kept.
+  const [docSaveError, setDocSaveError] = React.useState<string | null>(null);
+  // Each save is numbered, so an older one that finishes late cannot clear
+  // the warning for a newer one that failed.
+  const docSaveSequence = React.useRef(0);
   const keepResumeDoc = React.useCallback((doc: ResumeDoc | null) => {
     setResumeDoc(doc);
+    const sequence = ++docSaveSequence.current;
     void loadFeature(import('../lib/local-db'))
       .then(async ({ saveResumeDoc, deleteResumeDoc }) => {
-        if (doc) await saveResumeDoc(doc);
-        else await deleteResumeDoc();
+        const result = doc ? await saveResumeDoc(doc) : await deleteResumeDoc();
+        if (sequence !== docSaveSequence.current) return;
+        // With no storage at all, nothing was saved before either, so a
+        // removal that cannot run leaves nothing behind to come back.
+        const harmless = !doc && !result.ok && result.reason === 'unavailable';
+        setDocSaveError(result.ok || harmless ? null : result.message);
       })
-      .catch(reportFeatureFailure);
+      .catch((error: unknown) => {
+        if (sequence === docSaveSequence.current) {
+          setDocSaveError('This browser would not open its storage.');
+        }
+        reportFeatureFailure(error);
+      });
   }, []);
+
+  // "Try a sample" replaces what is in the box. What was there is kept here,
+  // on this page, so one tap puts it back.
+  const [beforeSample, setBeforeSample] = React.useState<{
+    session: StoredResumeSession;
+    doc: ResumeDoc | null;
+    scanComplete: boolean;
+  } | null>(null);
 
   React.useEffect(
     () => () => {
@@ -251,9 +291,9 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     const sequence = ++uploadSequence.current;
     setFileError(null);
     setStatus(null);
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > MAX_RESUME_FILE_MB * 1024 * 1024) {
       setIsLoadingFile(false);
-      setFileError('File too large. Maximum size is 5MB.');
+      setFileError(`File too large. Maximum size is ${MAX_RESUME_FILE_MB} MB.`);
       return;
     }
     setIsLoadingFile(true);
@@ -401,6 +441,34 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     await exportDocx(`${reviewName()}.docx`, reviewText());
   }, [reviewName, reviewText]);
 
+  // Other words for one line, from the posting match. Shown beside the line
+  // in the editor; the visitor writes them in, or does not.
+  const [wording, setWording] = React.useState<(WordingHint & { bulletId: string }) | null>(null);
+  const openWithWording = (hint: WordingHint) => {
+    const plain = (text: string) =>
+      text
+        .replace(/^[-•*]\s*/, '')
+        .replace(/[.\s]+$/, '')
+        .replace(/\s+/g, ' ')
+        .toLowerCase();
+    const wanted = plain(hint.line);
+    const bullet = bullets.find(
+      (item) => plain(item.original) === wanted || plain(item.improved) === wanted
+    );
+    if (!bullet || !scanComplete || needsRescan) {
+      setStatus('Analyze the resume first, then this line opens in the editor.');
+      return;
+    }
+    setSelectedBulletId(bullet.id);
+    setWording({ ...hint, bulletId: bullet.id });
+    window.requestAnimationFrame(() => {
+      document
+        .getElementById('bullet-editor')
+        ?.scrollIntoView?.({ behavior: scrollBehavior(), block: 'start' });
+      document.getElementById('wording-hint')?.focus({ preventScroll: true });
+    });
+  };
+
   const resumeOutOfDate = needsRescan && scanComplete && resumeText.trim().length > 0;
   const sampleResume = register === 'student' ? STUDENT_SAMPLE_RESUME : PROFESSIONAL_SAMPLE_RESUME;
   const placeholder = register === 'student' ? STUDENT_PLACEHOLDER : PROFESSIONAL_PLACEHOLDER;
@@ -428,6 +496,7 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
           currentText={resumeText}
           announce={announceBuilder}
           focusOnOpen={builderFocus}
+          schoolExample={firstJob ? 'highSchool' : 'college'}
         />
       )}
 
@@ -453,31 +522,58 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
         onLoadSample={(id) => {
           cancelScan();
           cancelUpload();
-          setResumeTextValue(id === 'first-job' ? FIRST_JOB_SAMPLE_RESUME : sampleResume);
+          const sample = id === 'first-job' ? FIRST_JOB_SAMPLE_RESUME : sampleResume;
+          // Keep the visitor's own resume, not a sample tried a moment ago.
+          const own = session.resumeText.trim() && !isSampleText(session.resumeText);
+          if (own) setBeforeSample({ session, doc: resumeDoc, scanComplete });
+          setResumeTextValue(sample);
           keepResumeDoc(null);
           setStatus('Sample resume loaded. Run the analysis to see suggestions.');
         }}
+        replacesOwn={Boolean(resumeText.trim()) && !isSampleText(resumeText)}
+        undoSample={
+          beforeSample && isSampleText(resumeText)
+            ? () => {
+                cancelScan();
+                // The start-from-nothing form keeps what was typed since.
+                setSessionState((previous) => ({ ...beforeSample.session, draft: previous.draft }));
+                setScanComplete(beforeSample.scanComplete);
+                if (beforeSample.doc) keepResumeDoc(beforeSample.doc);
+                setBeforeSample(null);
+                setStatus('Your resume is back in the box.');
+              }
+            : undefined
+        }
         onClear={() => {
           cancelScan();
           cancelUpload();
           // The start-from-nothing form has its own Start over.
           setSessionState((previous) => ({ ...EMPTY_SESSION, draft: previous.draft }));
           setScanComplete(false);
+          setBeforeSample(null);
           keepResumeDoc(null);
           setStatus('Workspace cleared. Paste a fresh resume to begin.');
         }}
       />
 
+      {docSaveError && !resumeDoc && (
+        <p className="text-sm text-gold" role="alert">
+          The change to the structured copy was not saved on this device. {docSaveError}
+        </p>
+      )}
+
       {resumeDoc && (
         <MachineView
           doc={resumeDoc}
           onChange={keepResumeDoc}
+          saveError={docSaveError}
+          onRetrySave={() => keepResumeDoc(resumeDoc)}
           rewrites={rewrites}
           text={resumeText}
         />
       )}
 
-      <PostingMatch resumeText={matchText} />
+      <PostingMatch resumeText={matchText} onRewriteLine={openWithWording} />
 
       {!scanComplete && resumeText.trim() && (
         <div className="rounded-2xl border border-dashed border-border/35 bg-overlay/15 p-8 text-center">
@@ -546,6 +642,7 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
             index={bullets.findIndex((b) => b.id === selectedBulletId)}
             register={register}
             onFieldChange={updateBulletField}
+            wording={wording && wording.bulletId === selectedBulletId ? wording : null}
           />
         </div>
       )}

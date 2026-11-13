@@ -1,0 +1,263 @@
+import { describe, expect, it } from 'vitest';
+import { sortApplications } from '../src/lib/applications';
+import { findRequirementEvidence } from '../src/lib/posting';
+import { detectResumeStructure } from '../src/lib/resume-game';
+import { extractSkills } from '../src/lib/resume-game/skills';
+import { isCareerBreak } from '../src/lib/resume-game/structure';
+
+const today = new Date('2026-11-13T12:00:00');
+
+describe('a title line is told apart from an action clause', () => {
+  it('scores work whose first clause ends in a title word', () => {
+    for (const line of [
+      'Supported manager, organized files and answered calls',
+      'Assisted lead developer, reviewing code and writing tests',
+    ]) {
+      expect(detectResumeStructure(`Experience\n${line}`).bullets, line).toHaveLength(1);
+    }
+  });
+
+  it('still reads a title and a place as a title', () => {
+    const { bullets } = detectResumeStructure(
+      [
+        'Experience',
+        'Research Assistant, Department of Economics',
+        'Certified Nursing Assistant, Mercy Hospital',
+        '- Recorded vitals for patients on a 20 bed ward',
+      ].join('\n')
+    );
+    expect(bullets).toHaveLength(1);
+  });
+});
+
+describe('caring for people as a job is work, not a career break', () => {
+  it('scores childcare and patient care', () => {
+    for (const line of [
+      'Cared for 12 children at summer camp, keeping everyone safe',
+      'Caregiver for 3 elderly residents at Sunrise home',
+      'Cared for children in the toddlers classroom every weekday',
+    ]) {
+      expect(isCareerBreak(line), line).toBe(false);
+      expect(detectResumeStructure(`Experience\n- ${line}`).bullets, line).toHaveLength(1);
+    }
+  });
+
+  it('still reads a break as a break', () => {
+    for (const line of [
+      'Full-time caregiver for a parent after surgery',
+      'Cared for my two children while they were small',
+      'Career break to relocate',
+    ]) {
+      expect(isCareerBreak(line), line).toBe(true);
+    }
+  });
+});
+
+describe('customer service is a skill unless it names another team', () => {
+  it('keeps it when the visitor did it or listed it', () => {
+    for (const text of [
+      'Provided sales and customer service at the front counter',
+      'Skills: Communication and customer service',
+    ]) {
+      expect(extractSkills(text).soft, text).toContain('customer service');
+    }
+  });
+
+  it('leaves it out when it is a department worked with', () => {
+    for (const text of [
+      'Worked closely with drivers and customer service to fix late orders',
+      'Passed returns to the customer service desk',
+    ]) {
+      expect(extractSkills(text).soft, text).not.toContain('customer service');
+    }
+  });
+});
+
+describe('years of management need a title that says so', () => {
+  const requirement = 'At least 2 years of retail management experience';
+  it('does not count a cashier job', () => {
+    const resume = `Sam Rivera\n\nEXPERIENCE\n\nCashier, Valley Fresh Market | Jan 2021 - Jan 2024\n- Ran a register on weekends`;
+    expect(findRequirementEvidence(requirement, resume, { today }).state).not.toBe('evidence');
+  });
+
+  it('does not read management from a cashier title when no years are asked', () => {
+    const resume = `Sam Rivera\n\nEXPERIENCE\n\nCashier, Valley Fresh Market | Jan 2021 - Jan 2024\n- Ran a register on weekends`;
+    expect(
+      findRequirementEvidence('Retail management experience', resume, { today }).state
+    ).not.toBe('evidence');
+    // The field alone is still read from the title.
+    expect(findRequirementEvidence('Experience in retail', resume, { today }).state).toBe(
+      'evidence'
+    );
+  });
+
+  it('counts a store manager job', () => {
+    const resume = `Renee Park\n\nEXPERIENCE\n\nStore Manager, Brightline Home Goods | March 2018 - February 2026\n- Managed a team of 22 associates`;
+    expect(findRequirementEvidence(requirement, resume, { today }).state).toBe('evidence');
+  });
+});
+
+describe('an offer in hand is never sorted behind drafts', () => {
+  it('keeps a sent application with an offer in the group that needs attention', () => {
+    const order = sortApplications(
+      [
+        { id: 'draft-a', daysUntil: null, updatedAt: 3, sentOn: null },
+        { id: 'draft-b', daysUntil: null, updatedAt: 2, sentOn: null },
+        { id: 'offer', daysUntil: 0, updatedAt: 1, sentOn: '2026-11-01', offerReceived: true },
+        { id: 'sent', daysUntil: null, updatedAt: 4, sentOn: '2026-11-02' },
+      ],
+      null
+    ).map((app) => app.id);
+    expect(order[0]).toBe('offer');
+    expect(order[order.length - 1]).toBe('sent');
+  });
+});
+
+describe("a posting's pay is the applicant's, not money the job handles", () => {
+  it('passes over business spending to the salary line', async () => {
+    const { readPostingPay } = await import('../src/lib/pay/posting-pay');
+    const pay = readPostingPay(
+      'Manage $200,000 per year in marketing spend.\nSalary: $44,000 per year'
+    );
+    expect(pay?.basePay).toBe(44000);
+    expect(pay?.payPeriod).toBe('year');
+    expect(pay?.quotes).toEqual(['Salary: $44,000 per year']);
+  });
+
+  it('reads nothing when only business money is written', async () => {
+    const { readPostingPay } = await import('../src/lib/pay/posting-pay');
+    expect(readPostingPay('Own a budget of $30,000 per month for events.')).toBeNull();
+    expect(readPostingPay('$15.00/hr | 15-25 hrs/week')?.basePay).toBe(15);
+  });
+});
+
+describe('a front desk is not hospitality on its own', () => {
+  const clinic = `Ana Cruz\n\nEXPERIENCE\n\nFront Desk Receptionist, Valley Dental Clinic | Jan 2021 - Jan 2024\n- Checked patients in and booked visits`;
+  const hotel = `Ana Cruz\n\nEXPERIENCE\n\nFront Desk Agent, Lakeside Hotel | Jan 2021 - Jan 2024\n- Checked guests in and out`;
+  it('does not credit a dental clinic job', () => {
+    for (const ask of ['Hospitality experience', 'At least 2 years of hospitality experience']) {
+      expect(findRequirementEvidence(ask, clinic, { today }).state, ask).not.toBe('evidence');
+    }
+  });
+  it('credits a hotel job', () => {
+    expect(findRequirementEvidence('Hospitality experience', hotel, { today }).state).toBe(
+      'evidence'
+    );
+  });
+});
+
+describe("a bonus is not a posting's base pay", () => {
+  it('passes over a bonus or an allowance to the base salary', async () => {
+    const { readPostingPay } = await import('../src/lib/pay/posting-pay');
+    for (const text of [
+      'Annual bonus: $5,000 per year\nBase salary: $44,000 per year',
+      'Annual bonus: $5,000 per year, base salary $44,000 per year',
+      '$5,000 yearly bonus\nSalary: $44,000 per year',
+      'Housing allowance of $500 per month.\nPay rate: $44,000 per year',
+    ]) {
+      expect(readPostingPay(text)?.basePay, text).toBe(44000);
+    }
+  });
+
+  it('still reads base pay written before a bonus, an hourly wage, and a stipend', async () => {
+    const { readPostingPay } = await import('../src/lib/pay/posting-pay');
+    expect(readPostingPay('Base salary $44,000 per year plus $5,000 annual bonus')?.basePay).toBe(
+      44000
+    );
+    expect(readPostingPay('$15.00/hr | 15-25 hrs/week')?.basePay).toBe(15);
+    expect(readPostingPay('Stipend: $600 per week')?.basePay).toBe(600);
+  });
+
+  it('reads no base pay when only a bonus is stated', async () => {
+    const { readPostingPay } = await import('../src/lib/pay/posting-pay');
+    expect(readPostingPay('Signing bonus: $2,000 per year of service')?.basePay ?? null).toBeNull();
+  });
+});
+
+describe('a path id is an own entry', () => {
+  it('rejects names every object inherits', async () => {
+    const { isPathId, PATH_STORAGE_KEY, loadPath } = await import('../src/lib/path');
+    for (const name of ['__proto__', 'constructor', 'toString', 'hasOwnProperty']) {
+      expect(isPathId(name), name).toBe(false);
+    }
+    expect(isPathId('offer')).toBe(true);
+    localStorage.setItem(PATH_STORAGE_KEY, JSON.stringify({ id: 'constructor' }));
+    expect(loadPath()).toBeNull();
+    localStorage.clear();
+  });
+});
+
+describe('a refusal to sponsor is read from its own clause', () => {
+  it('does not read a refusal into a posting that offers sponsorship', async () => {
+    const { hiringCondition } = await import('../src/lib/posting');
+    for (const line of [
+      'No prior experience required; visa sponsorship is available.',
+      'We do not require a degree and visa sponsorship is available.',
+      'Not sure you qualify? Apply anyway. We sponsor work visas.',
+    ]) {
+      expect(hiringCondition(line)?.noSponsorship ?? false, line).toBe(false);
+    }
+  });
+
+  it('still reads the ways a posting says it will not sponsor', async () => {
+    const { hiringCondition } = await import('../src/lib/posting');
+    for (const line of [
+      'We are unable to sponsor or take over sponsorship of an employment visa at this time.',
+      'We do not sponsor visas.',
+      'We cannot offer visa sponsorship for this role.',
+      'No visa sponsorship.',
+      'Must be authorized to work in the United States without sponsorship.',
+      'Candidates must not require sponsorship now or in the future.',
+      'Sponsorship is not available.',
+      'This role is not eligible for visa sponsorship.',
+    ]) {
+      expect(hiringCondition(line)?.noSponsorship, line).toBe(true);
+    }
+  });
+});
+
+describe('two dated jobs are two roles, even when the first has no bullets', () => {
+  it('keeps them apart so a bullet can be placed under either', async () => {
+    const { fromText } = await import('../src/lib/resume-doc');
+    const { resumeRoles } = await import('../src/lib/resume-doc/tailor');
+    const roles = resumeRoles(
+      fromText(
+        [
+          'Sam Rivera',
+          'sam@example.edu',
+          '',
+          'Experience',
+          'Manager, Alpha Store | Jan 2023 - Present',
+          'Cashier, Beta Shop | Jan 2021 - Dec 2022',
+          '- Ran a register on weekends',
+        ].join('\n')
+      )
+    );
+    expect(roles.map((role) => role.label)).toEqual([
+      'Manager, Alpha Store | Jan 2023 - Present',
+      'Cashier, Beta Shop | Jan 2021 - Dec 2022',
+    ]);
+    expect(roles[0].bulletIds).toHaveLength(0);
+    expect(roles[1].bulletIds).toHaveLength(1);
+  });
+
+  it('still joins the two lines of one heading', async () => {
+    const { fromText } = await import('../src/lib/resume-doc');
+    const { resumeRoles } = await import('../src/lib/resume-doc/tailor');
+    const roles = resumeRoles(
+      fromText(
+        [
+          'Sam Rivera',
+          'sam@example.edu',
+          '',
+          'Experience',
+          'Alpha Store, Dayton, OH',
+          'Store Manager, Jan 2023 - Present',
+          '- Managed a team of 22 associates',
+        ].join('\n')
+      )
+    );
+    expect(roles).toHaveLength(1);
+    expect(roles[0].bulletIds).toHaveLength(1);
+  });
+});

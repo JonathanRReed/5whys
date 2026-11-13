@@ -16,6 +16,14 @@ import {
   stepBackIndex,
 } from '../../lib/guide';
 import { GUIDES } from '../../lib/guides';
+import {
+  type CareerPath,
+  isPathId,
+  loadPath,
+  pathProgress,
+  startPath,
+  stopPosition,
+} from '../../lib/path';
 import { cn, scrollBehavior } from '../../lib/utils';
 
 const WATCH_MS = 500;
@@ -24,7 +32,7 @@ const TARGET_ATTR = 'data-guide-active';
  * Screens where an open coach would sit on top of the thing it describes:
  * phones, tablets, and short laptops such as a 1366 by 768 Chromebook.
  */
-const COMPACT_QUERY = '(max-width: 1279px), (max-height: 820px)';
+const COMPACT_QUERY = '(max-width: 1279px), (max-height: 920px)';
 /** Looks in a row a step's needs must be missing before the coach steps back. */
 const MISSING_LOOKS = 2;
 /** Room kept between a field and the coach bar. */
@@ -66,8 +74,14 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
   const [progress, setProgress] = React.useState<GuideProgress | null>(null);
   const [chosen, setChosen] = React.useState(true);
   const [collapsed, setCollapsed] = React.useState(false);
+  // What the visitor just did, said back with the reason it mattered. The
+  // reason comes after the action, when it means something.
   const [justDone, setJustDone] = React.useState<string | null>(null);
+  // The closing task counts only if it was not already true when the steps ended.
+  const challengeArmed = React.useRef(false);
   const [coachHeight, setCoachHeight] = React.useState(0);
+  // The path this visit belongs to, when the career review started one.
+  const [path, setPath] = React.useState<CareerPath | null>(null);
   // Steps whose page state showed them done at the last look. Only a change
   // moves the coach forward, so restarting on a full page starts at step 1.
   const passedRef = React.useRef<Set<string>>(new Set());
@@ -93,7 +107,10 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
   };
   // biome-ignore lint/correctness/useExhaustiveDependencies: fold when the step changes
   React.useEffect(() => {
-    if (!focusIsWithCoach() && window.matchMedia?.(COMPACT_QUERY).matches) setCollapsed(true);
+    if (focusIsWithCoach()) return;
+    // A finished guide folds to one line with the way onward, on any screen:
+    // open, it would sit on the result the visitor just worked for.
+    if (stepId === 'finished' || window.matchMedia?.(COMPACT_QUERY).matches) setCollapsed(true);
   }, [stepId]);
 
   // Hydrate from empty state, then read the saved choice.
@@ -101,7 +118,11 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
     const saved = loadGuideProgress(tool);
     // A link can open a tool with the guide already on (?guide=1), for
     // someone sent here by the career review or a teacher.
-    const asked = new URLSearchParams(window.location.search).get('guide') === '1';
+    const params = new URLSearchParams(window.location.search);
+    const asked = params.get('guide') === '1';
+    // A link can also put the visitor on a path (?path=offer).
+    const wanted = params.get('path');
+    setPath(isPathId(wanted) ? startPath(wanted) : loadPath());
     if (asked && saved?.mode !== 'guided') {
       const next =
         saved && !saved.finished ? { ...saved, mode: 'guided' as const } : restartGuide();
@@ -111,7 +132,13 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
       return;
     }
     setChosen(saved !== null);
-    setProgress(saved ?? { mode: 'free', done: [], finished: false });
+    // A guide finished on an earlier visit does not come back docked over the
+    // page. It can be started again from the bar.
+    setProgress(
+      saved?.finished && saved.mode === 'guided'
+        ? { ...saved, mode: 'free' }
+        : (saved ?? { mode: 'free', done: [], finished: false })
+    );
   }, [tool]);
 
   const update = React.useCallback(
@@ -152,11 +179,28 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
         if (heldRef.current === step.id) {
           if (!holds) heldRef.current = null;
         } else if (holds) {
-          setJustDone(step.title);
+          setJustDone(step.why ?? `${step.title}.`);
           next = markStepDone(guide, next, step.id);
         }
       }
       if (next !== progress) update(next);
+    };
+    look();
+    const timer = window.setInterval(look, WATCH_MS);
+    return () => window.clearInterval(timer);
+  }, [guide, progress, update]);
+
+  // Once the steps are done, watch for the closing task: the same thing
+  // again, with no pointer. It is noticed, never demanded.
+  React.useEffect(() => {
+    const task = guide?.challenge;
+    if (!task || !progress?.finished || progress.challenge || progress.mode !== 'guided') {
+      return undefined;
+    }
+    const look = () => {
+      const holds = evaluateCheck(task.done, document);
+      if (!holds) challengeArmed.current = true;
+      else if (challengeArmed.current) update({ ...progress, challenge: true });
     };
     look();
     const timer = window.setInterval(look, WATCH_MS);
@@ -196,7 +240,10 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
     const mark = () => {
       let found: Element | null = null;
       try {
-        found = document.querySelector(step.target as string);
+        // When the target is on another tab, point at the tab that holds it.
+        found =
+          document.querySelector(step.target as string) ??
+          (step.reveal ? document.querySelector(step.reveal) : null);
       } catch {
         found = null;
       }
@@ -236,6 +283,37 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
   // would see it, so the page does not jump when it arrives.
   const view = progress ?? { mode: 'free' as const, done: [], finished: false };
   const total = guide.steps.length;
+  const stopNumber = path ? stopPosition(path, tool) : null;
+  // Where the finish card sends the visitor: the next stop of their path
+  // when they are on one, otherwise the guide's own suggestion.
+  const onward = (() => {
+    if (!path || stopNumber === null) return guide.finish.link ?? null;
+    const next = pathProgress(path, (other) =>
+      other === tool ? true : loadGuideProgress(other)?.finished === true
+    ).next;
+    return next
+      ? { label: `Next stop: ${next.label}`, href: next.href }
+      : { label: 'Path finished. Open the dashboard', href: '/dashboard/' };
+  })();
+  const challenge = guide.challenge && (
+    <span
+      className="mt-2 block rounded-lg border border-border/50 px-3 py-2 text-sm leading-relaxed"
+      data-guide-challenge={view.challenge ? 'done' : 'open'}
+    >
+      <span className="block text-xs text-muted-foreground">
+        {view.challenge ? 'Done on your own' : 'Now try one on your own'}
+      </span>
+      <span className="block font-medium text-foreground">
+        {view.challenge && <span aria-hidden="true">✓ </span>}
+        {guide.challenge.title}
+      </span>
+      {!view.challenge && guide.challenge.body && (
+        <span className="block text-muted-foreground">{guide.challenge.body}</span>
+      )}
+    </span>
+  );
+  const primaryLink =
+    'inline-flex min-h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring';
   const position = step ? guide.steps.findIndex((s) => s.id === step.id) + 1 : total;
 
   const showTarget = () => {
@@ -314,8 +392,9 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
     if (mode === 'free' && coachRef.current?.contains(document.activeElement)) {
       window.requestAnimationFrame(() => freeRadioRef.current?.focus());
     }
-    // Someone who just asked for the guide wants to read the first step.
-    if (mode === 'guided') setCollapsed(false);
+    // The folded bar already says the task. On a small or short screen it
+    // opens folded, so it never starts on top of the thing it points at.
+    if (mode === 'guided') setCollapsed(window.matchMedia?.(COMPACT_QUERY).matches ?? false);
     if (mode === 'free') update({ ...view, mode: 'free' });
     else if (view.finished) startAgain();
     else update({ ...view, mode: 'guided' });
@@ -324,22 +403,59 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
   return (
     <>
       <div
-        className="mx-auto mb-10 flex w-full max-w-6xl flex-col gap-3 rounded-xl border border-border/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+        className={cn(
+          'mx-auto mb-10 flex w-full max-w-6xl flex-col gap-3 rounded-xl border sm:flex-row sm:items-center sm:justify-between sm:gap-6',
+          // Until the visitor has chosen, the offer is the first thing on the
+          // tool: a quiet line here was read past.
+          chosen ? 'border-border/40 px-4 py-3' : 'border-foam/50 bg-foam/8 px-5 py-5'
+        )}
         data-guide-bar
+        data-guide-offer={chosen ? undefined : ''}
       >
-        <p className="min-w-0 text-sm text-muted-foreground sm:flex-1">
-          {guided
-            ? 'Guided mode is on. The coach follows what you do on this page.'
-            : chosen
-              ? 'You are working on your own. Turn the guide on any time.'
-              : guide.invitation}
-        </p>
+        {chosen ? (
+          <p className="min-w-0 text-sm text-muted-foreground sm:flex-1">
+            {path && stopNumber !== null && (
+              <span className="text-foreground">
+                Stop {stopNumber} of {path.stops.length} on your path.{' '}
+              </span>
+            )}
+            {view.finished ? (
+              <>
+                You finished this guide. On a shared or lab computer, export your work from the
+                dashboard and then clear this device.{' '}
+                <a
+                  href="/dashboard/#storage-title"
+                  className="text-foreground underline underline-offset-4 hover:text-foam focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  Open the dashboard
+                </a>
+              </>
+            ) : guided ? (
+              'Guided mode is on. The coach follows what you do on this page.'
+            ) : (
+              'You are working on your own. Turn the guide on any time.'
+            )}
+          </p>
+        ) : (
+          <div className="min-w-0 space-y-1 sm:flex-1">
+            <p className="font-display text-lg font-semibold text-foreground">
+              Want to be walked through it?
+            </p>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {path && stopNumber !== null
+                ? `Stop ${stopNumber} of ${path.stops.length} on your path. `
+                : ''}
+              {guide.invitation} It has {guide.steps.length} steps, shows you where to press, and
+              you can end it at any point.
+            </p>
+          </div>
+        )}
         <fieldset className="m-0 min-w-0 border-0 p-0">
           <legend className="sr-only">How to use this tool</legend>
-          <div className="flex gap-1.5">
+          <div className="flex flex-wrap gap-1.5">
             {(
               [
-                ['guided', 'Guided'],
+                ['guided', chosen ? 'Guided' : 'Guide me'],
                 ['free', 'On my own'],
               ] as const
             ).map(([mode, label]) => (
@@ -348,15 +464,19 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
                   ref={mode === 'free' ? freeRadioRef : undefined}
                   type="radio"
                   name={`guide-mode-${tool}`}
-                  checked={view.mode === mode}
+                  checked={chosen && view.mode === mode}
                   onChange={() => choose(mode)}
                   className="peer absolute inset-0 cursor-pointer opacity-0"
                 />
                 <span
                   className={cn(
-                    'inline-flex min-h-9 items-center rounded-lg border border-border/50 px-3 text-sm text-muted-foreground transition-colors',
-                    'peer-hover:text-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring',
-                    'peer-checked:border-foam peer-checked:bg-foam/12 peer-checked:text-foreground'
+                    'inline-flex max-w-full items-center rounded-lg border py-1 transition-colors',
+                    'peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2',
+                    chosen
+                      ? 'min-h-9 border-border/50 px-3 text-sm text-muted-foreground peer-hover:text-foreground peer-checked:border-foam peer-checked:bg-foam/12 peer-checked:text-foreground'
+                      : mode === 'guided'
+                        ? 'min-h-11 border-primary bg-primary px-4 text-sm font-semibold text-primary-foreground peer-hover:bg-primary/90'
+                        : 'min-h-11 border-border/60 px-4 text-sm text-foreground peer-hover:bg-overlay/40'
                   )}
                 >
                   {label}
@@ -386,7 +506,9 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
                 'fixed inset-x-3 bottom-3 z-40 rounded-xl bg-popover text-popover-foreground shadow-[0_28px_70px_-32px_hsl(var(--background))] ring-1 ring-border/50 print:hidden',
                 // Never taller than the screen, so Hide and End guide stay reachable at large text sizes.
                 'max-h-[calc(100dvh-1.5rem)] overflow-y-auto overscroll-contain',
-                'sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[22rem]'
+                // A fixed width in pixels: in rem it doubles with a visitor's text size
+                // and covers the page it describes.
+                'sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[352px] sm:max-w-[calc(100vw-2.5rem)]'
               )}
             >
               <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1 px-4 pt-3">
@@ -419,6 +541,24 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
                 </div>
               </div>
 
+              {/* Folded, the coach still says what just happened and where to go next. */}
+              {collapsed && (step ? justDone : true) && (
+                <div className="px-4 pt-1">
+                  {step ? (
+                    <p className="text-xs leading-relaxed text-foam">Done. {justDone}</p>
+                  ) : (
+                    <>
+                      {challenge}
+                      {onward && (
+                        <a href={onward.href} className={cn(primaryLink, 'mt-2 py-1.5')}>
+                          {onward.label}
+                        </a>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
               <div
                 className={cn(
                   'mx-4 mt-2 h-1 overflow-hidden rounded-full bg-foreground/10',
@@ -435,7 +575,11 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
               <div className={cn('px-4 pb-4 pt-3', collapsed && 'hidden')}>
                 {step ? (
                   <div className="space-y-2">
-                    {justDone && <p className="text-xs text-foam">Done: {justDone}.</p>}
+                    {justDone && (
+                      <p className="text-sm leading-relaxed text-foam" data-guide-done>
+                        Done. {justDone}
+                      </p>
+                    )}
                     <h2
                       ref={titleRef}
                       tabIndex={-1}
@@ -443,12 +587,7 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
                     >
                       {step.title}
                     </h2>
-                    <p className="text-sm leading-relaxed">{step.body}</p>
-                    {step.why && (
-                      <p className="hidden text-xs leading-relaxed text-muted-foreground sm:block">
-                        {step.why}
-                      </p>
-                    )}
+                    {step.body && <p className="text-sm leading-relaxed">{step.body}</p>}
                     <div className="flex flex-wrap gap-2 pt-1">
                       {step.target && (
                         <button
@@ -499,23 +638,11 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
                       {guide.finish.title}
                     </h2>
                     <p className="text-sm leading-relaxed">{guide.finish.body}</p>
-                    <p className="text-xs leading-relaxed text-muted-foreground">
-                      On a shared or lab computer, export your work from the dashboard and then
-                      clear this device.{' '}
-                      <a
-                        href="/dashboard/#storage-title"
-                        className="text-foreground underline underline-offset-4 hover:text-foam focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                      >
-                        Open the dashboard
-                      </a>
-                    </p>
+                    {challenge}
                     <div className="flex flex-wrap gap-2 pt-1">
-                      {guide.finish.link && (
-                        <a
-                          href={guide.finish.link.href}
-                          className="inline-flex min-h-9 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                        >
-                          {guide.finish.link.label}
+                      {onward && (
+                        <a href={onward.href} className={primaryLink}>
+                          {onward.label}
                         </a>
                       )}
                       <button
@@ -543,9 +670,15 @@ export default function GuideCoach({ tool }: { tool: GuideTool }) {
       {/* Read each new step aloud in full, whether the coach is open or folded. */}
       <p className="sr-only" role="status">
         {guided && step
-          ? `Step ${position} of ${total}. ${step.title}. ${step.body}`
+          ? `${justDone ? `Done. ${justDone} ` : ''}Step ${position} of ${total}. ${step.title}. ${step.body ?? ''}`
           : guided
-            ? `Guide finished. ${guide.finish.title}. ${guide.finish.body}`
+            ? `Guide finished. ${guide.finish.title}. ${guide.finish.body}${
+                guide.challenge
+                  ? view.challenge
+                    ? ` Done on your own: ${guide.challenge.title}.`
+                    : ` Now try one on your own: ${guide.challenge.title}.`
+                  : ''
+              }`
             : ''}
       </p>
     </>

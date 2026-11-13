@@ -14,6 +14,11 @@ export interface DeskExamples {
   hook: string;
   /** A finished letter: greeting, four parts, sign-off. */
   letter: readonly string[];
+  /** Placeholders for the role and employer on the start form. */
+  role: string;
+  company: string;
+  /** A specific step for the action plan, against "Network", which is not one. */
+  actionStep: string;
 }
 
 const STUDENT: DeskExamples = {
@@ -40,6 +45,9 @@ const STUDENT: DeskExamples = {
     'Thank you for considering my application. Could we talk for 15 minutes about how I could help with volunteer scheduling this fall?',
     'Sincerely, Sam Alvarez',
   ],
+  role: 'Marketing intern',
+  company: 'Riverside Food Bank',
+  actionStep: 'Schedule three informational interviews before the end of the term',
 };
 
 /** For someone with years of work behind them, often in another field. */
@@ -67,6 +75,9 @@ const WORKING: DeskExamples = {
     'Thank you for considering my application. Could we talk for 20 minutes about the clinic openings planned for next year?',
     'Sincerely, Dana Whitfield',
   ],
+  role: 'Operations coordinator',
+  company: 'Northgate Health',
+  actionStep: 'Schedule three informational interviews before the end of the month',
 };
 
 /**

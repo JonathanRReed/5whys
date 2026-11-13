@@ -9,6 +9,8 @@ import {
   linearize,
   moveContactToTop,
   normalizeDates,
+  renameHeading,
+  replaceLineText,
   toDocx,
   toPrintModel,
 } from '../../lib/resume-doc';
@@ -29,7 +31,47 @@ type Props = {
    * it would otherwise carry a resume the visitor has replaced.
    */
   text?: string;
+  /**
+   * Set when the structured copy on screen could not be saved on this
+   * device. Repairs still show here, but nothing claims they were kept.
+   */
+  saveError?: string | null;
+  /** Try the save again with the copy on screen. */
+  onRetrySave?: () => void;
 };
+
+/** Headings the fixer can name a line as, in the words the finding uses. */
+const HEADING_KINDS = ['experience', 'education', 'skills'] as const;
+type HeadingKind = (typeof HEADING_KINDS)[number];
+const HEADING_LABEL: Record<HeadingKind, string> = {
+  experience: 'Experience',
+  education: 'Education',
+  skills: 'Skills',
+};
+
+/** The heading a rename-heading finding is about: its id ends in the kind. */
+function headingKindOf(finding: ResumeFinding): HeadingKind | null {
+  const kind = finding.id.split(':')[1];
+  return (HEADING_KINDS as readonly string[]).includes(kind) ? (kind as HeadingKind) : null;
+}
+
+/**
+ * Lines that could be a heading under another name ("Where I have worked"):
+ * short, no digits, no contact details, not a bullet, not already a heading
+ * the reader knows.
+ */
+function headingCandidates(doc: ResumeDoc): ResumeLine[] {
+  const known = new Set(doc.sections.map((section) => section.headingLineId));
+  return doc.extractionOrder
+    .map((id) => doc.lines.find((line) => line.id === id))
+    .filter((line): line is ResumeLine => {
+      if (!line || known.has(line.id) || line.bullet || line.continuationOf) return false;
+      const text = line.text.trim();
+      const words = text.split(/\s+/).filter(Boolean).length;
+      return words >= 1 && words <= 5 && !/\d|@|https?:|www\./i.test(text) && text.length <= 40;
+    })
+    .slice(0, 40);
+}
 
 const REPAIRS: Partial<
   Record<
@@ -83,12 +125,34 @@ const baseName = (name: string) => name.replace(/\.[^.]+$/, '') || 'resume';
  * this extractor saw. They are not a verdict about any employer's system, and
  * there is deliberately no score.
  */
-export default function MachineView({ doc, onChange, rewrites, text }: Props) {
+export default function MachineView({
+  doc,
+  onChange,
+  rewrites,
+  text,
+  saveError,
+  onRetrySave,
+}: Props) {
   const current = React.useMemo(() => text === undefined || docMatchesText(doc, text), [doc, text]);
   const rewriteCount = React.useMemo(() => countRewrites(doc, rewrites), [doc, rewrites]);
   const [activeFinding, setActiveFinding] = React.useState<string | null>(null);
   const [notice, setNotice] = React.useState<string | null>(null);
   const [exporting, setExporting] = React.useState(false);
+  // The copy before the last repair, so one tap takes the repair back.
+  const [undo, setUndo] = React.useState<{ doc: ResumeDoc; label: string } | null>(null);
+  // The finding whose line is open for editing, and the wording typed so far.
+  const [editing, setEditing] = React.useState<{ findingId: string; text: string } | null>(null);
+  // The line picked as the heading for each missing-heading finding.
+  const [picked, setPicked] = React.useState<Record<string, string>>({});
+  const candidates = React.useMemo(() => headingCandidates(doc), [doc]);
+  // A different resume (a new upload, or the copy rebuilt from the text)
+  // has nothing to undo or retype.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset when the source changes
+  React.useEffect(() => {
+    setUndo(null);
+    setEditing(null);
+    setPicked({});
+  }, [doc.file.name, doc.sourceText]);
   const [print, printPortal] = usePrintResume();
 
   const linesById = React.useMemo(() => new Map(doc.lines.map((l) => [l.id, l])), [doc.lines]);
@@ -115,20 +179,51 @@ export default function MachineView({ doc, onChange, rewrites, text }: Props) {
 
   const pagesWithGeometry = doc.pages.filter((page) => page.width && page.height);
 
-  const applyRepair = (finding: ResumeFinding) => {
-    const repair = finding.repairId ? REPAIRS[finding.repairId] : undefined;
-    if (!repair) return;
+  // Every repair goes through here: the copy before it is kept for undo,
+  // and findings are read again from the repaired copy.
+  const commit = (run: () => ResumeDoc, done: string) => {
     try {
+      const repaired = run();
       // The reorder is the change the visitor asked for, so let them see it.
-      const repaired = repair.run(doc);
       withViewTransition(() => onChange(repaired));
+      setUndo({ doc, label: done });
       setActiveFinding(null);
-      setNotice(repair.done);
+      setEditing(null);
+      setNotice(done);
     } catch (error) {
       setNotice(
         error instanceof Error ? error.message : 'That repair could not be applied to this file.'
       );
     }
+  };
+
+  const applyRepair = (finding: ResumeFinding) => {
+    const repair = finding.repairId ? REPAIRS[finding.repairId] : undefined;
+    if (!repair) return;
+    commit(() => repair.run(doc), repair.done);
+  };
+
+  const replaceLine = (finding: ResumeFinding) => {
+    const lineId = finding.lineIds[0];
+    if (!editing || !lineId) return;
+    commit(() => replaceLineText(doc, lineId, editing.text.trim()), 'Line replaced.');
+  };
+
+  const nameHeading = (finding: ResumeFinding, kind: HeadingKind) => {
+    const lineId = picked[finding.id];
+    const line = lineId ? linesById.get(lineId) : undefined;
+    if (!line) return;
+    commit(
+      () => renameHeading(doc, line.id, kind),
+      `"${line.text.trim()}" now reads ${HEADING_LABEL[kind]}.`
+    );
+  };
+
+  const undoRepair = () => {
+    if (!undo) return;
+    withViewTransition(() => onChange(undo.doc));
+    setNotice(`Undone: ${undo.label}`);
+    setUndo(null);
   };
 
   // Read the edited text as the new structured copy. The uploaded file is
@@ -339,6 +434,31 @@ export default function MachineView({ doc, onChange, rewrites, text }: Props) {
                       </a>
                     </p>
                   )}
+                  {finding.repairId === 'replace-line' && finding.lineIds[0] && (
+                    <LineEditor
+                      findingId={finding.id}
+                      original={linesById.get(finding.lineIds[0])?.text ?? ''}
+                      editing={editing?.findingId === finding.id ? editing.text : null}
+                      onStart={(value) => setEditing({ findingId: finding.id, text: value })}
+                      onType={(value) => setEditing({ findingId: finding.id, text: value })}
+                      onCancel={() => setEditing(null)}
+                      onSave={() => replaceLine(finding)}
+                    />
+                  )}
+                  {finding.repairId === 'rename-heading' &&
+                    headingKindOf(finding) &&
+                    candidates.length > 0 && (
+                      <HeadingPicker
+                        findingId={finding.id}
+                        kind={headingKindOf(finding) as HeadingKind}
+                        candidates={candidates}
+                        value={picked[finding.id] ?? ''}
+                        onPick={(lineId) =>
+                          setPicked((current) => ({ ...current, [finding.id]: lineId }))
+                        }
+                        onRename={() => nameHeading(finding, headingKindOf(finding) as HeadingKind)}
+                      />
+                    )}
                   <div className="flex flex-wrap gap-2 pt-1">
                     {repair && (
                       <Button type="button" size="sm" onClick={() => applyRepair(finding)}>
@@ -413,9 +533,33 @@ export default function MachineView({ doc, onChange, rewrites, text }: Props) {
             </Button>
           )}
         </div>
-        <p role="status" className="min-h-5 text-sm text-foreground">
-          {notice}
-        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <p role="status" className="min-h-5 text-sm text-foreground">
+            {notice}
+          </p>
+          {undo && (
+            <Button type="button" size="sm" variant="outline" onClick={undoRepair}>
+              Undo the last repair
+            </Button>
+          )}
+        </div>
+        {saveError && (
+          <div
+            className="space-y-2 rounded-xl border border-gold/50 bg-gold/8 p-4"
+            role="alert"
+            data-testid="machine-save-error"
+          >
+            <p className="text-sm leading-relaxed text-foreground">
+              This copy is not saved on this device. {saveError} It stays on this page until you
+              close it, and the downloads above still work.
+            </p>
+            {onRetrySave && (
+              <Button type="button" size="sm" variant="outline" onClick={onRetrySave}>
+                Try saving again
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {printPortal}
@@ -489,5 +633,110 @@ function PageSpecimen({
       </div>
       <figcaption className="mt-1 text-xs text-muted-foreground">{label}</figcaption>
     </figure>
+  );
+}
+
+type LineEditorProps = {
+  findingId: string;
+  original: string;
+  /** The wording being typed, or null while the editor is closed. */
+  editing: string | null;
+  onStart: (value: string) => void;
+  onType: (value: string) => void;
+  onCancel: () => void;
+  onSave: () => void;
+};
+
+/** Fix one damaged line in place: the line as read, ready to retype. */
+function LineEditor({
+  findingId,
+  original,
+  editing,
+  onStart,
+  onType,
+  onCancel,
+  onSave,
+}: LineEditorProps) {
+  const id = `${findingId}-line`;
+  if (editing === null) {
+    return (
+      <Button type="button" size="sm" variant="outline" onClick={() => onStart(original)}>
+        Retype this line
+      </Button>
+    );
+  }
+  return (
+    <form
+      className="space-y-2"
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSave();
+      }}
+    >
+      <label htmlFor={id} className="block text-sm font-medium text-foreground">
+        The line as it should read
+      </label>
+      <input
+        id={id}
+        // biome-ignore lint/a11y/noAutofocus: opened by the visitor's own press
+        autoFocus
+        value={editing}
+        onChange={(event) => onType(event.target.value)}
+        className="min-h-11 w-full rounded-md border border-border/50 bg-overlay/30 px-3 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-foam"
+      />
+      <p className="text-xs text-muted-foreground">Was read as: {original}</p>
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" size="sm" disabled={!editing.trim()}>
+          Use this wording
+        </Button>
+        <Button type="button" size="sm" variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+type HeadingPickerProps = {
+  findingId: string;
+  kind: HeadingKind;
+  candidates: ResumeLine[];
+  value: string;
+  onPick: (lineId: string) => void;
+  onRename: () => void;
+};
+
+/** "Which line is your Experience heading?" Rename the one the visitor names. */
+function HeadingPicker({
+  findingId,
+  kind,
+  candidates,
+  value,
+  onPick,
+  onRename,
+}: HeadingPickerProps) {
+  const id = `${findingId}-pick`;
+  return (
+    <div className="space-y-2">
+      <label htmlFor={id} className="block text-sm font-medium text-foreground">
+        Is one of these your {HEADING_LABEL[kind].toLowerCase()} heading?
+      </label>
+      <select
+        id={id}
+        value={value}
+        onChange={(event) => onPick(event.target.value)}
+        className="min-h-11 w-full max-w-sm rounded-md border border-border/50 bg-overlay/30 px-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-foam"
+      >
+        <option value="">Pick a line</option>
+        {candidates.map((line) => (
+          <option key={line.id} value={line.id}>
+            {line.text.trim()}
+          </option>
+        ))}
+      </select>
+      <Button type="button" size="sm" variant="outline" disabled={!value} onClick={onRename}>
+        Rename it {HEADING_LABEL[kind]}
+      </Button>
+    </div>
   );
 }

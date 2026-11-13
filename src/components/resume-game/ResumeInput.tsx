@@ -1,4 +1,5 @@
 import type * as React from 'react';
+import { MAX_RESUME_FILE_MB } from '../../lib/resume-game';
 import ConfirmButton from '../shared/ConfirmButton';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -27,7 +28,55 @@ type Props = {
   hidden?: boolean;
   /** When there is more than one sample, the choice between them. */
   samples?: readonly { id: string; label: string }[];
+  /** The box holds the visitor's own resume, so a sample asks before replacing it. */
+  replacesOwn?: boolean;
+  /** Put back the resume a sample replaced. Offered while the sample is untouched. */
+  undoSample?: () => void;
 };
+
+const SAMPLE_BUTTON =
+  'min-h-11 rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2';
+
+/** One sample button. Over the visitor's own resume it arms first and names the loss. */
+function SampleButton({
+  label,
+  replacesOwn,
+  onLoad,
+  className,
+  guide,
+}: {
+  label: string;
+  replacesOwn: boolean;
+  onLoad: () => void;
+  className?: string;
+  guide?: string;
+}) {
+  if (replacesOwn) {
+    return (
+      <span data-guide={guide} className={className}>
+        <ConfirmButton
+          tone="neutral"
+          confirmLabel={`Replace your resume with the ${label.toLowerCase()} sample?`}
+          onConfirm={onLoad}
+          className={`${SAMPLE_BUTTON} w-full`}
+        >
+          {label}
+        </ConfirmButton>
+      </span>
+    );
+  }
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      className={`${SAMPLE_BUTTON} ${className ?? ''}`}
+      data-guide={guide}
+      onClick={onLoad}
+    >
+      {label}
+    </Button>
+  );
+}
 
 export default function ResumeInput({
   resumeText,
@@ -47,6 +96,8 @@ export default function ResumeInput({
   onStartBlank,
   samples,
   hidden,
+  replacesOwn = false,
+  undoSample,
 }: Props) {
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const input = event.currentTarget;
@@ -62,7 +113,8 @@ export default function ResumeInput({
         <p className="text-sm text-muted-foreground">
           Paste your resume or upload a PDF, Word file, or text file. Check the text below before
           you analyze it. A scanned PDF is a picture of text, so there is nothing to read; export it
-          from the program you wrote it in. Everything stays in your browser.
+          from the program you wrote it in. Files up to {MAX_RESUME_FILE_MB} MB. Everything stays in
+          your browser.
         </p>
         {onStartBlank && (
           <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-4">
@@ -113,28 +165,24 @@ export default function ResumeInput({
                   Try a sample:
                 </span>
                 {samples.map((sample, index) => (
-                  <Button
+                  <SampleButton
                     key={sample.id}
-                    type="button"
-                    variant="outline"
-                    className="min-h-11 flex-1 rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2 md:flex-none"
-                    data-guide={index === samples.length - 1 ? 'resume-sample' : undefined}
-                    onClick={() => onLoadSample(sample.id)}
-                  >
-                    {sample.label}
-                  </Button>
+                    label={sample.label}
+                    replacesOwn={replacesOwn}
+                    className="flex-1 md:flex-none"
+                    guide={index === samples.length - 1 ? 'resume-sample' : undefined}
+                    onLoad={() => onLoadSample(sample.id)}
+                  />
                 ))}
               </fieldset>
             ) : (
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full md:w-auto rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
-                data-guide="resume-sample"
-                onClick={() => onLoadSample()}
-              >
-                Try sample
-              </Button>
+              <SampleButton
+                label="Try sample"
+                replacesOwn={replacesOwn}
+                className="w-full md:w-auto"
+                guide="resume-sample"
+                onLoad={() => onLoadSample()}
+              />
             )}
           </div>
         </div>
@@ -186,6 +234,16 @@ export default function ResumeInput({
           <p className="text-sm text-love" role="alert">
             {fileError}
           </p>
+        )}
+        {undoSample && (
+          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border/40 p-3">
+            <p className="text-sm text-muted-foreground">
+              The sample took the place of your resume.
+            </p>
+            <Button type="button" variant="outline" className="min-h-11" onClick={undoSample}>
+              Put my resume back
+            </Button>
+          </div>
         )}
         {/* Always in the page, so a reader hears each new message arrive. */}
         <p className={status ? 'text-sm text-foam' : 'sr-only'} role="status">

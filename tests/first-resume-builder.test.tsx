@@ -79,7 +79,7 @@ it('walks a student from nothing to a scored resume', () => {
   expect(preview).not.toHaveTextContent('Education');
 
   fireEvent.click(screen.getByRole('button', { name: 'Next: Skills' }));
-  type('Skills (optional)', 'Spanish, Google Sheets');
+  type('List your skills (optional)', 'Spanish, Google Sheets');
   fireEvent.click(screen.getByRole('button', { name: 'Use this as my resume' }));
 
   // In the box, exactly as if pasted, and already scored.
@@ -153,9 +153,9 @@ it('asks before replacing a resume already in the box', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Replace the resume in the box?' }));
   expect(stored().resumeText).toContain('- Sorted donations by date.');
   act(() => vi.advanceTimersByTime(500));
-  expect(
-    screen.getAllByRole('status').some((s) => /Scored 1 bullet/.test(s.textContent ?? ''))
-  ).toBe(true);
+  expect(screen.getAllByRole('status').some((s) => /Scored 1 line/.test(s.textContent ?? ''))).toBe(
+    true
+  );
 });
 
 it('offers a first-job sample beside the college one', () => {

@@ -6,7 +6,19 @@ import { loadFeature, reportFeatureFailure } from '../../lib/lazy-feature';
 import { extractRequirementTerms, findTermMatches } from '../../lib/posting';
 import type { ResumeDoc, ResumeLine } from '../../lib/resume-doc';
 import { listedLineIds } from '../../lib/resume-doc/editor-text';
+import { copyLines, rewrittenLines, toPrintModel } from '../../lib/resume-doc/export';
 import { joinParts } from '../../lib/resume-doc/layout';
+import {
+  addedBulletsFor,
+  type Placement,
+  placeableRewrites,
+  placeBullet,
+  repeatedLines,
+  resumeRoles,
+  roleOf,
+  withAchievementLines,
+  wordsOf,
+} from '../../lib/resume-doc/tailor';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
 import type { DeskState } from './useDesk';
@@ -45,31 +57,7 @@ function bulletsOf(doc: ResumeDoc): { id: string; text: string }[] {
     }));
 }
 
-/** A line reduced to its words, to match a rewrite to the line it replaces. */
-function wordsOf(text: string): string {
-  return text
-    .replace(/^\s*[-–•*◦○●▪·o]\s+/, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
-}
-
-/**
- * A pasted resume often has no bullet marks. The lines the Resume Game reads
- * as achievements are its bullets, so they can be chosen here too.
- */
-export function withAchievementLines(doc: ResumeDoc, achievements: readonly string[]): ResumeDoc {
-  const found = new Set(achievements.map(wordsOf));
-  if (found.size === 0) return doc;
-  return {
-    ...doc,
-    lines: doc.lines.map((line) =>
-      !line.bullet && !line.continuationOf && found.has(wordsOf(line.text))
-        ? { ...line, bullet: true }
-        : line
-    ),
-  };
-}
+export { withAchievementLines };
 
 /**
  * Whether a saved document still says what the resume text says: every line
@@ -150,52 +138,6 @@ export function matchSelection(
   return { ids: all.filter((id) => chosen.has(id)), reset: false };
 }
 
-/** A role's header line: it carries a year, or says it is current. */
-const DATED = /\b(?:19|20)\d{2}\b|\b(?:present|current|now)\b/i;
-
-/**
- * Where a bullet written on the desk goes by default: after the last bullet
- * of the most recent job, which is the first dated role under an experience
- * section. Never under skills, education or a summary. With no experience
- * section, after the last bullet outside those sections; null when there is
- * no such bullet.
- *
- * `bulletIds` are the bullets that can be chosen, by their first line.
- */
-export function defaultPlacement(doc: ResumeDoc, bulletIds: readonly string[]): string | null {
-  const choosable = new Set(bulletIds);
-  const byId = new Map(doc.lines.map((line) => [line.id, line]));
-  for (const section of doc.sections.filter((s) => s.kind === 'experience')) {
-    let inRole = false;
-    let last: string | null = null;
-    let anyBullet: string | null = null;
-    for (const id of section.lineIds) {
-      const line = byId.get(id);
-      if (!line || line.continuationOf) continue;
-      if (choosable.has(id)) {
-        anyBullet ??= id;
-        if (inRole || !last) last = id;
-        continue;
-      }
-      if (!line.bullet && DATED.test(line.text)) {
-        // The next dated role starts: the first one is finished.
-        if (inRole && last) return last;
-        inRole = true;
-        last = null;
-      }
-    }
-    if (last) return last;
-    if (anyBullet) return anyBullet;
-  }
-  const excluded = new Set(
-    doc.sections
-      .filter((s) => s.kind === 'skills' || s.kind === 'education' || s.kind === 'summary')
-      .flatMap((s) => s.lineIds)
-  );
-  const outside = bulletIds.filter((id) => !excluded.has(id));
-  return outside.at(-1) ?? null;
-}
-
 /** The bullet ids a saved choice covers now. See `matchSelection`. */
 export function selectedIds(
   bullets: readonly { id: string; key: string }[],
@@ -204,10 +146,38 @@ export function selectedIds(
   return matchSelection(bullets, saved).ids;
 }
 
+/** A line shortened for a list or a menu, at a word. */
+function short(text: string, max = 70): string {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max - 3);
+  const space = cut.lastIndexOf(' ');
+  return `${(space > max / 2 ? cut.slice(0, space) : cut).trimEnd()}...`;
+}
+
+/** "one", "two", or the number: for counts in a sentence. */
+function plural(count: number, one: string, many: string): string {
+  return `${count} ${count === 1 ? one : many}`;
+}
+
+/** A bullet written on the Bullets station, as this station shows it. */
+type WrittenBullet = {
+  index: 0 | 1;
+  text: string;
+  saved: string | null;
+  included: boolean;
+  placement: Placement;
+  requirements: string[];
+};
+
 /**
  * One master resume, tailored per application: choose which of its bullets
  * go into the copy for this role. Nothing here edits the resume itself; the
  * selection is all an application keeps.
+ *
+ * Everything this station says about the copy (which wording a line has,
+ * which job a written bullet is under, what repeats, what is left out) is
+ * read from the same model the file is written from, so the page and the
+ * file cannot disagree.
  */
 export default function ResumeStation({ desk }: { desk: DeskState }) {
   // The resume and its rewrites are read again when another tab saves them
@@ -216,8 +186,10 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
   const { application, role, resumeText, rewrites, changeDesks } = desk;
   const [doc, setDoc] = React.useState<ResumeDoc | null | undefined>(undefined);
   const [notice, setNotice] = React.useState<string | null>(null);
-  // "Only the ones that match" would leave this few bullets: asked about in place.
+  // "Only the ones that match": what it would leave is shown before it is done.
   const [narrowing, setNarrowing] = React.useState(false);
+  // The copy line by line is drawn only while the visitor reads it.
+  const [reading, setReading] = React.useState(false);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -270,26 +242,56 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
     () => deskRequirements(role?.bullets ?? []).requirements,
     [role?.bullets]
   );
-  const bullets: Bullet[] = React.useMemo(() => {
-    if (!doc) return [];
+  const answers = React.useMemo(() => {
     const terms = confirmed.map((r) => ({ text: r.text, terms: extractRequirementTerms(r.text) }));
-    const reworded = new Map(rewrites.map((r) => [wordsOf(r.original), r.improved.trim()]));
-    return bulletsOf(doc).map((bullet) => ({
-      ...bullet,
-      key: wordsOf(bullet.text),
-      text: reworded.get(wordsOf(bullet.text)) ?? bullet.text,
-      requirements: terms
-        .filter((entry) => findTermMatches(entry.terms, bullet.text).length > 0)
-        .map((entry) => entry.text),
-    }));
-  }, [doc, confirmed, rewrites]);
+    return (text: string) =>
+      terms
+        .filter((entry) => findTermMatches(entry.terms, text).length > 0)
+        .map((entry) => entry.text);
+  }, [confirmed]);
+
+  // The resume as the file has it: its jobs, and the wording of each line.
+  const copy = React.useMemo(() => {
+    if (!doc) return null;
+    const placeable = placeableRewrites(doc, rewrites);
+    const order = new Map(copyLines(doc).map((line, index) => [line.id, index]));
+    return {
+      roles: resumeRoles(doc),
+      rewrites: placeable.rewrites,
+      unplacedRewrites: placeable.unplaced,
+      wording: rewrittenLines(doc, placeable.rewrites),
+      order,
+    };
+  }, [doc, rewrites]);
+
+  const bullets: Bullet[] = React.useMemo(() => {
+    if (!doc || !copy) return [];
+    return bulletsOf(doc)
+      .map((bullet) => {
+        // The line as the copy will have it: the Resume Game wording when the
+        // visitor rewrote this line (this one, not another with the same words).
+        const text = copy.wording.get(bullet.id) ?? bullet.text;
+        return {
+          ...bullet,
+          key: wordsOf(bullet.text),
+          text,
+          // What the posting asks for is matched on the line as it will be sent.
+          requirements: answers(text),
+        };
+      })
+      .sort(
+        (a, b) =>
+          (copy.order.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+          (copy.order.get(b.id) ?? Number.MAX_SAFE_INTEGER)
+      );
+  }, [doc, copy, answers]);
 
   if (!application) return null;
   const appId = application.id;
 
   if (doc === undefined)
     return <p className="text-sm text-muted-foreground">Looking for your resume.</p>;
-  if (!doc || bullets.length === 0) {
+  if (!doc || !copy || bullets.length === 0) {
     return (
       <div className="max-w-[62ch] space-y-3">
         <h2 className="text-2xl font-semibold">Tailor your resume to this role</h2>
@@ -316,10 +318,11 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
     );
   }
 
-  const known = new Set(bullets.map((b) => b.id));
+  const { roles } = copy;
   const match = matchSelection(bullets, desk.desk.resumeSelection);
   const selected = new Set(match.ids);
   const matching = bullets.filter((b) => b.requirements.length > 0);
+  const byId = new Map(bullets.map((b) => [b.id, b]));
 
   const choose = (ids: string[] | null) => {
     const chosen = ids && new Set(ids);
@@ -340,25 +343,21 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
   };
 
   // Bullets written on the Bullets station. They join this copy only, and
-  // are in it unless the visitor took one out.
-  const written = desk.desk.bullets.bullets
-    .map((slot, index) => ({
-      index: index as 0 | 1,
-      text: slot.text.trim(),
-      after: slot.bulletId,
-      included: slot.included,
-    }))
+  // are in it unless the visitor took one out. Each goes under the job the
+  // visitor chose, or the one it names; never under a job by default.
+  const written: WrittenBullet[] = desk.desk.bullets.bullets
+    .map((slot, index) => {
+      const text = slot.text.trim();
+      return {
+        index: index as 0 | 1,
+        text,
+        saved: slot.bulletId,
+        included: slot.included,
+        placement: placeBullet(text, slot.bulletId, roles),
+        requirements: answers(text),
+      };
+    })
     .filter((slot) => slot.text);
-  // The last bullet of the most recent job. A resume with no job on it (only
-  // school, say) has none: bullets written here then get an Experience
-  // section of their own, instead of landing under Education.
-  const jobAnchor = defaultPlacement(
-    doc,
-    bullets.map((b) => b.id)
-  );
-  const NEW_SECTION = '';
-  const defaultAfter = jobAnchor ?? NEW_SECTION;
-  const placeOf = (after: string | null) => (after && known.has(after) ? after : defaultAfter);
   const headingsAreCapitals = doc.sections.some((section) => {
     const heading = doc.lines.find((line) => line.id === section.headingLineId)?.text ?? '';
     return /[A-Z]/.test(heading) && heading === heading.toUpperCase();
@@ -366,10 +365,38 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
   const looseHeading = headingsAreCapitals ? 'EXPERIENCE' : 'Experience';
   const place = (index: 0 | 1, slot: { bulletId?: string; included?: boolean }) =>
     changeDesks((data) => updateBulletsFlow(data, appId, { bullet: { index, slot } }));
-  const addedBullets = written
-    .filter((slot) => slot.included)
-    .map((slot) => ({ afterLineId: placeOf(slot.after), text: slot.text }));
-  const shortAfterNarrowing = matching.length < 3;
+  const included = written.filter((slot) => slot.included);
+  const placed = included.filter((slot) => slot.placement.kind !== 'unplaced');
+  const addedBullets = addedBulletsFor(placed);
+  // The exporter numbers added bullets `added-<n>` in this order.
+  const slotOfAdded = new Map(placed.map((slot, n) => [`added-${n}`, slot]));
+  // Only the bullets the visitor can choose are filtered. A skills or
+  // certifications list is made of list lines too, and it stays whole.
+  const keep = new Set([...selected, ...listedLineIds(doc)]);
+  const options = { bulletLineIds: keep, addedBullets, rewrites: copy.rewrites, looseHeading };
+  const model = toPrintModel(doc, options);
+  const repeats = repeatedLines(model.paragraphs);
+  const repeatOf = new Map(
+    repeats.flatMap((repeat) => {
+      const slot = slotOfAdded.get(repeat.addedId);
+      return slot ? [[slot.index, repeat] as const] : [];
+    })
+  );
+  /** Where a line of the copy is, in the visitor's words. */
+  const whereIs = (id: string): string => {
+    const added = slotOfAdded.get(id);
+    if (added) return `bullet ${added.index + 1} written on this desk`;
+    const found = roleOf(roles, id);
+    return found ? `a line under ${found.label}` : 'a line in your resume';
+  };
+  const leftOut = bullets.filter((b) => !selected.has(b.id));
+  const reworded = bullets.filter((b) => selected.has(b.id) && copy.wording.has(b.id));
+  const kept = bullets.filter((b) => selected.has(b.id));
+  const emptiedRoles = (ids: ReadonlySet<string>) =>
+    roles.filter(
+      (r) => r.bulletIds.length > 0 && r.bulletIds.every((id) => !ids.has(id) && byId.has(id))
+    );
+  const fewMatch = matching.length < 3;
 
   const download = async () => {
     // Another tab may have corrected the resume since this list was drawn.
@@ -379,7 +406,10 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
       readResumeText() !== resumeText ||
       savedRewrites.length !== rewrites.length ||
       savedRewrites.some(
-        (r, i) => r.original !== rewrites[i].original || r.improved !== rewrites[i].improved
+        (r, i) =>
+          r.original !== rewrites[i].original ||
+          r.improved !== rewrites[i].improved ||
+          r.occurrence !== rewrites[i].occurrence
       )
     ) {
       desk.refresh();
@@ -390,15 +420,7 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
     }
     try {
       const { toDocx, checkExport } = await loadFeature(import('../../lib/resume-doc'));
-      // Only the bullets the visitor can choose are filtered. A skills or
-      // certifications list is made of list lines too, and it stays whole.
-      const keep = new Set([...selected, ...listedLineIds(doc)]);
-      const bytes = await toDocx(doc, {
-        bulletLineIds: keep,
-        addedBullets,
-        rewrites,
-        looseHeading,
-      });
+      const bytes = await toDocx(doc, options);
       const url = URL.createObjectURL(
         new Blob([bytes as BlobPart], {
           type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -409,20 +431,32 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '');
+      const name = `resume-${slug || 'tailored'}.docx`;
       link.href = url;
-      link.download = `resume-${slug || 'tailored'}.docx`;
+      link.download = name;
       link.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
       const check = await checkExport(bytes);
+      // Reading the file back checks how it parses, not what it says. Only
+      // the visitor can tell that every line is true and in its place.
       setNotice(
         check.ok
-          ? 'Saved. We read the new file back and found nothing to fix in how it reads.'
-          : 'Saved. Reading it back shows something to fix. Open the machine view in the Resume Game.'
+          ? `Saved ${name}. Open it and read it once before you send it.`
+          : `Saved ${name}. Reading it back shows something to fix in how it reads: open the machine view in the Resume Game. Read the file once before you send it.`
       );
     } catch {
       setNotice('The file could not be written. Nothing was changed.');
     }
   };
+
+  // The list, grouped under the job each line is in, in the order of the copy.
+  const groups: { label: string; items: Bullet[] }[] = [];
+  for (const bullet of bullets) {
+    const label = roleOf(roles, bullet.id)?.label ?? '';
+    const last = groups.at(-1);
+    if (last && last.label === label) last.items.push(bullet);
+    else groups.push({ label, items: [bullet] });
+  }
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -443,24 +477,32 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
             included again. Check the list before you download.
           </p>
         )}
+        {fewMatch && (
+          <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
+            {matching.length === 0
+              ? 'None of your lines names something this posting asks for yet.'
+              : `Only ${plural(matching.length, 'line names', 'lines name')} something this posting asks for.`}{' '}
+            Keep everything, and use the Bullets station to write two that do.
+          </p>
+        )}
         <div className="flex flex-wrap gap-2">
+          {!fewMatch && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              aria-expanded={narrowing}
+              aria-controls="resume-narrowing"
+              onClick={() => setNarrowing(true)}
+            >
+              Only the ones that match ({matching.length})
+            </Button>
+          )}
           <Button
             type="button"
             size="sm"
             variant="outline"
-            disabled={matching.length === 0}
-            aria-expanded={shortAfterNarrowing ? narrowing : undefined}
-            onClick={() => {
-              if (shortAfterNarrowing) setNarrowing(true);
-              else choose(matching.map((b) => b.id));
-            }}
-          >
-            Only the ones that match ({matching.length})
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
+            disabled={leftOut.length === 0}
             onClick={() => {
               setNarrowing(false);
               choose(null);
@@ -469,16 +511,24 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
             Include everything
           </Button>
         </div>
-        {narrowing && (
+        {narrowing && !fewMatch && (
           <div
+            id="resume-narrowing"
             className="max-w-[68ch] space-y-2 rounded-lg bg-gold/12 px-3 py-2 text-sm text-foreground"
             role="status"
           >
             <p>
-              That would leave {matching.length} {matching.length === 1 ? 'bullet' : 'bullets'} in
-              the copy for this role. A resume that short can look empty, and a bullet that does not
-              use the posting's words can still show the same work.
+              That keeps {plural(matching.length, 'bullet', 'bullets')} from your resume and leaves
+              out {plural(bullets.length - matching.length, 'bullet', 'bullets')}. These would stay:
             </p>
+            <ul className="list-disc space-y-1 pl-5">
+              {matching.map((b) => (
+                <li key={b.id}>{short(b.text, 90)}</li>
+              ))}
+            </ul>
+            {emptiedRoles(new Set(matching.map((b) => b.id))).map((r) => (
+              <p key={r.id}>{r.label} would have no bullets under it.</p>
+            ))}
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
@@ -488,7 +538,7 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
                   choose(matching.map((b) => b.id));
                 }}
               >
-                Keep only {matching.length === 1 ? 'that one' : `those ${matching.length}`}
+                Keep only these {matching.length}
               </Button>
               <Button type="button" size="sm" variant="outline" onClick={() => setNarrowing(false)}>
                 Keep what is included now
@@ -498,41 +548,53 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
         )}
       </div>
 
-      <ul className="space-y-2">
-        {bullets.map((bullet) => {
-          const on = selected.has(bullet.id);
-          return (
-            <li
-              key={bullet.id}
-              className={cn(
-                'rounded-xl border p-3 transition-colors',
-                on ? 'border-lichen/50 bg-lichen/6' : 'border-border/40'
-              )}
-            >
-              <label className="flex cursor-pointer items-start gap-3">
-                <input
-                  type="checkbox"
-                  checked={on}
-                  onChange={(event) => toggle(bullet.id, event.target.checked)}
-                  className="mt-1 h-4 w-4 accent-[hsl(var(--lichen))]"
-                />
-                <span className="min-w-0 space-y-1">
-                  <span
-                    className={cn('block text-sm leading-relaxed', !on && 'text-muted-foreground')}
+      <div className="space-y-4">
+        {groups.map((group) => (
+          <section key={`${group.label}-${group.items[0].id}`} className="space-y-2">
+            {group.label && (
+              <h3 className="text-sm font-semibold text-foreground">{group.label}</h3>
+            )}
+            <ul className="space-y-2">
+              {group.items.map((bullet) => {
+                const on = selected.has(bullet.id);
+                return (
+                  <li
+                    key={bullet.id}
+                    className={cn(
+                      'rounded-xl border p-3 transition-colors',
+                      on ? 'border-lichen/50 bg-lichen/6' : 'border-border/40'
+                    )}
                   >
-                    {bullet.text}
-                  </span>
-                  {bullet.requirements.slice(0, 2).map((requirement) => (
-                    <span key={requirement} className="block text-xs text-lichen">
-                      Answers: {requirement}
-                    </span>
-                  ))}
-                </span>
-              </label>
-            </li>
-          );
-        })}
-      </ul>
+                    <label className="flex cursor-pointer items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={(event) => toggle(bullet.id, event.target.checked)}
+                        className="mt-1 h-4 w-4 accent-[hsl(var(--lichen))]"
+                      />
+                      <span className="min-w-0 space-y-1">
+                        <span
+                          className={cn(
+                            'block text-sm leading-relaxed',
+                            !on && 'text-muted-foreground'
+                          )}
+                        >
+                          {bullet.text}
+                        </span>
+                        {bullet.requirements.slice(0, 2).map((requirement) => (
+                          <span key={requirement} className="block text-xs text-lichen">
+                            Answers: {requirement}
+                          </span>
+                        ))}
+                      </span>
+                    </label>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))}
+      </div>
 
       {written.length > 0 && (
         <section aria-labelledby="desk-written-heading" className="space-y-2">
@@ -540,15 +602,21 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
             Written on this desk
           </h3>
           <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
-            {written.every((slot) => slot.included)
-              ? `${written.length === 1 ? 'This bullet is' : 'Both are'} in the copy for this role, ${jobAnchor ? 'after the last bullet of your most recent job' : 'under an Experience heading of their own, because this resume lists no job yet'}. Untick one to leave it out, or choose where it goes.`
-              : 'A ticked bullet is in the copy for this role. Tick one to put it back.'}{' '}
-            To keep one for every application, add it to your resume in the Resume Game.
+            A ticked bullet goes into the copy for this role, under the part of your resume you
+            choose. To keep one for every application, add it to your resume in the Resume Game.
           </p>
           <ul className="space-y-2">
             {written.map((slot) => {
               const on = slot.included;
-              const after = placeOf(slot.after);
+              const where = slot.placement;
+              const repeat = repeatOf.get(slot.index);
+              const selectId = `desk-bullet-place-${slot.index}`;
+              const selectValue =
+                where.kind === 'unplaced' || where.kind === 'new-section' ? '' : where.role.id;
+              const anchor =
+                where.kind === 'chosen' && where.afterLineId !== where.role.lastLineId
+                  ? byId.get(where.afterLineId)
+                  : undefined;
               return (
                 <li
                   key={slot.index}
@@ -564,41 +632,110 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
                       onChange={(event) => place(slot.index, { included: event.target.checked })}
                       className="mt-0.5 h-6 w-6 shrink-0 accent-[hsl(var(--lichen))]"
                     />
-                    <span
-                      className={cn(
-                        'min-w-0 text-sm leading-relaxed',
-                        !on && 'text-muted-foreground'
-                      )}
-                    >
-                      {slot.text}
-                      <span className="sr-only">
-                        {on ? ' (in the copy for this role)' : ' (left out)'}
+                    <span className="min-w-0 space-y-1">
+                      <span
+                        className={cn(
+                          'block text-sm leading-relaxed',
+                          !on && 'text-muted-foreground'
+                        )}
+                      >
+                        {slot.text}
+                        <span className="sr-only">
+                          {on ? ' (in the copy for this role)' : ' (left out)'}
+                        </span>
                       </span>
+                      {slot.requirements.slice(0, 2).map((requirement) => (
+                        <span key={requirement} className="block text-xs text-lichen">
+                          Answers: {requirement}
+                        </span>
+                      ))}
                     </span>
                   </label>
                   {on && (
-                    <label className="flex flex-wrap items-center gap-2 px-3 pb-3 text-xs text-muted-foreground sm:pl-12">
-                      <span>
-                        Place it after
-                        <span className="sr-only"> (for: {slot.text.slice(0, 60)})</span>
-                      </span>
-                      <select
-                        value={after}
-                        onChange={(event) => place(slot.index, { bulletId: event.target.value })}
-                        className="h-10 max-w-full min-w-0 flex-1 rounded-md border border-border/50 bg-transparent px-1.5 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                      >
-                        {!jobAnchor && (
-                          <option value={NEW_SECTION}>A new Experience section</option>
+                    <div className="space-y-2 px-3 pb-3 sm:pl-12">
+                      {roles.length > 0 ? (
+                        <div className="space-y-1">
+                          <label htmlFor={selectId} className="block text-sm text-muted-foreground">
+                            Which part of your resume is this from?
+                            <span className="sr-only"> (for: {short(slot.text, 60)})</span>
+                          </label>
+                          <select
+                            id={selectId}
+                            value={selectValue}
+                            onChange={(event) =>
+                              event.target.value &&
+                              place(slot.index, { bulletId: event.target.value })
+                            }
+                            className="h-auto min-h-10 w-full max-w-full min-w-0 rounded-md border border-border/50 bg-transparent px-1.5 py-1 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            {selectValue === '' && <option value="">Choose a place</option>}
+                            {roles.map((r) => (
+                              <option key={r.id} value={r.id}>
+                                {short(r.label)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      ) : null}
+                      <p
+                        className={cn(
+                          'text-xs leading-relaxed',
+                          where.kind === 'unplaced'
+                            ? 'rounded-md bg-gold/12 px-2 py-1 text-foreground'
+                            : 'text-muted-foreground'
                         )}
-                        {bullets.map((bullet) => (
-                          <option key={bullet.id} value={bullet.id}>
-                            {bullet.text.length > 70
-                              ? `${bullet.text.slice(0, 67).trimEnd()}...`
-                              : bullet.text}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                        data-testid={`desk-bullet-place-note-${slot.index}`}
+                      >
+                        {where.kind === 'unplaced'
+                          ? 'Not in the file until you choose where it goes.'
+                          : where.kind === 'new-section'
+                            ? `Your resume lists no job yet, so it goes under a heading of its own, "${looseHeading}", at the end.`
+                            : where.kind === 'guessed'
+                              ? `Under ${where.role.label}, because it names ${where.words.join(' ')}. Change it if it belongs somewhere else.`
+                              : where.kind === 'only'
+                                ? `Under ${where.role.label}, the one job on your resume.`
+                                : anchor
+                                  ? selected.has(anchor.id)
+                                    ? `Under ${where.role.label}, right after "${short(anchor.text, 60)}".`
+                                    : `Under ${where.role.label}, in place of "${short(anchor.text, 60)}".`
+                                  : `Under ${where.role.label}, after its last line.`}
+                      </p>
+                      {repeat && (
+                        <div
+                          className="space-y-2 rounded-md bg-gold/12 px-2 py-2 text-sm text-foreground"
+                          data-testid={`desk-bullet-repeat-${slot.index}`}
+                        >
+                          <p>
+                            This says much the same as {whereIs(repeat.otherId)}: "
+                            {short(repeat.otherText, 110)}". If both describe the same work, keep
+                            one.
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {byId.has(repeat.otherId) && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  place(slot.index, { bulletId: repeat.otherId });
+                                  toggle(repeat.otherId, false);
+                                }}
+                              >
+                                Use this one in its place
+                              </Button>
+                            )}
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => place(slot.index, { included: false })}
+                            >
+                              Leave this one out
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </li>
               );
@@ -607,7 +744,103 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
         </section>
       )}
 
-      <div className="space-y-2 border-t border-border/40 pt-5">
+      <section
+        aria-labelledby="resume-copy-heading"
+        className="space-y-3 border-t border-border/40 pt-5"
+        data-testid="resume-copy-summary"
+      >
+        <h3 id="resume-copy-heading" className="text-lg font-semibold">
+          What the file holds
+        </h3>
+        <ul className="max-w-[68ch] list-disc space-y-1 pl-5 text-sm leading-relaxed">
+          <li>
+            {kept.length} of {plural(bullets.length, 'bullet', 'bullets')} from your resume
+            {reworded.length > 0
+              ? `, ${reworded.length === kept.length ? (kept.length === 1 ? 'in' : 'all in') : `${reworded.length} of them in`} the wording you wrote in the Resume Game`
+              : ''}
+            .
+          </li>
+          {placed.map((slot) => (
+            <li key={`placed-${slot.index}`}>
+              Bullet {slot.index + 1} written on this desk,{' '}
+              {slot.placement.kind === 'new-section'
+                ? `under a new "${looseHeading}" heading at the end`
+                : `under ${slot.placement.kind === 'unplaced' ? '' : slot.placement.role.label}`}
+              .
+            </li>
+          ))}
+          {included
+            .filter((slot) => slot.placement.kind === 'unplaced')
+            .map((slot) => (
+              <li key={`unplaced-${slot.index}`} className="text-foreground">
+                Not in it: bullet {slot.index + 1} written on this desk, until you choose where it
+                goes.
+              </li>
+            ))}
+          {written
+            .filter((slot) => !slot.included)
+            .map((slot) => (
+              <li key={`out-${slot.index}`}>
+                Not in it: bullet {slot.index + 1} written on this desk, which you left out.
+              </li>
+            ))}
+          {leftOut.length > 0 && (
+            <li>
+              Not in it, from your resume:
+              <ul className="list-[circle] pl-5">
+                {leftOut.map((b) => (
+                  <li key={b.id}>{short(b.text, 90)}</li>
+                ))}
+              </ul>
+            </li>
+          )}
+          {copy.unplacedRewrites.map((rewrite) => (
+            <li key={`${rewrite.original}-${rewrite.improved}`}>
+              "{short(rewrite.original, 60)}" is in it as first written. That line appears more than
+              once in your resume, and your Resume Game wording does not say which one it replaces.
+            </li>
+          ))}
+          {repeats.length > 0 && (
+            <li className="text-foreground">
+              {repeats.length === 1
+                ? 'One bullet written on this desk says much the same as another line in the file.'
+                : `${repeats.length} bullets written on this desk say much the same as another line in the file.`}{' '}
+              The note under each one above says which.
+            </li>
+          )}
+          <li>The rest of your resume (name, contact, education, skills) is in it as written.</li>
+        </ul>
+        <details
+          className="max-w-[68ch] rounded-lg border border-border/40 px-3 py-2"
+          onToggle={(event) => setReading(event.currentTarget.open)}
+        >
+          <summary className="cursor-pointer text-sm font-medium text-foreground">
+            Read the file line by line
+          </summary>
+          {reading && (
+            <div
+              className="mt-3 space-y-1 text-sm leading-relaxed"
+              data-testid="resume-copy-preview"
+            >
+              {model.paragraphs.map((paragraph) => (
+                <p
+                  key={paragraph.lineId}
+                  className={cn(
+                    paragraph.kind === 'heading' && 'pt-2 font-semibold uppercase tracking-wide',
+                    (paragraph.kind === 'name' || paragraph.kind === 'title') && 'font-semibold',
+                    paragraph.kind === 'bullet' && 'pl-4 -indent-3',
+                    slotOfAdded.has(paragraph.lineId) && 'text-lichen'
+                  )}
+                >
+                  {paragraph.kind === 'bullet' ? `• ${paragraph.text}` : paragraph.text}
+                  {slotOfAdded.has(paragraph.lineId) && (
+                    <span className="text-xs text-muted-foreground"> (written on this desk)</span>
+                  )}
+                </p>
+              ))}
+            </div>
+          )}
+        </details>
         <Button
           type="button"
           onClick={download}
@@ -619,7 +852,7 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
         <p role="status" className="min-h-5 text-sm text-foreground">
           {notice}
         </p>
-      </div>
+      </section>
     </div>
   );
 }

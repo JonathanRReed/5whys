@@ -4,14 +4,26 @@ import {
   audienceFor,
   detectSkillsFromText,
   getQuestionById,
-  OPTIONAL_QUESTION_IDS,
+  optionalQuestionIds,
+  packetQuestionLines,
   planRehearsal,
   type RehearsalPlanInput,
   type RehearsalQuestion,
+  resolveQuestionText,
+  selfCheckFor,
   storiesForQuestion,
+  tidyQuestionText,
 } from '../../lib/glowup-banks';
-import type { DecodedRole, Story } from '../../lib/glowup-store';
-import { loadData, requirementBullets } from '../../lib/glowup-store';
+import { chosenQuestion } from '../../lib/glowup-banks/rehearsal';
+import type { DecodedRole, GlowUpData, KeptAnswer, Story } from '../../lib/glowup-store';
+import {
+  loadData,
+  openRole,
+  removeStoredAnswer,
+  requirementBullets,
+  storeKeptAnswer,
+  updateStoredAnswer,
+} from '../../lib/glowup-store';
 import { loadFeature, reportFeatureFailure, runFeature } from '../../lib/lazy-feature';
 import type { HostedModel, ModelState } from '../../lib/models';
 import { hiringCondition } from '../../lib/posting/conditions';
@@ -19,6 +31,7 @@ import type { RecordedAudio, SpeechRecorder } from '../../lib/speech';
 import { cn, focusWhenReady } from '../../lib/utils';
 import { formatBytes } from '../StoragePanel';
 import Announcer, { useAnnouncer } from '../shared/Announcer';
+import ConfirmButton from '../shared/ConfirmButton';
 import SavedRecordings from '../shared/SavedRecordings';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
@@ -38,6 +51,56 @@ export function workAuthorizationLine(role: DecodedRole | null): string | null {
 }
 type AnswerMode = 'speak' | 'type';
 
+/** Where "Use as a story draft" opens the workspace's story editor on a kept answer. */
+export const storyDraftHref = (answerId: string) =>
+  `/interview-glow-up/workspace/?draft=${encodeURIComponent(answerId)}`;
+
+/**
+ * The questions in a role's packet the visitor can choose to rehearse: the
+ * likely-questions list, then the questions attached to packed stories.
+ */
+export function packetQuestions(roleId: string | null): string[] {
+  if (!roleId) return [];
+  const data = loadData();
+  const packet = data.packets.find((p) => p.roleId === roleId);
+  if (!packet) return [];
+  const packed = new Set(packet.topStoryIds);
+  const attached = data.stories
+    .filter((story) => packed.has(story.id))
+    .flatMap((story) => story.questionPrompts.map(resolveQuestionText));
+  const seen = new Set<string>();
+  return [...packetQuestionLines(packet.aiQuestions ?? ''), ...attached].filter((line) => {
+    const key = line.trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+/**
+ * The role and application a link asked for: "?role=r1" names a saved role,
+ * "?application=a1" a tracked application (and, through it, its role). An id
+ * that matches nothing is ignored. Without either, the current role and the
+ * application tracking it.
+ */
+export function roomTarget(
+  data: GlowUpData,
+  applications: readonly { id: string; roleId: string | null }[],
+  search: string
+): { role: DecodedRole | null; applicationId: string | null; asked: boolean } {
+  const params = new URLSearchParams(search);
+  const app = applications.find((a) => a.id === params.get('application'));
+  const named =
+    data.roles.find((r) => r.id === params.get('role')) ??
+    (app?.roleId ? data.roles.find((r) => r.id === app.roleId) : undefined);
+  const role =
+    named ?? data.roles.find((r) => r.id === data.currentRoleId) ?? data.roles[0] ?? null;
+  const applicationId =
+    (app && (!app.roleId || app.roleId === role?.id) ? app.id : null) ??
+    (role ? (applications.find((a) => a.roleId === role.id)?.id ?? null) : null);
+  return { role, applicationId, asked: Boolean(named) };
+}
+
 const clock = (seconds: number) =>
   `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
 
@@ -53,10 +116,27 @@ export default function RehearsalRoom() {
   // the extra questions the visitor adds for this visit.
   const [planBase, setPlanBase] = React.useState<RehearsalPlanInput | null>(null);
   const [extras, setExtras] = React.useState<string[]>([]);
+  // Questions from the packet: listed, never asked until the visitor ticks one.
+  const [packetLines, setPacketLines] = React.useState<string[]>([]);
+  const [picked, setPicked] = React.useState<string[]>([]);
   const questions = React.useMemo<RehearsalQuestion[]>(
-    () => (planBase ? planRehearsal({ ...planBase, extras }) : []),
-    [planBase, extras]
+    () =>
+      planBase
+        ? planRehearsal({ ...planBase, extras, chosen: picked.map((q) => chosenQuestion(q)) })
+        : [],
+    [planBase, extras, picked]
   );
+  // Answers kept on this device for this role, and which of this visit's
+  // answers were kept, by question number.
+  const [keptAnswers, setKeptAnswers] = React.useState<KeptAnswer[]>([]);
+  const [keptByIndex, setKeptByIndex] = React.useState<
+    Record<number, { id: string; text: string }>
+  >({});
+  // Every answer given this visit, by question number, so the end of the
+  // session can list them and offer to keep them.
+  const [sessionTakes, setSessionTakes] = React.useState<Record<number, Take>>({});
+  // The tracked application for this role, so a kept recording belongs to it.
+  const [applicationId, setApplicationId] = React.useState<string | null>(null);
   const [audience, setAudience] = React.useState<Audience>('student');
   const [requirementCount, setRequirementCount] = React.useState(0);
   // The visitor's saved stories, read once. The room never writes them.
@@ -89,7 +169,6 @@ export default function RehearsalRoom() {
   const kept = Boolean(take?.audio && take.audio === keptAudio);
   // Kept for the visit, not saved: the choice applies to every answer until the page closes.
   const [countDelivery, setCountDelivery] = React.useState(true);
-  const [answered, setAnswered] = React.useState(0);
   const [notice, setNotice] = React.useState<string | null>(null);
   const [announcement, announce] = useAnnouncer();
   const recorder = React.useRef<SpeechRecorder | null>(null);
@@ -102,27 +181,47 @@ export default function RehearsalRoom() {
   const whisperReady = models.some((m) => m.id === 'whisper-tiny-en' && m.state === 'ready');
   const kokoroReady = models.some((m) => m.id === 'kokoro' && m.state === 'ready');
 
-  // Read the role being prepared for and build its questions. Reading only:
-  // nothing here writes to storage.
+  // Read the role being prepared for and build its questions. Reading only,
+  // except that a role named in the address becomes the current one.
   // biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount
   React.useEffect(() => {
     let cancelled = false;
-    const data = loadData();
-    const current = data.roles.find((r) => r.id === data.currentRoleId) ?? data.roles[0] ?? null;
-    setRole(current);
-    setStories(data.stories);
+    // The role this room is for, once read. Used if the questions fail to load.
+    let opened: ReturnType<typeof roomTarget>['role'] | undefined;
+    const open = (applications: Parameters<typeof roomTarget>[1]) => {
+      const data = loadData();
+      const target = roomTarget(data, applications, window.location.search);
+      const current = target.role;
+      // A link that names a role (from the dashboard, opened in a new tab, say)
+      // makes it current, as choosing it would; the workspace then opens on the
+      // same job. With no role named, nothing is written.
+      if (target.asked && current) openRole(current.id);
+      setRole(current);
+      setStories(data.stories);
+      setPacketLines(packetQuestions(current?.id ?? null));
+      setKeptAnswers((data.answers ?? []).filter((a) => a.roleId === (current?.id ?? null)));
+      setApplicationId(target.applicationId);
+      opened = current;
+      return current;
+    };
     void (async () => {
-      const [{ likelyQuestions }, { readProfile }, { readResumeText }] = await Promise.all([
-        loadFeature(import('../../lib/local-ai')),
-        loadFeature(import('../../lib/profile')),
-        loadFeature(import('../../lib/career-bridge')),
-      ]);
+      const [{ likelyQuestions }, { readProfile }, { readResumeText, readTrackedApplications }] =
+        await Promise.all([
+          loadFeature(import('../../lib/local-ai')),
+          loadFeature(import('../../lib/profile')),
+          // The one cross-tool reader: the applications and the resume both
+          // come through it.
+          loadFeature(import('../../lib/career-bridge')),
+        ]);
+      if (cancelled) return;
+      const current = open(readTrackedApplications());
       // The career review decides; without one, years of dated work on the
       // resume keep a long-time worker from being asked about coursework.
       const who = audienceFor(readProfile(), readResumeText());
       // Only real requirements: confirmed lines, or lines sorted as required,
       // preferred, or a duty. Never the header, the address, or the pitch.
-      const requirements = requirementBullets(current?.bullets ?? []).map((b) => b.text);
+      const requirementLines = requirementBullets(current?.bullets ?? []);
+      const requirements = requirementLines.map((b) => b.text);
       const result = await likelyQuestions(
         {
           jobTitle: current?.jobTitle || undefined,
@@ -136,7 +235,7 @@ export default function RehearsalRoom() {
       const fromPosting: RehearsalQuestion[] = result.value.questions
         .filter((q) => q.requirement)
         .map((q) => ({
-          question: q.question,
+          question: tidyQuestionText(q.question),
           requirement: q.requirement,
           skillIds: q.skillIds ?? [],
           questionId: q.questionId,
@@ -152,6 +251,15 @@ export default function RehearsalRoom() {
         audience: who,
         fromPosting,
         postingSkillIds,
+        requirements: requirementLines.map((b) => ({
+          text: b.text,
+          skillIds: [
+            ...[b.primarySkillId, ...(b.secondarySkillIds ?? [])].filter((id): id is string =>
+              Boolean(id)
+            ),
+            ...detectSkillsFromText(b.text).map((s) => s.skillId),
+          ],
+        })),
         workAuthorizationLine: workAuthorizationLine(current),
       });
     })().catch((error) => {
@@ -159,6 +267,9 @@ export default function RehearsalRoom() {
       // still give the room its standing questions.
       reportFeatureFailure(error);
       if (!cancelled) {
+        // The reader itself may be what failed: open the room on the role the
+        // address or the workspace names, without the application behind it.
+        const current = opened === undefined ? open([]) : opened;
         setPlanBase({
           audience: 'student',
           fromPosting: [],
@@ -225,6 +336,67 @@ export default function RehearsalRoom() {
   }, [recording]);
 
   const current = questions[index] ?? null;
+
+  // Every answer this visit, as the visitor last left it (corrections included).
+  React.useEffect(() => {
+    if (take) setSessionTakes((all) => (all[index] === take ? all : { ...all, [index]: take }));
+  }, [take, index]);
+
+  /**
+   * Keep an answer's words on this device, tied to the role and question.
+   * Only on the visitor's press. Returns the kept answer's id, or null.
+   */
+  const keepText = (at: number): string | null => {
+    const answer = at === index && take ? take : sessionTakes[at];
+    const question = questions[at];
+    const text = answer?.text.trim() ?? '';
+    if (!answer || !question || !text) return null;
+    const already = keptByIndex[at];
+    if (already) {
+      if (already.text === text) return already.id;
+      // Corrected since it was kept: the kept copy follows the correction.
+      if (!updateStoredAnswer(already.id, text)) {
+        setNotice('This browser would not keep the change. Copy it somewhere before you leave.');
+        return null;
+      }
+      setKeptByIndex((all) => ({ ...all, [at]: { id: already.id, text } }));
+      setKeptAnswers((all) => all.map((a) => (a.id === already.id ? { ...a, text } : a)));
+      return already.id;
+    }
+    const kept = storeKeptAnswer({
+      roleId: role?.id ?? null,
+      question: question.question,
+      ...(question.questionId ? { questionId: question.questionId } : {}),
+      requirement: question.requirement,
+      skillIds: question.skillIds,
+      text,
+      mode: answer.audio ? 'spoken' : 'typed',
+    });
+    if (!kept) {
+      setNotice('This browser would not keep the answer. Copy it somewhere before you leave.');
+      return null;
+    }
+    setKeptByIndex((all) => ({ ...all, [at]: { id: kept.id, text } }));
+    setKeptAnswers((all) => [...all, kept]);
+    announce('Answer kept on this device.');
+    return kept.id;
+  };
+
+  const draftStoryFrom = (at: number) => {
+    const id = keepText(at);
+    if (id) window.location.assign(storyDraftHref(id));
+  };
+
+  const forget = (answerId: string) => {
+    if (!removeStoredAnswer(answerId)) {
+      setNotice('This browser would not delete the answer. Try again.');
+      return;
+    }
+    setKeptAnswers((all) => all.filter((a) => a.id !== answerId));
+    setKeptByIndex((all) =>
+      Object.fromEntries(Object.entries(all).filter(([, kept]) => kept.id !== answerId))
+    );
+  };
   const storyMatch = React.useMemo(
     () => (current ? (storiesForQuestion(current, stories, 1)[0] ?? null) : null),
     [current, stories]
@@ -366,7 +538,12 @@ export default function RehearsalRoom() {
       durationSeconds: seconds,
     };
     setTake(next);
-    setAnswered((count) => count + 1);
+    // A new answer to the same question is not the one that was kept.
+    setKeptByIndex((all) => {
+      if (!(index in all)) return all;
+      const { [index]: _dropped, ...rest } = all;
+      return rest;
+    });
     setPhase('review');
     focusWhenReady('rehearsal-review-heading');
     announce(`Review. Question ${index + 1} of ${questions.length}.`);
@@ -419,6 +596,8 @@ export default function RehearsalRoom() {
       audio: take.audio.blob,
       mimeType: take.audio.mimeType,
       transcript: take.text,
+      // The tracked application for this role, so its recordings can be told apart.
+      applicationId,
     });
     if (result.ok) setKeptAudio(saving);
     else setNotice(result.message);
@@ -518,7 +697,7 @@ export default function RehearsalRoom() {
           <p className="text-xs leading-relaxed text-muted-foreground">
             Add any that could be asked of you: a change of field, a gap, the terms of the job.
           </p>
-          {OPTIONAL_QUESTION_IDS.map((id) => {
+          {optionalQuestionIds(audience).map((id) => {
             const question = getQuestionById(id);
             if (!question) return null;
             const fromPosting = id === 'q-work-authorization' && planBase?.workAuthorizationLine;
@@ -549,6 +728,36 @@ export default function RehearsalRoom() {
             );
           })}
         </fieldset>
+
+        {packetLines.length > 0 && (
+          <fieldset
+            className="mx-0 min-w-0 space-y-2 border-0 p-0"
+            data-testid="rehearsal-packet-questions"
+          >
+            <legend className="font-display text-lg font-semibold">From your packet</legend>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              The likely questions you saved in Pack the proof, and the questions attached to your
+              packed stories. Tick the ones to ask first.
+            </p>
+            {packetLines.map((line) => (
+              <label key={line} className="flex cursor-pointer items-start gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  checked={picked.includes(line)}
+                  onChange={(event) =>
+                    setPicked((current) =>
+                      event.target.checked
+                        ? [...current, line]
+                        : current.filter((value) => value !== line)
+                    )
+                  }
+                  className="mt-0.5 h-4 w-4 accent-[hsl(var(--love))]"
+                />
+                <span className="min-w-0 wrap-anywhere">{line}</span>
+              </label>
+            ))}
+          </fieldset>
+        )}
 
         {hasVoice && (
           <div className="space-y-3">
@@ -682,34 +891,136 @@ export default function RehearsalRoom() {
         >
           Start with the first question
         </Button>
-        <SavedRecordings tool="interview-glow-up" />
+        {keptAnswers.length > 0 && (
+          <section
+            aria-labelledby="kept-answers-title"
+            className="space-y-3"
+            data-testid="kept-answers"
+          >
+            <h3 id="kept-answers-title" className="text-lg font-semibold">
+              Answers you kept
+            </h3>
+            <ul className="divide-y divide-border/30 rounded-xl border border-border/40">
+              {keptAnswers.map((answer) => {
+                const short =
+                  answer.question.length > 60
+                    ? `${answer.question.slice(0, 57).trimEnd()}...`
+                    : answer.question;
+                return (
+                  <li key={answer.id} className="space-y-2 px-4 py-3">
+                    <p className="text-sm font-medium text-foreground">{answer.question}</p>
+                    <p className="line-clamp-3 text-sm text-muted-foreground">{answer.text}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button asChild size="sm" variant="outline">
+                        <a href={storyDraftHref(answer.id)}>
+                          Use as a story draft<span className="sr-only">: {short}</span>
+                        </a>
+                      </Button>
+                      <ConfirmButton
+                        confirmLabel="Delete this answer?"
+                        onConfirm={() => forget(answer.id)}
+                        className="px-3 py-1.5 text-xs"
+                      >
+                        Delete<span className="sr-only">: {short}</span>
+                      </ConfirmButton>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
+        {/* With a tracked application in view, only its own recordings. */}
+        <SavedRecordings tool="interview-glow-up" applicationId={applicationId ?? undefined} />
         <Announcer message={announcement} />
       </div>
     );
   }
 
   if (phase === 'done') {
+    const answeredAt = Object.keys(sessionTakes)
+      .map(Number)
+      .filter((at) => at < questions.length)
+      .sort((a, b) => a - b);
     return (
-      <div className="max-w-2xl space-y-4">
-        <h2
-          id="rehearsal-done-heading"
-          tabIndex={-1}
-          className="text-2xl font-semibold focus-visible:outline-hidden"
-        >
-          That was the last question
-        </h2>
-        <p
-          className="text-sm leading-relaxed text-muted-foreground"
-          data-testid="rehearsal-summary"
-        >
-          You answered {answered} {answered === 1 ? 'time' : 'times'} across {questions.length}{' '}
-          questions.
-        </p>
+      <div className="max-w-2xl space-y-6">
+        <div className="space-y-2">
+          <h2
+            id="rehearsal-done-heading"
+            tabIndex={-1}
+            className="text-2xl font-semibold focus-visible:outline-hidden"
+          >
+            That was the last question
+          </h2>
+          <p
+            className="text-sm leading-relaxed text-muted-foreground"
+            data-testid="rehearsal-summary"
+          >
+            {answeredAt.length === 0
+              ? `You skipped all ${questions.length} questions this time.`
+              : `You answered ${answeredAt.length} of ${questions.length} questions.`}
+          </p>
+        </div>
+        {answeredAt.length > 0 && (
+          <section aria-labelledby="session-answers-title" className="space-y-3">
+            <h3 id="session-answers-title" className="text-lg font-semibold">
+              Your answers from this session
+            </h3>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              They are gone when you leave this page, unless you keep them. A kept answer stays on
+              this device, and you can turn it into a story.
+            </p>
+            <ul className="divide-y divide-border/30 rounded-xl border border-border/40">
+              {answeredAt.map((at) => {
+                const answer = sessionTakes[at];
+                const question = questions[at];
+                const hasText = Boolean(answer.text.trim());
+                const keptEntry = keptByIndex[at];
+                const keptId = keptEntry && keptEntry.text === answer.text.trim();
+                return (
+                  <li key={at} className="space-y-2 px-4 py-3" data-testid="session-answer">
+                    <p className="text-sm font-medium text-foreground">{question.question}</p>
+                    {hasText ? (
+                      <p className="line-clamp-3 text-sm text-muted-foreground">{answer.text}</p>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        A recording with no words written down.
+                      </p>
+                    )}
+                    {hasText && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={Boolean(keptId)}
+                          onClick={() => keepText(at)}
+                        >
+                          {keptId ? 'Kept on this device' : 'Keep this answer'}
+                          <span className="sr-only">: {question.question}</span>
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => draftStoryFrom(at)}
+                        >
+                          Use as a story draft<span className="sr-only">: {question.question}</span>
+                        </Button>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
         <div className="flex flex-wrap gap-2">
           <Button
             type="button"
             onClick={() => {
-              setAnswered(0);
+              setSessionTakes({});
+              setKeptByIndex({});
               ask(0);
             }}
           >
@@ -719,13 +1030,17 @@ export default function RehearsalRoom() {
             <a href="/interview-glow-up/workspace/?tab=stories">Work on your stories</a>
           </Button>
         </div>
+        <p role="status" className="min-h-5 text-sm text-foreground">
+          {notice}
+        </p>
+        <Announcer message={announcement} />
       </div>
     );
   }
 
   if (phase === 'review' && take) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4" data-guide-review={index}>
         <p className="font-mono text-xs tabular-nums text-muted-foreground">
           Question {index + 1} of {questions.length}
         </p>
@@ -736,6 +1051,21 @@ export default function RehearsalRoom() {
           onTextChange={(text) => setTake({ ...take, text })}
           onKeep={take.audio ? () => runFeature(keep) : null}
           kept={kept}
+          onKeepText={() => keepText(index)}
+          textKept={keptByIndex[index]?.text === take.text.trim()}
+          onUseAsStory={() => draftStoryFrom(index)}
+          checklist={selfCheckFor(current)}
+          noteContext={{
+            company: role?.company,
+            jobTitle: role?.jobTitle,
+            askAboutJob: Boolean(
+              current?.questionId && getQuestionById(current.questionId)?.category === 'general'
+            ),
+            terms:
+              current?.questionId === 'q-work-authorization' ||
+              current?.questionId === 'q-salary-expectations' ||
+              current?.questionId === 'q-availability',
+          }}
           countDelivery={countDelivery}
           onCountDeliveryChange={setCountDelivery}
           notes={
@@ -873,13 +1203,21 @@ export default function RehearsalRoom() {
           <Button
             type="button"
             size="lg"
-            disabled={!typed.trim()}
+            disabled={!/[\p{L}\p{N}]/u.test(typed)}
+            aria-describedby="typed-answer-needs"
             onClick={() =>
               finishWith(null, typed, Math.max(0, (performance.now() - startedAt.current) / 1000))
             }
           >
             Review my answer
           </Button>
+          {!/[\p{L}\p{N}]/u.test(typed) && (
+            <p id="typed-answer-needs" className="text-sm text-muted-foreground">
+              {typed.trim()
+                ? 'Write your answer in words to review it.'
+                : 'Write an answer to review it. One sentence is enough to start.'}
+            </p>
+          )}
         </div>
       )}
 

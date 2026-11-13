@@ -1,5 +1,13 @@
 import * as React from 'react';
-import { type ApplicationDesk as Desk, stationsWithContent } from '../../lib/application-desk';
+import {
+  type ApplicationDesk as Desk,
+  type DeskStation,
+  deadlineInWords,
+  isDeskStation,
+  setLastStation,
+  stationsWithContent,
+  titleFromPosting,
+} from '../../lib/application-desk';
 import {
   addApplication,
   daysUntilDeadline,
@@ -8,22 +16,25 @@ import {
   setActiveApplication,
   updateApplication,
 } from '../../lib/applications';
+import { withRole } from '../../lib/career-bridge';
 import { fullLetter } from '../../lib/desk-checks';
 import { switchRole, updateRole } from '../../lib/glowup-store';
+import { requirementsFromBullets } from '../../lib/posting';
+import { POSTING_HANDOFF_KEY } from '../../lib/posting-handoff';
 import { focusWhenReady } from '../../lib/utils';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import BulletsStation from './BulletsStation';
+import { useDeskExamples } from './examples';
 import LetterStation from './LetterStation';
 import PostingStation from './PostingStation';
 import QualificationsStation from './QualificationsStation';
 import ResumeStation from './ResumeStation';
-import SendStation from './SendStation';
-import SentControl from './SentControl';
+import SendStation, { MarkSent, sendState } from './SendStation';
 import { type DeskLoss, useDesk } from './useDesk';
 
-type Station = 'posting' | 'qualifications' | 'bullets' | 'resume' | 'letter' | 'send';
+type Station = DeskStation;
 
 const STATIONS: { id: Station; label: string }[] = [
   { id: 'posting', label: 'Posting' },
@@ -34,8 +45,7 @@ const STATIONS: { id: Station; label: string }[] = [
   { id: 'send', label: 'Before you send' },
 ];
 
-const isStation = (value: string | null): value is Station =>
-  STATIONS.some((station) => station.id === value);
+const isStation = (value: string | null): value is Station => isDeskStation(value);
 
 /** The label a field is shown with, for the copy of what was on screen. */
 function fieldLabel(field: HTMLInputElement | HTMLTextAreaElement): string {
@@ -140,7 +150,16 @@ export default function ApplicationDesk() {
   const snapshot = React.useCallback(() => collectText(rootRef.current, deskRef.current), []);
   const desk = useDesk({ snapshot });
   deskRef.current = desk.application ? desk.desk : null;
-  const { ready, applications, application, role, select, changeApplications, changeGlow } = desk;
+  const {
+    ready,
+    applications,
+    application,
+    role,
+    select,
+    changeApplications,
+    changeGlow,
+    changeDesks,
+  } = desk;
   // The interview tools open on whichever role is current. Make it this
   // application's before leaving, so they show this posting and not the last
   // one worked on. Saved before the page changes; nothing is written when the
@@ -166,6 +185,7 @@ export default function ApplicationDesk() {
       );
     }
   };
+  const examples = useDeskExamples();
   const [station, setStation] = React.useState<Station>('posting');
   const [adding, setAdding] = React.useState(false);
   const [title, setTitle] = React.useState('');
@@ -177,16 +197,36 @@ export default function ApplicationDesk() {
 
   // The forms belong to the application on screen; another one starts them over.
   const shownId = application?.id ?? null;
+  // A posting brought from the homepage waits in this tab. An application
+  // with no posting takes it on its Posting station; one that already has a
+  // posting never does, so the desk says it is waiting and asks.
+  const hasPosting = Boolean(role?.rawJdText?.trim());
+  const [waiting, setWaiting] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    if (!shownId || !hasPosting) {
+      setWaiting(null);
+      return;
+    }
+    try {
+      const text = window.sessionStorage.getItem(POSTING_HANDOFF_KEY);
+      setWaiting(text?.trim() ? text : null);
+    } catch {
+      setWaiting(null);
+    }
+  }, [shownId, hasPosting]);
+  const dropWaiting = () => {
+    try {
+      window.sessionStorage.removeItem(POSTING_HANDOFF_KEY);
+    } catch {
+      // Storage is blocked; the posting goes when the tab closes.
+    }
+    setWaiting(null);
+  };
   // biome-ignore lint/correctness/useExhaustiveDependencies: resets when the application changes
   React.useEffect(() => {
     setEditing(false);
     setAdding(false);
   }, [shownId]);
-
-  React.useEffect(() => {
-    const wanted = new URLSearchParams(window.location.search).get('station');
-    if (isStation(wanted)) setStation(wanted);
-  }, []);
 
   const openStation = (next: string) => {
     if (!isStation(next)) return;
@@ -194,6 +234,32 @@ export default function ApplicationDesk() {
     const url = new URL(window.location.href);
     url.searchParams.set('station', next);
     window.history.replaceState(null, '', url);
+  };
+
+  // The station to open on: the one the address names, else the one the
+  // visitor last opened for this application. Opening one writes nothing;
+  // only choosing a station is remembered.
+  const remembered = desk.desk.lastStation;
+  const firstOpen = React.useRef(true);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: decided once per application shown
+  React.useEffect(() => {
+    if (!ready || !shownId) return;
+    if (firstOpen.current) {
+      firstOpen.current = false;
+      const wanted = new URLSearchParams(window.location.search).get('station');
+      if (isStation(wanted)) {
+        setStation(wanted);
+        return;
+      }
+    }
+    if (remembered) openStation(remembered);
+  }, [ready, shownId]);
+
+  /** A station the visitor chose: opened, and remembered for this application. */
+  const chooseStation = (next: string) => {
+    openStation(next);
+    const appId = application?.id;
+    if (appId && isStation(next)) changeDesks((data) => setLastStation(data, appId, next));
   };
 
   const create = (event: React.FormEvent) => {
@@ -245,55 +311,82 @@ export default function ApplicationDesk() {
 
   const lostNotice = desk.lost && <LossNotice lost={desk.lost} onDismiss={desk.dismissLost} />;
 
+  const deadlineWords = deadlineInWords(deadline);
+  // Sized by its own width, not the window's: at large text or in a wide
+  // typeface the fields stack instead of squeezing into one row.
   const form = (
-    <form
-      onSubmit={create}
-      data-guide="desk-new"
-      className="grid max-w-3xl gap-3 sm:grid-cols-[2fr_2fr_auto_auto] sm:items-end"
-    >
-      <label className="space-y-1">
-        <span className="block text-sm text-muted-foreground">Role</span>
-        <Input
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          placeholder="Marketing intern"
-          className="text-base"
-          required
-        />
-      </label>
-      <label className="space-y-1">
-        <span className="block text-sm text-muted-foreground">
-          Company or organization (optional)
-        </span>
-        <Input
-          value={company}
-          onChange={(event) => setCompany(event.target.value)}
-          placeholder="Riverside Food Bank"
-          className="text-base"
-        />
-      </label>
-      <label className="space-y-1">
-        <span className="block text-sm text-muted-foreground">Deadline (optional)</span>
-        <Input
-          type="date"
-          value={deadline}
-          onChange={(event) => setDeadline(event.target.value)}
-          className="text-base"
-        />
-      </label>
-      <Button
-        type="submit"
-        disabled={!title.trim()}
-        aria-describedby={title.trim() ? undefined : 'desk-new-needs'}
+    <div className="@container max-w-3xl">
+      <form
+        onSubmit={create}
+        data-guide="desk-new"
+        className="grid gap-3 @xl:grid-cols-2 @xl:items-end @3xl:grid-cols-[2fr_2fr_auto_auto]"
       >
-        Start this application
-      </Button>
-      {!title.trim() && (
-        <p id="desk-new-needs" className="text-xs text-muted-foreground sm:col-span-4">
-          Type the role to start.
-        </p>
-      )}
-    </form>
+        <label className="min-w-0 space-y-1">
+          <span className="block text-sm text-muted-foreground">Role</span>
+          <Input
+            id="desk-new-title"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder={examples.role}
+            className="text-base"
+            required
+          />
+        </label>
+        <label className="min-w-0 space-y-1">
+          <span className="block text-sm text-muted-foreground">
+            Company or organization (optional)
+          </span>
+          <Input
+            value={company}
+            onChange={(event) => setCompany(event.target.value)}
+            placeholder={examples.company}
+            className="text-base"
+          />
+        </label>
+        <label className="min-w-0 space-y-1">
+          <span className="block text-sm text-muted-foreground">Deadline (optional)</span>
+          <Input
+            type="date"
+            value={deadline}
+            onChange={(event) => setDeadline(event.target.value)}
+            onKeyDown={(event) => {
+              // Enter starts the application here too, as in the other fields.
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+              }
+            }}
+            aria-describedby={deadlineWords ? 'desk-new-deadline-words' : undefined}
+            className="text-base"
+          />
+        </label>
+        <Button
+          type="submit"
+          disabled={!title.trim()}
+          aria-describedby={title.trim() ? undefined : 'desk-new-needs'}
+          className="h-auto min-h-9 whitespace-normal"
+        >
+          Start this application
+        </Button>
+        {deadlineWords && (
+          <p
+            id="desk-new-deadline-words"
+            className="text-xs text-muted-foreground @xl:col-span-2 @3xl:col-span-4"
+            data-testid="deadline-words"
+          >
+            Deadline read as {deadlineWords}.
+          </p>
+        )}
+        {!title.trim() && (
+          <p
+            id="desk-new-needs"
+            className="text-xs text-muted-foreground @xl:col-span-2 @3xl:col-span-4"
+          >
+            Type the role to start.
+          </p>
+        )}
+      </form>
+    </div>
   );
 
   if (!application) {
@@ -332,6 +425,13 @@ export default function ApplicationDesk() {
   }
 
   const days = daysUntilDeadline(application.deadline);
+  const send = sendState(
+    desk.desk.letter,
+    application.title,
+    application.company,
+    requirementsFromBullets(role?.bullets ?? []),
+    desk.desk.qualifications
+  );
   const filled = stationsWithContent(desk.desk);
   const hasContent: Record<Station, boolean> = {
     posting: Boolean(role?.bullets.length),
@@ -366,17 +466,25 @@ export default function ApplicationDesk() {
           </p>
           {!application.sentOn && days !== null && (
             <p className="text-sm text-muted-foreground">
-              {days < 0 ? 'The deadline has passed' : deadlineLabel(days)}
+              {days < 0
+                ? 'The deadline has passed'
+                : days > 1
+                  ? `Due ${deadlineLabel(days)}`
+                  : deadlineLabel(days)}
             </p>
           )}
-          <SentControl
-            className="pt-1"
-            sentOn={application.sentOn}
-            title={application.title}
-            onChange={(sentOn) =>
-              changeApplications((data) => markSent(data, application.id, sentOn))
-            }
-          />
+          {/* Nothing to send before there is a posting; once sent, the date stays. */}
+          {(hasPosting || application.sentOn) && (
+            <MarkSent
+              className="pt-1"
+              sentOn={application.sentOn}
+              title={application.title}
+              blocker={send.blocker}
+              onChange={(sentOn) =>
+                changeApplications((data) => markSent(data, application.id, sentOn))
+              }
+            />
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {applications.applications.length > 1 && (
@@ -385,7 +493,7 @@ export default function ApplicationDesk() {
               <select
                 value={application.id}
                 onChange={(event) => focusOn(event.target.value)}
-                className="h-auto min-h-9 w-full min-w-0 max-w-[14rem] rounded-md border border-border/50 bg-transparent px-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                className="h-auto min-h-9 w-full min-w-0 max-w-full rounded-md border border-border/50 bg-transparent px-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring sm:w-auto sm:max-w-[28rem]"
               >
                 {applications.applications.map((item) => (
                   <option key={item.id} value={item.id}>
@@ -443,7 +551,7 @@ export default function ApplicationDesk() {
             <Input
               value={editCompany}
               onChange={(event) => setEditCompany(event.target.value)}
-              placeholder="Riverside Food Bank"
+              placeholder={examples.company}
               className="text-base"
             />
           </label>
@@ -456,9 +564,42 @@ export default function ApplicationDesk() {
         </form>
       )}
 
+      {waiting && !adding && (
+        <div
+          role="status"
+          className="max-w-3xl space-y-3 rounded-lg bg-gold/12 px-4 py-3 text-sm"
+          data-testid="posting-waiting"
+        >
+          <p className="text-foreground">
+            The posting you brought from the homepage is waiting. It starts: "
+            {waiting.trim().split('\n')[0].slice(0, 90)}". It was not put on {application.title},
+            which already has a posting.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                setTitle(titleFromPosting(waiting));
+                setCompany('');
+                setDeadline('');
+                setEditing(false);
+                setAdding(true);
+                focusWhenReady('desk-new-title');
+              }}
+            >
+              Start a new application with it
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={dropWaiting}>
+              Leave it
+            </Button>
+          </div>
+        </div>
+      )}
+
       {adding && form}
 
-      <Tabs value={station} onValueChange={openStation}>
+      <Tabs value={station} onValueChange={chooseStation}>
         <TabsList className="w-full flex-wrap justify-start gap-1 bg-transparent p-0 group-data-[orientation=horizontal]/tabs:h-auto">
           {STATIONS.map((item, index) => (
             <TabsTrigger
@@ -513,14 +654,14 @@ export default function ApplicationDesk() {
           <>
             <a
               className="underline underline-offset-4 hover:text-foam"
-              href="/interview-glow-up/workspace/?tab=stories"
+              href={withRole('/interview-glow-up/workspace/?tab=stories', role.id)}
               onClick={openOnThisRole}
             >
               Build interview stories
             </a>
             <a
               className="underline underline-offset-4 hover:text-foam"
-              href="/interview-glow-up/rehearse/"
+              href={withRole('/interview-glow-up/rehearse/', role.id)}
               onClick={openOnThisRole}
             >
               Rehearse the interview

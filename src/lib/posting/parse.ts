@@ -4,9 +4,11 @@
  * the evidence for its section. Nothing is fetched; nothing is guessed.
  */
 
+import { hiringCondition } from './conditions';
 import {
   classifyLegacyLine,
   isBoilerplate,
+  isBoilerplateHere,
   isSectionHeader,
   MAX_REQUIREMENT_LINES,
   MIN_REQUIREMENT_WORDS,
@@ -128,9 +130,9 @@ function isNestedUnder(child: ScannedLine, parent: ScannedLine): boolean {
 const JOB_DETAIL_LINE =
   /^(?:location|locations|schedule|hours|shift|shifts|pay|pay rate|wage|wages|salary|compensation|rate|job type|employment type|position type|start date|duration|department|reports to|team|travel|work model|workplace type|openings|posted|deadline|application deadline)\s*:|^\$\s?\d[\d,.]*(?:\s*(?:-|–|to)\s*\$?\s?\d[\d,.]*)?\s*(?:\/|per\s+|an?\s+)(?:hour|hr|year|yr|week|month)\b/i;
 
-/** A sentence about pay, weekly hours, or how to apply, with no requirement cue of its own. */
+/** A sentence about weekly hours or how to apply, with no requirement cue of its own. */
 const JOB_DETAIL_SENTENCE =
-  /\$\s?\d|\b\d+\s*(?:(?:-|–|to)\s*\d+\s*)?hours\s+(?:per|a|each)\s+week\b|^apply\s+(?:by|before|online|through|via|at|now|today)\b|^to\s+apply\b|^salary\b|\bcommensurate\s+with\b/i;
+  /\b\d+\s*(?:(?:-|–|to)\s*\d+\s*)?hours\s+(?:per|a|each)\s+week\b|^apply\s+(?:by|before|online|through|via|at|now|today)\b|^to\s+apply\b|^salary\b|\bcommensurate\s+with\b/i;
 
 /** Deadlines, review timing, and how to apply. Set aside wherever they appear. */
 const APPLICATION_LOGISTICS =
@@ -244,10 +246,43 @@ export function looksLikeNoise(text: string): boolean {
   return wordCount(text) < MIN_REQUIREMENT_WORDS && !isShortRequirement(text);
 }
 
+/** A dollar figure, with any shorthand for thousands or millions after it. */
+const DOLLAR_FIGURE = /\$\s?\d[\d,]*(?:\.\d+)?(?:\s*(k|m|mm|b|bn|million|billion|thousand)\b)?/gi;
+
+/** Words that make a figure what the applicant is paid. */
+const PAY_WORDS =
+  /\b(?:salary|salaries|wages?|compensation|stipends?|hourly|per\s+hour|an\s+hour|(?:base|starting|hourly)\s+pay|pay\s+(?:rate|range|band|scale)|bonus(?:es)?|commission|tips|overtime|per\s+diem|allowance|reimburse(?:d|ment)?|relocation|you\s+(?:will\s+)?(?:earn|make|receive)|paid\s+(?:at|weekly|biweekly|monthly|hourly))\b/i;
+
+/** A rate written after a figure: "$45,000 a year", "$19/hr", "$600 weekly". */
+const RATE_AFTER =
+  /^\s*(?:(?:-|–|to)\s*\$?\s?\d[\d,]*(?:\.\d+)?\s*k?\s*)?(?:(?:\/\s*|per\s+|an?\s+|each\s+)(?:hour|hr|year|yr|annum|week|wk|month|mo)\b|(?:hourly|annually|yearly|weekly|biweekly|monthly)\b)/i;
+
+/** Money the job handles rather than money the applicant earns. */
+const BUSINESS_MONEY =
+  /\b(?:budgets?|p\s*&\s*l|revenue|sales|invoices?|spend(?:ing)?|portfolio|purchas(?:e|es|ing)|contracts?|funding|grants?|costs?|savings|inventory|assets|accounts?|deals?|transactions?|payments?|expenses?|donations?|fundrais\w*|vendors?|suppliers?|bills?)\b/i;
+
+/**
+ * A dollar figure that is pay: it sits next to a pay word ("Salary range:
+ * $44,000 to $48,000 per year", "$18 an hour"), or has a rate after it and
+ * no sign that the money is the business's. "Own the budget and P&L, about
+ * $30M a year" and "Process invoices up to $5,000" are duties, not pay.
+ */
+export function mentionsPay(text: string): boolean {
+  const figures = [...text.matchAll(DOLLAR_FIGURE)];
+  if (figures.length === 0) return false;
+  if (PAY_WORDS.test(text)) return true;
+  if (BUSINESS_MONEY.test(text)) return false;
+  return figures.some((figure) => {
+    // Nobody this site is for is paid in millions.
+    if (/^(?:m|mm|b|bn|million|billion)$/i.test(figure[1] ?? '')) return false;
+    return RATE_AFTER.test(text.slice((figure.index ?? 0) + figure[0].length));
+  });
+}
+
 /** "Location: Austin, TX", "$17 to $19 per hour", "Apply by October 1": facts about the job, not requirements. */
 function isJobDetail(text: string): boolean {
   if (JOB_DETAIL_LINE.test(text)) return true;
-  if (!JOB_DETAIL_SENTENCE.test(text)) return false;
+  if (!JOB_DETAIL_SENTENCE.test(text) && !mentionsPay(text)) return false;
   const cues = findCues(text);
   return !(cues.required || cues.preferred || cues.responsibility);
 }
@@ -398,7 +433,7 @@ class PostingParser {
       this.skip(span, 'outside-requirements');
       return;
     }
-    if (isBoilerplate(text)) {
+    if (isBoilerplateHere(text, startsWithAction)) {
       this.skip(span, 'boilerplate');
       return;
     }
@@ -418,6 +453,17 @@ class PostingParser {
     }
     const classification = decideSection(this.context, findCues(text));
     if (classification.section === 'unclassified' && classification.basis === 'none') {
+      // "We do not sponsor visas for this role." reads like a line about the
+      // employer, but it decides who can be hired: kept, as a condition.
+      const condition = hiringCondition(cleanText(text));
+      if (condition) {
+        this.push(span, cleanText(text), {
+          section: 'required',
+          basis: 'cue',
+          cue: condition.label,
+        });
+        return;
+      }
       const reason = descriptionReason(cleanText(text));
       if (reason) {
         this.skip(span, reason);
@@ -475,7 +521,7 @@ class PostingParser {
       const joiner = parts.some((p) => p.includes(',')) ? '; ' : ', ';
       const text = `${lead}: ${parts.join(joiner)}`;
       const span = { start: parent.start, end: items[items.length - 1].end };
-      if (isBoilerplate(text)) {
+      if (isBoilerplateHere(text, startsWithAction)) {
         this.skip(span, 'boilerplate');
         return;
       }

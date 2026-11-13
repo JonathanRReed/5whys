@@ -13,6 +13,10 @@ type Props = {
    * with the take, so editing the draft afterwards cannot relabel it.
    */
   label: string;
+  /** Called once recording has started, so the rep clock can run with it. */
+  onStart?: () => void;
+  /** Called with the length of the take once recording stops. */
+  onStop?: (durationMs: number) => void;
 };
 
 /**
@@ -20,7 +24,7 @@ type Props = {
  * visitor presses record, the take stays in this tab unless they keep it, and
  * nothing is sent anywhere. There is no grade: hearing yourself is the point.
  */
-export default function RepRecorder({ label }: Props) {
+export default function RepRecorder({ label, onStart, onStop }: Props) {
   const [supported, setSupported] = React.useState(false);
   const [recording, setRecording] = React.useState(false);
   const [elapsed, setElapsed] = React.useState(0);
@@ -80,6 +84,7 @@ export default function RepRecorder({ label }: Props) {
       startedAt.current = performance.now();
       setElapsed(0);
       setRecording(true);
+      onStart?.();
     } catch (error) {
       const reason = (error as { reason?: string } | null)?.reason;
       setNotice(
@@ -100,8 +105,11 @@ export default function RepRecorder({ label }: Props) {
     const stopped = recorder.current;
     recorder.current = null;
     try {
-      setTake(await stopped.stop());
+      const recorded = await stopped.stop();
+      setTake(recorded);
+      onStop?.(recorded.durationMs);
     } catch {
+      onStop?.(0);
       setNotice('The recording could not be saved. Try again.');
     }
   };
@@ -139,8 +147,8 @@ export default function RepRecorder({ label }: Props) {
           Hear how it sounds
         </h3>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Record a rep and listen back. It stays in this tab unless you keep it, and it is never
-          sent anywhere.
+          Record a rep and listen back. Recording runs the rep timer too. The take stays in this tab
+          unless you keep it, and it is never sent anywhere.
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-3">

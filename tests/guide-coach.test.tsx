@@ -25,9 +25,9 @@ it('walks forward when the visitor does the step, and marks its place on the pag
   document.body.appendChild(box);
   render(<GuideCoach tool="resume-game" />);
 
-  fireEvent.click(screen.getByRole('radio', { name: 'Guided' }));
+  fireEvent.click(screen.getByRole('radio', { name: /^Guide/ }));
   const coach = screen.getByRole('complementary', { name: 'Guide' });
-  expect(coach).toHaveTextContent('Step 1 of 5');
+  expect(coach).toHaveTextContent('Step 1 of 4');
   expect(coach).toHaveTextContent('Put a resume in');
   expect(box).toHaveAttribute('data-guide-active');
 
@@ -35,17 +35,18 @@ it('walks forward when the visitor does the step, and marks its place on the pag
   act(() => {
     vi.advanceTimersByTime(600);
   });
-  expect(coach).toHaveTextContent('Step 2 of 5');
-  expect(coach).toHaveTextContent('Done: Put a resume in.');
+  expect(coach).toHaveTextContent('Step 2 of 4');
+  // The reason is held back until the step is done.
+  expect(coach).toHaveTextContent('Done. Everything here works on the lines you gave it');
   expect(box).not.toHaveAttribute('data-guide-active');
   expect(loadGuideProgress('resume-game')?.done).toEqual(['add-resume']);
 });
 
 it('can skip a step and be ended, and remembers the choice', () => {
   render(<GuideCoach tool="resume-game" />);
-  fireEvent.click(screen.getByRole('radio', { name: 'Guided' }));
+  fireEvent.click(screen.getByRole('radio', { name: /^Guide/ }));
   fireEvent.click(screen.getByRole('button', { name: 'Skip this step' }));
-  expect(screen.getByRole('complementary', { name: 'Guide' })).toHaveTextContent('Step 2 of 5');
+  expect(screen.getByRole('complementary', { name: 'Guide' })).toHaveTextContent('Step 2 of 4');
   fireEvent.click(screen.getByRole('button', { name: 'End guide' }));
   expect(screen.queryByRole('complementary', { name: 'Guide' })).toBeNull();
   expect(loadGuideProgress('resume-game')?.mode).toBe('free');

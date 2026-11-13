@@ -12,12 +12,13 @@ export {
   summarizeLines,
   summarySentences,
 } from './analysis';
-export { ACTION_VERBS, WEAK_WORDS } from './constants';
+export { ACTION_VERBS, MAX_RESUME_FILE_MB, WEAK_WORDS } from './constants';
 export { readDatesNote } from './dates-note';
 export { downloadTextFile, exportDocx } from './exporters';
 export type { HighlightToken } from './highlight';
 export { highlightResume, parseHighlightedResume } from './highlight';
 export { analyzeResumeLength } from './length';
+export { careerBreaks, readPersonalDetailsNote, readSummaryNote } from './notes';
 export { buildReviewReport, REVIEW_FILE_BASE } from './review';
 export type { Register } from './samples';
 export {
@@ -54,7 +55,7 @@ export {
 export { extractSkills } from './skills';
 export { detectResumeStructure } from './structure';
 export type { BulletSuggestion } from './suggestions';
-export { generateBulletSuggestions } from './suggestions';
+export { exampleFor, generateBulletSuggestions } from './suggestions';
 export { countPowerVerbs, decodeEntities, escapeHtml } from './text';
 export type { BulletFields, BulletRecord, SignalReport, StoredResumeSession } from './types';
 export { honestVerbQuestion, isVerbWord, leadingAction, startsWithVerb } from './verbs';

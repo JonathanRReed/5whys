@@ -17,7 +17,12 @@ import {
   saveApplications,
   type TrackedApplication,
 } from '../../lib/applications';
-import { RESUME_SESSION_KEY, readResumeRewrites, readResumeText } from '../../lib/career-bridge';
+import {
+  RESUME_SESSION_KEY,
+  readResumeRewrites,
+  readResumeText,
+  rolesForApplications,
+} from '../../lib/career-bridge';
 import { forgetDeskDrafts } from '../../lib/desk-drafts';
 import { onDeviceCleared } from '../../lib/device-events';
 import {
@@ -29,7 +34,12 @@ import {
   saveData,
 } from '../../lib/glowup-store';
 
-export type ResumeRewrite = { original: string; improved: string };
+/**
+ * A line rewritten in the Resume Game. `occurrence` says which of the lines
+ * with these words it was (counted from 0 in resume order), so a line that
+ * appears twice is rewritten in its own place.
+ */
+export type ResumeRewrite = { original: string; improved: string; occurrence?: number };
 
 /**
  * The application this page had open is gone: removed in another tab, or
@@ -88,7 +98,12 @@ function missing(key: string): boolean {
 
 const sameRewrites = (a: ResumeRewrite[], b: ResumeRewrite[]) =>
   a.length === b.length &&
-  a.every((r, i) => r.original === b[i].original && r.improved === b[i].improved);
+  a.every(
+    (r, i) =>
+      r.original === b[i].original &&
+      r.improved === b[i].improved &&
+      r.occurrence === b[i].occurrence
+  );
 
 /** The stores the desk shows. A change to any of them in another tab is read again. */
 const WATCHED = new Set([
@@ -321,9 +336,18 @@ export function useDesk(options: { snapshot?: () => string } = {}): DeskState {
   const plainRefresh = React.useCallback(() => refresh(), [refresh]);
 
   const application = applications.applications.find((a) => a.id === selectedId) ?? null;
-  const role = application?.roleId
-    ? (glow.roles.find((r) => r.id === application.roleId) ?? null)
-    : null;
+  // The same matching the dashboard uses, so a posting the dashboard calls
+  // decoded is the posting this desk opens: a saved link first, otherwise the
+  // one decoded role with this title. Read only; nothing is linked on open.
+  const roleId = React.useMemo(
+    () =>
+      application
+        ? (rolesForApplications(applications.applications, glow.roles).get(application.id)
+            ?.roleId ?? null)
+        : null,
+    [application, applications.applications, glow.roles]
+  );
+  const role = roleId ? (glow.roles.find((r) => r.id === roleId) ?? null) : null;
   const desk = React.useMemo(() => getDesk(desks, application?.id ?? ''), [desks, application?.id]);
 
   return {

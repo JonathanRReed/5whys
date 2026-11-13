@@ -75,12 +75,24 @@ export interface BulletSlot {
   included: boolean;
 }
 
+/** A first draft of a bullet, in three parts the visitor edits. */
+export interface BulletDraft {
+  verb: string;
+  task: string;
+  result: string;
+}
+
 /** The guided bullets flow: one experience, its impact, two bullets, a reflection. */
 export interface BulletsFlow {
   experience: string;
   impact: string;
   bullets: [BulletSlot, BulletSlot];
   reflection: string;
+  /**
+   * The draft built from the two answers, as the visitor last edited it.
+   * Absent until they ask for one, and in desks saved before it was kept.
+   */
+  draft?: BulletDraft;
 }
 
 export type MessageKind = 'linkedin' | 'follow-up-email' | 'intro-call';
@@ -135,10 +147,17 @@ export const PERCENT_FIELDS: readonly PercentField[] = ['guaranteedBonus', 'vari
 
 /**
  * The offer worksheet. Every number is what the student typed, or null when
- * they have not. Bonus and variable pay are amounts per year.
+ * they have not. Bonus and variable pay are amounts over the weeks entered:
+ * a year for a full-year job, the whole placement for a shorter one. They are
+ * labeled that way where they are typed, so nothing is prorated or guessed.
  */
 export interface OfferWorksheet {
   basePay: number | null;
+  /**
+   * The top of a posted range, when base pay was given as one ("44k to 48k").
+   * `basePay` holds the bottom. Absent when the pay is a single figure.
+   */
+  basePayTo?: number;
   payPeriod: PayPeriod | null;
   guaranteedBonus: number | null;
   variablePay: number | null;
@@ -166,6 +185,17 @@ export interface OfferWorksheet {
    * dollars, as in worksheets saved before other currencies were read.
    */
   currency?: string;
+  /**
+   * Money paid once, such as a signing or relocation bonus. It is counted in
+   * the first year only and never added to a yearly figure. Absent when none.
+   */
+  oneTimeBonus?: number;
+  /** True when the visitor has this offer in hand, not just a posted rate. */
+  received?: boolean;
+  /** 'YYYY-MM-DD' the visitor must answer the offer by. */
+  answerBy?: string;
+  /** When the worksheet was last changed (ms), so Pay can open on the offer worked on last. */
+  editedAt?: number;
 }
 
 /** Currency symbols the worksheet reads and shows results in. */
@@ -186,6 +216,21 @@ export interface ResumeSelection {
   updatedAt: number;
 }
 
+/** The desk's stations, in the order they are shown. */
+export const DESK_STATIONS = [
+  'posting',
+  'qualifications',
+  'bullets',
+  'resume',
+  'letter',
+  'send',
+] as const;
+
+export type DeskStation = (typeof DESK_STATIONS)[number];
+
+export const isDeskStation = (value: unknown): value is DeskStation =>
+  typeof value === 'string' && (DESK_STATIONS as readonly string[]).includes(value);
+
 export interface ApplicationDesk {
   qualifications: QualificationRow[];
   actionPlan: ActionStep[];
@@ -196,6 +241,12 @@ export interface ApplicationDesk {
   offer: OfferWorksheet;
   /** Null until the student picks; the export decides what that means. */
   resumeSelection: ResumeSelection | null;
+  /**
+   * The station the visitor last opened for this application, so the desk
+   * reopens there. Absent until they pick one. Not work: it does not move
+   * `updatedAt`.
+   */
+  lastStation?: DeskStation;
   updatedAt: number;
 }
 
@@ -312,6 +363,12 @@ function normalizeSlot(value: unknown): BulletSlot {
   };
 }
 
+/** A saved draft, or null when there is none or it is not the right shape. */
+function normalizeDraft(value: unknown): BulletDraft | null {
+  if (!isRecord(value)) return null;
+  return { verb: text(value.verb), task: text(value.task), result: text(value.result) };
+}
+
 function normalizeVariant(value: unknown, now: number): MessageVariant | null {
   if (!isRecord(value)) return null;
   const variantText = text(value.text);
@@ -376,6 +433,8 @@ export function normalizeDesk(value: unknown, now = Date.now()): ApplicationDesk
       bullets: [normalizeSlot(slots[0]), normalizeSlot(slots[1])],
       reflection: text(b.reflection),
     };
+    const draft = normalizeDraft(b.draft);
+    if (draft) desk.bullets.draft = draft;
   }
   if (isRecord(value.letter)) {
     const l = value.letter;
@@ -416,6 +475,18 @@ export function normalizeDesk(value: unknown, now = Date.now()): ApplicationDesk
     const percents = normalizePercents(o.percentOfBase);
     if (percents) desk.offer.percentOfBase = percents;
     if (isCurrencySymbol(o.currency) && o.currency !== '$') desk.offer.currency = o.currency;
+    const top = amount(o.basePayTo);
+    if (top !== null && desk.offer.basePay !== null && top > desk.offer.basePay) {
+      desk.offer.basePayTo = top;
+    }
+    const once = amount(o.oneTimeBonus);
+    if (once !== null && once > 0) desk.offer.oneTimeBonus = once;
+    if (o.received === true) desk.offer.received = true;
+    const answerBy = date(o.answerBy);
+    if (answerBy) desk.offer.answerBy = answerBy;
+    if (typeof o.editedAt === 'number' && Number.isFinite(o.editedAt)) {
+      desk.offer.editedAt = o.editedAt;
+    }
   }
   if (isRecord(value.resumeSelection) && Array.isArray(value.resumeSelection.bulletIds)) {
     desk.resumeSelection = {
@@ -426,20 +497,19 @@ export function normalizeDesk(value: unknown, now = Date.now()): ApplicationDesk
           )
         ),
       ],
+      // Repeats are kept: a resume can hold the same line twice, and choosing
+      // both is two choices.
       ...(Array.isArray(value.resumeSelection.bulletTexts)
         ? {
-            bulletTexts: [
-              ...new Set(
-                value.resumeSelection.bulletTexts.filter(
-                  (entry): entry is string => typeof entry === 'string' && !!entry
-                )
-              ),
-            ],
+            bulletTexts: value.resumeSelection.bulletTexts.filter(
+              (entry): entry is string => typeof entry === 'string' && !!entry
+            ),
           }
         : {}),
       updatedAt: time(value.resumeSelection.updatedAt, now),
     };
   }
+  if (isDeskStation(value.lastStation)) desk.lastStation = value.lastStation;
   desk.updatedAt = time(value.updatedAt, now);
   return desk;
 }
@@ -531,6 +601,43 @@ export function remapQualifications(
       qualifications.every((row, index) => row === desk.qualifications[index]);
     return same ? desk : { ...desk, qualifications };
   });
+}
+
+/**
+ * `remapQualifications` for every application linked to one decoded role: a
+ * posting re-decoded from any page moves the rows of each desk that uses it.
+ */
+export function remapLinkedDesks(
+  data: ApplicationDeskData,
+  applicationIds: readonly string[],
+  map: ReadonlyMap<string, string>,
+  parsedIds: ReadonlySet<string>
+): ApplicationDeskData {
+  return applicationIds.reduce(
+    (next, id) => (next.desks[id] ? remapQualifications(next, id, map, parsedIds) : next),
+    data
+  );
+}
+
+/**
+ * After a posting is decoded again elsewhere (the interview workspace), move
+ * the qualification rows of the applications on that posting to their
+ * requirements' new ids and save. The desk's own operation on its own store:
+ * the caller names the applications and never reads the store itself.
+ * Written only when a row actually moved or went. Returns whether it wrote.
+ */
+export function saveRemappedDesks(
+  applicationIds: readonly string[],
+  map: ReadonlyMap<string, string>,
+  parsedIds: ReadonlySet<string>
+): boolean {
+  if (applicationIds.length === 0) return false;
+  const desks = loadApplicationDesks();
+  const next = remapLinkedDesks(desks, applicationIds, map, parsedIds);
+  const changed = applicationIds.some(
+    (id) => desks.desks[id] && next.desks[id]?.qualifications !== desks.desks[id].qualifications
+  );
+  return changed ? saveApplicationDesks(next) : false;
 }
 
 export function setQualification(
@@ -641,6 +748,8 @@ export function updateBulletsFlow(
   changes: Partial<Pick<BulletsFlow, 'experience' | 'impact' | 'reflection'>> & {
     /** Replace one of the two bullets. */
     bullet?: { index: 0 | 1; slot: Partial<BulletSlot> };
+    /** Replace the draft; null removes it. */
+    draft?: Partial<BulletDraft> | null;
   }
 ): ApplicationDeskData {
   return updateDesk(data, applicationId, (desk) => {
@@ -654,6 +763,16 @@ export function updateBulletsFlow(
         included: typeof included === 'boolean' ? included : current.included,
       };
     }
+    const draft =
+      changes.draft === undefined
+        ? desk.bullets.draft
+        : changes.draft === null
+          ? undefined
+          : {
+              verb: text(changes.draft.verb ?? desk.bullets.draft?.verb),
+              task: text(changes.draft.task ?? desk.bullets.draft?.task),
+              result: text(changes.draft.result ?? desk.bullets.draft?.result),
+            };
     return {
       ...desk,
       bullets: {
@@ -663,9 +782,28 @@ export function updateBulletsFlow(
         bullets,
         reflection:
           typeof changes.reflection === 'string' ? changes.reflection : desk.bullets.reflection,
+        ...(draft ? { draft } : {}),
       },
     };
   });
+}
+
+/**
+ * Remember the station the visitor opened, so the desk reopens there. Only
+ * an application that is tracked gets a desk, and opening a station is not
+ * work: a desk that already exists keeps its `updatedAt`. Returns `data`
+ * unchanged when the station is already the one remembered.
+ */
+export function setLastStation(
+  data: ApplicationDeskData,
+  applicationId: string,
+  station: DeskStation
+): ApplicationDeskData {
+  if (!applicationId || UNSAFE_KEYS.has(applicationId) || !isDeskStation(station)) return data;
+  const existing = data.desks[applicationId];
+  if (existing?.lastStation === station) return data;
+  const desk = existing ?? createEmptyDesk(Date.now());
+  return { ...data, desks: { ...data.desks, [applicationId]: { ...desk, lastStation: station } } };
 }
 
 export function updateLetter(
@@ -724,9 +862,27 @@ export function setChecklistTick(
   }));
 }
 
-export type OfferChanges = Partial<Omit<OfferWorksheet, 'percentOfBase' | 'currency'>> & {
+export type OfferChanges = Partial<
+  Omit<
+    OfferWorksheet,
+    | 'percentOfBase'
+    | 'currency'
+    | 'basePayTo'
+    | 'oneTimeBonus'
+    | 'received'
+    | 'answerBy'
+    | 'editedAt'
+  >
+> & {
   /** A symbol records the currency typed with the base pay; null or "$" returns to dollars. */
   currency?: string | null;
+  /** The top of a range; null when the base pay is one figure. */
+  basePayTo?: number | null;
+  /** A one-time amount; null or zero clears it. */
+  oneTimeBonus?: number | null;
+  received?: boolean | null;
+  /** 'YYYY-MM-DD', or null to clear. */
+  answerBy?: string | null;
   /** A number records the field as typed as that percentage; null clears it. */
   percentOfBase?: Partial<Record<PercentField, number | null>>;
 };
@@ -759,6 +915,32 @@ export function applyOfferChanges(current: OfferWorksheet, changes: OfferChanges
       offer.currency = changes.currency;
     } else delete offer.currency;
   }
+  if ('basePayTo' in changes) {
+    const top = amount(changes.basePayTo);
+    if (top !== null) offer.basePayTo = top;
+    else delete offer.basePayTo;
+  }
+  // A range needs a top above its bottom; a changed bottom can undo it.
+  if (
+    offer.basePayTo !== undefined &&
+    (offer.basePay === null || offer.basePayTo <= offer.basePay)
+  ) {
+    delete offer.basePayTo;
+  }
+  if ('oneTimeBonus' in changes) {
+    const once = amount(changes.oneTimeBonus);
+    if (once !== null && once > 0) offer.oneTimeBonus = once;
+    else delete offer.oneTimeBonus;
+  }
+  if ('received' in changes) {
+    if (changes.received === true) offer.received = true;
+    else delete offer.received;
+  }
+  if ('answerBy' in changes) {
+    const answerBy = date(changes.answerBy);
+    if (answerBy) offer.answerBy = answerBy;
+    else delete offer.answerBy;
+  }
   if (changes.percentOfBase) {
     const percents = { ...offer.percentOfBase };
     for (const field of PERCENT_FIELDS) {
@@ -781,7 +963,7 @@ export function updateOfferWorksheet(
 ): ApplicationDeskData {
   return updateDesk(data, applicationId, (desk) => ({
     ...desk,
-    offer: applyOfferChanges(desk.offer, changes),
+    offer: { ...applyOfferChanges(desk.offer, changes), editedAt: Date.now() },
   }));
 }
 
@@ -800,8 +982,10 @@ export function setResumeSelection(
         ? null
         : {
             bulletIds: [...new Set(bulletIds.filter((id) => typeof id === 'string' && !!id))],
+            // Words may repeat: two identical lines chosen are two choices,
+            // and each is matched back to its own line after a reload.
             ...(bulletTexts
-              ? { bulletTexts: [...new Set(bulletTexts.filter((entry) => !!entry))] }
+              ? { bulletTexts: bulletTexts.filter((entry) => typeof entry === 'string' && !!entry) }
               : {}),
             updatedAt: Date.now(),
           },
@@ -890,7 +1074,10 @@ export function stationsWithContent(desk: ApplicationDesk): Record<DeskStationId
       offer.weeksPerYear !== null ||
       filled(offer.notes) ||
       filled(offer.wageSource) ||
-      offer.wageSourceDate !== null,
+      offer.wageSourceDate !== null ||
+      offer.oneTimeBonus !== undefined ||
+      offer.received === true ||
+      offer.answerBy !== undefined,
   };
 }
 
@@ -1036,6 +1223,12 @@ export interface OfferEquivalents {
   hourly: number | null;
   /** Base pay for one week, without overtime, or null. */
   weekly: number | null;
+  /**
+   * Base pay for one month, without overtime, or null. A salary is divided by
+   * twelve; other rates count 52 weeks over 12 months, the same calendar
+   * conversion the worksheet uses for a monthly rate.
+   */
+  monthly: number | null;
   /** Base pay over the weeks entered (a year for a salary), without overtime, or null. */
   annualBase: number | null;
   /**
@@ -1050,6 +1243,14 @@ export interface OfferEquivalents {
    * it were paid, and any overtime. Null when the base is unknown.
    */
   annualWithVariable: number | null;
+  /** The one-time amount, or zero. It is never part of a yearly figure. */
+  oneTime: number;
+  /**
+   * The first year (or the whole placement): guaranteed pay plus the one-time
+   * amount. Null when the base is unknown. Equal to `annualGuaranteed` when
+   * there is no one-time amount.
+   */
+  firstYear: number | null;
   /** Inputs the student still needs to enter for the missing figures. */
   missing: Array<'basePay' | 'payPeriod' | 'hoursPerWeek' | 'weeksPerYear'>;
 }
@@ -1089,6 +1290,16 @@ export function offerEquivalents(offer: OfferWorksheet): OfferEquivalents {
       ? null
       : finite(annualGuaranteed + extra('variablePay') + overtimeAnnual);
   const weekly = finite(weeklyPay(basePay, payPeriod, hoursPerWeek, weeksPerYear));
+  const monthly =
+    payPeriod === 'year'
+      ? validPay(basePay)
+        ? finite(basePay / MONTHS_PER_YEAR)
+        : null
+      : weekly === null
+        ? null
+        : finite((weekly * WEEKS_PER_CALENDAR_YEAR) / MONTHS_PER_YEAR);
+  const oneTime = positive(offer.oneTimeBonus) ? offer.oneTimeBonus : 0;
+  const firstYear = annualGuaranteed === null ? null : finite(annualGuaranteed + oneTime);
 
   // Whatever the period, one of the two figures needs hours and one needs
   // weeks, so a complete worksheet always has both.
@@ -1100,12 +1311,39 @@ export function offerEquivalents(offer: OfferWorksheet): OfferEquivalents {
   return {
     hourly,
     weekly,
+    monthly,
     annualBase,
     overtimeAnnual,
     annualGuaranteed,
     annualWithVariable,
+    oneTime,
+    firstYear,
     missing,
   };
+}
+
+/**
+ * The figures for both ends of a posted range: `low` from the base pay, and
+ * `high` from the top of the range, or null when the pay is one figure. A
+ * bonus typed as a percentage follows each end; an amount stays the same.
+ */
+export function offerRange(offer: OfferWorksheet): {
+  low: OfferEquivalents;
+  high: OfferEquivalents | null;
+} {
+  const low = offerEquivalents(offer);
+  const top = offer.basePayTo;
+  const high =
+    typeof top === 'number' && offer.basePay !== null && top > offer.basePay
+      ? offerEquivalents({ ...offer, basePay: top })
+      : null;
+  return { low, high };
+}
+
+/** How the extras on a worksheet are named: "a year", or "for the 10 weeks" on a shorter job. */
+export function extrasPhrase(offer: Pick<OfferWorksheet, 'payPeriod' | 'weeksPerYear'>): string {
+  const period = periodPhrase(offer);
+  return period === 'a year' ? 'a year' : period.replace(/^over /, 'for the ');
 }
 
 /**
@@ -1119,4 +1357,37 @@ export function periodPhrase(offer: Pick<OfferWorksheet, 'payPeriod' | 'weeksPer
     return 'a year';
   }
   return `over ${weeks} ${weeks === 1 ? 'week' : 'weeks'}`;
+}
+
+/**
+ * A deadline in words, so a date typed day-first and read month-first shows
+ * at a glance: "2027-12-01" is "Wednesday, December 1, 2027". Empty for a
+ * value that is not a whole date.
+ */
+export function deadlineInWords(isoDate: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return '';
+  const [year, month, day] = isoDate.split('-').map(Number);
+  const date = new Date(year, month - 1, day, 12);
+  if (date.getMonth() !== month - 1 || date.getDate() !== day) return '';
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+/**
+ * A role title to start an application with, from a pasted posting: its
+ * first line when that line is short enough to be a title. Empty otherwise,
+ * so the visitor types it.
+ */
+export function titleFromPosting(posting: string): string {
+  const first =
+    posting
+      .split('\n')
+      .map((line) => line.trim())
+      .find(Boolean) ?? '';
+  const title = first.replace(/[.:;,]+$/, '').trim();
+  return title.length > 0 && title.length <= 80 && title.split(/\s+/).length <= 10 ? title : '';
 }

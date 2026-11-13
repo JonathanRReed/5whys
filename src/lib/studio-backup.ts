@@ -218,6 +218,12 @@ const reflection = (value: unknown) =>
     whyStatement: isText,
     rootReason: isText,
     nextStep: isText,
+    rootIndex: isNumber,
+    // A chain started from an experience, and the visitor's own closing words.
+    start: (v) => v === 'experience',
+    statement: isText,
+    mustOffer: isText,
+    canGiveUp: isText,
   });
 /** Each entry is an object whose present fields pass `checks`. */
 const each =
@@ -364,6 +370,23 @@ const STORE_CHECKS: Record<StudioStorageKey, (value: unknown) => boolean> = {
       })
     ) &&
     // The dashboard and the interview tools walk each packet's lists.
+    // Answers kept from the rehearsal room (glowup-store KeptAnswer).
+    fields(v, {
+      answers: (a) =>
+        objectArray(a) &&
+        each({
+          id: isText,
+          roleId: nullableText,
+          question: isText,
+          questionId: isText,
+          requirement: nullableText,
+          skillIds: textArray,
+          text: isText,
+          mode: (m) => m === 'typed' || m === 'spoken',
+          createdAt: isNumber,
+          updatedAt: isNumber,
+        })(a),
+    }) &&
     v.packets.every((packet: Record<string, unknown>) =>
       fields(packet, {
         roleId: isText,
@@ -388,6 +411,7 @@ const STORE_CHECKS: Record<StudioStorageKey, (value: unknown) => boolean> = {
           deadline: nullableText,
           roleId: nullableText,
           sentOn: nullableText,
+          setAside: nullable(object({ on: isText, reason: isText })),
           createdAt: isNumber,
           updatedAt: isNumber,
         }) &&
@@ -418,6 +442,7 @@ const STORE_CHECKS: Record<StudioStorageKey, (value: unknown) => boolean> = {
                   isText(slot) ||
                   object({ bulletId: nullableText, text: isText, included: isBoolean })(slot)
               ),
+            draft: object({ verb: isText, task: isText, result: isText }),
           }),
           letter: object({
             hook: isText,
@@ -446,6 +471,11 @@ const STORE_CHECKS: Record<StudioStorageKey, (value: unknown) => boolean> = {
             wageSourceDate: nullableText,
             percentOfBase: (p) => isObject(p) && Object.values(p).every(amountLike),
             currency: isText,
+            basePayTo: amountLike,
+            oneTimeBonus: amountLike,
+            received: isBoolean,
+            answerBy: isText,
+            editedAt: isNumber,
           }),
           resumeSelection: nullable(
             (r) =>
@@ -453,6 +483,7 @@ const STORE_CHECKS: Record<StudioStorageKey, (value: unknown) => boolean> = {
               textArray(r.bulletIds) &&
               fields(r, { bulletTexts: textArray, updatedAt: isNumber })
           ),
+          lastStation: isText,
           updatedAt: isNumber,
         })
     ),

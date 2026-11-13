@@ -13,6 +13,30 @@ import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
 import { PrinterIcon } from './icons';
 import { roleHeading } from './PacketPrint';
 
+/** The first sentence of a story's play, the line that says what the visitor did. */
+export function firstSentence(text: string): string {
+  const clean = text.replace(/\s+/g, ' ').trim();
+  return (clean.split(/(?<=[.!?])\s+/)[0] ?? '').trim();
+}
+
+/** What the cheat sheet is missing, named so the packet and the HUD say the same thing. */
+export function missingFromCheatSheet(packet: InterviewPacket): string[] {
+  const missing: string[] = [];
+  if ((packet.companyIntel?.keywords ?? []).length === 0) missing.push('keywords');
+  if (!packet.panicAnswer?.trim()) missing.push('a fallback story');
+  if (packet.customQuestions.filter((q) => q.trim()).length === 0) {
+    missing.push('questions to ask them');
+  }
+  return missing;
+}
+
+/** "a, b, and c", for a short list in a sentence. */
+export function listInWords(items: string[]): string {
+  if (items.length <= 1) return items.join('');
+  if (items.length === 2) return `${items[0]} and ${items[1]}`;
+  return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
+}
+
 /** Controls whose own Enter and Space must win over the HUD's shortcuts. */
 const INTERACTIVE =
   'button, a[href], select, summary, [role="button"], [role="link"], [role="radio"], [role="checkbox"]';
@@ -172,6 +196,7 @@ export default function InterviewHUD({
   }, [displayStories.length, selectedIndex]);
 
   const keywords = packet.companyIntel?.keywords ?? [];
+  const missing = missingFromCheatSheet(packet);
 
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
@@ -226,11 +251,17 @@ export default function InterviewHUD({
               </div>
             </div>
           </div>
+          <a
+            href="/interview-glow-up/rehearse/"
+            className="ml-auto inline-flex min-h-9 shrink-0 items-center gap-2 rounded-lg border border-border/50 px-3 text-sm text-muted-foreground hover:bg-overlay/25 hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-iris print:hidden"
+          >
+            Rehearse these questions
+          </a>
           {onPrint && (
             <button
               type="button"
               onClick={onPrint}
-              className="ml-auto mr-4 inline-flex min-h-9 shrink-0 items-center gap-2 rounded-lg border border-border/50 px-3 text-sm text-muted-foreground hover:bg-overlay/25 hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-iris print:hidden"
+              className="mr-4 inline-flex min-h-9 shrink-0 items-center gap-2 rounded-lg border border-border/50 px-3 text-sm text-muted-foreground hover:bg-overlay/25 hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-iris print:hidden"
             >
               <PrinterIcon className="h-4 w-4" />
               Print the cheat sheet
@@ -261,6 +292,16 @@ export default function InterviewHUD({
                   className="w-full rounded-xl border border-border/80 bg-overlay/15 px-4 py-3 text-lg text-foreground placeholder:text-muted-foreground focus:border-iris focus:outline-hidden"
                 />
               </div>
+            )}
+
+            {missing.length > 0 && (
+              <p
+                className="mb-4 rounded-lg border border-border/40 px-4 py-2 text-sm text-muted-foreground print:hidden"
+                data-testid="hud-missing"
+              >
+                Not on this cheat sheet yet: {listInWords(missing)}. Add{' '}
+                {missing.length === 1 ? 'it' : 'them'} in Pack the proof.
+              </p>
             )}
 
             {/* Panic Mode */}
@@ -319,9 +360,23 @@ export default function InterviewHUD({
                             {story.trigger || 'Untitled'}
                           </p>
                           <p className="mt-1 text-muted-foreground/90">{story.hook}</p>
-                          <p className="mt-2 text-sm font-medium text-iris">
-                            <ChartIcon className="h-4 w-4 inline" /> {story.proofSnippet}
-                          </p>
+                          {!isExpanded && firstSentence(story.play) && (
+                            <p className="mt-2 line-clamp-2 text-foreground" data-testid="hud-play">
+                              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                What you did:{' '}
+                              </span>
+                              {firstSentence(story.play)}
+                            </p>
+                          )}
+                          {!isExpanded && (story.proof || story.proofSnippet) && (
+                            <p
+                              className="mt-2 line-clamp-2 text-sm font-medium text-iris"
+                              data-testid="hud-proof"
+                            >
+                              <ChartIcon className="h-4 w-4 inline" />{' '}
+                              {story.proof.trim() || story.proofSnippet}
+                            </p>
+                          )}
                         </div>
                         <div className="text-muted-foreground">
                           {isExpanded ? (
@@ -418,7 +473,9 @@ export default function InterviewHUD({
             </ul>
 
             {packet.customQuestions.filter(Boolean).length === 0 && (
-              <p className="text-sm text-muted-foreground">No questions added yet.</p>
+              <p className="text-sm text-muted-foreground">
+                None yet. Add two or three in Pack the proof.
+              </p>
             )}
 
             {/* Notes */}

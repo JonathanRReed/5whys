@@ -40,7 +40,7 @@
  */
 import { STOPWORDS } from './constants';
 import { STRONG_SCORE } from './thresholds';
-import { hasBuriedVerb, leadingAction } from './verbs';
+import { hasBuriedVerb, leadingAction, sameVerb } from './verbs';
 
 export const PART_MAX = { action: 20, work: 25, result: 40, measure: 15 } as const;
 /** Result points for a line that says only what the work was for. */
@@ -59,6 +59,9 @@ const NUMBER_TOKEN = /[$€£₹₦¥]?\d[\d,]*(?:\.\d+)?%?(?:[kKmMxX]\b)?/g;
 const YEAR = /^(?:19|20)\d{2}$/;
 const DATE_RANGE = /\b(?:19|20)\d{2}\s*(?:[-–—]|to)\s*(?:(?:19|20)\d{2}|present|current|now)\b/gi;
 const PHONE = /(?:\+?\d{1,2}[\s.-])?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}/g;
+// Dates written with numbers only: "2021.09", "2021/09", "09/2021", "01/07/2025".
+const NUMERIC_DATE =
+  /\b(?:(?:19|20)\d{2}[./](?:0?[1-9]|1[0-2])(?:[./](?:0?[1-9]|[12]\d|3[01]))?|(?:0?[1-9]|[12]\d|3[01])[./](?:0?[1-9]|[12]\d|3[01])[./](?:19|20)\d{2}|(?:0?[1-9]|1[0-2])[./](?:19|20)\d{2})\b/g;
 const ORDINAL = /^\d+(?:st|nd|rd|th)$/i;
 // A grade point average is a record of school, not a measure of the work:
 // "GPA 3.6", "GPA: 3.6/4.0", "3.6 GPA", "3.8 cumulative GPA".
@@ -94,12 +97,16 @@ const COUNT_ADJECTIVE =
   /^(?:new|more|other|additional|extra|returning|first-time|unique|active|total|regular|repeat|weekly|daily|monthly)$/i;
 
 const PEOPLE =
-  /^(?:person|people|persons|members?|associates?|employees?|staff|workers?|volunteers?|cashiers?|servers?|reports|teammates?|tutors?|interns?|managers?|leads?|crew|students?|engineers?|designers?|agents?|nurses?|aides?|drivers?|clerks?|soldiers?|children|kids|sons?|daughters?|grandchildren|siblings)$/i;
+  /^(?:person|people|persons|members?|associates?|employees?|staff|workers?|volunteers?|cashiers?|servers?|reports|teammates?|tutors?|interns?|managers?|leads?|crew|students?|engineers?|designers?|agents?|nurses?|aides?|drivers?|clerks?|soldiers?|assistants?|supervisors?|coordinators?|analysts?|specialists?|technicians?|reps|representatives?|directors?|officers?|children|kids|sons?|daughters?|grandchildren|siblings)$/i;
 // One's own family is who the work was for, never a measure of it.
 const FAMILY = /^(?:children|kids|sons?|daughters?|grandchildren|siblings)$/i;
 const OWN_FAMILY_BEFORE = /\b(?:raised|raising|my|our|his|her|their)\s+$/i;
 const GROUP_OF = /\b(?:team|staff|crew|group|department|class|unit|shift) of\s*$/i;
 const WITH_BEFORE = /\bwith\s+(?:a |an |the |about |around |over )?$/i;
+// "Managed a team of 22 associates and 3 assistant managers": the second
+// group is part of the same headcount.
+const SUPERVISING_CLAUSE =
+  /\b(?:supervised|supervising|managed|managing|led|leading|oversaw|overseeing|directed|directing|headed|heading)\b[^.;]*\b(?:and|plus)\s+$/i;
 const SUPERVISING_BEFORE =
   /\b(?:supervised|supervising|supervise|managed|managing|manage|led|leading|lead|oversaw|overseeing|oversee|directed|directing|ran|running|headed|heading|scheduled|scheduling)\s+(?:a |an |the |my |our )?(?:team of |staff of |crew of )?$/i;
 
@@ -118,6 +125,7 @@ const blank = (match: string) => ' '.repeat(match.length);
 function stripNonMeasures(text: string): string {
   return text
     .replace(DATE_RANGE, blank)
+    .replace(NUMERIC_DATE, blank)
     .replace(PHONE, blank)
     .replace(GPA, blank)
     .replace(REFERENCE_CODE, blank)
@@ -197,6 +205,7 @@ export function findNumberSpans(text: string): NumberSpan[] {
       (hyphenUnit !== undefined && unitIsPeople) ||
       (unitIsPeople && (GROUP_OF.test(before) || WITH_BEFORE.test(before))) ||
       (unitIsPeople && SUPERVISING_BEFORE.test(before)) ||
+      (unitIsPeople && SUPERVISING_CLAUSE.test(before)) ||
       (GROUP_OF.test(before) && !symbol);
     if (isScope) {
       found.push({ text: unitText, kind: 'scope', ...span });
@@ -262,6 +271,10 @@ export function hasQualitativeOutcome(text: string): boolean {
 
 const CHANGE_VERBS =
   'cut|reduced|decreased|lowered|shortened|halved|increased|grew|raised|doubled|tripled|saved|boosted|lifted|eliminated|prevented|ended|improved|stopped|recovered|freed up|sped up|attracted';
+// Objects that make a change verb an ordinary task, not a result: "Raised
+// concerns", "Cut vegetables", "Lifted boxes", "Saved files to the drive".
+const ORDINARY_OBJECT =
+  '(?:raised\\s+(?:a\\s+|the\\s+)?(?:concerns?|questions?|issues?|objections?|flags?|hands?|the alarm|awareness of (?:a |the )?problem)|cut\\s+(?:the\\s+)?(?:vegetables|veggies|onions|meat|fruit|bread|hair|grass|lawns?|wood|fabric|paper|boxes|keys|coupons|cards|out)|lifted\\s+(?:heavy\\s+)?(?:boxes|weights|patients|furniture|pallets|items|bags|cases|loads?|up to)|saved\\s+(?:the\\s+)?(?:files?|documents?|records?|work|data|drafts?|copies)|stopped\\s+(?:by|in|at|over)|ended\\s+(?:each|every|the)\\s+(?:shift|day|night|call|meeting))\\b';
 
 // Past forms that say something happened: "so new pickers hit full rate".
 const IRREGULAR_PAST =
@@ -290,14 +303,25 @@ const RESULT_PATTERNS: RegExp[] = [
   // A change, with an object: "cut shrink", "grew followers". "To cut" is an
   // aim, read below.
   new RegExp(
-    `(?<!\\b(?:to|will|would|could|should|might|can)\\s)\\b(?:${CHANGE_VERBS})\\s+(?!(?:to|for|with|in|on|at|and|or)\\b)(?!(?:(?:my|our|his|her|their|a|two|three|four|five|\\d+)\\s+)?(?:children|kids|sons?|daughters?|family|grandchildren|siblings)\\b)[\\w$€£₹₦¥]`,
+    `(?<!\\b(?:to|will|would|could|should|might|can)\\s)(?!${ORDINARY_OBJECT})\\b(?:${CHANGE_VERBS})\\s+(?!(?:to|for|with|in|on|at|and|or)\\b)(?!(?:(?:my|our|his|her|their|a|two|three|four|five|\\d+)\\s+)?(?:children|kids|sons?|daughters?|family|grandchildren|siblings)\\b)[\\w$€£₹₦¥]`,
     'i'
   ),
   /,\s*(?:cutting|reducing|decreasing|lowering|shortening|halving|increasing|growing|raising|doubling|tripling|saving|boosting|lifting|eliminating|preventing|ending|improving|stopping|recovering|freeing up|speeding up|delivering|earning|winning|bringing|keeping|getting)\b/i,
   // A state kept or reached: "kept payroll within 2% of plan".
   /\b(?:kept|keeping|got|getting|brought|bringing|finished|completed|delivered|stayed|came in|held)\b[^.;]{0,60}?\b(?:within|on (?:plan|time|schedule|budget|target)|under (?:budget|plan)|ahead of|below (?:plan|budget|target)|above (?:plan|target|goal)|at zero)\b/i,
-  // Achievements.
-  /\b(?:passed|won|earned|placed|ranked|awarded|praised|recognized)\b/i,
+  // Achievements, each with what was achieved: "passed the food handler
+  // exam", "placed second at state", "ranked 3rd of 40". "Placed orders" and
+  // "Passed information" name a task, and earn nothing here.
+  /\b(?:won|awarded|praised|recognized)\b/i,
+  /\bpassed\s+(?:(?:my|the|a|an|all|every|each|both|\d+|two|three|four|five)\s+)?(?:[a-z-]+\s+){0,3}?(?:exams?|tests?|inspections?|audits?|certifications?|boards?|bar|courses?|classes?|reviews?|evaluations?|check-?rides?|road test|qualifications?|assessments?)\b/i,
+  /\bplaced\s+(?:\d+(?:st|nd|rd|th)|first|second|third|fourth|fifth|top|in the top|among the top|at (?:state|regionals?|nationals?|districts?))\b/i,
+  /\branked\s+(?:#\s?\d+|\d+(?:st|nd|rd|th)|first|second|third|top|number one|no\.\s?\d+|\d+\s+(?:of|out of)\s+\d)/i,
+  /\bearned\s+(?:(?:a|an|the|my|two|three|\d+)\s+)?(?:[a-z-]+\s+){0,3}?(?:awards?|certificates?|certifications?|licen[cs]es?|promotions?|scholarships?|badges?|praise|recognition|spots?|places?|ratings?|honou?rs?|titles?|raises?|commendations?|letters? of recommendation|a perfect)\b/i,
+  // Standing among others: "top 8% of 3,200 teams", "top 10 of 400 entries".
+  /\btop\s+(?:\d+(?:\.\d+)?\s?%|\d+\s+(?:of|out of|among)\s+[$€£₹₦¥]?\d|(?:one|two|three|five|ten)\s+percent)/i,
+  // A change with its subject first: "recordable incidents fell 38%",
+  // "returns dropped to 2 a week", "attendance rose by a third".
+  /\b(?:fell|dropped|declined|decreased|shrank|rose|grew|climbed|increased|improved|went (?:down|up))\s+(?:by\s+|to\s+|from\s+)?(?:[$€£₹₦¥]?\d|zero|half|a (?:third|quarter|half))/i,
   /\bpromoted (?:\d|to\b|into\b)/i,
   /\b(?:named|selected as|chosen as) (?:an? |the )?\w+ of the (?:month|year|quarter)\b/i,
   // Result phrases.
@@ -410,25 +434,47 @@ function clean(line: string): string {
     .trim();
 }
 
+/**
+ * Two forms of the same verb at the start: "Watched Watch my cousin". The
+ * line was put together by accident; it has one action, written twice.
+ */
+export function doubledOpening(line: string): string | null {
+  const words = clean(line).match(/^([A-Za-z][A-Za-z'-]*)\s+([A-Za-z][A-Za-z'-]*)/);
+  if (!words) return null;
+  return sameVerb(words[1], words[2]) ? `${words[1]} ${words[2]}` : null;
+}
+
 /** The four parts of a line's score, each with a plain note. */
 export function scoreParts(line: string): ScoreParts {
   const text = clean(line);
   const opening = leadingAction(text);
   const buried = !opening && hasBuriedVerb(text);
+  const doubled = opening && !opening.involvement ? doubledOpening(text) : null;
 
-  const action: ScorePart = opening
-    ? opening.involvement
-      ? {
-          points: 8,
-          max: PART_MAX.action,
-          note: `Opens with "${opening.text}", which says you were there, not what you did.`,
-        }
-      : { points: 20, max: PART_MAX.action, note: `Opens with what you did: "${opening.text}".` }
-    : buried
-      ? { points: 10, max: PART_MAX.action, note: 'What you did comes later in the line.' }
-      : { points: 0, max: PART_MAX.action, note: 'Does not start with what you did.' };
+  const action: ScorePart = doubled
+    ? {
+        points: 10,
+        max: PART_MAX.action,
+        note: `Starts with two action words: "${doubled}". Keep one.`,
+      }
+    : opening
+      ? opening.involvement
+        ? {
+            points: 8,
+            max: PART_MAX.action,
+            note: `Opens with "${opening.text}", which says you were there, not what you did.`,
+          }
+        : { points: 20, max: PART_MAX.action, note: `Opens with what you did: "${opening.text}".` }
+      : buried
+        ? { points: 10, max: PART_MAX.action, note: 'What you did comes later in the line.' }
+        : { points: 0, max: PART_MAX.action, note: 'Does not start with what you did.' };
 
-  const rest = opening ? text.slice(opening.text.length) : text;
+  // The repeated verb is not more words of work.
+  const rest = doubled
+    ? text.slice(doubled.length)
+    : opening
+      ? text.slice(opening.text.length)
+      : text;
   const words = contentWords(rest).length;
   const hasVerb = !!opening || buried;
   const workPoints = words >= 4 && hasVerb ? 25 : words >= 1 ? 10 : 0;
@@ -507,7 +553,8 @@ export function scoreBullet(bullet: string): number {
 
 /** A plain label for a line's score. */
 export function scoreLabel(score: number) {
-  if (score >= STRONG_SCORE) return { label: 'Strong', color: 'text-love' };
+  // Evergreen, the palette's color for done. Terracotta reads as a warning.
+  if (score >= STRONG_SCORE) return { label: 'Strong', color: 'text-foam' };
   if (score >= 50) return { label: 'Getting there', color: 'text-gold' };
   return { label: 'Starting point', color: 'text-iris' };
 }

@@ -16,30 +16,37 @@ type Props = {
   missingRatings: string[];
 };
 
+/**
+ * Room for a full paragraph in every note. The count appears once a note is
+ * most of the way there, so a long paste is never cut without a word.
+ */
+const REFLECTION_LIMIT = 2000;
+const SHOW_COUNT_FROM = REFLECTION_LIMIT * 0.8;
+
 const REFLECTION_FIELDS = [
   {
     key: 'wins' as const,
     label: 'What worked',
     placeholder: 'One line that landed, or a moment that felt natural',
-    maxLength: 240,
+    maxLength: REFLECTION_LIMIT,
   },
   {
     key: 'nervesNote' as const,
     label: 'Where nerves showed up',
     placeholder: 'Rushed the opener, forgot the question, talked too fast',
-    maxLength: 240,
+    maxLength: REFLECTION_LIMIT,
   },
   {
     key: 'nextFocus' as const,
     label: 'One fix for next rep',
     placeholder: 'The single thing to change next time',
-    maxLength: 240,
+    maxLength: REFLECTION_LIMIT,
   },
   {
     key: 'humanNote' as const,
     label: 'Other notes',
     placeholder: 'Anything else future you should know',
-    maxLength: 500,
+    maxLength: REFLECTION_LIMIT,
   },
 ];
 
@@ -64,8 +71,19 @@ export default function ReflectionPanel({
               maxLength={maxLength}
               onChange={(event) => onReflectionField(key, event.target.value.slice(0, maxLength))}
               placeholder={placeholder}
+              aria-describedby={
+                reflection[key].length >= SHOW_COUNT_FROM ? `reflection-${key}-count` : undefined
+              }
               className="min-h-[72px] bg-overlay/30 border-border/60 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-foam"
             />
+            {reflection[key].length >= SHOW_COUNT_FROM && (
+              <p id={`reflection-${key}-count`} className="text-xs text-foreground">
+                {Math.min(reflection[key].length, maxLength)} of {maxLength} characters.
+                {reflection[key].length >= maxLength
+                  ? ' This note is full, so anything after this point is not kept.'
+                  : ''}
+              </p>
+            )}
           </div>
         ))}
       </div>

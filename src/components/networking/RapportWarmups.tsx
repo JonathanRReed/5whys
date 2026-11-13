@@ -6,6 +6,8 @@ type Props = {
   scenarioId: string | undefined;
   onCopy: (value: string, key: string) => void;
   copiedKey: string | null;
+  /** A plain hint about the person the visitor named. Not a line to copy. */
+  prepNote?: string | null;
 };
 
 function EmptyState() {
@@ -35,7 +37,13 @@ function EmptyState() {
   );
 }
 
-export default function RapportWarmups({ rapportSamples, scenarioId, onCopy, copiedKey }: Props) {
+export default function RapportWarmups({
+  rapportSamples,
+  scenarioId,
+  onCopy,
+  copiedKey,
+  prepNote,
+}: Props) {
   if (!scenarioId) {
     return (
       <Card className="border-border/60 bg-overlay/28">
@@ -57,6 +65,11 @@ export default function RapportWarmups({ rapportSamples, scenarioId, onCopy, cop
         <p className="text-sm text-muted-foreground">Steal a line or tweak it for your voice.</p>
       </CardHeader>
       <CardContent className="space-y-3">
+        {prepNote && (
+          <p className="rounded-2xl border border-gold/40 px-4 py-3 text-sm text-foreground">
+            {prepNote}
+          </p>
+        )}
         {rapportSamples.length ? (
           rapportSamples.map((sample, index) => {
             const key = `rapport-${scenarioId}-${index}`;
@@ -66,7 +79,7 @@ export default function RapportWarmups({ rapportSamples, scenarioId, onCopy, cop
                 key={key}
                 className="flex items-start justify-between gap-3 rounded-2xl border border-border/35 bg-background/60 p-4"
               >
-                <p className="text-sm text-foreground">{sample}</p>
+                <p className="min-w-0 flex-1 text-sm wrap-anywhere text-foreground">{sample}</p>
                 <Button
                   type="button"
                   size="sm"
@@ -87,8 +100,8 @@ export default function RapportWarmups({ rapportSamples, scenarioId, onCopy, cop
         )}
         {rapportSamples.length > 0 && (
           <p className="text-xs text-muted-foreground">
-            Your custom audience and goal appear in the practice guidance. Preset examples remain
-            fictional; adapt them to what is true for you.
+            These lines are for the situation you picked, spoken by a fictional person. Adapt them
+            to what is true for you.
           </p>
         )}
       </CardContent>

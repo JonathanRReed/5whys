@@ -1,16 +1,40 @@
 import * as React from 'react';
 import { updateBulletsFlow } from '../../lib/application-desk';
-import { type DraftFields, draftBullet, draftFields } from '../../lib/bullet-draft';
+import { type DraftFields, draftBullet, draftFields, hasEveryPart } from '../../lib/bullet-draft';
 import { deskRequirements } from '../../lib/desk-checks';
 import { hiringCondition, requirementsFromBullets } from '../../lib/posting';
-import { scoreBullet } from '../../lib/resume-game';
+import { fromText } from '../../lib/resume-doc/model';
+import { bulletsByRole, withAchievementLines } from '../../lib/resume-doc/tailor';
+import { detectResumeStructure, scoreBullet } from '../../lib/resume-game';
 import RewriteHelp from '../resume-game/RewriteHelp';
+import ConfirmButton from '../shared/ConfirmButton';
 import PrintSheet from '../shared/PrintSheet';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { useDeskExamples } from './examples';
 import type { DeskState } from './useDesk';
+
+/**
+ * The bullets already on the visitor's resume, under the job each is in, so
+ * the experience for a new bullet can start from one of them instead of
+ * being typed again.
+ */
+function resumeLines(
+  resumeText: string,
+  rewrites: readonly { original: string; improved: string }[]
+): { label: string; lines: string[] }[] {
+  if (!resumeText.trim()) return [];
+  try {
+    const doc = withAchievementLines(
+      fromText(resumeText),
+      detectResumeStructure(resumeText).bullets
+    );
+    return bulletsByRole(doc, rewrites);
+  } catch {
+    return [];
+  }
+}
 
 const STEPS = [
   {
@@ -36,13 +60,24 @@ export default function BulletsStation({ desk }: { desk: DeskState }) {
   React.useEffect(() => {
     setWantedId(new URLSearchParams(window.location.search).get('requirement'));
   }, []);
-  // A first draft built only from the two answers above, in fields the
-  // visitor edits before using it. Null until they ask for one.
-  const [draft, setDraft] = React.useState<DraftFields | null>(null);
   const [used, setUsed] = React.useState<0 | 1 | null>(null);
-  if (!application) return null;
+  const appId = application?.id ?? null;
+  // A first draft built only from the two answers above, in fields the
+  // visitor edits before using it. It is saved with this application's desk,
+  // so it survives a reload, and only once the visitor asks for one or edits
+  // it: opening the station writes nothing.
+  const draft = desk.desk.bullets.draft ?? null;
+  const setDraft = (next: DraftFields | null) => {
+    if (!appId) return;
+    changeDesks((data) => updateBulletsFlow(data, appId, { draft: next }));
+  };
+  const { resumeText, rewrites } = desk;
+  const fromResume = React.useMemo(() => resumeLines(resumeText, rewrites), [resumeText, rewrites]);
+  const [picked, setPicked] = React.useState('');
+  if (!application || !appId) return null;
   const flow = desk.desk.bullets;
-  const appId = application.id;
+  const startFromPicked = () =>
+    changeDesks((data) => updateBulletsFlow(data, appId, { experience: picked }));
   // Conditions of hiring are never a bullet's target or on the worksheet.
   const confirmed = deskRequirements(role?.bullets ?? []).requirements;
   const asked = wantedId
@@ -103,6 +138,55 @@ export default function BulletsStation({ desk }: { desk: DeskState }) {
             <p className="text-sm leading-relaxed text-muted-foreground">
               {step.key === 'experience' ? examples.experienceHelp : step.help}
             </p>
+            {step.key === 'experience' && fromResume.length > 0 && (
+              <div className="space-y-2 rounded-xl border border-border/40 p-3">
+                <label htmlFor="bullets-from-resume" className="block text-sm text-foreground">
+                  Start from a line on your resume
+                </label>
+                <select
+                  id="bullets-from-resume"
+                  value={picked}
+                  onChange={(event) => setPicked(event.target.value)}
+                  className="h-auto min-h-11 w-full max-w-full min-w-0 rounded-md border border-border/50 bg-transparent px-1.5 py-1 text-base text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <option value="">Choose a line</option>
+                  {fromResume.map((group) => (
+                    <optgroup key={group.label} label={group.label}>
+                      {group.lines.map((line, index) => (
+                        // biome-ignore lint/suspicious/noArrayIndexKey: a resume can repeat a line
+                        <option key={index} value={line}>
+                          {line.length > 80 ? `${line.slice(0, 77).trimEnd()}...` : line}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+                {picked &&
+                  (flow.experience.trim() && flow.experience.trim() !== picked ? (
+                    <ConfirmButton
+                      tone="neutral"
+                      confirmLabel="Replace what step 1 says with this line"
+                      onConfirm={startFromPicked}
+                    >
+                      Use this line
+                    </ConfirmButton>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={flow.experience.trim() === picked}
+                      onClick={startFromPicked}
+                    >
+                      Use this line
+                    </Button>
+                  ))}
+                <p className="text-xs text-muted-foreground">
+                  Then add what happened because of it in step 2. A bullet written from a resume
+                  line can take that line's place in the copy for this role.
+                </p>
+              </div>
+            )}
             <label className="block">
               <span className="sr-only">{step.title}</span>
               <Textarea
@@ -251,7 +335,11 @@ export default function BulletsStation({ desk }: { desk: DeskState }) {
                 {text.trim().length > 12 && (
                   <RewriteHelp
                     line={text}
-                    noneFollowUp="Add what happened because of the work, or a number you know is true, in your own words above."
+                    noneFollowUp={
+                      hasEveryPart(text)
+                        ? 'Your line already says what you did and what happened.'
+                        : 'Add what happened because of the work, or a number you know is true, in your own words above.'
+                    }
                   />
                 )}
               </div>

@@ -1,4 +1,5 @@
 import { buildBullet } from './analysis';
+import { gerundToPast, isVerbWord, pastTenseOf } from './verbs';
 
 /**
  * A first resume, built from nothing. The visitor answers a few short
@@ -29,7 +30,17 @@ import { buildBullet } from './analysis';
  * before the dates, which the posting reader groups into a dated role.
  */
 
-export type ExperienceKind = 'job' | 'club' | 'volunteer' | 'project' | 'family' | 'other';
+/** The fewest digits a phone number can have and still be dialled. */
+export const MIN_PHONE_DIGITS = 7;
+
+export type ExperienceKind =
+  | 'job'
+  | 'sitting'
+  | 'club'
+  | 'volunteer'
+  | 'project'
+  | 'family'
+  | 'other';
 
 export interface DraftLine {
   /** One action word: "Balanced", "Trained". */
@@ -139,6 +150,19 @@ export const EXPERIENCE_KINDS: Record<
       },
     ],
   },
+  sitting: {
+    label: 'Babysitting or pet sitting',
+    role: 'Babysitter',
+    where: 'Neighborhood families',
+    lines: [
+      {
+        verb: 'Watched',
+        task: 'three kids on weekend evenings',
+        impact: 'their parents could work late shifts',
+      },
+      { verb: 'Kept', task: 'a list of allergies and bedtimes', impact: '' },
+    ],
+  },
   club: {
     label: 'A club or team',
     role: 'Treasurer',
@@ -197,20 +221,31 @@ export const EXPERIENCE_KINDS: Record<
   },
   other: {
     label: 'Something else',
-    role: 'Babysitter',
-    where: 'Neighborhood families',
+    role: 'Lawn care',
+    where: 'Neighbors on my street',
     lines: [
       {
-        verb: 'Watched',
-        task: 'three kids on weekend evenings',
-        impact: 'parents could work late shifts',
+        verb: 'Mowed',
+        task: 'four lawns every Saturday in summer',
+        impact: 'two neighbors asked me back the next year',
       },
-      { verb: 'Kept', task: 'a list of allergies and bedtimes', impact: '' },
+      { verb: 'Raked', task: 'leaves and bagged them each fall', impact: '' },
     ],
   },
 };
 
 const KINDS = Object.keys(EXPERIENCE_KINDS) as ExperienceKind[];
+
+/** Placeholders for the school step. High school for a first job; college otherwise. */
+export const SCHOOL_EXAMPLES = {
+  college: { school: 'Fresno City College', study: 'Business', finish: 'May 2027' },
+  highSchool: {
+    school: 'Roosevelt High School',
+    study: 'High school diploma',
+    finish: 'June 2027',
+  },
+} as const;
+export type SchoolExample = keyof typeof SCHOOL_EXAMPLES;
 
 // ---------------------------------------------------------------------------
 // Dates
@@ -407,6 +442,126 @@ export function resumeFileBase(name: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// The action word
+// ---------------------------------------------------------------------------
+
+// Small words that belong to the verb: "Picked up", "Helped out", "Set up".
+const PARTICLE = /^(?:up|out|off|in|on|over|down|back|away|through)$/i;
+
+/**
+ * A whole sentence typed into the one-word field: "i watch my cousin after
+ * school". Returns the action word and the rest, which belongs in "What you
+ * did". A leading "I" is dropped. Null when the field already holds one
+ * action (a verb, or a verb and its small word: "Picked up").
+ */
+export function splitActionWord(raw: string): { verb: string; rest: string } | null {
+  const words = clean(raw).split(' ').filter(Boolean);
+  if (words.length > 1 && /^i$/i.test(words[0])) words.shift();
+  if (words.length <= 1) {
+    return words.length === 1 && words[0] !== clean(raw) ? { verb: words[0], rest: '' } : null;
+  }
+  const take = PARTICLE.test(words[1]) ? 2 : 1;
+  if (words.length <= take) return null;
+  return { verb: words.slice(0, take).join(' '), rest: words.slice(take).join(' ') };
+}
+
+/** "watch" -> "Watched", "Picked up" -> "Picked up": the word as an example. */
+function exampleVerb(verb: string): string {
+  const [first, ...rest] = verb.split(' ');
+  const shown = pastTenseOf(first) ?? first.slice(0, 1).toUpperCase() + first.slice(1);
+  return [shown, ...rest].join(' ');
+}
+
+/** What the form can offer about the action word, never blocking. */
+export type ActionWordAdvice =
+  | { kind: 'past'; word: string; past: string }
+  | { kind: 'not-a-verb'; word: string };
+
+/**
+ * A gentle offer about the action word, read with the same verb list the
+ * scorer uses. "watch" for something that is over: "Watched?". "babysitting":
+ * "Babysat?". A word the scorer would not read as an action is named, so the
+ * visitor is not surprised one screen later.
+ */
+export function actionWordAdvice(raw: string, current: boolean): ActionWordAdvice | null {
+  const word = clean(raw).split(' ')[0] ?? '';
+  if (!word || !/^[a-z-]+$/i.test(word)) return null;
+  const gerund = gerundToPast(word);
+  if (gerund && /ing$/i.test(word)) return { kind: 'past', word, past: gerund };
+  if (!isVerbWord(word)) return { kind: 'not-a-verb', word };
+  if (current) return null;
+  const past = pastTenseOf(word);
+  return past && past.toLowerCase() !== word.toLowerCase() ? { kind: 'past', word, past } : null;
+}
+
+// ---------------------------------------------------------------------------
+// Capital letters
+// ---------------------------------------------------------------------------
+
+const SMALL_WORDS = new Set(['of', 'and', 'the', 'for', 'at', 'in', 'on', 'to', 'a', 'an', 'or']);
+
+/** "roosevelt high" -> "Roosevelt High"; "member, robotics team" -> "Member, Robotics Team". */
+export function capitalizeName(value: string): string {
+  let first = true;
+  return value.replace(/[A-Za-z][A-Za-z'’-]*/g, (word) => {
+    const keep = !first && SMALL_WORDS.has(word.toLowerCase());
+    first = false;
+    return keep ? word : word.slice(0, 1).toUpperCase() + word.slice(1);
+  });
+}
+
+/** One field typed all in lowercase, with how it would read capitalized. */
+export interface CapitalFix {
+  field: string;
+  label: string;
+  from: string;
+  to: string;
+}
+
+// Email addresses and phone numbers are never touched; only names are.
+const needsCapitals = (value: string) => /[a-z]/.test(value) && !/[A-Z]/.test(value);
+
+/**
+ * Names typed in lowercase on a phone: the visitor's name, the school, the
+ * city, each role and where it was. A check the visitor runs with one tap;
+ * nothing changes without it.
+ */
+export function capitalFixes(draft: ResumeDraft): CapitalFix[] {
+  const fixes: CapitalFix[] = [];
+  const add = (field: string, label: string, value: string) => {
+    const from = clean(value);
+    if (!from || !needsCapitals(from)) return;
+    const to = capitalizeName(from);
+    if (to !== from) fixes.push({ field, label, from, to });
+  };
+  add(fieldId.name, 'Your name', draft.name);
+  add(fieldId.city, 'City', draft.city);
+  if (!draft.skipSchool) add(fieldId.school, 'School', draft.school);
+  draft.experiences.forEach((experience, index) => {
+    add(fieldId.role(index), 'Role', experience.role);
+    add(fieldId.where(index), 'Where', experience.where);
+  });
+  return fixes;
+}
+
+/** The draft with every name in capitalFixes capitalized. */
+export function applyCapitalFixes(draft: ResumeDraft): ResumeDraft {
+  const fix = (value: string) =>
+    needsCapitals(clean(value)) ? capitalizeName(clean(value)) : value;
+  return {
+    ...draft,
+    name: fix(draft.name),
+    city: fix(draft.city),
+    school: draft.skipSchool ? draft.school : fix(draft.school),
+    experiences: draft.experiences.map((experience) => ({
+      ...experience,
+      role: fix(experience.role),
+      where: fix(experience.where),
+    })),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Checks
 // ---------------------------------------------------------------------------
 
@@ -455,8 +610,11 @@ function checkYou(draft: ResumeDraft): DraftError[] {
       message: 'This email needs an @ and a domain, like name@example.com.',
     });
   }
-  if (phone && (phone.replace(/\D/g, '').length < 7 || /[a-z]/i.test(phone))) {
-    errors.push({ field: fieldId.phone, message: 'This phone number needs at least 7 digits.' });
+  if (phone && (phone.replace(/\D/g, '').length < MIN_PHONE_DIGITS || /[a-z]/i.test(phone))) {
+    errors.push({
+      field: fieldId.phone,
+      message: `This phone number needs at least ${MIN_PHONE_DIGITS} digits.`,
+    });
   }
   return errors;
 }
@@ -520,8 +678,10 @@ function checkExperiences(draft: ResumeDraft, today: Date): DraftError[] {
       }
     }
     let written = 0;
+    let started = 0;
     lines.forEach((line, lineIndex) => {
       if (!line.verb && !line.task && !line.impact) return;
+      started += 1;
       if (!line.verb) {
         errors.push({
           field: fieldId.verb(index, lineIndex),
@@ -529,16 +689,26 @@ function checkExperiences(draft: ResumeDraft, today: Date): DraftError[] {
         });
       }
       if (!line.task) {
-        errors.push({ field: fieldId.task(index, lineIndex), message: 'Add what you did.' });
+        // A whole sentence in the one-word box: say where the rest goes.
+        const split = line.verb ? splitActionWord(line.verb) : null;
+        errors.push(
+          split?.rest
+            ? {
+                field: fieldId.verb(index, lineIndex),
+                message: `Put only the first word here, like ${exampleVerb(split.verb)}. The rest goes in What you did.`,
+              }
+            : { field: fieldId.task(index, lineIndex), message: 'Add what you did.' }
+        );
       }
       if (line.verb && line.task) written += 1;
     });
-    if (written === 0) {
+    // A line that is started already has its own message above.
+    if (written === 0 && started === 0) {
       errors.push({
         field: fieldId.verb(index, 0),
         message: 'Write at least one line: an action word and what you did.',
       });
-    } else {
+    } else if (written > 0) {
       complete += 1;
     }
   });

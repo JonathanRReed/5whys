@@ -7,7 +7,11 @@ import {
   exportJSON,
   type GlowUpData,
   loadData,
+  mergeGlowUp,
+  readStoredJson,
+  STORAGE_KEY,
   saveData,
+  switchRole,
 } from '../../lib/glowup-store';
 import { readProfile } from '../../lib/profile';
 import { Button } from '../ui/button';
@@ -16,7 +20,12 @@ import DecodeSection, { type SaveState } from './DecodeSection';
 import InterviewHUD from './InterviewHUD';
 import PacketPrint from './PacketPrint';
 import PacketSection from './PacketSection';
-import StoriesSection, { CLOSED_EDITOR, type StoryEditor } from './StoriesSection';
+import StoriesSection, {
+  CLOSED_EDITOR,
+  newStoryEditor,
+  type StoryEditor,
+  storyEditorFromAnswer,
+} from './StoriesSection';
 import TrackApplication from './TrackApplication';
 import VaultSection from './VaultSection';
 import WorkspaceHeader from './WorkspaceHeader';
@@ -24,6 +33,30 @@ import WorkspaceTabs, { type Tab } from './WorkspaceTabs';
 
 const SAVE_DEBOUNCE_MS = 300;
 const TABS: Tab[] = ['decode', 'stories', 'packet', 'vault'];
+
+/**
+ * The role a link asked for ("?role=r1"), when it is one of the saved roles.
+ * An unknown id is ignored.
+ */
+function readRoleFromUrl(data: GlowUpData): string | null {
+  if (typeof window === 'undefined') return null;
+  const wanted = new URLSearchParams(window.location.search).get('role');
+  return wanted && data.roles.some((r) => r.id === wanted) ? wanted : null;
+}
+
+/**
+ * Take the role back out of the address once it is current, so a reload
+ * after switching to another role opens on that one.
+ */
+function forgetRoleInUrl(): void {
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('role');
+    window.history.replaceState(window.history.state, '', url);
+  } catch {
+    // The address keeps the role; it still names a saved role.
+  }
+}
 
 function readTabFromUrl(): Tab | null {
   if (typeof window === 'undefined') return null;
@@ -71,12 +104,40 @@ export default function InterviewGlowUpWorkspace() {
   // an import on the dashboard, may have saved newer work in the meantime,
   // and an unload flush would silently overwrite it.
   const loadedJsonRef = React.useRef<string | null>(null);
-  const dirtyRef = React.useRef(false);
+  const touchedRef = React.useRef(false);
+  // What storage held when this tab last read or wrote it: the raw text, to
+  // notice another tab's write, and the data, to merge against.
+  const baseRef = React.useRef<{ raw: string | null; data: GlowUpData } | null>(null);
+
+  /**
+   * Write this tab's data. When another tab wrote since we last read, merge
+   * record by record instead of overwriting: what this tab changed wins,
+   * everything else keeps the newer copy. Returns what was written, or null
+   * when the browser refused.
+   */
+  const commit = React.useCallback((ours: GlowUpData): GlowUpData | null => {
+    const base = baseRef.current;
+    const raw = readStoredJson();
+    const toWrite = base && raw !== base.raw ? mergeGlowUp(base.data, ours, loadData()) : ours;
+    if (!saveData(toWrite)) return null;
+    baseRef.current = { raw: readStoredJson(), data: toWrite };
+    return toWrite;
+  }, []);
 
   React.useEffect(() => {
-    let loaded = loadData();
-    if (loaded.currentRoleId) loaded = ensurePacketForRole(loaded, loaded.currentRoleId);
-    loadedJsonRef.current = JSON.stringify(loaded);
+    const raw = readStoredJson();
+    const stored = loadData();
+    baseRef.current = { raw, data: stored };
+    const opened = stored.currentRoleId
+      ? ensurePacketForRole(stored, stored.currentRoleId)
+      : stored;
+    loadedJsonRef.current = JSON.stringify(opened);
+    // A link that names a role ("?role=r1", from the dashboard or the desk)
+    // opens on it, even in a new tab. That is the change the role switcher
+    // makes, so it is saved like one. With no role named, nothing is written.
+    const asked = readRoleFromUrl(stored);
+    const loaded = asked && asked !== opened.currentRoleId ? switchRole(opened, asked) : opened;
+    if (asked) forgetRoleInUrl();
     setData(loaded);
     setAudience(audienceForProfile(readProfile()));
     setHydrated(true);
@@ -85,7 +146,14 @@ export default function InterviewGlowUpWorkspace() {
     // Go straight to stories only once the posting is decoded; before that
     // the next step (parsing) is on Decode the job.
     const decoded = Boolean(role?.bullets.some((b) => b.status === 'active'));
-    if (fromUrl) setActiveTab(fromUrl);
+    // "Use as a story draft" in the rehearsal room opens the editor here on
+    // a kept answer. Nothing is saved until the visitor presses Save.
+    const draftId = new URLSearchParams(window.location.search).get('draft');
+    const answer = draftId ? (loaded.answers ?? []).find((a) => a.id === draftId) : undefined;
+    if (answer) {
+      setStoryEditor(storyEditorFromAnswer(answer));
+      setActiveTab('stories');
+    } else if (fromUrl) setActiveTab(fromUrl);
     else if (decoded && loaded.stories.length === 0) setActiveTab('stories');
   }, []);
 
@@ -93,38 +161,79 @@ export default function InterviewGlowUpWorkspace() {
   // a quick tab switch or a closed laptop never drops the last edit.
   React.useEffect(() => {
     if (!hydrated) return;
-    if (!dirtyRef.current) {
+    if (!touchedRef.current) {
       if (JSON.stringify(data) === loadedJsonRef.current) return;
-      dirtyRef.current = true;
+      touchedRef.current = true;
     }
+    // Nothing new since the last write (or since another tab's change was read in).
+    if (baseRef.current && JSON.stringify(data) === JSON.stringify(baseRef.current.data)) return;
     latestRef.current = data;
     setSaveState('saving');
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
-      // "Saved" only when the browser kept it.
-      setSaveState(saveData(data) ? 'saved' : 'failed');
       saveTimeoutRef.current = null;
+      const written = commit(data);
+      // A refused save stays pending: it is tried again when the tab is
+      // hidden or shown, and another tab's save cannot replace it meanwhile.
+      if (written) latestRef.current = null;
+      // "Saved" only when the browser kept it.
+      setSaveState(written ? 'saved' : 'failed');
+      // Another tab's newer work was merged in: show it.
+      if (written && written !== data) setData(written);
     }, SAVE_DEBOUNCE_MS);
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
-  }, [data, hydrated]);
+  }, [data, hydrated, commit]);
 
   React.useEffect(() => {
+    // Only an edit that has not reached storage yet is written; a saved tab
+    // writes nothing on its way out.
     const flush = () => {
-      if (dirtyRef.current && latestRef.current) saveData(latestRef.current);
+      const pending = latestRef.current;
+      if (!pending) return;
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+      const written = commit(pending);
+      if (!written) {
+        // The browser refused: the edit stays pending, so another tab's save
+        // cannot replace it, and it is tried again when the tab comes back.
+        setSaveState('failed');
+        return;
+      }
+      latestRef.current = null;
+      setSaveState('saved');
+      // Another tab's newer work was merged in: this tab must show it too,
+      // or its next edit would write the older copy over the merge.
+      if (written !== pending) setData(written);
     };
     const onVisibility = () => {
-      if (document.visibilityState === 'hidden') flush();
+      // Hidden: write what is waiting. Back again: retry a write that failed.
+      flush();
+    };
+    // Another tab saved (the desk, an import, a second workspace). With no
+    // edit waiting here, show its version; with one waiting, the next save
+    // merges the two.
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== STORAGE_KEY) return;
+      if (latestRef.current) return;
+      const raw = readStoredJson();
+      if (raw === baseRef.current?.raw) return;
+      const fresh = loadData();
+      baseRef.current = { raw, data: fresh };
+      if (!touchedRef.current) loadedJsonRef.current = JSON.stringify(fresh);
+      setData(fresh);
     };
     window.addEventListener('pagehide', flush);
+    window.addEventListener('storage', onStorage);
     document.addEventListener('visibilitychange', onVisibility);
     return () => {
       window.removeEventListener('pagehide', flush);
+      window.removeEventListener('storage', onStorage);
       document.removeEventListener('visibilitychange', onVisibility);
       flush();
     };
-  }, []);
+  }, [commit]);
 
   // The browser's own print (Ctrl+P) with the cheat sheet open would print a
   // blank page: print the cheat sheet as a plain sheet instead.
@@ -235,13 +344,13 @@ export default function InterviewGlowUpWorkspace() {
       {currentRole && (
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-border/30 bg-overlay/15 px-4 py-2 text-sm print:hidden">
           <span className="text-muted-foreground">Prepping for</span>
-          <span className="font-medium text-foreground">
+          <span className="min-w-0 max-w-full font-medium wrap-anywhere text-foreground">
             {currentRole.jobTitle || 'Untitled role'}
             {currentRole.company ? ` at ${currentRole.company}` : ''}
           </span>
           <span className="ml-auto flex flex-wrap items-center">
             <a
-              href="/interview-glow-up/rehearse/"
+              href={`/interview-glow-up/rehearse/?role=${encodeURIComponent(currentRole.id)}`}
               className="mr-3 inline-flex min-h-6 items-center underline underline-offset-4 hover:text-foam focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-foam"
             >
               Rehearse out loud
@@ -253,7 +362,8 @@ export default function InterviewGlowUpWorkspace() {
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as Tab)}>
         <WorkspaceTabs
-          showHUD={packetStoryCount > 0}
+          // Pack the proof has its own button at the bottom; one is enough there.
+          showHUD={packetStoryCount > 0 && activeTab !== 'packet'}
           onLaunchHUD={openHUD}
           counts={{
             decode: currentRole
@@ -288,7 +398,16 @@ export default function InterviewGlowUpWorkspace() {
             />
           </TabsContent>
           <TabsContent value="vault">
-            <VaultSection data={data} setData={setData} currentPacket={currentPacket} />
+            <VaultSection
+              data={data}
+              setData={setData}
+              currentPacket={currentPacket}
+              onGoToStories={() => {
+                // A story already being written is kept; only a closed editor opens new.
+                setStoryEditor((current) => (current.editingId ? current : newStoryEditor()));
+                setActiveTab('stories');
+              }}
+            />
           </TabsContent>
           <TabsContent value="packet">
             <PacketSection

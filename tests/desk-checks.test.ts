@@ -40,7 +40,8 @@ it('computes each check from the letter and the confirmed requirements', () => {
   });
   const byId = Object.fromEntries(checks.map((check) => [check.id, check]));
   expect(byId.names.passed).toBe(true);
-  expect(byId['one-page'].passed).toBe(true);
+  // A letter this short is not ticked: it reads as a note.
+  expect(byId['one-page'].passed).toBe(false);
   expect(byId['posting-words'].passed).toBe(true);
   expect(byId['posting-words'].detail).toBe('Touches 1 of 1 confirmed requirements.');
   expect(byId['ends-with-ask'].passed).toBe(true);

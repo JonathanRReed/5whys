@@ -23,9 +23,38 @@ export interface HiringCondition {
   kind: ConditionKind;
   /** A short name for the kind of line. */
   label: string;
-  /** What the line means and what the visitor can do about it. */
+  /** What this line means and what the visitor can do about it. Short, so it can sit under every line. */
   note: string;
+  /**
+   * The terms behind the note ("F-1", "OPT", "I-9"), for a page to show once
+   * however many lines of the kind a posting has.
+   */
+  about?: string;
+  /**
+   * The line says the employer will not sponsor a visa ("We are unable to
+   * sponsor", "without sponsorship"). A posting can say this apart from, or
+   * together with, asking for work authorization.
+   */
+  noSponsorship?: boolean;
 }
+
+/** "We do not sponsor visas", "unable to sponsor", "without sponsorship", "sponsorship is not available". */
+const NO_SPONSORSHIP = new RegExp(
+  [
+    // The refusal and the word it refuses stay together: "No prior experience
+    // required; visa sponsorship is available" refuses nothing about visas.
+    String.raw`\b(?:unable\s+to|not\s+able\s+to|cannot|can\s?not|can't|won't|will\s+not|do\s+not|does\s+not|don't|doesn't|are\s+not|is\s+not|must\s+not|not)\s+(?:(?:currently|presently|be|able|to|offer|offering|provide|providing|or|any|consider|considering|require|requiring|need|needing|eligible|for|a|an|the)\s+){0,5}(?:(?:visa|work|employment|immigration|h-?1b|new)\s+){0,2}sponsor`,
+    String.raw`\bno\s+(?:(?:visa|work|employment|immigration|h-?1b|new)\s+){0,2}sponsor`,
+    String.raw`\bwithout\s+(?:\w+\s+)?sponsorship\b`,
+    String.raw`\bsponsorship\s+(?:is\s+)?(?:not\s+(?:available|offered|provided|possible)|unavailable)\b`,
+  ].join('|'),
+  'i'
+);
+const WORK_AUTHORIZATION_ABOUT =
+  'F-1, J-1, and H-1B are visa types; CPT and OPT are kinds of work permission for students on an F-1 visa. An I-9 is the form US employers use to check work eligibility at hiring, and a Social Security number is used for pay and tax records. None of this is a skill or goes on a resume.';
+
+const NO_SPONSORSHIP_NOTE =
+  "This employer says it will not sponsor a work visa. If you will need sponsorship, now or after OPT ends, ask the recruiter before you spend time on the letter. Your school's international student office can tell you what work you may do.";
 
 const CONDITIONS: readonly (HiringCondition & {
   pattern: RegExp;
@@ -50,11 +79,12 @@ const CONDITIONS: readonly (HiringCondition & {
     kind: 'work-authorization',
     label: 'Work authorization',
     pattern:
-      /\bsponsor(?:ship|ed|s|ing)?\b[^.]*\b(?:visa|employment|work|authori[sz]ation)|\b(?:require|requires|need|needs)\s+(?:visa\s+|employment\s+|immigration\s+)?sponsorship\b|\bsponsorship\b[^.]*\bnow or in the future\b|\bvisas?\b|\bwork authori[sz]ation\b|\b(?:legally\s+)?(?:authori[sz]ed|eligible|permitted|entitled)\s+to\s+work\b|\bright to work\b|\bgreen card\b|\bpermanent residen(?:t|ts|cy)\b|\bh-?1b\b|\bsocial security (?:number|card)\b|\bstem opt\b/i,
+      /\bsponsor(?:ship|ed|s|ing)?\b[^.]*\b(?:visa|employment|work|authori[sz]ation)|\b(?:require|requires|need|needs)\s+(?:visa\s+|employment\s+|immigration\s+)?sponsorship\b|\bsponsorship\b[^.]*\bnow or in the future\b|\bsponsorship\s+(?:is\s+)?(?:not\s+(?:available|offered|provided|possible)|unavailable)\b|\bvisas?\b|\bwork authori[sz]ation\b|\b(?:legally\s+)?(?:authori[sz]ed|eligible|permitted|entitled)\s+to\s+work\b|\bright to work\b|\bgreen card\b|\bpermanent residen(?:t|ts|cy)\b|\bh-?1b\b|\bsocial security (?:number|card)\b|\bstem opt\b/i,
     // Case matters for these: "OPT" is a student work permission, "opt in" is not.
     exact:
       /\bOPT\b|\b[FJ]-1\b|\bSSN\b|\bI-9\b|\bEAD\b|\bCPT\b(?=[^.]*\b(?:OPT|F-1|J-1|visas?|students?|authori[sz]ation)\b)|\b(?:OPT|F-1|J-1|visas?|students?)\b[^.]*\bCPT\b/,
-    note: "This asks whether you may legally work in the country, and whether the employer would need to sponsor a visa now or later. F-1, J-1, and H-1B are visa types; CPT and OPT are kinds of work permission for students on an F-1 visa. An I-9 is the form US employers use to check work eligibility at hiring, and a Social Security number is used for pay and tax records. None of this is a skill or goes on a resume. Answer truthfully when the application asks. If you study on a visa, your school's international student office can tell you what work you may do.",
+    note: "This asks whether you may legally work in the country. It is not a skill and does not go on a resume. Answer truthfully when the application asks. If you study on a visa, your school's international student office can tell you what work you may do.",
+    about: WORK_AUTHORIZATION_ABOUT,
   },
   {
     kind: 'native-speaker',
@@ -100,9 +130,19 @@ const CONDITIONS: readonly (HiringCondition & {
 
 /** The condition a posting line states, or null when it is an ordinary qualification. */
 export function hiringCondition(text: string): HiringCondition | null {
-  for (const { pattern, exact, unless, kind, label, note } of CONDITIONS) {
-    if ((pattern.test(text) || exact?.test(text)) && !unless?.test(text))
-      return { kind, label, note };
+  for (const { pattern, exact, unless, kind, label, note, about } of CONDITIONS) {
+    if ((pattern.test(text) || exact?.test(text)) && !unless?.test(text)) {
+      if (kind === 'work-authorization' && NO_SPONSORSHIP.test(text)) {
+        return {
+          kind,
+          label: 'Visa sponsorship',
+          note: NO_SPONSORSHIP_NOTE,
+          about: WORK_AUTHORIZATION_ABOUT,
+          noSponsorship: true,
+        };
+      }
+      return { kind, label, note, ...(about ? { about } : {}) };
+    }
   }
   return null;
 }

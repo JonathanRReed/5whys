@@ -2,40 +2,39 @@ import type { Guide } from '../guide';
 
 export const networkingPracticeGuide: Guide = {
   tool: 'networking-practice',
-  invitation:
-    'New to this? The guide walks you through one practice rep, from picking the situation to a saved intro.',
+  invitation: 'New to this? The guide walks you through one practice rep, start to saved.',
   steps: [
     {
       id: 'scenario',
-      title: 'Pick the situation',
-      body: 'Open "Scenario" and choose the conversation closest to your next one. Its focus, who, and where show beside it.',
-      why: 'The timer length and the sample lines follow the situation you pick.',
+      title: 'Pick the situation closest to yours',
+      body: 'Open "Scenario" and choose one.',
+      why: 'The timer length and the sample lines follow the situation you picked.',
       target: '#scenario',
-      done: { kind: 'manual' },
+      // The picker marks itself once the visitor has chosen, even the same one.
+      done: { kind: 'exists', selector: '[data-guide-scenario="picked"]' },
       // Writing a draft means the situation is picked.
       passed: { kind: 'filled', selector: '#intro-draft', minLength: 1 },
     },
     {
       id: 'draft',
       title: 'Write the intro you would say',
-      body: 'In "Draft", write an opener, who you are, one honest line about what you bring, and one question. "Help me write it" has lines that work with no experience.',
-      why: "Use your own words. If a line only works with someone else's achievements in it, cut it.",
+      body: 'Who you are, one thing you bring, one question. "Help me write it" has lines.',
+      why: 'Your own words hold up better than a script when you are nervous.',
       target: '#intro-draft',
-      done: { kind: 'filled', selector: '#intro-draft', minLength: 40 },
-      passed: { kind: 'filled', selector: '#intro-draft', minLength: 40 },
+      done: { kind: 'filled', selector: '#intro-draft', minLength: 10 },
+      passed: { kind: 'filled', selector: '#intro-draft', minLength: 10 },
     },
     {
       id: 'timer',
-      title: 'Say it out loud against the clock',
-      body: 'Press "Start" on the "Rep timer" and say your intro out loud, the way you would in the room.',
-      why: 'Saying it shows where it runs long or where you trip. Reading it silently does not.',
+      title: 'Press "Start" and say it out loud',
+      why: 'Saying it shows where it runs long or where you trip. Reading it does not.',
       target: '[data-guide="rep-timer"]',
       done: { kind: 'exists', selector: '[data-guide="timer-elapsed"]' },
     },
     {
       id: 'rate',
-      title: 'Rate the rep honestly',
-      body: 'Under "Rate this rep", pick 1 to 5 for each of the four to say how it went.',
+      title: 'Rate the rep, 1 to 5',
+      body: 'All four ratings, honestly.',
       why: 'The "Next step" under the ratings follows your lowest one.',
       target: '[data-guide="rep-ratings"]',
       done: {
@@ -45,24 +44,27 @@ export const networkingPracticeGuide: Guide = {
     },
     {
       id: 'next-fix',
-      title: 'Choose one fix',
-      body: 'Write the one thing you will change next time in "One fix for next rep".',
-      why: 'Pick the change that would help most. The rest can wait for later reps.',
+      title: 'Write one fix for next time',
+      why: 'One change is enough. The rest can wait for later reps.',
       target: '#reflection-nextFocus',
-      done: { kind: 'filled', selector: '#reflection-nextFocus', minLength: 5 },
+      done: { kind: 'filled', selector: '#reflection-nextFocus', minLength: 2 },
     },
     {
       id: 'save',
-      title: 'Save the rep',
-      body: 'Press "Save this rep". The history below keeps your exact words, the time you practiced, and your ratings.',
-      why: 'After a few reps, the history shows how your intro changed.',
+      title: 'Press "Save this rep"',
+      why: 'The history keeps your words, your time and your ratings.',
       target: '[data-guide="rep-save"]',
       done: { kind: 'exists', selector: '[data-guide="saved-rep"]' },
     },
   ],
+  challenge: {
+    title: 'Do a second rep with your fix',
+    body: 'Same steps, no pointers. Save it when you are done.',
+    done: { kind: 'count', selector: '[data-guide="saved-rep"]', atLeast: 2 },
+  },
   finish: {
     title: 'That is one full rep',
-    body: 'Do another with your fix in mind. When an interview is coming, build the stories behind your intro.',
+    body: 'When an interview is coming, build the stories behind your intro.',
     link: { label: 'Open the interview workspace', href: '/interview-glow-up/workspace/' },
   },
 };

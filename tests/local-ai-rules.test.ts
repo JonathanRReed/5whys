@@ -87,7 +87,7 @@ describe('followUpWhy rules', () => {
 
   it('asks the first question before any answer', async () => {
     const result = await followUpWhy({ track: 'career', topic: 'Nursing', answers: [] });
-    expect(result.value.question).toContain('Nursing');
+    expect(result.value.question).toContain('nursing');
     expect(result.fallbackReason).toBe('not-needed');
   });
 });

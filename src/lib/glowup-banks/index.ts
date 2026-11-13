@@ -18,6 +18,11 @@ export {
   audienceForStage,
   usesStudentExamples,
 } from './audience';
+export {
+  type CompetencyRow,
+  type PacketCoverage,
+  packetCoverage,
+} from './coverage';
 export { detectSkillsFromText, type SkillSuggestion } from './detect';
 export {
   findQuestionByText,
@@ -25,21 +30,29 @@ export {
   getQuestionById,
   getQuestionsForSkill,
   OPTIONAL_QUESTION_IDS,
+  optionalQuestionIds,
   QUESTION_BANK,
   QUESTION_MAP,
   type QuestionFilter,
   type QuestionPrompt,
   questionFits,
   questionsFor,
+  questionsToAsk,
   resolveQuestionText,
   SUGGESTED_QUESTIONS_TO_ASK,
   TERMS_QUESTION_IDS,
 } from './questions';
 export {
+  type AnswerNote,
+  answerNotes,
   CAREER_CHANGER_MUST_ASK,
+  packetQuestionLines,
   planRehearsal,
   type RehearsalPlanInput,
   type RehearsalQuestion,
+  type SelfCheckItem,
+  selfCheckFor,
+  tidyQuestionText,
 } from './rehearsal';
 export { type PostingNames, postingRepeatedTerms } from './repeated';
 export {

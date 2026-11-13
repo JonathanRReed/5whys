@@ -24,11 +24,13 @@ test('a deadline on the empty dashboard starts the studio', async ({ page }) => 
 
   const row = page.locator('li').filter({ hasText: 'Marketing Intern' });
   await expect(row).toBeVisible();
-  await expect(row.getByText('in 10 days')).toBeVisible();
+  await expect(row.getByText('Due in 10 days')).toBeVisible();
   await expect(row.getByText('No decoded posting')).toBeVisible();
-  await expect(row.getByRole('link', { name: 'Decode the posting' })).toHaveAttribute(
+  // The posting is pasted on this application's own desk, not in whichever
+  // interview role happens to be current.
+  await expect(row.getByRole('link', { name: 'Paste the posting on the desk' })).toHaveAttribute(
     'href',
-    '/interview-glow-up/workspace/?tab=decode'
+    /\/application\/\?id=.+&station=posting/
   );
 
   // The deadline-aware recommendation names the same application.
@@ -84,5 +86,5 @@ test('a decoded role can be tracked from the Glow Up workspace', async ({ page }
   const row = page.locator('li').filter({ hasText: 'Product Analyst' });
   await expect(row).toBeVisible();
   await expect(row.getByText('Posting decoded')).toBeVisible();
-  await expect(row.getByText('Packet empty')).toBeVisible();
+  await expect(row.getByText('No interview stories packed')).toBeVisible();
 });

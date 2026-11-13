@@ -58,7 +58,7 @@ describe('suggestNextStep', () => {
         'I want to help students succeed.'
       );
       expect(step).toBe(
-        'Book 30 minutes with one person doing software engineering today. Ask what their week actually looks like, then check whether your root reason survives the answer.'
+        'Book 30 minutes with one person who works in software engineering today. Ask what their week actually looks like, then check whether your root reason survives the answer.'
       );
     });
 
@@ -80,14 +80,14 @@ describe('suggestNextStep', () => {
         'I am curious about machine learning mechanisms.'
       );
       expect(step).toBe(
-        "Take one short course or read one practitioner's honest writeup of data science. Compare the day-to-day against your root reason, not the job posting."
+        'Take one short course, or read one honest account from someone who works in data science. Compare the day-to-day against your root reason, not the job posting.'
       );
     });
 
     it('falls back to default recommendation when no keywords match', () => {
       const step = suggestNextStep('career', 'finance', 'I want financial stability and autonomy.');
       expect(step).toBe(
-        'Talk to one person two years into finance. Trade your five whys for theirs and see if the roots match.'
+        'Talk to one person who has worked in finance for about two years. Trade your five whys for theirs and see if the roots match.'
       );
     });
   });
@@ -173,7 +173,7 @@ describe('getAnswerNudge', () => {
   it('returns short answer prompt when word count is less than 8 words', () => {
     const nudge = getAnswerNudge('I want to build software.', '');
     expect(nudge).toBe(
-      'Short answer. Push one level deeper: name a value, a constraint, a moment, a person, or a fear.'
+      'This counts. To make it stronger, name a value, a constraint, a moment, a person, or a fear.'
     );
   });
 

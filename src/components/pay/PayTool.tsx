@@ -1,14 +1,17 @@
 import * as React from 'react';
+import { hasWages } from '../../config/pay';
 import {
   APPLICATION_DESK_KEY,
   type ApplicationDeskData,
   applyOfferChanges,
   createDefaultDeskData,
   createEmptyDesk,
+  extrasPhrase,
   loadApplicationDesks,
   type OfferChanges,
   type OfferWorksheet,
   offerEquivalents,
+  offerRange,
   PAY_PERIODS,
   type PayPeriod,
   type PercentField,
@@ -20,10 +23,13 @@ import {
   APPLICATIONS_KEY,
   activeApplicationId,
   addApplication,
+  daysUntilDeadline,
   loadApplications,
   saveApplications,
+  shortDate,
   type TrackedApplication,
 } from '../../lib/applications';
+import { readPostingFor, readReflectionReason } from '../../lib/career-bridge';
 import { onDeviceCleared } from '../../lib/device-events';
 import {
   createPayLoaders,
@@ -37,9 +43,11 @@ import {
   type TitleCandidate,
   type WageDataset,
 } from '../../lib/pay';
+import { type PostingPay, readPostingPay } from '../../lib/pay/posting-pay';
 import { type ParsedAmount, parseAmount } from '../../lib/pay-input';
 import { cn, focusWhenReady } from '../../lib/utils';
 import Announcer, { useSettledAnnouncement } from '../shared/Announcer';
+import WordHelp from '../shared/WordHelp';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -65,10 +73,51 @@ export const money = (value: number | null, per: string, symbol = '$', cents = f
         maximumFractionDigits: cents ? 2 : 0,
       }).format(value)} ${per}`;
 
+const amountText = (value: number, cents = false) =>
+  new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: cents ? 2 : 0,
+    maximumFractionDigits: cents ? 2 : 0,
+  }).format(value);
+
+/**
+ * An amount, or both ends of a range when the posting gave one: "$21.15 to
+ * $23.08 an hour". The top is shown only when it is known and higher.
+ */
+export const moneyRange = (
+  low: number | null,
+  high: number | null | undefined,
+  per: string,
+  symbol = '$',
+  cents = false
+) =>
+  low === null
+    ? NEEDS_MORE
+    : typeof high === 'number' && high > low
+      ? `${symbol}${amountText(low, cents)} to ${symbol}${amountText(high, cents)} ${per}`
+      : money(low, per, symbol, cents);
+
 /** Hours a week past which hourly work is usually paid as overtime in the United States. */
 const OVERTIME_AFTER_HOURS = 40;
 
 type Search = (query: string, limit?: number) => TitleCandidate[];
+
+const MISSING_LABEL = {
+  basePay: 'base pay',
+  payPeriod: 'how often it is paid',
+  hoursPerWeek: 'hours a week',
+  weeksPerYear: 'weeks a year',
+} as const;
+
+/** Names only the fields that are still blank, so nobody is sent back to one they filled. */
+function missingHint(missing: ReadonlyArray<keyof typeof MISSING_LABEL>): string {
+  if (missing.length === 1 && missing[0] === 'payPeriod') {
+    return 'Choose how often this is paid under "Paid" to see the figures.';
+  }
+  const names = missing.map((key) => MISSING_LABEL[key]);
+  const list =
+    names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0];
+  return `Fill in ${list} to complete the blank figures.`;
+}
 
 export default function PayTool() {
   // --- Wage lookup -------------------------------------------------------
@@ -88,9 +137,10 @@ export default function PayTool() {
   );
 
   // Data loads the first time the visitor types, never on page load, and the
-  // typed title is only ever searched in memory.
+  // typed title is only ever searched in memory. Without wage figures built
+  // in, the lookup is not shown and nothing is requested.
   const ensureData = React.useCallback(async () => {
-    if (dataState !== 'idle') return;
+    if (!hasWages || dataState !== 'idle') return;
     setDataState('loading');
     const [wages, places] = await Promise.all([
       loaders.loadNational().catch(() => null),
@@ -108,7 +158,7 @@ export default function PayTool() {
   }, [dataState, loaders]);
 
   React.useEffect(() => {
-    if (!placeId) {
+    if (!hasWages || !placeId) {
       setPlace(null);
       return undefined;
     }
@@ -178,16 +228,51 @@ export default function PayTool() {
 
   React.useEffect(() => {
     const apps = loadApplications();
+    const saved = loadApplicationDesks();
     setApplications(apps.applications);
-    setDesks(loadApplicationDesks());
+    setDesks(saved);
     const wanted = new URLSearchParams(window.location.search).get('id');
     const known = apps.applications.some((a) => a.id === wanted);
-    setAppId(known && wanted ? wanted : (activeApplicationId(apps) ?? ''));
+    setAppId(
+      known && wanted
+        ? wanted
+        : openingApplication(apps.applications, saved, activeApplicationId(apps))
+    );
     // Arriving from an application's desk: start from that role's title. The
     // title is read from this device's storage, never from the address.
     const from = apps.applications.find((a) => a.id === wanted);
-    if (from?.title) setQuery(from.title);
+    if (hasWages && from?.title) setQuery(from.title);
   }, []);
+
+  // The pay and hours the chosen application's posting states, read by rule.
+  const [posting, setPosting] = React.useState<{ title: string; pay: PostingPay } | null>(null);
+  React.useEffect(() => {
+    if (!appId) {
+      setPosting(null);
+      return;
+    }
+    const found = readPostingFor(appId);
+    const pay = found ? readPostingPay(found.text) : null;
+    setPosting(found && pay ? { title: found.title, pay } : null);
+  }, [appId]);
+
+  // The reason the visitor reached in the Five Whys, to weigh offers against.
+  const [reason, setReason] = React.useState<{ reason: string; topic: string } | null>(null);
+  React.useEffect(() => {
+    setReason(readReflectionReason());
+  }, []);
+
+  /**
+   * Show one application's worksheet. The address names it too, so a reload
+   * or another tab opens on the same offer, as the desk does.
+   */
+  const showApp = (id: string) => {
+    setAppId(id);
+    const url = new URL(window.location.href);
+    if (id) url.searchParams.set('id', id);
+    else url.searchParams.delete('id');
+    window.history.replaceState(window.history.state, '', url);
+  };
 
   // Whether the visitor has changed the worksheet on this visit, so a saved
   // offer loading is not read out.
@@ -267,28 +352,35 @@ export default function PayTool() {
     setUnsaved(!saved);
     setDesks(next);
   };
-  const equivalents = offerEquivalents(offer);
+  const { low: equivalents, high: top } = offerRange(offer);
   const symbol = offer.currency ?? '$';
   const period = periodPhrase(offer);
+  const extras = extrasPhrase(offer);
+  const fullYear = period === 'a year';
   const shown = {
-    hourly: money(equivalents.hourly, 'an hour', symbol, true),
-    weekly: money(equivalents.weekly, 'a week', symbol),
-    base: money(equivalents.annualBase, period, symbol),
+    hourly: moneyRange(equivalents.hourly, top?.hourly, 'an hour', symbol, true),
+    weekly: moneyRange(equivalents.weekly, top?.weekly, 'a week', symbol),
+    monthly: moneyRange(equivalents.monthly, top?.monthly, 'a month', symbol),
+    base: moneyRange(equivalents.annualBase, top?.annualBase, period, symbol),
   };
   const offerMessage = useSettledAnnouncement(
     shown.hourly === NEEDS_MORE && shown.base === NEEDS_MORE
       ? ''
-      : `Works out to ${[shown.hourly, shown.weekly, shown.base]
+      : `Works out to ${[shown.hourly, shown.weekly, shown.monthly, shown.base]
           .filter((text) => text !== NEEDS_MORE)
           .join(', ')}, before taxes.${
           equivalents.annualGuaranteed !== null &&
           equivalents.annualGuaranteed !== equivalents.annualBase
-            ? ` With the guaranteed bonus, ${money(equivalents.annualGuaranteed, period, symbol)}.`
+            ? ` With the guaranteed bonus, ${moneyRange(equivalents.annualGuaranteed, top?.annualGuaranteed, period, symbol)}.`
+            : ''
+        }${
+          equivalents.oneTime > 0
+            ? ` ${fullYear ? 'The first year, with the one-time bonus' : 'With the one-time bonus'}, ${moneyRange(equivalents.firstYear, top?.firstYear, period, symbol)}.`
             : ''
         }${
           equivalents.annualWithVariable !== null &&
           equivalents.annualWithVariable !== equivalents.annualGuaranteed
-            ? ` If the pay that is not promised comes through, ${money(equivalents.annualWithVariable, period, symbol)}.`
+            ? ` If the pay that is not promised comes through, ${moneyRange(equivalents.annualWithVariable, top?.annualWithVariable, period, symbol)}.`
             : ''
         }`,
     offerEdited
@@ -325,7 +417,8 @@ export default function PayTool() {
       return;
     }
     // What was typed with no application to keep it goes with the new one.
-    const kept = !appId && scratch.basePay !== null;
+    // Hours or a note written before the rate is known are work too.
+    const kept = !appId && JSON.stringify(scratch) !== JSON.stringify(createEmptyDesk().offer);
     if (kept) {
       const next = updateOfferWorksheet(loadApplicationDesks(), application.id, {
         ...scratch,
@@ -338,7 +431,7 @@ export default function PayTool() {
     setApplications(data.applications);
     setAddFailed(false);
     setGone(false);
-    setAppId(application.id);
+    showApp(application.id);
     setNewTitle('');
     setNewCompany('');
     setAdding(false);
@@ -352,14 +445,24 @@ export default function PayTool() {
   const field = (
     label: string,
     key: NumberKey,
-    options: { hint?: string; min?: number; max?: number; percent?: boolean } = {}
+    options: {
+      hint?: string;
+      min?: number;
+      max?: number;
+      percent?: boolean;
+      unit?: 'hours' | 'weeks';
+      example?: string;
+      sum?: boolean;
+      range?: boolean;
+    } = {}
   ) => (
     <AmountField
       key={`${appId}-${key}`}
       label={label}
       hint={options.hint}
       guide={`offer-${key}`}
-      value={offer[key]}
+      value={offer[key] ?? null}
+      to={key === 'basePay' ? (offer.basePayTo ?? null) : null}
       percent={isPercentField(key) ? (offer.percentOfBase?.[key] ?? null) : null}
       symbol={key === 'basePay' ? (offer.currency ?? null) : null}
       parse={(text) => {
@@ -368,6 +471,10 @@ export default function PayTool() {
           min: options.min,
           max: options.max,
           money: isMoneyField(key),
+          unit: options.unit,
+          example: options.example,
+          sum: options.sum,
+          range: options.range,
           ...(options.percent ? { percentOf: yearlyBase } : {}),
         });
         // One offer, one currency: the one typed with the base pay.
@@ -382,12 +489,16 @@ export default function PayTool() {
         return parsed;
       }}
       percentOf={options.percent ? yearlyBase : undefined}
-      onCommit={(value, percent, currency) =>
+      onCommit={(value, percent, currency, to) =>
         changeOffer(
           isPercentField(key)
             ? { [key]: value, percentOfBase: { [key]: percent ?? null } }
             : key === 'basePay'
-              ? { basePay: value, ...(currency !== undefined ? { currency } : {}) }
+              ? {
+                  basePay: value,
+                  basePayTo: to ?? null,
+                  ...(currency !== undefined ? { currency } : {}),
+                }
               : { [key]: value }
         )
       }
@@ -401,195 +512,50 @@ export default function PayTool() {
       (entry): entry is { application: TrackedApplication; offer: OfferWorksheet } =>
         entry.offer !== undefined && entry.offer.basePay !== null
     )
-    .map((entry) => ({ ...entry, figures: offerEquivalents(entry.offer) }));
+    .map((entry) => {
+      const { low, high } = offerRange(entry.offer);
+      return { ...entry, figures: low, high };
+    });
+  const anyOneTime = compared.some(({ figures }) => figures.oneTime > 0);
+  // Offers the visitor has in hand, whatever their pay, for the "Deciding" block.
+  const offersInHand = applications
+    .map((application) => ({ application, offer: desks.desks[application.id]?.offer }))
+    .filter(
+      (entry): entry is { application: TrackedApplication; offer: OfferWorksheet } =>
+        entry.offer?.received === true
+    );
+  const chosen = applications.find((application) => application.id === appId) ?? null;
+
+  // The posting's figures are offered while the worksheet does not already hold them.
+  const fromPosting = posting?.pay;
+  const postingDiffers =
+    !!fromPosting &&
+    ((fromPosting.basePay !== null &&
+      (offer.basePay !== fromPosting.basePay ||
+        (offer.basePayTo ?? null) !== fromPosting.basePayTo ||
+        offer.payPeriod !== fromPosting.payPeriod)) ||
+      (fromPosting.hoursPerWeek !== null && offer.hoursPerWeek !== fromPosting.hoursPerWeek) ||
+      (fromPosting.basePay !== null && !!offer.currency));
+  const applyPostingPay = () => {
+    if (!fromPosting) return;
+    changeOffer({
+      ...(fromPosting.basePay !== null
+        ? {
+            basePay: fromPosting.basePay,
+            basePayTo: fromPosting.basePayTo,
+            payPeriod: fromPosting.payPeriod,
+            // A posting's figures are read in dollars: the worksheet follows,
+            // so a dollar amount is never relabelled in another currency.
+            currency: '$',
+          }
+        : {}),
+      ...(fromPosting.hoursPerWeek !== null ? { hoursPerWeek: fromPosting.hoursPerWeek } : {}),
+    });
+  };
 
   return (
     <div className="space-y-14">
-      <section aria-labelledby="wages-title" className="space-y-5">
-        <div className="space-y-2">
-          <h2 id="wages-title" className="text-2xl font-semibold">
-            What the job tends to pay
-          </h2>
-          <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
-            Type a job title. The search runs on this device against a public list of job titles;
-            what you type is not sent anywhere.
-          </p>
-        </div>
-        <label className="block max-w-xl space-y-1">
-          <span className="block text-sm text-muted-foreground">Job title</span>
-          <Input
-            value={query}
-            onFocus={() => void ensureData()}
-            data-guide="pay-title"
-            onChange={(event) => {
-              setQuery(event.target.value);
-              setTyped(true);
-              setPicked(null);
-              void ensureData();
-            }}
-            placeholder="Marketing assistant"
-            className="text-base"
-          />
-        </label>
-
-        {dataState === 'loading' && (
-          <p className="text-sm text-muted-foreground">Loading the title list.</p>
-        )}
-
-        <Announcer message={searchMessage} />
-        {candidates.length > 0 && !picked && (
-          <div className="max-w-xl space-y-2">
-            <p className="text-sm text-muted-foreground">
-              Titles mean different things at different employers. Pick the occupation that fits.
-              {isInternSearch &&
-                ' Intern pay is not measured separately: these are figures for the occupation as a whole, and interns usually earn less.'}
-            </p>
-            <ul
-              className="divide-y divide-border/30 rounded-xl border border-border/40"
-              data-guide="pay-candidates"
-            >
-              {candidates.map((candidate) => (
-                <li key={`${candidate.onetCode}-${candidate.matchedTitle}`}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPicked(candidate);
-                      // The list goes away; the occupation that replaced it takes focus.
-                      focusWhenReady('pay-occupation');
-                    }}
-                    className="flex w-full flex-col items-start gap-0.5 px-4 py-2.5 text-left text-sm transition-colors hover:bg-overlay/30 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    <span className="text-foreground">{candidate.title}</span>
-                    {/* The title is already the first line: read it once. */}
-                    <span className="text-xs text-muted-foreground">
-                      <span aria-hidden="true">{candidate.title} </span>({candidate.onetCode})
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {search && occupationQuery.length >= 2 && candidates.length === 0 && (
-          <p className="text-sm text-muted-foreground">
-            No occupation matches that title. Try a plainer version of it.
-          </p>
-        )}
-
-        {picked && (
-          <div className="space-y-4">
-            <h3
-              id="pay-occupation"
-              tabIndex={-1}
-              className="font-display text-xl font-semibold focus-visible:outline-hidden"
-              data-testid="pay-occupation"
-            >
-              {picked.title}
-            </h3>
-            {dataState === 'titles-only' || !national ? (
-              <p className="max-w-[68ch] rounded-lg bg-gold/12 px-3 py-2 text-sm">
-                Wage figures are not included in this copy of the site yet, so there are no numbers
-                to show for this occupation. The worksheet below still works.
-              </p>
-            ) : !lookup ? (
-              <p className="max-w-[68ch] text-sm text-muted-foreground">
-                The wage survey does not publish figures for this exact occupation.
-              </p>
-            ) : (
-              <>
-                {geographies.length > 0 && (
-                  <label className="flex max-w-xl flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                    <span>Place</span>
-                    <select
-                      value={placeId}
-                      onChange={(event) => setPlaceId(event.target.value)}
-                      className="h-9 min-w-0 flex-1 rounded-md border border-border/50 bg-transparent px-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <option value="">United States</option>
-                      {geographies.map((geography) => (
-                        <option key={geography.id} value={geography.id}>
-                          {geography.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
-                <div className="overflow-x-auto">
-                  <table className="w-full max-w-2xl text-sm">
-                    <caption className="pb-2 text-left text-xs text-muted-foreground">
-                      {lookup.occupationTitle}, {lookup.figures[0]?.place.name}.{' '}
-                      {lookup.figures[0]?.referencePeriod}.
-                    </caption>
-                    <thead>
-                      <tr className="border-b border-border/40 text-left text-muted-foreground">
-                        <th scope="col" className="py-2 pr-4 font-medium">
-                          Where in the range
-                        </th>
-                        <th scope="col" className="py-2 pr-4 font-medium">
-                          A year
-                        </th>
-                        <th scope="col" className="py-2 font-medium">
-                          An hour
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {[10, 25, 50, 75, 90].map((percentile) => {
-                        const annual = lookup.figures.find(
-                          (f) => f.percentile === percentile && f.unit === 'annual'
-                        );
-                        const hourly = lookup.figures.find(
-                          (f) => f.percentile === percentile && f.unit === 'hourly'
-                        );
-                        const any = annual ?? hourly;
-                        if (!any) return null;
-                        return (
-                          <tr key={percentile} className="border-b border-border/25 align-top">
-                            <th scope="row" className="py-2 pr-4 text-left font-normal">
-                              <span className="text-foreground">{any.label}</span>
-                              <span className="block text-xs text-muted-foreground">
-                                {any.explanation}
-                              </span>
-                            </th>
-                            <td className="py-2 pr-4 font-mono tabular-nums">
-                              {annual ? formatPayValue(annual.value, 'annual') : 'Not published'}
-                            </td>
-                            <td className="py-2 font-mono tabular-nums">
-                              {hourly ? formatPayValue(hourly.value, 'hourly') : 'Not published'}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-                <p className="max-w-[68ch] text-xs leading-relaxed text-muted-foreground">
-                  These are percentiles across everyone in the occupation, at every level of
-                  experience. The survey does not measure starting pay, so a lower percentile is not
-                  an entry-level salary.
-                </p>
-              </>
-            )}
-          </div>
-        )}
-
-        <details className="max-w-[68ch] text-xs text-muted-foreground">
-          <summary className="cursor-pointer">Where this data comes from</summary>
-          <p className="mt-2 leading-relaxed">{credits.bls}</p>
-          <p className="mt-2 leading-relaxed">{credits.onet}</p>
-          <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-            {credits.links.map((link) => (
-              <li key={link.href}>
-                <a className="underline underline-offset-2" href={link.href} rel="noreferrer">
-                  {link.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </details>
-      </section>
-
-      <section aria-labelledby="offer-title" className="space-y-5 border-t border-border/40 pt-10">
+      <section aria-labelledby="offer-title" className="space-y-5">
         <div className="space-y-2">
           <h2
             id="offer-title"
@@ -602,6 +568,7 @@ export default function PayTool() {
             Put an offer or a posted rate into one set of terms. Nothing is assumed: if hours or
             weeks are blank, the figure that needs them stays blank.
           </p>
+          <WordHelp words={['basePay', 'variablePay', 'overtime']} />
           {gone && (
             <p role="alert" className="rounded-lg bg-gold/12 px-3 py-2 text-sm text-foreground">
               The application this worksheet was saved with was removed in another tab, so the
@@ -622,7 +589,7 @@ export default function PayTool() {
                   value={appId}
                   onChange={(event) => {
                     setGone(false);
-                    setAppId(event.target.value);
+                    showApp(event.target.value);
                   }}
                   className="h-10 w-full min-w-0 max-w-[18rem] rounded-md border border-border/50 bg-transparent px-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                 >
@@ -702,9 +669,45 @@ export default function PayTool() {
           )}
         </div>
 
+        {posting && postingDiffers && (
+          <div
+            className="max-w-3xl space-y-2 rounded-xl border border-foam/35 bg-foam/8 p-4 text-sm"
+            data-testid="posting-pay"
+          >
+            <p className="text-foreground">
+              The posting you decoded{posting.title ? ` for ${posting.title}` : ''} says:
+            </p>
+            <ul className="space-y-1">
+              {posting.pay.quotes.map((line) => (
+                <li key={line} className="font-mono text-xs text-muted-foreground wrap-anywhere">
+                  {line}
+                </li>
+              ))}
+            </ul>
+            {posting.pay.hoursPerWeekTo !== null && posting.pay.hoursPerWeek !== null && (
+              <p className="text-xs text-muted-foreground">
+                Hours a week will take the low end, {posting.pay.hoursPerWeek}. Change it if you
+                expect more.
+              </p>
+            )}
+            {offer.currency && fromPosting?.basePay !== null && (
+              <p className="text-xs text-foreground" data-testid="posting-pay-currency">
+                This worksheet is in {offer.currency}. The posting's figures are read in dollars, so
+                using them switches the worksheet to dollars. Check the other amounts after.
+              </p>
+            )}
+            <Button type="button" size="sm" onClick={applyPostingPay}>
+              Use the figures from the posting
+            </Button>
+          </div>
+        )}
+
         <div className="grid gap-8 lg:grid-cols-2">
           <div className="grid content-start gap-4 sm:grid-cols-2">
-            {field('Base pay', 'basePay', { hint: 'Write it as offered: 26, 62000 or 62k.' })}
+            {field('Base pay', 'basePay', {
+              range: true,
+              hint: 'Write it as offered: 26, 62000 or 62k. A range such as 44k to 48k is kept as a range.',
+            })}
             <label className="space-y-1">
               <span className="block text-sm text-muted-foreground">Paid</span>
               <select
@@ -726,26 +729,40 @@ export default function PayTool() {
             {field('Hours a week', 'hoursPerWeek', {
               min: 1,
               max: 100,
+              unit: 'hours',
+              example: '20',
               hint: 'The hours you expect to work, even on a salary.',
             })}
             {field('Weeks a year', 'weeksPerYear', {
               min: 1,
               max: 52,
-              hint: 'A full year is 52. A summer role might be 10 or 12.',
+              unit: 'weeks',
+              example: '10 or 52',
+              hint: 'A full year is 52. A summer role might be 10 or 12. During the school year, count the weeks you expect to work.',
             })}
             {offer.payPeriod === 'hour' &&
               field('Overtime each week, in hours', 'overtimeHoursPerWeek', {
                 min: 0,
                 max: 60,
+                unit: 'hours',
+                example: '5',
                 hint: 'Counted at time and a half. Leave blank if there is none.',
               })}
-            {field('Guaranteed bonus, a year', 'guaranteedBonus', {
+            {field(`Guaranteed bonus, ${extras}`, 'guaranteedBonus', {
               percent: true,
-              hint: 'An amount, or a percentage of base pay such as 5%.',
+              sum: true,
+              hint: fullYear
+                ? 'An amount, or a percentage of base pay such as 5%.'
+                : `The amount promised ${extras}, not a yearly rate. Or a percentage of base pay such as 5%.`,
             })}
-            {field('Variable pay, a year', 'variablePay', {
+            {field(`Variable pay, ${extras}`, 'variablePay', {
               percent: true,
-              hint: 'Commission, tips or a bonus "up to" an amount: not promised.',
+              sum: true,
+              hint: 'Commission, tips, equity or a bonus "up to" an amount: not promised. Add parts with +, such as 35000 + 40000.',
+            })}
+            {field('One-time bonus', 'oneTimeBonus', {
+              sum: true,
+              hint: 'A signing or relocation bonus, paid once. It counts in the first year only.',
             })}
             <label className="space-y-1 sm:col-span-2">
               <span className="block text-sm text-muted-foreground">Notes</span>
@@ -757,85 +774,209 @@ export default function PayTool() {
                 className="text-base"
               />
             </label>
+            {appId && (
+              <div className="space-y-3 sm:col-span-2">
+                <label className="flex items-center gap-2 text-sm text-foreground">
+                  <input
+                    type="checkbox"
+                    checked={offer.received === true}
+                    onChange={(event) => changeOffer({ received: event.target.checked })}
+                    className="h-4 w-4 accent-foam"
+                  />
+                  I have this offer and need to answer it
+                </label>
+                {offer.received && (
+                  <label className="block max-w-xs space-y-1">
+                    <span className="block text-sm text-muted-foreground">Answer by</span>
+                    <Input
+                      type="date"
+                      value={offer.answerBy ?? ''}
+                      onChange={(event) => changeOffer({ answerBy: event.target.value || null })}
+                      className="text-base"
+                    />
+                  </label>
+                )}
+              </div>
+            )}
           </div>
 
           <Announcer message={offerMessage} />
-          <dl
-            className="content-start space-y-3 rounded-xl border border-border/40 p-5"
-            data-guide="offer-results"
-          >
-            {(
-              [
-                ['Works out to', shown.hourly, true],
-                ['A week', shown.weekly, true],
-                ['Base pay over the period', shown.base, true],
+          <div className="content-start space-y-3">
+            <dl
+              className="space-y-3 rounded-xl border border-border/40 p-5"
+              data-guide="offer-results"
+            >
+              {(
                 [
-                  'Overtime, if you work it',
-                  money(equivalents.overtimeAnnual, period, symbol),
-                  hasOvertime,
-                ],
-                [
-                  'With the guaranteed bonus',
-                  money(equivalents.annualGuaranteed, period, symbol),
-                  hasBonus,
-                ],
-                [
-                  notPromised,
-                  money(equivalents.annualWithVariable, period, symbol),
-                  hasOvertime || hasVariable,
-                ],
-              ] as const
-            )
-              .filter(([, , show]) => show)
-              .map(([term, value]) => (
-                <div key={term} className="flex flex-wrap items-baseline justify-between gap-x-4">
-                  <dt className="text-sm text-muted-foreground">{term}</dt>
-                  <dd
-                    className={cn(
-                      // A long figure wraps inside the panel instead of widening the page.
-                      'min-w-0 max-w-full font-mono text-base tabular-nums break-all',
-                      value === NEEDS_MORE ? 'text-muted-foreground' : 'text-foreground'
-                    )}
-                  >
-                    {value}
-                  </dd>
-                </div>
-              ))}
-            <p className="pt-1 text-xs text-muted-foreground">
-              All figures are before taxes and deductions.
-            </p>
-            {hasOvertime && (
-              <p className="text-xs text-muted-foreground">
-                Overtime depends on the hours you are given, so it is expected, not promised. It is
-                kept out of the base and counted only in the last line.
+                  ['An hour', shown.hourly, true],
+                  ['A week', shown.weekly, true],
+                  ['A month', shown.monthly, true],
+                  ['Total base pay', shown.base, true],
+                  [
+                    'Overtime, if you work it',
+                    moneyRange(equivalents.overtimeAnnual, top?.overtimeAnnual, period, symbol),
+                    hasOvertime,
+                  ],
+                  [
+                    'With the guaranteed bonus',
+                    moneyRange(equivalents.annualGuaranteed, top?.annualGuaranteed, period, symbol),
+                    hasBonus,
+                  ],
+                  [
+                    fullYear ? 'First year, with the one-time bonus' : 'With the one-time bonus',
+                    moneyRange(equivalents.firstYear, top?.firstYear, period, symbol),
+                    equivalents.oneTime > 0,
+                  ],
+                  [
+                    'Each year after',
+                    moneyRange(equivalents.annualGuaranteed, top?.annualGuaranteed, period, symbol),
+                    equivalents.oneTime > 0 && fullYear,
+                  ],
+                  [
+                    notPromised,
+                    moneyRange(
+                      equivalents.annualWithVariable,
+                      top?.annualWithVariable,
+                      period,
+                      symbol
+                    ),
+                    hasOvertime || hasVariable,
+                  ],
+                ] as const
+              )
+                .filter(([, , show]) => show)
+                .map(([term, value]) => (
+                  <div key={term} className="flex flex-wrap items-baseline justify-between gap-x-4">
+                    <dt className="text-sm text-muted-foreground">{term}</dt>
+                    <dd
+                      className={cn(
+                        // A long figure wraps inside the panel instead of widening the page.
+                        'min-w-0 max-w-full font-mono text-base tabular-nums break-all',
+                        value === NEEDS_MORE ? 'text-muted-foreground' : 'text-foreground'
+                      )}
+                    >
+                      {value}
+                    </dd>
+                  </div>
+                ))}
+              <p className="pt-1 text-xs text-muted-foreground">
+                All figures are before taxes and deductions. A month counts 52 weeks over 12 months.
+              </p>
+              {offer.basePayTo !== undefined && (
+                <p className="text-xs text-muted-foreground">
+                  The pay was given as a range, so each figure shows both ends. An offer names one
+                  figure: ask which end, and why.
+                </p>
+              )}
+              {equivalents.oneTime > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  The one-time bonus is paid once, so it is kept out of every yearly figure but the
+                  first.
+                </p>
+              )}
+              {hasOvertime && (
+                <p className="text-xs text-muted-foreground">
+                  Overtime depends on the hours you are given, so it is expected, not promised. It
+                  is kept out of the base and counted only in the last line.
+                </p>
+              )}
+              {longHours && (
+                <p className="text-xs text-foreground" data-testid="overtime-hint">
+                  In the United States, hours over {OVERTIME_AFTER_HOURS} a week are usually paid at
+                  time and a half for hourly workers. If some of these hours are overtime, put{' '}
+                  {OVERTIME_AFTER_HOURS} in "Hours a week" and the rest in "Overtime each week, in
+                  hours".
+                </p>
+              )}
+              {offer.payPeriod !== null && offer.payPeriod !== 'hour' && offer.basePay !== null && (
+                <p className="text-xs text-muted-foreground">
+                  A salary usually pays the same however many hours you work, so more hours a week
+                  means less an hour.
+                </p>
+              )}
+              {equivalents.missing.length > 0 && offer.basePay !== null && (
+                <p className="text-xs text-foreground" data-testid="pay-missing-hint">
+                  {missingHint(equivalents.missing)}
+                </p>
+              )}
+            </dl>
+            {chosen && (
+              <p className="text-sm text-muted-foreground">
+                Next:{' '}
+                <a
+                  className="text-foreground underline underline-offset-4 hover:text-foam"
+                  href={`/application/?id=${encodeURIComponent(chosen.id)}`}
+                >
+                  back to {chosen.title}
+                  {chosen.company ? ` at ${chosen.company}` : ''}
+                </a>
+                {compared.length < 2 ? ', or add another offer above to compare them.' : '.'}
               </p>
             )}
-            {longHours && (
-              <p className="text-xs text-foreground" data-testid="overtime-hint">
-                In the United States, hours over {OVERTIME_AFTER_HOURS} a week are usually paid at
-                time and a half for hourly workers. If some of these hours are overtime, put{' '}
-                {OVERTIME_AFTER_HOURS} in "Hours a week" and the rest in "Overtime each week, in
-                hours".
-              </p>
-            )}
-            {offer.payPeriod !== null && offer.payPeriod !== 'hour' && offer.basePay !== null && (
-              <p className="text-xs text-muted-foreground">
-                A salary usually pays the same however many hours you work, so more hours a week
-                means less an hour.
-              </p>
-            )}
-            {equivalents.missing.length > 0 && offer.basePay !== null && (
-              <p className="text-xs text-muted-foreground">
-                Fill in hours and weeks to complete the blank figures.
-              </p>
-            )}
-          </dl>
+          </div>
         </div>
 
         {compared.length > 1 && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <h3 className="text-lg font-semibold">Side by side</h3>
-            <div className="overflow-x-auto">
+            {/* A phone gets one card per offer; the table needs room for its columns. */}
+            <ul className="space-y-3 sm:hidden" data-testid="offer-compare-cards">
+              {compared.map(({ application, offer: row, figures, high }) => {
+                const sign = row.currency ?? '$';
+                const per = periodPhrase(row);
+                const lines: Array<[string, string, boolean]> = [
+                  [
+                    'Hours a week',
+                    row.hoursPerWeek === null
+                      ? 'Not given'
+                      : `${row.hoursPerWeek}${row.overtimeHoursPerWeek ? ` + ${row.overtimeHoursPerWeek} overtime` : ''}`,
+                    true,
+                  ],
+                  [
+                    'An hour',
+                    moneyRange(figures.hourly, high?.hourly, 'an hour', sign, true),
+                    true,
+                  ],
+                  ['Base', moneyRange(figures.annualBase, high?.annualBase, per, sign), true],
+                  [
+                    'With guaranteed bonus',
+                    moneyRange(figures.annualGuaranteed, high?.annualGuaranteed, per, sign),
+                    figures.annualGuaranteed !== figures.annualBase,
+                  ],
+                  ['One-time', money(figures.oneTime, 'once', sign), figures.oneTime > 0],
+                  [
+                    'If overtime and variable pay come through',
+                    moneyRange(figures.annualWithVariable, high?.annualWithVariable, per, sign),
+                    figures.annualWithVariable !== figures.annualGuaranteed,
+                  ],
+                ];
+                return (
+                  <li key={application.id} className="rounded-xl border border-border/40 p-4">
+                    <p className="font-medium text-foreground wrap-anywhere">
+                      {application.title}
+                      {application.company && (
+                        <span className="block text-xs font-normal text-muted-foreground">
+                          {application.company}
+                        </span>
+                      )}
+                    </p>
+                    <dl className="mt-2 space-y-1.5 text-sm">
+                      {lines
+                        .filter(([, , show]) => show)
+                        .map(([term, value]) => (
+                          <div key={term} className="flex flex-wrap justify-between gap-x-3">
+                            <dt className="text-muted-foreground">{term}</dt>
+                            <dd className="min-w-0 font-mono tabular-nums break-all text-foreground">
+                              {value}
+                            </dd>
+                          </div>
+                        ))}
+                    </dl>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="hidden overflow-x-auto sm:block">
               <table className="w-full min-w-[32rem] text-sm" data-testid="offer-compare">
                 <thead>
                   <tr className="border-b border-border/40 text-left text-muted-foreground">
@@ -854,13 +995,18 @@ export default function PayTool() {
                     <th scope="col" className="py-2 pr-4 font-medium">
                       With guaranteed bonus
                     </th>
+                    {anyOneTime && (
+                      <th scope="col" className="py-2 pr-4 font-medium">
+                        One-time
+                      </th>
+                    )}
                     <th scope="col" className="py-2 font-medium">
                       If overtime and variable pay come through
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {compared.map(({ application, offer: row, figures }) => {
+                  {compared.map(({ application, offer: row, figures, high }) => {
                     const sign = row.currency ?? '$';
                     const per = periodPhrase(row);
                     return (
@@ -882,16 +1028,26 @@ export default function PayTool() {
                           ) : null}
                         </td>
                         <td className="py-2 pr-4 font-mono tabular-nums">
-                          {money(figures.hourly, 'an hour', sign, true)}
+                          {moneyRange(figures.hourly, high?.hourly, 'an hour', sign, true)}
                         </td>
                         <td className="py-2 pr-4 font-mono tabular-nums">
-                          {money(figures.annualBase, per, sign)}
+                          {moneyRange(figures.annualBase, high?.annualBase, per, sign)}
                         </td>
                         <td className="py-2 pr-4 font-mono tabular-nums">
-                          {money(figures.annualGuaranteed, per, sign)}
+                          {moneyRange(figures.annualGuaranteed, high?.annualGuaranteed, per, sign)}
                         </td>
+                        {anyOneTime && (
+                          <td className="py-2 pr-4 font-mono tabular-nums">
+                            {figures.oneTime > 0 ? money(figures.oneTime, 'once', sign) : 'None'}
+                          </td>
+                        )}
                         <td className="py-2 font-mono tabular-nums">
-                          {money(figures.annualWithVariable, per, sign)}
+                          {moneyRange(
+                            figures.annualWithVariable,
+                            high?.annualWithVariable,
+                            per,
+                            sign
+                          )}
                         </td>
                       </tr>
                     );
@@ -901,14 +1057,287 @@ export default function PayTool() {
             </div>
             <p className="text-xs text-muted-foreground">
               The hourly figure divides pay by the hours you entered, so a salary with long weeks
-              shows what an hour of it is really worth. Overtime is never counted in the base. Every
-              figure is before taxes.
+              shows what an hour of it is really worth. Overtime is never counted in the base, and a
+              one-time bonus is never counted in a yearly figure. Every figure is before taxes.
             </p>
           </div>
         )}
+
+        {offersInHand.length > 0 && (
+          <section
+            aria-labelledby="deciding-title"
+            className="max-w-3xl space-y-3 rounded-xl border border-border/40 p-5"
+            data-testid="offer-deciding"
+          >
+            <h3 id="deciding-title" className="text-lg font-semibold">
+              Deciding
+            </h3>
+            <ul className="space-y-1 text-sm">
+              {offersInHand.map(({ application, offer: row }) => {
+                const days = daysUntilDeadline(row.answerBy ?? null);
+                return (
+                  <li key={application.id} className="text-foreground">
+                    {application.title}
+                    {application.company ? ` at ${application.company}` : ''}:{' '}
+                    <span className="text-muted-foreground">
+                      {row.answerBy
+                        ? `answer by ${shortDate(row.answerBy)}${days === null || days < 0 ? '' : days === 0 ? ', today' : days === 1 ? ', tomorrow' : `, in ${days} days`}.`
+                        : 'no answer-by date yet. Ask for one if you were not given it.'}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="text-sm text-muted-foreground">
+              If you need more time, ask before that date. You could write:
+            </p>
+            <blockquote className="rounded-lg bg-overlay/30 px-4 py-3 text-sm text-foreground">
+              Thank you for the offer. I am finishing another interview this week. Could I give you
+              my answer by [the day you need]?
+            </blockquote>
+            {reason ? (
+              <p className="text-sm text-muted-foreground">
+                Your reason, in your words:{' '}
+                <span className="italic text-foreground">{reason.reason}</span>. Which of these
+                gives you that?{' '}
+                <a
+                  className="text-foreground underline underline-offset-4 hover:text-foam"
+                  href="/career/"
+                >
+                  Look at it again
+                </a>
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Pay is one part of it. The{' '}
+                <a
+                  className="text-foreground underline underline-offset-4 hover:text-foam"
+                  href="/career/"
+                >
+                  Five Whys
+                </a>{' '}
+                helps you name what matters most to you, so you can ask which offer gives you that.
+              </p>
+            )}
+          </section>
+        )}
       </section>
+
+      {/* Only with wage figures built in: a title search that ends without
+          pay would promise what the page cannot give. */}
+      {hasWages && (
+        <section
+          aria-labelledby="wages-title"
+          className="space-y-5 border-t border-border/40 pt-10"
+        >
+          <div className="space-y-2">
+            <h2 id="wages-title" className="text-2xl font-semibold">
+              What the job tends to pay
+            </h2>
+            <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
+              Type a job title. The search runs on this device against a public list of job titles;
+              what you type is not sent anywhere.
+            </p>
+          </div>
+          <label className="block max-w-xl space-y-1">
+            <span className="block text-sm text-muted-foreground">Job title</span>
+            <Input
+              value={query}
+              onFocus={() => void ensureData()}
+              data-guide="pay-title"
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setTyped(true);
+                setPicked(null);
+                void ensureData();
+              }}
+              placeholder="Marketing assistant"
+              className="text-base"
+            />
+          </label>
+
+          {dataState === 'loading' && (
+            <p className="text-sm text-muted-foreground">Loading the title list.</p>
+          )}
+
+          <Announcer message={searchMessage} />
+          {candidates.length > 0 && !picked && (
+            <div className="max-w-xl space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Titles mean different things at different employers. Pick the occupation that fits.
+                {isInternSearch &&
+                  ' Intern pay is not measured separately: these are figures for the occupation as a whole, and interns usually earn less.'}
+              </p>
+              <ul
+                className="divide-y divide-border/30 rounded-xl border border-border/40"
+                data-guide="pay-candidates"
+              >
+                {candidates.map((candidate) => (
+                  <li key={`${candidate.onetCode}-${candidate.matchedTitle}`}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPicked(candidate);
+                        // The list goes away; the occupation that replaced it takes focus.
+                        focusWhenReady('pay-occupation');
+                      }}
+                      className="flex w-full flex-col items-start gap-0.5 px-4 py-2.5 text-left text-sm transition-colors hover:bg-overlay/30 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <span className="text-foreground">{candidate.title}</span>
+                      {/* The title is already the first line: read it once. */}
+                      <span className="text-xs text-muted-foreground">
+                        <span aria-hidden="true">{candidate.title} </span>({candidate.onetCode})
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {search && occupationQuery.length >= 2 && candidates.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              No occupation matches that title. Try a plainer version of it.
+            </p>
+          )}
+
+          {picked && (
+            <div className="space-y-4">
+              <h3
+                id="pay-occupation"
+                tabIndex={-1}
+                className="font-display text-xl font-semibold focus-visible:outline-hidden"
+                data-testid="pay-occupation"
+              >
+                {picked.title}
+              </h3>
+              {dataState === 'titles-only' || !national ? (
+                <p className="max-w-[68ch] rounded-lg bg-gold/12 px-3 py-2 text-sm">
+                  Wage figures are not included in this copy of the site yet, so there are no
+                  numbers to show for this occupation. The worksheet below still works.
+                </p>
+              ) : !lookup ? (
+                <p className="max-w-[68ch] text-sm text-muted-foreground">
+                  The wage survey does not publish figures for this exact occupation.
+                </p>
+              ) : (
+                <>
+                  {geographies.length > 0 && (
+                    <label className="flex max-w-xl flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                      <span>Place</span>
+                      <select
+                        value={placeId}
+                        onChange={(event) => setPlaceId(event.target.value)}
+                        className="h-9 min-w-0 flex-1 rounded-md border border-border/50 bg-transparent px-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <option value="">United States</option>
+                        {geographies.map((geography) => (
+                          <option key={geography.id} value={geography.id}>
+                            {geography.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                  <div className="overflow-x-auto">
+                    <table className="w-full max-w-2xl text-sm">
+                      <caption className="pb-2 text-left text-xs text-muted-foreground">
+                        {lookup.occupationTitle}, {lookup.figures[0]?.place.name}.{' '}
+                        {lookup.figures[0]?.referencePeriod}.
+                      </caption>
+                      <thead>
+                        <tr className="border-b border-border/40 text-left text-muted-foreground">
+                          <th scope="col" className="py-2 pr-4 font-medium">
+                            Where in the range
+                          </th>
+                          <th scope="col" className="py-2 pr-4 font-medium">
+                            A year
+                          </th>
+                          <th scope="col" className="py-2 font-medium">
+                            An hour
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[10, 25, 50, 75, 90].map((percentile) => {
+                          const annual = lookup.figures.find(
+                            (f) => f.percentile === percentile && f.unit === 'annual'
+                          );
+                          const hourly = lookup.figures.find(
+                            (f) => f.percentile === percentile && f.unit === 'hourly'
+                          );
+                          const any = annual ?? hourly;
+                          if (!any) return null;
+                          return (
+                            <tr key={percentile} className="border-b border-border/25 align-top">
+                              <th scope="row" className="py-2 pr-4 text-left font-normal">
+                                <span className="text-foreground">{any.label}</span>
+                                <span className="block text-xs text-muted-foreground">
+                                  {any.explanation}
+                                </span>
+                              </th>
+                              <td className="py-2 pr-4 font-mono tabular-nums">
+                                {annual ? formatPayValue(annual.value, 'annual') : 'Not published'}
+                              </td>
+                              <td className="py-2 font-mono tabular-nums">
+                                {hourly ? formatPayValue(hourly.value, 'hourly') : 'Not published'}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="max-w-[68ch] text-xs leading-relaxed text-muted-foreground">
+                    These are percentiles across everyone in the occupation, at every level of
+                    experience. The survey does not measure starting pay, so a lower percentile is
+                    not an entry-level salary.
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+
+          <details className="max-w-[68ch] text-xs text-muted-foreground">
+            <summary className="cursor-pointer">Where this data comes from</summary>
+            <p className="mt-2 leading-relaxed">{credits.bls}</p>
+            <p className="mt-2 leading-relaxed">{credits.onet}</p>
+            <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+              {credits.links.map((link) => (
+                <li key={link.href}>
+                  <a className="underline underline-offset-2" href={link.href} rel="noreferrer">
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </details>
+        </section>
+      )}
     </div>
   );
+}
+
+/**
+ * Which application the worksheet opens on when the address names none: the
+ * one in focus when it has an offer filled in; otherwise the offer worked on
+ * last, so a return visit shows the figures typed before; otherwise the one in
+ * focus.
+ */
+export function openingApplication(
+  applications: TrackedApplication[],
+  desks: ApplicationDeskData,
+  activeId: string | null
+): string {
+  const offerOf = (id: string) => desks.desks[id]?.offer;
+  if (activeId && offerOf(activeId)?.basePay != null) return activeId;
+  const latest = applications
+    .filter((application) => offerOf(application.id)?.basePay != null)
+    .sort(
+      (a, b) =>
+        (offerOf(b.id)?.editedAt ?? desks.desks[b.id]?.updatedAt ?? 0) -
+        (offerOf(a.id)?.editedAt ?? desks.desks[a.id]?.updatedAt ?? 0)
+    )[0];
+  return latest?.id ?? activeId ?? '';
 }
 
 const isPercentField = (key: NumberKey): key is PercentField =>
@@ -916,12 +1345,13 @@ const isPercentField = (key: NumberKey): key is PercentField =>
 
 /** Hours and weeks are counts, not money: a currency symbol there is refused. */
 const isMoneyField = (key: NumberKey) =>
-  key === 'basePay' || key === 'guaranteedBonus' || key === 'variablePay';
+  key === 'basePay' || key === 'guaranteedBonus' || key === 'variablePay' || key === 'oneTimeBonus';
 
 type NumberKey =
   | 'basePay'
   | 'guaranteedBonus'
   | 'variablePay'
+  | 'oneTimeBonus'
   | 'hoursPerWeek'
   | 'weeksPerYear'
   | 'overtimeHoursPerWeek';
@@ -931,6 +1361,8 @@ type AmountFieldProps = {
   hint?: string;
   guide: string;
   value: number | null;
+  /** The top of a range typed in this field, when one was. */
+  to?: number | null;
   /** The percentage this amount was typed as, when it was: 5 for "5%". */
   percent?: number | null;
   parse: (text: string) => ParsedAmount;
@@ -938,21 +1370,29 @@ type AmountFieldProps = {
   percentOf?: number | null;
   /** The currency symbol a stored amount was typed with, other than dollars. */
   symbol?: string | null;
-  /** `currency` is the symbol typed, or undefined when none was. */
-  onCommit: (value: number | null, percent: number | null, currency?: string) => void;
+  /** `currency` is the symbol typed, or undefined when none was. `to` is the top of a range. */
+  onCommit: (
+    value: number | null,
+    percent: number | null,
+    currency?: string,
+    to?: number | null
+  ) => void;
 };
 
 /** What the field shows for a stored amount: the percentage it was typed as, or the number. */
 const shownText = (
   value: number | null,
   percent: number | null | undefined,
-  symbol?: string | null
-) =>
-  typeof percent === 'number'
-    ? `${percent}%`
-    : value === null
-      ? ''
-      : `${symbol && symbol !== '$' ? symbol : ''}${value}`;
+  symbol?: string | null,
+  to?: number | null
+) => {
+  if (typeof percent === 'number') return `${percent}%`;
+  if (value === null) return '';
+  const sign = symbol && symbol !== '$' ? symbol : '';
+  return typeof to === 'number' && to > value
+    ? `${sign}${value} to ${sign}${to}`
+    : `${sign}${value}`;
+};
 
 /**
  * A pay field that keeps what was typed. "62k" and "5%" are understood and
@@ -963,36 +1403,42 @@ function AmountField({
   hint,
   guide,
   value,
+  to,
   percent,
   parse,
   percentOf,
   symbol,
   onCommit,
 }: AmountFieldProps) {
-  const [text, setText] = React.useState(shownText(value, percent, symbol));
+  const [text, setText] = React.useState(shownText(value, percent, symbol, to));
   const [error, setError] = React.useState<string | null>(null);
   const lastCommitted = React.useRef(value);
+  const lastTop = React.useRef(to ?? null);
   const noteId = React.useId();
 
-  // Follow changes that came from elsewhere (another application, a reload).
+  // Follow changes that came from elsewhere (another application, a reload,
+  // the posting's figures).
   // biome-ignore lint/correctness/useExhaustiveDependencies: the percentage is read with the value it belongs to
   React.useEffect(() => {
-    if (value === lastCommitted.current) return;
+    if (value === lastCommitted.current && (to ?? null) === lastTop.current) return;
     lastCommitted.current = value;
-    setText(shownText(value, percent, symbol));
+    lastTop.current = to ?? null;
+    setText(shownText(value, percent, symbol, to));
     setError(null);
-  }, [value]);
+  }, [value, to]);
 
   const change = (next: string) => {
     setText(next);
     const parsed = parse(next);
     setError(parsed.ok ? null : parsed.error);
     lastCommitted.current = parsed.value;
+    lastTop.current = parsed.ok ? (parsed.to ?? null) : null;
     onCommit(
       parsed.value,
       parsed.ok ? (parsed.percent ?? null) : null,
       // A dollar sign typed again returns the offer to dollars.
-      parsed.ok ? (parsed.currency ?? (next.includes('$') ? '$' : undefined)) : undefined
+      parsed.ok ? (parsed.currency ?? (next.includes('$') ? '$' : undefined)) : undefined,
+      parsed.ok ? (parsed.to ?? null) : null
     );
   };
 
@@ -1009,12 +1455,14 @@ function AmountField({
     !error &&
     value !== null &&
     text.trim() !== '' &&
-    shownText(value, null, symbol) !== text.trim() &&
+    shownText(value, null, symbol, to) !== text.trim() &&
     String(value) !== text.trim();
+  const plain = (n: number) =>
+    new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(n);
   const note =
     error ??
     (understood
-      ? `Read as ${new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(value ?? 0)}.`
+      ? `Read as ${plain(value ?? 0)}${typeof to === 'number' && value !== null && to > value ? ` to ${plain(to)}` : ''}.`
       : hint);
 
   return (

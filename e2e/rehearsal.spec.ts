@@ -24,7 +24,8 @@ test('a question is answered in writing and reviewed with counts, not a grade', 
   await page.getByRole('radio', { name: /In writing/ }).check();
   await page.getByRole('button', { name: 'Start with the first question' }).click();
   await expect(page.getByTestId('rehearsal-question')).not.toBeEmpty();
-  await expect(page.getByText('Question 1 of')).toBeVisible();
+  // The announcer for screen readers says the same words: read the line on screen.
+  await expect(page.locator('p.font-mono', { hasText: /^Question 1 of/ })).toBeVisible();
 
   await page
     .getByLabel('Your answer')

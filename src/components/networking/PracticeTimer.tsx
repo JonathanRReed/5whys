@@ -1,5 +1,6 @@
 import type * as React from 'react';
 import { cn } from '../../lib/utils';
+import WordHelp from '../shared/WordHelp';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
@@ -41,6 +42,7 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset, onLeng
     <Card className="border-primary/60 bg-overlay/30" data-guide="rep-timer">
       <CardHeader className="text-center">
         <CardTitle className="text-primary">Rep timer</CardTitle>
+        <WordHelp words={['rep']} className="flex flex-col items-center" />
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-4">
         <div role="status" aria-live="polite" className="sr-only">

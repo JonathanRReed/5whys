@@ -7,7 +7,7 @@ import {
   updateActionStep,
 } from '../../lib/application-desk';
 import { shortDate } from '../../lib/applications';
-import { describeStanding, deskRequirements, standing } from '../../lib/desk-checks';
+import { describeStanding, deskRequirements, searchedFor, standing } from '../../lib/desk-checks';
 import { keepDeskDraft, readDeskDraft } from '../../lib/desk-drafts';
 import {
   type CoverageRow,
@@ -22,6 +22,7 @@ import ConfirmButton from '../shared/ConfirmButton';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
+import { useDeskExamples } from './examples';
 import type { DeskState } from './useDesk';
 
 const STATUS: { value: QualificationStatus; label: string }[] = [
@@ -37,6 +38,18 @@ const CONDITION_STATUS: { value: QualificationStatus; label: string }[] = [
   { value: 'not-yet', label: 'I do not' },
 ];
 
+/**
+ * "We are unable to sponsor" is not something to meet: it is asked as the
+ * question it raises. Needing sponsorship is the "not yet" mark, so Before
+ * you send can say what it means.
+ */
+const SPONSORSHIP_QUESTION = 'Will you need visa sponsorship for this job?';
+const SPONSORSHIP_STATUS: { value: QualificationStatus; label: string }[] = [
+  { value: 'not-yet', label: 'Yes, I will' },
+  { value: 'maybe', label: 'Not sure' },
+  { value: 'have', label: 'No' },
+];
+
 /** Rows are grouped the way the posting groups them. */
 const GROUPS: { section: PostingSection; label: string }[] = [
   { section: 'required', label: 'Required' },
@@ -44,6 +57,9 @@ const GROUPS: { section: PostingSection; label: string }[] = [
   { section: 'responsibility', label: 'What you would do' },
   { section: 'unclassified', label: 'Not sorted yet' },
 ];
+
+/** A resume line as quoted on the page: without its bullet marker. */
+const plainLine = (text: string) => text.trim().replace(/^[•\-*◦–—·]+\s*/, '');
 
 /** What the resume shows for one row, in plain text. */
 function Evidence({ row }: { row: CoverageRow }) {
@@ -53,22 +69,24 @@ function Evidence({ row }: { row: CoverageRow }) {
     <div className="space-y-1 text-xs leading-relaxed text-muted-foreground">
       {row.state === 'evidence' && excerpt && (
         <p>
-          <span className="text-foam">In your resume: </span>"{excerpt.text.trim()}"
+          <span className="text-foam">In your resume: </span>"{plainLine(excerpt.text)}"
           {excerpt.listedOnly && ' (listed as a skill, not shown in use)'}
         </p>
       )}
       {row.state === 'partial' && (
         <>
           <p>Shown: {parts.shown.join('; ')}.</p>
-          {excerpt && <p>In your resume: "{excerpt.text.trim()}"</p>}
+          {excerpt && <p>In your resume: "{plainLine(excerpt.text)}"</p>}
           <p>Not shown yet: {parts.notShown.join('; ')}.</p>
         </>
       )}
-      {row.state === 'none' && <p>Nothing in your resume mentions this yet.</p>}
+      {row.state === 'none' && (
+        <p>{searchedFor(row) ?? 'Nothing in your resume mentions this yet.'}</p>
+      )}
       {row.note && <p>{row.note}</p>}
       {row.nearMisses.map((miss) => (
         <div key={miss.start} className="space-y-0.5">
-          <p>This line may already say it, in other words: "{miss.text.trim()}"</p>
+          <p>This line may already say it, in other words: "{plainLine(miss.text)}"</p>
           <p>
             If it is the same work, say it with the posting's words: {miss.postingTerms.join(', ')}.
           </p>
@@ -87,11 +105,13 @@ const PLAN_PROMPT: Record<QualificationStatus, string> = {
 
 export default function QualificationsStation({ desk }: { desk: DeskState }) {
   const { application, role, resumeText, changeDesks } = desk;
+  const examples = useDeskExamples();
   // A step being typed stays with its application when the visitor switches
   // to another and comes back.
   const draftFor = desk.application?.id ?? '';
   const [step, setStepState] = React.useState(() => readDeskDraft(draftFor, 'step') ?? '');
   const [due, setDueState] = React.useState(() => readDeskDraft(draftFor, 'due') ?? '');
+  const [added, setAdded] = React.useState('');
   const setStep = (value: string) => {
     setStepState(value);
     if (draftFor) keepDeskDraft(draftFor, 'step', value || null);
@@ -114,6 +134,10 @@ export default function QualificationsStation({ desk }: { desk: DeskState }) {
   );
   if (!application) return null;
   const appId = application.id;
+  // The terms behind the condition notes, once for the page however many lines use them.
+  const glossary = [
+    ...new Set(conditions.map((c) => hiringCondition(c.text)?.about).filter(Boolean)),
+  ] as string[];
   const rows = new Map(desk.desk.qualifications.map((row) => [row.requirementId, row]));
   const evidence = new Map(coverage?.rows.map((row) => [row.requirement.id, row]) ?? []);
   const where = standing(
@@ -202,6 +226,8 @@ export default function QualificationsStation({ desk }: { desk: DeskState }) {
   const renderCondition = (requirement: PostingRequirement) => {
     const status = rows.get(requirement.id)?.status ?? 'unset';
     const condition = hiringCondition(requirement.text);
+    const sponsorship = Boolean(condition?.noSponsorship);
+    const choices = sponsorship ? SPONSORSHIP_STATUS : CONDITION_STATUS;
     return (
       <li
         key={requirement.id}
@@ -209,10 +235,19 @@ export default function QualificationsStation({ desk }: { desk: DeskState }) {
       >
         <div className="min-w-0 space-y-2">
           <p className="text-sm leading-relaxed text-foreground">{requirement.text}</p>
+          {sponsorship && (
+            <p className="text-sm font-medium text-foreground" aria-hidden="true">
+              {SPONSORSHIP_QUESTION}
+            </p>
+          )}
           <fieldset className="m-0 min-w-0 border-0 p-0">
-            <legend className="sr-only">Whether you meet: {requirement.text}</legend>
+            <legend className="sr-only">
+              {sponsorship
+                ? `${SPONSORSHIP_QUESTION} The posting says: ${requirement.text}`
+                : `Whether you meet: ${requirement.text}`}
+            </legend>
             <div className="flex flex-wrap gap-1.5">
-              {CONDITION_STATUS.map((option) => (
+              {choices.map((option) => (
                 <label key={option.value} className="relative">
                   <input
                     type="radio"
@@ -296,6 +331,18 @@ export default function QualificationsStation({ desk }: { desk: DeskState }) {
               </p>
             </div>
             <ul className="space-y-3">{conditions.map(renderCondition)}</ul>
+            {glossary.length > 0 && (
+              <details className="max-w-[68ch] text-sm" data-testid="condition-terms">
+                <summary className="cursor-pointer text-muted-foreground">
+                  What these terms mean
+                </summary>
+                {glossary.map((about) => (
+                  <p key={about} className="mt-2 leading-relaxed text-muted-foreground">
+                    {about}
+                  </p>
+                ))}
+              </details>
+            )}
           </section>
         )}
       </div>
@@ -304,9 +351,8 @@ export default function QualificationsStation({ desk }: { desk: DeskState }) {
         <div className="space-y-2">
           <h3 className="text-lg font-semibold">Action plan</h3>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Turn the plans above into a few specific steps. "Schedule three informational interviews
-            before the end of the term" is a step. "Network" is not. Steps with a date show up on
-            your dashboard.
+            Turn the plans above into a few specific steps. "{examples.actionStep}" is a step.
+            "Network" is not. Steps with a date show up on your dashboard.
           </p>
         </div>
         <ul className="space-y-2">
@@ -353,16 +399,23 @@ export default function QualificationsStation({ desk }: { desk: DeskState }) {
           className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]"
           onSubmit={(event) => {
             event.preventDefault();
+            if (!step.trim()) return;
+            const text = step.trim();
             changeDesks(
               (data) => addActionStep(data, appId, { text: step, due: due || null }).data
             );
             setStep('');
             setDue('');
+            // The button goes quiet once the box is empty; keep the keyboard
+            // in the box, ready for the next step, and say what was added.
+            setAdded(text);
+            document.getElementById('desk-step-text')?.focus();
           }}
         >
           <label>
             <span className="sr-only">Next step</span>
             <Input
+              id="desk-step-text"
               value={step}
               onChange={(event) => setStep(event.target.value)}
               placeholder="One specific step"
@@ -378,10 +431,18 @@ export default function QualificationsStation({ desk }: { desk: DeskState }) {
               className="text-base"
             />
           </label>
-          <Button type="submit" variant="outline" disabled={!step.trim()}>
+          <Button
+            type="submit"
+            variant="outline"
+            aria-disabled={!step.trim() || undefined}
+            className="aria-disabled:opacity-50"
+          >
             Add step
           </Button>
         </form>
+        <p role="status" className="sr-only">
+          {added ? `Step added: ${added}` : ''}
+        </p>
       </section>
     </div>
   );

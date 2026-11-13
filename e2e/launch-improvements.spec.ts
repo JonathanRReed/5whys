@@ -102,7 +102,9 @@ test('bullets written on the desk are in the tailored resume, under the job', as
   await expect(written).toBeChecked();
   const box = await written.boundingBox();
   expect(box?.height ?? 0).toBeGreaterThanOrEqual(24);
-  await expect(page.getByLabel(/Place it after/)).toContainText('Tracked weekly inventory');
+  await expect(page.getByTestId('desk-bullet-place-note-0')).toContainText(
+    'Under FreshWay Market, Cashier, 2025 to present, the one job on your resume.'
+  );
   const [download] = await Promise.all([
     page.waitForEvent('download'),
     page.getByRole('button', { name: 'Download the resume for this role (.docx)' }).click(),
@@ -135,8 +137,9 @@ test('the letter uses the proof already written and shows whole', async ({ page 
 
   await page.getByRole('tab', { name: /Letter/ }).click();
   await page.getByRole('button', { name: 'Start from what you marked "have it"' }).click();
+  // The skill first, then the proof the visitor wrote for it.
   await expect(page.getByLabel(/Why you/)).toHaveValue(
-    'Cashier at FreshWay Market since 2025, I help customers every shift.'
+    'Customer service: Cashier at FreshWay Market since 2025, I help customers every shift.'
   );
   await page.getByLabel(/Name the role with a hook/).fill('I kept the weekly counts at FreshWay.');
   const preview = page.getByTestId('letter-preview').first();
@@ -193,8 +196,12 @@ test('Pay names a summer total by its weeks and compares another offer', async (
   await page.getByLabel('Hours a week').fill('45');
   await expect(page.getByTestId('overtime-hint')).toBeVisible();
   await page.getByLabel('Weeks a year').fill('8');
-  const table = page.getByTestId('offer-compare');
-  await expect(table.getByRole('columnheader', { name: 'Hours a week' })).toBeVisible();
+  // A phone gets a card per offer; a wider screen gets the table.
+  const narrow = (page.viewportSize()?.width ?? 1280) < 640;
+  const table = page.getByTestId(narrow ? 'offer-compare-cards' : 'offer-compare');
+  if (!narrow) {
+    await expect(table.getByRole('columnheader', { name: 'Hours a week' })).toBeVisible();
+  }
   await expect(table).toContainText('$4,250 over 10 weeks');
 
   await page.getByLabel('Base pay').fill('62.000');

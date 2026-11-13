@@ -6,12 +6,21 @@ import {
   saveMessageVariant,
   updateLetter,
 } from '../../lib/application-desk';
-import { isGenericOpener, LINKEDIN_NOTE_LIMIT, whyYouDraft } from '../../lib/desk-checks';
+import {
+  isGenericOpener,
+  LINKEDIN_NOTE_LIMIT,
+  leavesOutHook,
+  nameFromResume,
+  tidyDoubledStop,
+  whyYouDraft,
+} from '../../lib/desk-checks';
 import { loadFeature, runFeature } from '../../lib/lazy-feature';
 import type { AiResult } from '../../lib/local-ai';
-import { requirementsFromBullets } from '../../lib/posting';
-import { cn } from '../../lib/utils';
+import { isNonAnswer, MIN_ANSWER_WORDS } from '../../lib/non-answer';
+import { requirementsFromBullets, summarizeCoverage } from '../../lib/posting';
+import { cn, focusWhenReady } from '../../lib/utils';
 import { sourceLabel } from '../shared/AiText';
+import WordHelp from '../shared/WordHelp';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -63,21 +72,48 @@ const toMessageSource = (source: AiResult<unknown>['source']): MessageSource =>
   source === 'hosted-model' ? 'site-model' : source;
 
 export default function LetterStation({ desk }: { desk: DeskState }) {
-  const { application, role, changeDesks } = desk;
+  const { application, role, changeDesks, resumeText } = desk;
   const examples = useDeskExamples();
+  const requirements = React.useMemo(
+    () => requirementsFromBullets(role?.bullets ?? []),
+    [role?.bullets]
+  );
+  // The resume line that shows each requirement, for a "have it" line with no
+  // proof typed yet. Only lines that describe work, never a skills list.
+  const shownBy = React.useMemo(() => {
+    const map = new Map<string, string>();
+    if (!resumeText.trim()) return map;
+    const coverage = summarizeCoverage(requirements, resumeText);
+    for (const row of coverage.rows) {
+      const line = row.excerpts.find((e) => e.kind === 'experience' && !e.listedOnly);
+      if (line && (row.state === 'evidence' || row.state === 'partial'))
+        map.set(row.requirement.id, line.text);
+    }
+    return map;
+  }, [requirements, resumeText]);
   const [busy, setBusy] = React.useState(false);
   const [copied, setCopied] = React.useState<MessageKind | null>(null);
+  // A message cleared in order to rewrite it keeps its box on screen. Keyed
+  // by application, so one application's empty boxes do not follow to the next.
+  const [opened, setOpened] = React.useState<ReadonlySet<string>>(new Set());
   if (!application) return null;
   const appId = application.id;
   const letter = desk.desk.letter;
   const generic = letter.hook.trim() ? isGenericOpener(letter.hook) : false;
+  // "idk" or two words would be wrapped in three polished messages as is.
+  const thin = isNonAnswer(letter.hook);
+  const shown = MESSAGES.filter(
+    ({ kind }) => letter.messages[kind] || opened.has(`${appId}:${kind}`)
+  );
+  const editedKinds = MESSAGES.filter(({ kind }) => {
+    const variant = letter.messages[kind];
+    return variant?.source === 'student' && variant.text.trim();
+  });
   // Up to three requirements the student marked "have it", each with the
   // proof they typed for it on the qualifications station. Conditions of
   // hiring and lines that sell no one (being enrolled) are left out.
-  const haveIt = whyYouDraft(
-    requirementsFromBullets(role?.bullets ?? []),
-    desk.desk.qualifications
-  );
+  const haveIt = whyYouDraft(requirements, desk.desk.qualifications, 3, shownBy);
+  const resumeName = letter.sender.trim() ? null : nameFromResume(resumeText);
 
   const derive = async () => {
     setBusy(true);
@@ -95,17 +131,27 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
     const source = toMessageSource(result.source);
     const { linkedInMessage, followUpEmail, introCallOpener } = result.value;
     const texts: Record<MessageKind, string> = {
-      linkedin: linkedInMessage,
-      'follow-up-email': `Subject: ${followUpEmail.subject}\n\n${followUpEmail.body}`,
-      'intro-call': introCallOpener,
+      linkedin: tidyDoubledStop(linkedInMessage),
+      'follow-up-email': tidyDoubledStop(
+        `Subject: ${followUpEmail.subject}\n\n${followUpEmail.body}`
+      ),
+      'intro-call': tidyDoubledStop(introCallOpener),
     };
+    // A message the visitor edited is theirs; only the others are rewritten.
+    const kept = new Set(editedKinds.map(({ kind }) => kind));
     changeDesks((data) =>
       MESSAGES.reduce(
-        (next, { kind }) => saveMessageVariant(next, appId, kind, { text: texts[kind], source }),
+        (next, { kind }) =>
+          kept.has(kind)
+            ? next
+            : saveMessageVariant(next, appId, kind, { text: texts[kind], source }),
         data
       )
     );
+    setOpened(new Set(MESSAGES.map(({ kind }) => `${appId}:${kind}`)));
     setBusy(false);
+    // The button changes its words; the first message is what the press made.
+    focusWhenReady('desk-message-linkedin');
   };
 
   const copy = async (kind: MessageKind, text: string) => {
@@ -147,6 +193,7 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
           <label className="space-y-1">
             <span className="block text-sm text-muted-foreground">Your name</span>
             <Input
+              id="desk-letter-sender"
               value={letter.sender}
               onChange={(event) =>
                 changeDesks((data) => updateLetter(data, appId, { sender: event.target.value }))
@@ -154,6 +201,21 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
               className="text-base"
             />
           </label>
+          {resumeName && (
+            <div className="sm:col-start-2">
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                onClick={() => {
+                  changeDesks((data) => updateLetter(data, appId, { sender: resumeName }));
+                  focusWhenReady('desk-letter-sender');
+                }}
+              >
+                Use "{resumeName}" from your resume
+              </Button>
+            </div>
+          )}
         </div>
 
         <details className="rounded-xl border border-border/40 p-4 text-sm">
@@ -165,6 +227,8 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
           </div>
         </details>
 
+        <WordHelp words={['hook', 'requirement']} />
+
         {PARTS.map((part) => (
           <div key={part.key} className="space-y-2">
             <label className="block space-y-1">
@@ -173,6 +237,7 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
                 {part.help}
               </span>
               <Textarea
+                id={`desk-letter-${part.key}`}
                 rows={part.rows}
                 data-guide={`letter-${part.key}`}
                 value={letter[part.key]}
@@ -189,20 +254,24 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
                 type="button"
                 size="sm"
                 variant="outline"
-                onClick={() =>
+                onClick={() => {
                   changeDesks((data) =>
                     updateLetter(data, appId, {
-                      whyYou: haveIt.join('\n'),
+                      // One paragraph: each skill, then its proof.
+                      whyYou: haveIt.join(' '),
                     })
-                  )
-                }
+                  );
+                  // The button is gone once the box has text; the box is next.
+                  focusWhenReady('desk-letter-whyYou');
+                }}
               >
                 Start from what you marked "have it"
               </Button>
             )}
             {part.key === 'whyYou' && haveIt.length > 0 && !letter.whyYou.trim() && (
               <p className="text-xs text-muted-foreground">
-                Fills in each one with the proof you wrote for it under Qualifications.
+                Names each skill, then the proof you wrote for it under Qualifications. Where you
+                wrote none, it uses the resume line that shows it, marked for you to check.
               </p>
             )}
             {part.key === 'hook' && generic && (
@@ -236,8 +305,16 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
         <div className="flex flex-wrap items-end gap-2">
           <Button
             type="button"
-            onClick={() => void runFeature(derive, () => setBusy(false))}
-            disabled={busy || !letter.hook.trim() || generic}
+            onClick={() => {
+              if (busy) return;
+              void runFeature(derive, () => setBusy(false));
+            }}
+            // Still focusable while it writes, so the keyboard is not sent to the top of the page.
+            aria-disabled={busy || undefined}
+            disabled={
+              !busy &&
+              (!letter.hook.trim() || generic || thin || editedKinds.length === MESSAGES.length)
+            }
           >
             {busy ? 'Writing' : hasMessages ? 'Write them again' : 'Write the three messages'}
           </Button>
@@ -252,9 +329,22 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
           </p>
         )}
 
-        {MESSAGES.map(({ kind, title }) => {
-          const variant = letter.messages[kind];
-          if (!variant) return null;
+        {letter.hook.trim() && !generic && thin && (
+          <p className="text-sm text-foreground">
+            Write one thing you did, or why this role interests you. A hook needs {MIN_ANSWER_WORDS}{' '}
+            words or more.
+          </p>
+        )}
+        {hasMessages && editedKinds.length > 0 && (
+          <p className="text-sm text-muted-foreground">
+            {editedKinds.length === MESSAGES.length
+              ? 'You edited all three, so they are kept as they are. Clear one to have it written again.'
+              : 'Messages you edited are kept. Clear one to have it written again.'}
+          </p>
+        )}
+
+        {shown.map(({ kind, title }) => {
+          const variant = letter.messages[kind] ?? { text: '', source: 'student' as const };
           return (
             <div
               key={kind}
@@ -264,16 +354,19 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
               <label className="block space-y-2">
                 <span className="block font-display text-base font-semibold">{title}</span>
                 <Textarea
+                  id={`desk-message-${kind}`}
                   rows={kind === 'follow-up-email' ? 8 : 4}
                   value={variant.text}
-                  onChange={(event) =>
+                  placeholder="Write this message, or press the button above to have it written."
+                  onChange={(event) => {
+                    setOpened((before) => new Set(before).add(`${appId}:${kind}`));
                     changeDesks((data) =>
                       saveMessageVariant(data, appId, kind, {
                         text: event.target.value,
                         source: 'student',
                       })
-                    )
-                  }
+                    );
+                  }}
                   className="text-base"
                 />
               </label>
@@ -282,11 +375,14 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
                   type="button"
                   size="xs"
                   variant="ghost"
+                  disabled={!variant.text.trim()}
                   onClick={() => copy(kind, variant.text)}
                 >
                   {copied === kind ? 'Copied' : 'Copy'}
                 </Button>
-                <span className="text-xs text-muted-foreground">{SOURCE_TEXT[variant.source]}</span>
+                <span className="text-xs text-muted-foreground">
+                  {variant.text.trim() ? SOURCE_TEXT[variant.source] : 'Empty'}
+                </span>
               </div>
               {kind === 'linkedin' && (
                 <p
@@ -304,6 +400,14 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
                     : '.'}
                 </p>
               )}
+              {kind === 'linkedin' &&
+                variant.source !== 'student' &&
+                leavesOutHook(variant.text, letter.hook) && (
+                  <p className="text-xs text-foreground" data-testid="linkedin-hook-left-out">
+                    Your opening line did not fit in {LINKEDIN_NOTE_LIMIT} characters, so this note
+                    leaves it out. Shorten the hook to use it here.
+                  </p>
+                )}
               {kind === 'follow-up-email' && (
                 <p className="text-xs text-muted-foreground">
                   Send it once, a week or two after you apply, or after the date they gave you.

@@ -430,19 +430,25 @@ describe('pay normalization', () => {
     expect(offerEquivalents(offer)).toEqual({
       hourly: 20,
       weekly: 800,
+      monthly: (800 * 52) / 12,
       annualBase: null,
       overtimeAnnual: 0,
       annualGuaranteed: null,
       annualWithVariable: null,
+      oneTime: 0,
+      firstYear: null,
       missing: ['weeksPerYear'],
     });
     expect(offerEquivalents({ ...offer, weeksPerYear: 50 })).toEqual({
       hourly: 20,
       weekly: 800,
+      monthly: (800 * 52) / 12,
       annualBase: 40_000,
       overtimeAnnual: 0,
       annualGuaranteed: 41_000,
       annualWithVariable: 41_500,
+      oneTime: 0,
+      firstYear: 41_000,
       missing: [],
     });
     expect(offerEquivalents(createEmptyDesk().offer).missing).toEqual([

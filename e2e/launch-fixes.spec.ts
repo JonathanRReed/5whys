@@ -154,13 +154,13 @@ test.describe('guide after a reload', () => {
     await page.goto('/interview-glow-up/workspace/?guide=1');
     await waitForHydration(page);
     const coach = page.locator('aside[aria-label="Guide"]');
-    await expect(coach).toContainText('Step 1 of 8');
+    await expect(coach).toContainText('Step 1 of 6');
     await page.locator('[data-guide="decode-sample"]').click();
-    await expect(coach).toContainText('Step 2 of 8');
+    await expect(coach).toContainText('Step 2 of 6');
 
     await page.reload();
     await waitForHydration(page);
-    await expect(coach).toContainText('Step 2 of 8');
+    await expect(coach).toContainText('Step 2 of 6');
     await expect(page.getByRole('tab', { name: /Decode the job/ })).toHaveAttribute(
       'data-state',
       'active'
@@ -179,12 +179,12 @@ test.describe('guide after a reload', () => {
     await page.getByRole('button', { name: 'Start with the first question' }).click();
     await page.getByLabel('Your answer').fill('I ran the volunteer schedule for my campus pantry.');
     await page.getByRole('button', { name: 'Review my answer' }).click();
-    await expect(coach).toContainText('Step 3 of 6');
+    await expect(coach).toContainText('Step 3 of 5');
 
     await page.reload();
     await waitForHydration(page);
     await expect(page.getByText('How will you answer?')).toBeVisible();
-    await expect(coach).toContainText('Step 1 of 6');
+    await expect(coach).toContainText('Step 1 of 5');
   });
 
   test('skipping every rehearsal question ends the guide instead of sending it back', async ({
@@ -205,7 +205,7 @@ test.describe('guide after a reload', () => {
     }
     await expect(page.locator('#rehearsal-done-heading')).toBeVisible();
     await expect(coach).toContainText('That is one full rep');
-    await expect(coach).not.toContainText('Choose how to answer and start');
+    await expect(coach).not.toContainText('Choose how to answer, then start');
   });
 
   test('a decoded posting and a saved story start the workspace guide past them', async ({
@@ -214,7 +214,7 @@ test.describe('guide after a reload', () => {
     await seedWorkspace(page);
     await page.goto('/interview-glow-up/workspace/?guide=1');
     await waitForHydration(page);
-    await expect(page.locator('aside[aria-label="Guide"]')).toContainText('Step 7 of 8');
+    await expect(page.locator('aside[aria-label="Guide"]')).toContainText('Step 6 of 6');
   });
 });
 

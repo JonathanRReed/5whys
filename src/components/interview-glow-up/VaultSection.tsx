@@ -17,9 +17,11 @@ type Props = {
   data: GlowUpData;
   setData: React.Dispatch<React.SetStateAction<GlowUpData>>;
   currentPacket: InterviewPacket | undefined;
+  /** Opens Build stories, where the first story is written. */
+  onGoToStories?: () => void;
 };
 
-export default function VaultSection({ data, setData, currentPacket }: Props) {
+export default function VaultSection({ data, setData, currentPacket, onGoToStories }: Props) {
   const [filter, setFilter] = React.useState('');
   const [skillFilter, setSkillFilter] = React.useState('');
   const [showUnused, setShowUnused] = React.useState(false);
@@ -205,12 +207,33 @@ export default function VaultSection({ data, setData, currentPacket }: Props) {
               </div>
               <p className="text-sm font-medium text-foreground">Your library is empty</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Every story you write lands here. Use it to search, filter by skill, and select them
-                for your packet.
+                Every story you write lands here, ready to search and add to a packet.
               </p>
+              {onGoToStories && (
+                <button
+                  type="button"
+                  onClick={onGoToStories}
+                  className="mt-4 inline-flex min-h-11 items-center rounded-lg bg-foam px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-foam/90 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+                >
+                  Write your first story
+                </button>
+              )}
             </>
           ) : (
-            <p className="text-muted-foreground">No stories match your filters.</p>
+            <div className="space-y-3">
+              <p className="text-muted-foreground">No stories match your filters.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setFilter('');
+                  setSkillFilter('');
+                  setShowUnused(false);
+                }}
+                className="inline-flex min-h-11 items-center rounded-lg border border-border/60 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-foam"
+              >
+                Clear filters
+              </button>
+            </div>
           )}
         </div>
       )}

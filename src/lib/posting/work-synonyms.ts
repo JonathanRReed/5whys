@@ -259,6 +259,15 @@ export const WORK_SYNONYM_GROUPS: readonly WorkSynonymGroup[] = [
     words: ['cash', 'register', 'till', 'pos', 'point of sale', 'payment', 'transaction'],
   },
   { id: 'sales', kind: 'thing', words: ['sales', 'revenue', 'upsell', 'sales plan', 'sales goal'] },
+  // Work where the numbers have to come out right: a drawer counted at close,
+  // a tally, totals. Specific enough that one of them may be the same work as
+  // "attention to detail with numbers".
+  {
+    id: 'figures',
+    kind: 'thing',
+    alone: true,
+    words: ['numbers', 'figures', 'totals', 'tally', 'drawer', 'cash count', 'count the drawer'],
+  },
   {
     id: 'merchandising',
     kind: 'thing',
@@ -348,6 +357,7 @@ export const WORK_SYNONYM_GROUPS: readonly WorkSynonymGroup[] = [
     kind: 'thing',
     words: [
       'records',
+      'receipts',
       'filing',
       'paperwork',
       'documentation',

@@ -21,12 +21,17 @@ export type GuideCheck =
   /** Only the visitor can say. They press "I did this". */
   | { kind: 'manual' };
 
+/** The most words a step may put on screen before the visitor acts. */
+export const STEP_TITLE_WORDS = 8;
+export const STEP_BODY_WORDS = 18;
+
 export interface GuideStep {
   id: string;
+  /** The task, as an instruction. Short enough to read at a glance. */
   title: string;
-  /** What to do, in one or two plain sentences. */
-  body: string;
-  /** Why it matters. Optional, shown smaller. */
+  /** How, when the title alone is not enough. One short sentence. */
+  body?: string;
+  /** Why it mattered. Shown once the visitor has done the step, not before. */
   why?: string;
   /** The part of the page this step is about. Highlighted and scrolled to. */
   target?: string;
@@ -58,6 +63,11 @@ export interface Guide {
   /** Shown when the guide is offered. */
   invitation: string;
   steps: GuideStep[];
+  /**
+   * One task to do alone once the steps are done, checked the same way a
+   * step is. It repeats something the guide taught, with no pointer.
+   */
+  challenge?: { title: string; body?: string; done: GuideCheck };
   finish: { title: string; body: string; link?: { label: string; href: string } };
 }
 
@@ -79,6 +89,8 @@ export interface GuideProgress {
   /** Steps finished or skipped, by id. */
   done: string[];
   finished: boolean;
+  /** True once the visitor did the guide's closing task on their own. */
+  challenge?: boolean;
 }
 
 /** A device preference, like the theme: its own key, not part of the backup. */
@@ -97,6 +109,7 @@ function normalize(value: unknown): GuideProgress {
     mode: raw.mode === 'guided' ? 'guided' : 'free',
     done: Array.isArray(raw.done) ? raw.done.filter((id) => typeof id === 'string') : [],
     finished: raw.finished === true,
+    ...(raw.challenge === true ? { challenge: true } : {}),
   };
 }
 

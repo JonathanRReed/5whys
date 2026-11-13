@@ -3,13 +3,20 @@ import { extractDocx } from './docx';
 import { toEditorText } from './editor-text';
 import { logicalLines } from './layout';
 import { contactLineIds, linearize, moveContactToTop, normalizeDates } from './repairs';
-import type { ExportCheck, ExportOptions, PrintModel, PrintParagraph, ResumeDoc } from './types';
+import type {
+  ExportCheck,
+  ExportOptions,
+  PrintModel,
+  PrintParagraph,
+  ResumeDoc,
+  ResumeLine,
+} from './types';
 
 const MARKER = /^\s*[-–•*◦○●▪·o]\s+/;
 /** A bullet glyph at the start of a line, with or without a space after it. */
 const LEADING_MARKER = /^\s*(?:[-–•*◦○●▪·]\s*|o\s+)/;
 /** A line reduced to its words, for matching a rewrite to the line it replaces. */
-function lineKey(text: string): string {
+export function lineKey(text: string): string {
   return text.replace(LEADING_MARKER, '').replace(/\s+/g, ' ').trim().toLowerCase();
 }
 type Rewrite = NonNullable<ExportOptions['rewrites']>[number];
@@ -61,6 +68,29 @@ function rewriteTargets<T>(
     if (improved !== undefined) targets.set(item, improved);
   }
   return targets;
+}
+
+/**
+ * The resume's lines as the exported copy has them: one column, contact at
+ * the top, wrapped lines joined. Every reader that has to agree with the
+ * file (which line a rewrite replaces, which job a line is under) reads
+ * these, in this order.
+ */
+export function copyLines(doc: ResumeDoc, options: ExportOptions = {}): ResumeLine[] {
+  return logicalLines(cleanCopy(doc, options).lines);
+}
+
+/**
+ * The new wording of each line a rewrite replaces in the exported copy, by
+ * line id. The list on screen and the file both read it, so a rewrite shown
+ * on a line is the rewrite the file has on that line, and on no other.
+ */
+export function rewrittenLines(
+  doc: ResumeDoc,
+  rewrites: ExportOptions['rewrites']
+): Map<string, string> {
+  const targets = rewriteTargets(copyLines(doc), (line) => line.text, rewrites);
+  return new Map([...targets].map(([line, improved]) => [line.id, improved]));
 }
 
 /** How many of the resume's lines the given rewrites would replace. */
@@ -115,13 +145,14 @@ const DATE_RANGE =
  * bullets under it. It is set in bold in the clean copy, as job titles are in
  * most resumes.
  */
-function isTitleLine(text: string, nextIsBullet: boolean): boolean {
+export function isTitleLine(text: string, nextIsBullet: boolean): boolean {
   const words = text.trim().split(/\s+/).length;
   if (words > 16 || /[.!?]$/.test(text.trim())) return false;
   return DATE_RANGE.test(text) || (nextIsBullet && words <= 12);
 }
 
-function cleanCopy(doc: ResumeDoc, options: ExportOptions): ResumeDoc {
+/** The copy a file is built from: one column, contact at the top, dates as chosen. */
+export function cleanCopy(doc: ResumeDoc, options: ExportOptions = {}): ResumeDoc {
   const copy = moveContactToTop(linearize(doc));
   return options.dateStyle ? normalizeDates(copy, options.dateStyle) : copy;
 }

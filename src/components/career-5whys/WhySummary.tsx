@@ -1,6 +1,8 @@
 import type * as React from 'react';
+import WordHelp from '../shared/WordHelp';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { WHY_COUNT } from './shared';
+import { type WhyOutcome as Outcome, WHY_COUNT } from './shared';
+import WhyOutcome from './WhyOutcome';
 
 type WhySummaryProps = {
   whyStatement: string;
@@ -12,6 +14,11 @@ type WhySummaryProps = {
   answers?: string[];
   rootIndex?: number;
   onRootChange?: (index: number) => void;
+  /** The root reason in the visitor's words, for the outcome section. */
+  root?: string;
+  outcome?: Outcome;
+  fromExperience?: boolean;
+  onOutcomeChange?: (field: keyof Outcome, value: string) => void;
   children?: React.ReactNode;
 };
 
@@ -24,6 +31,10 @@ export default function WhySummary({
   answers,
   rootIndex,
   onRootChange,
+  root = '',
+  outcome,
+  fromExperience = false,
+  onOutcomeChange,
   children,
 }: WhySummaryProps) {
   const chosen = rootIndex ?? WHY_COUNT - 1;
@@ -37,6 +48,7 @@ export default function WhySummary({
             ? 'Chain complete: all 5 layers answered'
             : `Depth progress: ${sequentialCount} of ${WHY_COUNT} layers answered`}
         </div>
+        <WordHelp words={['whyStatement', 'snapshot']} className="pt-2" />
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="rounded-2xl border border-border/50 bg-overlay/30 p-5 text-lg leading-relaxed text-foreground">
@@ -44,7 +56,10 @@ export default function WhySummary({
         </div>
 
         {isComplete && answers && onRootChange && (
-          <fieldset className="m-0 min-w-0 space-y-2 border-0 p-0">
+          <fieldset
+            className="m-0 min-w-0 space-y-2 border-0 p-0"
+            data-guide-root={rootIndex === undefined ? undefined : 'chosen'}
+          >
             <legend className="font-display text-lg font-semibold text-foreground">
               Which answer is the real reason?
             </legend>
@@ -119,6 +134,16 @@ export default function WhySummary({
             </p>
           )}
         </div>
+
+        {isComplete && answers && outcome && onOutcomeChange && (
+          <WhyOutcome
+            answers={answers}
+            root={root}
+            outcome={outcome}
+            fromExperience={fromExperience}
+            onChange={onOutcomeChange}
+          />
+        )}
 
         {children}
       </CardContent>

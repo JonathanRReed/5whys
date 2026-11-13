@@ -325,18 +325,34 @@ const PAST_FORMS = new Set<string>([
   ...FIRST_JOB_VERBS.filter((verb) => verb !== 'helped'),
 ]);
 const BASE_FORMS = new Set<string>(EXTRA_BASE);
-for (const past of ACTION_VERBS) {
+// The past form each base form came from: "watch" -> "watched", "run" -> "ran".
+const PAST_OF_BASE = new Map<string, string>();
+// Base forms come from every listed past form, the first-job ones included,
+// so "Watch my cousin" opens with an action just as "Watched my cousin" does.
+for (const past of [...ACTION_VERBS, ...FIRST_JOB_VERBS]) {
   // Only the stem the list itself implies; ambiguous forms are skipped.
   const base = IRREGULAR_PAST[past];
-  if (base) BASE_FORMS.add(base);
-  else for (const form of baseOfRegularPast(past)) BASE_FORMS.add(form);
+  const forms = base ? [base] : baseOfRegularPast(past);
+  for (const form of forms) {
+    BASE_FORMS.add(form);
+    if (!PAST_OF_BASE.has(form)) PAST_OF_BASE.set(form, past);
+  }
 }
-for (const base of Object.values(IRREGULAR_PAST)) BASE_FORMS.add(base);
+for (const [past, base] of Object.entries(IRREGULAR_PAST)) {
+  BASE_FORMS.add(base);
+  PAST_OF_BASE.set(base, past);
+}
 for (const word of NOT_BASE_VERBS) BASE_FORMS.delete(word);
 
 /** True when a single lowercase word reads as a verb at the start of a line. */
+// "Co-authored", "Re-stocked", "Co-led": a prefix joined with a hyphen does
+// not change whether the word is an action.
+const VERB_PREFIX = /^(?:co|re|pre|self)-(?=[a-z]{2,})/;
+
 export function isVerbWord(raw: string): boolean {
   const word = raw.toLowerCase().replace(/[^a-z-]/g, '');
+  const prefixed = word.match(VERB_PREFIX);
+  if (prefixed) return isVerbWord(word.slice(prefixed[0].length));
   if (word.length < 2 || NOT_VERBS.has(word) || NOT_BASE_VERBS.has(word)) return false;
   if (PAST_FORMS.has(word) || BASE_FORMS.has(word)) return true;
   // Regular past tense: "stocked", "counted", "posted", "covered".
@@ -351,12 +367,59 @@ export function isVerbWord(raw: string): boolean {
   return false;
 }
 
+/** The base forms a verb word can stand for: "watched" -> ["watch", "watche"]. */
+function basesOf(word: string): string[] {
+  const lower = word.toLowerCase();
+  const bases = new Set<string>([lower]);
+  const irregular = IRREGULAR_PAST[lower];
+  if (irregular) bases.add(irregular);
+  for (const form of baseOfRegularPast(lower)) bases.add(form);
+  // Third person: "watches" -> "watch", "runs" -> "run".
+  if (lower.endsWith('es')) bases.add(lower.slice(0, -2));
+  if (lower.endsWith('s') && !lower.endsWith('ss')) bases.add(lower.slice(0, -1));
+  if (lower.endsWith('ies')) bases.add(`${lower.slice(0, -3)}y`);
+  return [...bases];
+}
+
+/**
+ * True when two words are forms of the same verb: "Watched" and "watch",
+ * "Ran" and "runs". Only words that read as verbs are compared.
+ */
+export function sameVerb(a: string, b: string): boolean {
+  if (!a || !b || !isVerbWord(a) || !isVerbWord(b)) return false;
+  const known = (word: string) => basesOf(word).filter((form) => BASE_FORMS.has(form));
+  const left = new Set(known(a));
+  return known(b).some((form) => left.has(form));
+}
+
+/**
+ * The past form of a base-form verb, from the same lists the scorer uses:
+ * "watch" -> "Watched", "run" -> "Ran". Null when the word is not a base
+ * form this module knows, or is already past.
+ */
+export function pastTenseOf(raw: string): string | null {
+  const word = raw.trim().toLowerCase();
+  if (!/^[a-z-]+$/.test(word) || PAST_FORMS.has(word) || !isVerbWord(word)) return null;
+  let past = PAST_OF_BASE.get(word) ?? null;
+  if (!past && EXTRA_BASE.includes(word)) {
+    past = word.endsWith('e')
+      ? `${word}d`
+      : /[^aeiou]y$/.test(word)
+        ? `${word.slice(0, -1)}ied`
+        : `${word}ed`;
+  }
+  if (!past) return null;
+  return past.slice(0, 1).toUpperCase() + past.slice(1);
+}
+
 /**
  * Phrases that say the visitor was near the work without saying what they
  * did. A line that opens with one has an action, but a weak one.
  */
 export const INVOLVEMENT_PHRASES = [
   'responsible for',
+  'was in charge of',
+  'in charge of',
   'tasked with',
   'duties included',
   'helped with',

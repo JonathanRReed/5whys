@@ -26,29 +26,29 @@ test('guided mode walks a first-timer through the Resume Game by watching what t
   await expect(page.getByText(/New to this\?/)).toBeVisible();
   await expect(page.getByRole('complementary', { name: 'Guide' })).toHaveCount(0);
 
-  await page.getByRole('radio', { name: 'Guided' }).check();
+  await page.getByRole('radio', { name: /^Guide/ }).check();
   const coach = page.getByRole('complementary', { name: 'Guide' });
-  await expect(coach).toContainText('Step 1 of 5');
+  await expect(coach).toContainText('Step 1 of 4');
   await expect(page.getByLabel('Paste resume text')).toHaveAttribute('data-guide-active', '');
 
   // The example shortcut does the step, and the coach notices on its own.
   await (await openCoach(page)).getByRole('button', { name: 'Use a sample resume' }).click();
-  await expect(coach).toContainText('Step 2 of 5');
-  await expect(coach).toContainText('Score it');
+  await expect(coach).toContainText('Step 2 of 4');
+  await expect(coach).toContainText('Press "Analyze resume"');
+  // The reason for a step is said once it is done, not before.
+  await expect(coach.locator('[data-guide-done]')).toContainText('they stay on this device');
 
   await page.getByRole('button', { name: 'Analyze resume' }).click();
-  await expect(coach).toContainText('Step 3 of 5');
-  await expect(page.locator('[data-bullet-list]')).toHaveAttribute('data-guide-active', '');
-
-  // Some steps only the visitor can confirm.
-  await page.locator('[data-bullet-list] button').first().click();
-  await (await openCoach(page)).getByRole('button', { name: 'I did this' }).click();
-  await expect(coach).toContainText('Step 4 of 5');
+  await expect(coach).toContainText('Step 3 of 4');
+  await expect(page.locator('#bullet-editor [id$="-verb"]')).toHaveAttribute(
+    'data-guide-active',
+    ''
+  );
 
   // Progress survives a reload, and the guide can be ended.
   await page.reload();
   await waitForHydration(page);
-  await expect(page.getByRole('complementary', { name: 'Guide' })).toContainText('Step 4 of 5');
+  await expect(page.getByRole('complementary', { name: 'Guide' })).toContainText('Step 3 of 4');
   await page.getByRole('button', { name: 'End guide' }).click();
   await expect(page.getByRole('complementary', { name: 'Guide' })).toHaveCount(0);
   await expect(page.getByRole('radio', { name: 'On my own' })).toBeChecked();
@@ -99,7 +99,7 @@ async function walkGuide(
   }
 
   await expect(page.getByText(guide.invitation)).toBeVisible();
-  await page.getByRole('radio', { name: 'Guided' }).check();
+  await page.getByRole('radio', { name: /^Guide/ }).check();
   // Located by CSS so it still reads while a modal hides the rest of the page.
   const coach = page.locator('aside[aria-label="Guide"]');
   const total = guide.steps.length;
@@ -109,7 +109,9 @@ async function walkGuide(
     await expect(coach).toContainText(step.title);
     expect(await checkHolds(page, step.done), `${step.id} was done by an earlier step`).toBe(false);
     if (step.target) {
-      await expect(page.locator(step.target).first()).toHaveAttribute('data-guide-active', '');
+      // The step's target is marked, or the tab that holds it when it is elsewhere.
+      const marked = step.reveal ? `${step.target}, ${step.reveal}` : step.target;
+      await expect(page.locator(`:is(${marked})[data-guide-active]`).first()).toBeAttached();
     }
     if (step.example) await expect(page.locator(step.example.click).first()).toBeAttached();
 
@@ -180,9 +182,8 @@ test('guided mode walks a first-timer through one networking rep', async ({ page
   await walkGuide(page, 'networking-practice', {
     scenario: async (coach) => {
       await page.locator('#scenario').click();
+      // Choosing in the picker is enough; nothing has to be confirmed.
       await page.getByRole('option').nth(1).click();
-      // A scenario is chosen by default, so only the visitor can say they picked.
-      await (await openCoach(page)).getByRole('button', { name: 'I did this' }).click();
     },
     draft: async () => {
       await page
@@ -238,10 +239,8 @@ test('guided mode walks a first-timer through the interview workspace, tab by ta
       parse: async () => {
         await page.getByRole('button', { name: 'Parse the requirements' }).click();
       },
-      'open-stories': async () => {
-        await page.getByRole('tab', { name: /Build stories/ }).click();
-      },
       'start-story': async () => {
+        await page.getByRole('tab', { name: /Build stories/ }).click();
         // The first gap after "+ New story" opens the editor with that skill chosen.
         await page.locator('[data-guide="stories-start"] button').nth(1).click();
         await expect(page.locator('#story-primary-skill')).not.toContainText('Select skill');
@@ -254,10 +253,8 @@ test('guided mode walks a first-timer through the interview workspace, tab by ta
       'save-story': async () => {
         await page.getByRole('button', { name: 'Save and add to packet' }).click();
       },
-      'open-packet': async () => {
-        await page.getByRole('tab', { name: /Pack the proof/ }).click();
-      },
       hud: async () => {
+        await page.getByRole('tab', { name: /Pack the proof/ }).click();
         await page.locator('[data-guide="packet-hud"]').click();
       },
     },
@@ -292,24 +289,22 @@ test('guided mode walks a first-timer through the offer worksheet', async ({ pag
 test('the rehearsal guide follows one written answer from start to review', async ({ page }) => {
   await page.goto('/interview-glow-up/rehearse/');
   await waitForHydration(page);
-  await page.getByRole('radio', { name: 'Guided' }).check();
+  await page.getByRole('radio', { name: /^Guide/ }).check();
   const coach = page.getByRole('complementary', { name: 'Guide' });
-  await expect(coach).toContainText('Step 1 of 6');
+  await expect(coach).toContainText('Step 1 of 5');
 
   await page.getByRole('radio', { name: /In writing/ }).check();
   await page.getByRole('button', { name: 'Start with the first question' }).click();
-  await expect(coach).toContainText('Step 2 of 6');
+  await expect(coach).toContainText('Step 2 of 5');
 
   await page.getByLabel('Your answer').fill('I ran the volunteer schedule for my campus pantry.');
   await page.getByRole('button', { name: 'Review my answer' }).click();
-  await expect(coach).toContainText('Step 3 of 6');
-  await (await openCoach(page)).getByRole('button', { name: 'I did this' }).click();
-  await expect(coach).toContainText('Step 4 of 6');
-
+  await expect(coach).toContainText('Step 3 of 5');
+  // Every step follows what the visitor does; none waits for "I did this".
   await page.getByLabel('I answered the question that was asked').check();
-  await expect(coach).toContainText('Step 5 of 6');
+  await expect(coach).toContainText('Step 4 of 5');
   await page.getByRole('button', { name: 'What might they ask next?' }).click();
-  await expect(coach).toContainText('Step 6 of 6');
+  await expect(coach).toContainText('Step 5 of 5');
   await page.getByRole('button', { name: 'Next question' }).click();
   await expect(coach).toContainText('That is one full rep');
 });

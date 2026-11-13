@@ -2,8 +2,9 @@ import * as React from 'react';
 import {
   type Audience,
   getSkillName,
+  packetCoverage,
+  questionsToAsk,
   resolveQuestionText,
-  SUGGESTED_QUESTIONS_TO_ASK,
   usesStudentExamples,
 } from '../../lib/glowup-banks';
 import {
@@ -11,6 +12,7 @@ import {
   ensurePacketForRole,
   type GlowUpData,
   type InterviewPacket,
+  READINESS,
   readinessLabel,
   type Story,
   toggleStoryInPacket,
@@ -18,7 +20,9 @@ import {
 } from '../../lib/glowup-store';
 import { isRealAnswer } from '../../lib/non-answer';
 import { cn } from '../../lib/utils';
+import WordHelp from '../shared/WordHelp';
 import AiQuestions from './AiQuestions';
+import { listInWords, missingFromCheatSheet } from './InterviewHUD';
 import { ClipboardIcon, PrinterIcon, TargetIcon } from './icons';
 
 type Props = {
@@ -46,6 +50,7 @@ export default function PacketSection({
   audience = 'student',
 }: Props) {
   const student = usesStudentExamples(audience);
+  const suggestedToAsk = questionsToAsk(audience);
   const [mode, setMode] = React.useState<'prep' | 'review'>('prep');
 
   // The packet is created with the role; this only runs for data saved before that.
@@ -74,6 +79,9 @@ export default function PacketSection({
     );
   }
 
+  const missing = missingFromCheatSheet(currentPacket);
+  const coverage = packetCoverage(currentRole.bullets, data.stories, currentPacket, audience);
+  const readinessName = (id: string) => READINESS.find((r) => r.id === id)?.label ?? id;
   const topStoryIdsSet = new Set(currentPacket.topStoryIds);
   const packetStories: Story[] = [];
   const otherStories: Story[] = [];
@@ -111,7 +119,7 @@ export default function PacketSection({
           </p>
           <p className="text-xs text-muted-foreground">
             The one-screen cheat sheet (the HUD) shows your stories, three keywords, and a fallback
-            story for the call.
+            story for the call. Open it from the bottom of this page.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -141,19 +149,12 @@ export default function PacketSection({
           >
             Review
           </button>
-          <button
-            type="button"
-            onClick={onLaunchHUD}
-            className="flex items-center gap-1 rounded-lg bg-foam px-3 py-1.5 text-sm font-semibold text-background focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
-          >
-            <TargetIcon className="h-4 w-4" />
-            Open the cheat sheet (HUD)
-          </button>
         </div>
       </div>
 
       {mode === 'prep' && (
         <div className="space-y-6">
+          <WordHelp words={['story', 'packet', 'hud']} />
           <div className="space-y-3">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Stories in this packet
@@ -237,6 +238,85 @@ export default function PacketSection({
               </details>
             )}
           </div>
+
+          {coverage.rows.length > 0 && (
+            <section
+              aria-labelledby="competency-title"
+              className="space-y-3"
+              data-testid="competency-view"
+            >
+              <h3
+                id="competency-title"
+                className="text-sm font-semibold uppercase tracking-wide text-muted-foreground"
+              >
+                What each requirement asks of you
+              </h3>
+              <p className="text-sm text-foreground" data-testid="packet-coverage">
+                {coverage.total === 0
+                  ? 'No requirement line has a skill picked yet, so no story can be matched to one.'
+                  : `Stories in this packet answer ${coverage.covered} of ${coverage.total} ${coverage.total === 1 ? 'requirement' : 'requirements'}${
+                      coverage.covered > 0
+                        ? `: ${READINESS.map((r) => `${coverage.byReadiness[r.id]} ${r.label.toLowerCase()}`).join(', ')}.`
+                        : '.'
+                    }`}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Only stories packed for this job count here.
+                {coverage.untagged > 0
+                  ? ` ${coverage.untagged} ${coverage.untagged === 1 ? 'line has' : 'lines have'} no skill picked; pick one on Decode the job to match a story.`
+                  : ''}{' '}
+                "Skills with no story yet" on Decode the job counts every story in your library.
+              </p>
+              <ul className="space-y-2">
+                {coverage.rows.map((row) => (
+                  <li key={row.bulletId}>
+                    <details className="group rounded-xl border border-border/30 bg-overlay/15 p-3">
+                      <summary className="cursor-pointer">
+                        <span className="text-sm text-foreground">{row.requirement}</span>
+                        <span className="mt-1 block text-xs text-muted-foreground">
+                          {row.skillId ? getSkillName(row.skillId) : 'No skill picked'}
+                        </span>
+                        <span
+                          className={cn(
+                            'block text-xs',
+                            row.story ? 'text-foam' : 'text-muted-foreground'
+                          )}
+                        >
+                          {row.story
+                            ? `Your story: ${row.story.trigger || 'Untitled'} (${readinessName(row.readiness ?? 'solid')})`
+                            : 'No packed story answers this yet'}
+                        </span>
+                      </summary>
+                      {row.question ? (
+                        <dl className="mt-3 space-y-2 border-t border-border/30 pt-3 text-sm leading-relaxed">
+                          <div>
+                            <dt className="text-xs text-muted-foreground">
+                              A question they could ask
+                            </dt>
+                            <dd className="text-foreground">{row.question.text}</dd>
+                          </div>
+                          <div>
+                            <dt className="text-xs text-muted-foreground">A strong answer shows</dt>
+                            <dd className="text-foreground">{row.question.strongAnswer}</dd>
+                          </div>
+                          <div>
+                            <dt className="text-xs text-muted-foreground">A common mistake</dt>
+                            <dd className="text-foreground">{row.question.commonMistake}</dd>
+                          </div>
+                        </dl>
+                      ) : (
+                        <p className="mt-3 border-t border-border/30 pt-3 text-xs text-muted-foreground">
+                          {row.skillId
+                            ? 'No question in the bank fits this skill yet.'
+                            : 'Pick a skill for this line on Decode the job to see a question for it.'}
+                        </p>
+                      )}
+                    </details>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           <div className="space-y-3">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
@@ -374,28 +454,28 @@ export default function PacketSection({
                 + Add question
               </button>
             </div>
-            {SUGGESTED_QUESTIONS_TO_ASK.some((q) => !currentPacket.customQuestions.includes(q)) && (
+            {suggestedToAsk.some((q) => !currentPacket.customQuestions.includes(q)) && (
               <div className="space-y-1">
                 <span className="text-xs text-muted-foreground">Suggestions (press to add):</span>
                 <div className="flex flex-col items-start gap-1">
-                  {SUGGESTED_QUESTIONS_TO_ASK.filter(
-                    (q) => !currentPacket.customQuestions.includes(q)
-                  ).map((q) => (
-                    <button
-                      key={q}
-                      type="button"
-                      onClick={() => {
-                        setData(
-                          updatePacket(data, currentPacket.id, {
-                            customQuestions: [...currentPacket.customQuestions, q],
-                          })
-                        );
-                      }}
-                      className="rounded-lg px-2 py-1 text-left text-xs text-muted-foreground hover:bg-overlay/40 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
-                    >
-                      + {q}
-                    </button>
-                  ))}
+                  {suggestedToAsk
+                    .filter((q) => !currentPacket.customQuestions.includes(q))
+                    .map((q) => (
+                      <button
+                        key={q}
+                        type="button"
+                        onClick={() => {
+                          setData(
+                            updatePacket(data, currentPacket.id, {
+                              customQuestions: [...currentPacket.customQuestions, q],
+                            })
+                          );
+                        }}
+                        className="rounded-lg px-2 py-1 text-left text-xs text-muted-foreground hover:bg-overlay/40 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+                      >
+                        + {q}
+                      </button>
+                    ))}
                 </div>
               </div>
             )}
@@ -411,6 +491,11 @@ export default function PacketSection({
                   The HUD shows your stories, keywords, and fallback story on one screen, for a last
                   look before the call or a glance during it.
                 </p>
+                {missing.length > 0 && (
+                  <p className="mt-1 text-xs text-foreground" data-testid="packet-hud-missing">
+                    Not on your cheat sheet yet: {listInWords(missing)}.
+                  </p>
+                )}
               </div>
               <button
                 type="button"

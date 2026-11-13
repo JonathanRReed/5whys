@@ -17,22 +17,30 @@ it('uses the saved audience, setting, and goal in the active practice guidance',
   );
   expect(result.current.currentScenario?.who).toBe('A robotics engineer');
   expect(result.current.currentScenario?.where).toBe('A campus meetup');
-  expect(result.current.scenarioSteps).toEqual(['Ask about first-year work', 'Ask how to prepare']);
+  // The preset's opening flow stays; the visitor's lines are added as their ask.
+  const preset = result.current.scenarios.find(
+    (item) => item.id === result.current.currentScenario?.id
+  );
+  const expectedSteps = [
+    ...(preset?.what ?? []),
+    'Your ask: Ask about first-year work',
+    'Your ask: Ask how to prepare',
+  ];
+  expect(result.current.scenarioSteps).toEqual(expectedSteps);
   expect(
     result.current.questionTemplates.some((item) =>
       item.prompt.includes('Ask about first-year work')
     )
   ).toBe(true);
+  // The person they named is a plain hint, not a copyable warm-up line.
+  expect(result.current.currentScenario?.prepNote).toContain('A robotics engineer');
   expect(result.current.rapportSamples.some((item) => item.includes('A robotics engineer'))).toBe(
-    true
+    false
   );
   unmount();
   const restored = renderHook(() => useNetworkingPractice());
   expect(restored.result.current.currentScenario?.who).toBe('A robotics engineer');
-  expect(restored.result.current.scenarioSteps).toEqual([
-    'Ask about first-year work',
-    'Ask how to prepare',
-  ]);
+  expect(restored.result.current.scenarioSteps).toEqual(expectedSteps);
 });
 
 it('keeps preset guidance intact and falls back when custom fields are blank', () => {
@@ -40,7 +48,8 @@ it('keeps preset guidance intact and falls back when custom fields are blank', (
   const preset = result.current.scenarios.find(
     (item) => item.id === result.current.currentScenario?.id
   );
-  expect(result.current.currentScenario).toEqual(preset);
+  expect(result.current.currentScenario).toMatchObject(preset ?? {});
+  expect(result.current.currentScenario?.customized).toBe(false);
   act(() => result.current.handleFieldChange('who', '  '));
   act(() => result.current.handleFieldChange('where', ''));
   act(() => result.current.handleFieldChange('what', '\n  '));

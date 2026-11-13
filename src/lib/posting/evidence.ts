@@ -15,6 +15,7 @@
  */
 
 import { synonymsOf } from './aliases';
+import { fieldOf, fieldSignIn } from './field-signs';
 import {
   type EvidenceExcerpt,
   extractTermsWithClauses,
@@ -42,6 +43,12 @@ import {
 import { findCues } from './sections';
 import { normalizePunctuation } from './text';
 import type { SourceSpan } from './types';
+
+/** A requirement that names managing or leading, not only a field of work. */
+const ASKS_FOR_MANAGING = /\b(?:manag\w*|supervis\w*|leadership|leading)\b/i;
+/** A job title that says the holder managed or led. */
+const MANAGING_TITLE =
+  /\b(?:manager|management|supervisor|lead|leader|director|head|chief|owner|foreman|superintendent|captain|principal|president|coordinator)\b/i;
 
 export type RequirementKind = 'years' | 'education' | 'tool' | 'task';
 
@@ -105,6 +112,8 @@ export interface RequirementPart {
   label: string;
   shown: boolean;
   terms: RequirementTerm[];
+  /** True when any one of `terms` shows it; false when they must share a line. */
+  alternatives?: boolean;
   /** The best line that shows it. */
   excerpt?: EvidenceExcerpt;
 }
@@ -233,6 +242,15 @@ function fieldText(text: string): string {
   return rest;
 }
 
+/**
+ * A generic verb in front of the work it is done to: "coordinating schedules",
+ * "managing vendors". The object alone, in any form ("schedules",
+ * "scheduling"), is the same work said plainly. Only verbs that say nothing
+ * about the work on their own are listed.
+ */
+const LIGHT_VERB =
+  /^(?:coordinating|managing|handling|overseeing|organizing|maintaining|creating|building|preparing|planning|making|running|supporting|tracking)\s+((?:[a-z-]+\s+){0,2}[a-z-]{4,})$/;
+
 /** Splits "operations, logistics, supply chain, or a related field" into its alternatives. */
 export function fieldList(text: string, offset: number, source: string): RequirementTerm[] {
   const rest = fieldText(text);
@@ -244,12 +262,21 @@ export function fieldList(text: string, offset: number, source: string): Require
     if (terms.some((t) => t.key === lower)) continue;
     const at = source.toLowerCase().indexOf(lower, offset);
     const start = at >= 0 ? at : offset;
+    // "coordinating schedules": the verb is generic, the schedules are the work.
+    // "Created weekly schedules" and "Duties included scheduling" both show it.
+    const object = lower.match(LIGHT_VERB)?.[1];
     terms.push({
       key: lower,
       label: item,
       source: 'phrase',
       shape: item.includes(' ') ? 'phrase' : 'word',
-      variants: [...new Set([lower, ...synonymsOf(lower)])],
+      variants: [
+        ...new Set([
+          lower,
+          ...synonymsOf(lower),
+          ...(object ? [object, ...synonymsOf(object)] : []),
+        ]),
+      ],
       span: { start, end: start + item.length },
     });
   }
@@ -339,6 +366,10 @@ const ENROLLMENT =
 /** A line that names a degree of its own. */
 const DEGREE_WORDS =
   /\b(?:bachelor|master|associate|doctor|diploma|degree|ph\.?d|ged)\b|\b(?:B\.?\s?[AS]|M\.?\s?[AS]|MBA|AAS|A\.A\.S?)(?![A-Za-z])/i;
+
+/** "associate or bachelor's", "associate degree", "associate's program": the degree, not the job title. */
+const ASSOCIATE_LEVEL =
+  /\bassociate(?:['’]?s)?(?=\s+(?:degree|program|diploma)\b|\s*(?:,|or|and|\/)\s*(?:an?\s+)?(?:bachelor|master|4-year|four-year)\b)/i;
 
 /** Words that name a kind of school, not a field of study. */
 const INSTITUTION_WORDS =
@@ -447,12 +478,44 @@ export function analyzeRequirement(
   }
 
   const levels = terms.filter((t) => DEGREE_KEYS.has(t.key));
+  // "an associate or bachelor's program": "associate" names a degree here,
+  // though alone it is a job title. Either level is accepted.
+  const associate = text.match(ASSOCIATE_LEVEL);
+  if (associate?.index !== undefined && !levels.some((t) => t.key === "associate's degree")) {
+    const start = associate.index;
+    levels.push({
+      key: "associate's degree",
+      label: 'associate',
+      source: 'phrase',
+      shape: 'named',
+      variants: [
+        ...new Set([
+          "associate's degree",
+          ...synonymsOf("associate's degree"),
+          'associate in',
+          "associate's in",
+          'associates in',
+          'associate of',
+          'associates of',
+          'a.a.s.',
+          'a.a.',
+          'a.s.',
+          'aas',
+        ]),
+      ],
+      span: { start, end: start + associate[0].length },
+    });
+    levels.sort((a, b) => a.span.start - b.span.start);
+  }
   if (enrollment || levels.length > 0 || /\b(?:degree|diploma)\b/i.test(text)) {
     const asks: RequirementAsk[] = [];
     if (levels.length > 0) {
-      const levelLabel = levels[0].label;
+      const levelLabel = orList(
+        levels.map((l) => l.label.replace(/\s+(?:degree|diploma)$/i, '')).filter(Boolean)
+      );
+      const kept = levels.length === 1 ? levels[0].label : levelLabel;
       asks.push({
-        label: /degree|diploma/i.test(levelLabel) ? levelLabel : `${levelLabel} degree`,
+        label: /degree|diploma/i.test(kept) ? kept : `${kept} degree`,
         terms: levels,
         alternatives: true,
         role: 'degree',
@@ -495,12 +558,22 @@ export function analyzeRequirement(
     // Examples name kinds of one thing, so only the tools and the category
     // count. Peers joined by "or" ("healthcare billing or HIPAA") are all
     // alternatives. Tools joined by "and" are each asked for.
+    // "Lean or Six Sigma training": "training" belongs to each name in the
+    // list, so "Trained new hires" does not show it. A plain word right after
+    // a named term is that term's head noun, not one more alternative.
+    const headNoun = (t: RequirementTerm) =>
+      t.shape === 'word' &&
+      named.some(
+        (n) => n.span.end <= t.span.start && /^[\s-]*$/.test(text.slice(n.span.end, t.span.start))
+      );
     const toolTerms = (
       examples
         ? [...named, ...categories]
         : alternatives
           ? [
-              ...terms.filter((t) => !categories.some((c) => overlapsSpan(c.span, t.span))),
+              ...terms.filter(
+                (t) => !categories.some((c) => overlapsSpan(c.span, t.span)) && !headNoun(t)
+              ),
               ...categories,
             ]
           : [...named, ...categories]
@@ -662,6 +735,33 @@ function yearsEvidence(
       }
     }
   }
+  // "Store Manager, Brightline Home Goods": the title places the role in
+  // retail, so the whole role counts toward "retail management".
+  const readAs: string[] = [];
+  for (const role of doc.roles) {
+    const heading = normalized.slice(role.headingSpan.start, role.headingSpan.end);
+    for (const term of years.fields) {
+      const field = fieldOf(term.key);
+      const sign = field ? fieldSignIn(heading, field) : null;
+      if (!sign) continue;
+      // "Retail management" asks for managing, not for time in a store: a
+      // cashier's years count only when the title itself says they led.
+      if (ASKS_FOR_MANAGING.test(`${term.key} ${term.label}`) && !MANAGING_TITLE.test(heading)) {
+        continue;
+      }
+      const span = {
+        start: role.headingSpan.start + sign.start,
+        end: role.headingSpan.start + sign.end,
+      };
+      if (matchSpans.some((m) => m.term === term && m.span.start === span.start)) continue;
+      matchSpans.push({ term, span });
+      ranges.set(term, [...(ranges.get(term) ?? []), role]);
+      if (!readAs.some((said) => said.startsWith(`Read as ${term.label.toLowerCase()} `)))
+        readAs.push(
+          `Read as ${term.label.toLowerCase()} from the word "${sign.word}" in "${firstLine(heading)}".`
+        );
+    }
+  }
   const found = years.fields.filter((f) => ranges.has(f) || undated.has(f));
   const missing = years.fields.filter((f) => !found.includes(f));
   const monthsFor = (fields: RequirementTerm[]) =>
@@ -710,12 +810,13 @@ function yearsEvidence(
     missingTerms: missing,
   };
 
+  const readNote = readAs.length > 0 ? ` ${readAs.slice(0, 2).join(' ')}` : '';
   if (fieldsShown && enough(fieldMonths)) {
     return {
       ...common,
       state: 'evidence',
       parts: [{ label: years.label, shown: true, terms: [] }, ...fieldParts()],
-      note: `${capitalize(aboutDuration(fieldMonths))} in roles mentioning ${foundLabels}.`,
+      note: `${capitalize(aboutDuration(fieldMonths))} in roles mentioning ${foundLabels}.${readNote}`,
     };
   }
   if (found.length > 0) {
@@ -735,7 +836,7 @@ function yearsEvidence(
       ...common,
       state: 'partial',
       parts: [{ label: years.label, shown: false, terms: [] }, ...fieldParts()],
-      note: `${notes.join('; ')}.`,
+      note: `${notes.join('; ')}.${readNote}`,
     };
   }
   if (enough(total)) {
@@ -752,6 +853,11 @@ function yearsEvidence(
     parts: [{ label: years.label, shown: false, terms: [] }, ...fieldParts()],
     note: `Your resume has ${aboutDuration(total)} of dated work, and no role names ${fieldsLabel}.`,
   };
+}
+
+/** The first line of a role heading, which is its title. */
+function firstLine(heading: string): string {
+  return (heading.split('\n')[0] ?? heading).replace(/^[\s•\-*]+/, '').trim();
 }
 
 function capitalize(text: string): string {
@@ -809,6 +915,52 @@ export function findRequirementEvidence(
       educationInProgress(next.text, today)
     );
   };
+  // Job titles, for asks that name a field ("experience in retail").
+  const titleLines =
+    kind === 'education'
+      ? []
+      : readDocument(documentText, { today }).lines.filter((l) => l.kind === 'title');
+  const readAs: string[] = [];
+  /** A title line that places a job in a field the ask names: "Cashier, Valley Fresh Market" for retail. */
+  const titleShows = (ask: RequirementAsk): EvidenceExcerpt | undefined => {
+    if (ask.role || !(ask.alternatives || ask.terms.length === 1)) return undefined;
+    for (const term of ask.terms) {
+      const field = fieldOf(term.key);
+      if (!field) continue;
+      for (const line of titleLines) {
+        const sign = fieldSignIn(line.text, field);
+        if (!sign) continue;
+        // The same guard the years check uses: "retail management" is shown
+        // by a title that says they managed, not by any job in a store.
+        if (
+          ASKS_FOR_MANAGING.test(`${term.key} ${term.label}`) &&
+          !MANAGING_TITLE.test(line.text)
+        ) {
+          continue;
+        }
+        readAs.push(
+          `Read as ${term.label.toLowerCase()} from the word "${sign.word}" in "${line.text.replace(/^[\s•\-*]+/, '').trim()}".`
+        );
+        return {
+          start: line.start,
+          end: line.end,
+          text: line.text,
+          matches: [
+            {
+              start: line.start + sign.start,
+              end: line.start + sign.end,
+              text: sign.word,
+              termKey: term.key,
+              variant: sign.word,
+            },
+          ],
+          listedOnly: false,
+          kind: line.kind,
+        };
+      }
+    }
+    return undefined;
+  };
   let unfinished: EvidenceExcerpt | undefined;
   const used = new Set<EvidenceExcerpt>();
   const shownKeys = new Set<string>();
@@ -837,12 +989,25 @@ export function findRequirementEvidence(
       if (!analysis.enrollment && wanted.length === 0) unfinished = showing.find(inProgress);
       showing = wanted;
     }
+    if (showing.length === 0) {
+      const title = titleShows(ask);
+      if (title) {
+        candidates.push(title);
+        showing = [title];
+      }
+    }
     for (const e of showing) {
       used.add(e);
       for (const m of e.matches) if (keys.has(m.termKey)) shownKeys.add(m.termKey);
     }
     const excerpt = showing[0];
-    return { label: ask.label, shown: Boolean(excerpt), terms: ask.terms, excerpt };
+    return {
+      label: ask.label,
+      shown: Boolean(excerpt),
+      terms: ask.terms,
+      excerpt,
+      alternatives: Boolean(ask.alternatives),
+    };
   });
   const excerpts = candidates.filter((e) => used.has(e));
   if (unfinished) used.add(unfinished);
@@ -856,6 +1021,7 @@ export function findRequirementEvidence(
     kind === 'education' && state !== 'evidence' && analysis.acceptsEquivalent
       ? 'The posting also accepts equivalent experience.'
       : '',
+    ...readAs,
   ].filter(Boolean);
   return {
     terms,

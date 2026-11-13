@@ -31,6 +31,8 @@ export const SCENARIO_TIMER_SECONDS: Record<string, number> = {
   'career-changer': 120,
   'virtual-breakout': 120,
   'first-week': 300,
+  'lab-meeting': 30,
+  'reconnect-colleague': 60,
 };
 
 export type TimerState = {

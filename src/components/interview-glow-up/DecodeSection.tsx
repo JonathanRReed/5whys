@@ -1,4 +1,6 @@
 import * as React from 'react';
+import { saveRemappedDesks } from '../../lib/application-desk';
+import { applicationIdsForRole } from '../../lib/career-bridge';
 import {
   type Audience,
   getSkillName,
@@ -18,10 +20,16 @@ import {
   updateRole,
 } from '../../lib/glowup-store';
 import {
+  bulletsFromRequirements,
   decodePostingToBullets,
   hiringCondition,
   type PostingSection,
+  parsePosting as readPosting,
+  redecodeRequirements,
+  requirementsFromBullets,
+  requirementToBullet,
   SAMPLE_POSTING,
+  type SetAsideReason,
 } from '../../lib/posting';
 import { cn } from '../../lib/utils';
 import Announcer, { useAnnouncer } from '../shared/Announcer';
@@ -52,6 +60,25 @@ const SECTION_LABELS: Record<PostingSection, string> = {
   responsibility: 'Duty',
   unclassified: 'Not sorted, so not counted',
 };
+
+/** Why a line was set aside, in words. Headings are never listed. */
+const SET_ASIDE_LABELS: Partial<Record<SetAsideReason, string>> = {
+  'too-short': 'Too short to read as a requirement',
+  boilerplate: 'Legal or benefits text',
+  'header-line': 'A title or location line',
+  'job-details': 'Pay, hours, or another job detail',
+  'outside-requirements': 'Under a heading such as About us or Benefits',
+  'group-lead': 'Introduces a list',
+  'over-limit': 'Past the number of lines read',
+  'application-logistics': 'How or when to apply',
+  'company-description': 'About the employer',
+  'role-summary': 'A summary of the role',
+  pitch: 'Selling the job',
+  description: 'Reads as neither a requirement nor a duty',
+};
+
+/** Gaps shown before "Show all". */
+const GAPS_SHOWN = 5;
 
 /** A title for the role when none was typed: the first short line of the posting. */
 function deriveTitle(rawJdText: string): string {
@@ -98,8 +125,8 @@ export default function DecodeSection({
   // role and from then on every field is read from and written to the store.
   const [pending, setPending] = React.useState<RoleFields>(EMPTY_FIELDS);
   const [selectedBullets, setSelectedBullets] = React.useState<Set<string>>(new Set());
-  const [skippedCount, setSkippedCount] = React.useState<number | null>(null);
   const [savedAt, setSavedAt] = React.useState<number | null>(null);
+  const [showAllGaps, setShowAllGaps] = React.useState(false);
   const [announcement, announce] = useAnnouncer();
   const parseButtonRef = React.useRef<HTMLButtonElement>(null);
 
@@ -148,9 +175,30 @@ export default function DecodeSection({
   // tell a requirement from the employer's address.
   const parsePosting = () => {
     if (!fields.rawJdText.trim()) return;
-    const { parsed, bullets: parsedBullets } = decodePostingToBullets(fields.rawJdText);
+    const decoded = decodePostingToBullets(fields.rawJdText);
+    const { parsed } = decoded;
+    let parsedBullets = decoded.bullets;
+    if (currentRole && bullets.length > 0) {
+      // Parsing again keeps what was decided, here or on the Application
+      // Desk: each confirmation, dismissal and edit follows its line, and
+      // where the visitor stands on each requirement follows it too, on every
+      // application that uses this posting.
+      const redecoded = redecodeRequirements(
+        requirementsFromBullets(bullets),
+        currentRole.parsedJdText ?? currentRole.rawJdText ?? '',
+        parsed.requirements,
+        parsed.text
+      );
+      parsedBullets = bulletsFromRequirements(redecoded.requirements, bullets);
+      // Every application on this posting keeps its marks and plans: the
+      // bridge names the applications, the desk moves its own rows.
+      saveRemappedDesks(
+        applicationIdsForRole(currentRole.id, data.roles),
+        redecoded.moved,
+        redecoded.parsedIds
+      );
+    }
     const setAside = parsed.setAside.filter((line) => line.reason !== 'heading').length;
-    setSkippedCount(setAside);
     announce(
       `Lines from the posting (${parsedBullets.length}).${setAside > 0 ? ` Set aside ${setAside} ${setAside === 1 ? 'line' : 'lines'} that are not requirements.` : ''}`
     );
@@ -163,7 +211,6 @@ export default function DecodeSection({
 
   const startNewRole = () => {
     setPending(EMPTY_FIELDS);
-    setSkippedCount(null);
     setData({ ...data, currentRoleId: null, currentPacketId: null });
   };
 
@@ -184,6 +231,39 @@ export default function DecodeSection({
   );
 
   const activeCount = bullets.filter((b) => b.status === 'active').length;
+
+  // What the parser set aside, read again from the text it parsed, so the
+  // list survives a reload and a real duty can be brought back.
+  const parsedSource = currentRole?.parsedJdText ?? '';
+  const setAsideLines = React.useMemo(() => {
+    if (bullets.length === 0 || !parsedSource.trim()) return [];
+    const kept = new Set(bullets.map((b) => b.text));
+    return readPosting(parsedSource).setAside.filter(
+      (line) => line.reason !== 'heading' && !kept.has(line.text)
+    );
+  }, [parsedSource, bullets]);
+
+  const bringBack = (line: (typeof setAsideLines)[number]) => {
+    const taken = new Set(bullets.map((b) => b.id));
+    let n = 1;
+    while (taken.has(`back-${n}`)) n++;
+    const bullet = requirementToBullet({
+      id: `back-${n}`,
+      text: line.text,
+      section: 'responsibility',
+      status: 'suggested',
+      // The visitor's own decision, like a line they added: "Parse again"
+      // keeps it, where a parsed line the parser no longer finds is dropped.
+      origin: 'student',
+      span: { start: line.start, end: line.end },
+    });
+    // Back in the posting's own order.
+    const after = bullets.findIndex((b) => (b.sourceSpan?.start ?? -1) > line.start);
+    const next = [...bullets];
+    next.splice(after === -1 ? next.length : after, 0, bullet);
+    setBullets(next);
+    announce(`Brought back as a duty: ${shortText(line.text)}`);
+  };
 
   const handleBulkTag = (skillId: string) => {
     setBullets(
@@ -347,7 +427,7 @@ export default function DecodeSection({
           )}
           {bullets.length > 0 && (
             <span className="text-xs text-muted-foreground">
-              Parsing again replaces the tags below.
+              Parsing again keeps your choices on lines that did not change.
             </span>
           )}
         </div>
@@ -408,11 +488,36 @@ export default function DecodeSection({
                     : ''}
                 </p>
               )}
-              {skippedCount !== null && skippedCount > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  Set aside {skippedCount} {skippedCount === 1 ? 'line' : 'lines'} that are not
-                  requirements, such as pay, benefits, and legal text.
-                </p>
+              {setAsideLines.length > 0 && (
+                <details className="mt-1 text-xs text-muted-foreground" data-testid="set-aside">
+                  <summary className="cursor-pointer">
+                    Set aside {setAsideLines.length} {setAsideLines.length === 1 ? 'line' : 'lines'}{' '}
+                    as pay, benefits, legal text, or not a requirement
+                  </summary>
+                  <p className="mt-2">Bring one back if it is a real duty.</p>
+                  <ul className="mt-2 space-y-2">
+                    {setAsideLines.map((line) => (
+                      <li
+                        key={`${line.start}-${line.end}`}
+                        className="flex flex-wrap items-start justify-between gap-2 rounded-lg border border-border/30 p-2"
+                      >
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm text-foreground">{line.text}</span>
+                          <span className="block">
+                            {SET_ASIDE_LABELS[line.reason] ?? 'Set aside'}
+                          </span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => bringBack(line)}
+                          className="rounded-lg border border-border/50 bg-overlay/30 px-3 py-1 text-xs text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+                        >
+                          Bring back<span className="sr-only">: {shortText(line.text)}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
               )}
             </div>
             {selectedBullets.size > 0 && (
@@ -608,8 +713,8 @@ export default function DecodeSection({
                 Every tagged skill has a story. <PartyIcon className="h-4 w-4" />
               </p>
             ) : (
-              <ul className="space-y-1">
-                {topGaps.map((skillId) => (
+              <ul className="space-y-1" data-testid="decode-gaps">
+                {(showAllGaps ? topGaps : topGaps.slice(0, GAPS_SHOWN)).map((skillId) => (
                   <li key={skillId} className="flex items-center gap-2 text-sm text-foreground">
                     <span className="h-2 w-2 rounded-full bg-destructive" />
                     {getSkillName(skillId)}
@@ -617,8 +722,19 @@ export default function DecodeSection({
                 ))}
               </ul>
             )}
+            {topGaps.length > GAPS_SHOWN && (
+              <button
+                type="button"
+                aria-expanded={showAllGaps}
+                onClick={() => setShowAllGaps((open) => !open)}
+                className="mt-2 inline-flex min-h-6 items-center rounded px-1 text-sm text-foam underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+              >
+                {showAllGaps ? 'Show fewer' : `Show all ${topGaps.length}`}
+              </button>
+            )}
             <p className="mt-3 text-xs text-muted-foreground">
-              Next: open Build stories. Each gap has a start button there.
+              Most often tested first. Counts every story in your library, packed or not. Next: open
+              Build stories. Each gap has a start button there.
             </p>
           </div>
         </div>

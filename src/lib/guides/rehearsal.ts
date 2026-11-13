@@ -2,13 +2,12 @@ import type { Guide } from '../guide';
 
 export const rehearsalGuide: Guide = {
   tool: 'rehearsal',
-  invitation:
-    'New to this? The guide walks you through answering one interview question and reviewing it.',
+  invitation: 'New to this? The guide walks you through answering one question and reviewing it.',
   steps: [
     {
       id: 'start',
-      title: 'Choose how to answer and start',
-      body: 'Pick "Out loud" or "In writing", then press "Start with the first question".',
+      title: 'Choose how to answer, then start',
+      body: 'Pick "Out loud" or "In writing".',
       why: 'Out loud records on this device so you can listen back. Nothing is sent anywhere.',
       target: '[data-guide="rehearsal-setup"]',
       done: { kind: 'exists', selector: '[data-testid="rehearsal-question"]' },
@@ -22,8 +21,8 @@ export const rehearsalGuide: Guide = {
     {
       id: 'answer',
       title: 'Answer the question',
-      body: 'Press "Record my answer" and speak, then "Stop and review". Or type your answer and press "Review my answer".',
-      why: 'Answer the way you would in the room. A structured answer commonly runs one to two minutes.',
+      body: 'Record it or type it, the way you would say it in the room. Then review.',
+      why: 'These are counts, not grades. There is no proven right pace.',
       target: '[data-testid="rehearsal-question"]',
       done: { kind: 'exists', selector: '[data-testid="take-words"]' },
       // After a reload the room is back at the start: so is the guide.
@@ -38,41 +37,37 @@ export const rehearsalGuide: Guide = {
       },
     },
     {
-      id: 'counts',
-      title: 'Read what can be counted',
-      body: 'Look at the length, the words, and any filler words. If you recorded, play it back.',
-      why: 'These are counts, not grades. There is no proven right pace.',
-      target: '#facts-title',
-      done: { kind: 'manual' },
-      needs: { kind: 'exists', selector: '#facts-title, #rehearsal-done-heading' },
-      // The end of the run finishes the guide, however the visitor got there.
-      passed: { kind: 'exists', selector: '#rehearsal-done-heading' },
-    },
-    {
       id: 'self-check',
-      title: 'Check it yourself',
-      body: 'Tick what is true of this answer. Did you answer the question, say what you did, and say what happened because of it?',
+      title: 'Tick what is true of your answer',
+      body: 'Under "Check it yourself", below the counts.',
+      why: 'Only you can judge these. Filler words are counted only when you answer out loud.',
       target: '[data-guide="self-check"]',
       done: { kind: 'exists', selector: '[data-guide="self-check"] input:checked' },
-      needs: { kind: 'exists', selector: '[data-guide="self-check"], #rehearsal-done-heading' },
-      // The end of the run finishes the guide, however the visitor got there.
-      passed: { kind: 'exists', selector: '#rehearsal-done-heading' },
+      needs: {
+        kind: 'exists',
+        selector: '[data-guide="self-check"], #facts-title, #rehearsal-done-heading',
+      },
+      // Asking for the follow-up, or reaching the end of the run, is past this step.
+      passed: {
+        kind: 'exists',
+        selector:
+          '[data-guide="self-check"] input:checked, [data-guide="follow-up"], #rehearsal-done-heading',
+      },
     },
     {
       id: 'follow-up',
-      title: 'See what they might ask next',
-      body: 'Press "What might they ask next?". Interviewers often dig into the part you skipped past.',
+      title: 'Press "What might they ask next?"',
+      why: 'Interviewers often dig into the part you skipped past.',
       target: '[data-guide="self-check"]',
       done: { kind: 'exists', selector: '[data-guide="follow-up"]' },
       needs: { kind: 'exists', selector: '[data-guide="self-check"], #rehearsal-done-heading' },
       // The end of the run finishes the guide, however the visitor got there.
-      passed: { kind: 'exists', selector: '#rehearsal-done-heading' },
+      passed: { kind: 'exists', selector: '[data-guide="follow-up"], #rehearsal-done-heading' },
     },
     {
       id: 'again',
-      title: 'Go again or move on',
-      body: 'Press "Try this one again" to improve the same answer, or "Next question" to keep going.',
-      why: 'The second attempt at the same question is usually where it gets better.',
+      title: 'Try it again, or go to the next',
+      why: 'A second attempt at the same question is often where it gets better.',
       done: { kind: 'exists', selector: '[data-testid="rehearsal-question"]' },
       // The end of the run finishes the guide, however the visitor got there.
       passed: { kind: 'exists', selector: '#rehearsal-done-heading' },
@@ -82,9 +77,14 @@ export const rehearsalGuide: Guide = {
       },
     },
   ],
+  challenge: {
+    title: 'Answer the next question on your own',
+    body: 'No pointers this time. Answer it and review it.',
+    done: { kind: 'exists', selector: '[data-guide-review]:not([data-guide-review="0"])' },
+  },
   finish: {
     title: 'That is one full rep',
-    body: 'Work through the rest of the questions, then turn your best answers into stories you can reuse.',
+    body: 'Turn your best answers into stories you can reuse.',
     link: { label: 'Build interview stories', href: '/interview-glow-up/workspace/?tab=stories' },
   },
 };

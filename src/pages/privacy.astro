@@ -23,6 +23,8 @@ const privacySchemas = [
     },
   },
 ];
+/** Changed by hand whenever a promise on this page changes. */
+const LAST_CHANGED = '13 November 2026';
 ---
 
 <Base
@@ -39,20 +41,21 @@ const privacySchemas = [
       <PageHero
         eyebrow="Privacy"
         title="Your career drafts stay under your control."
-        description="5 Whys Career Studio is designed as a lightweight browser tool. It does not require accounts, payments, or a backend database for the core workflows."
+        description="5 Whys Career Studio is designed as a lightweight browser tool. No tool on this site needs an account, a payment, or a server to keep your work."
       />
     </section>
 
     <section class="mx-auto w-full max-w-4xl space-y-6">
+      <p class="text-sm text-muted-foreground">Last changed {LAST_CHANGED}.</p>
       <article
         class="rounded-xl border border-border/50 bg-card/50 p-6"
       >
         <h2 class="text-lg font-semibold text-foreground">What the tools store</h2>
         <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Everything you write, upload, or record stays in your browser on this device: drafts,
-          reflections, job postings, your resume, practice recordings, and transcripts. The tools
-          save it in browser storage so you can continue later on the same device. None of it is
-          sent to a server. The dashboard shows what is stored and has one button that clears
+          Everything you write, upload, or record stays in your browser on this device. Drafts,
+          reflections, job postings and your resume are saved in browser storage as you work, so
+          you can continue later on the same device. A practice recording is kept only when you
+          press the button that keeps it. None of it is sent to a server. The dashboard shows what is stored and has one button that clears
           all of it from this device.
         </p>
       </article>
@@ -111,10 +114,11 @@ const privacySchemas = [
           close it. A backup file you export is plain text: keep it somewhere only you can reach.
         </p>
         <p>
-          Schools and younger visitors: the site has no accounts and does not ask who you are, how
-          old you are, or where you study. It keeps no record of any visitor, so it holds no
-          student records. What a student writes stays on the computer they wrote it on until they
-          export or clear it.
+          Schools and younger visitors: the site has no accounts and keeps no record of any
+          visitor, so it holds no student records. A resume has a name, a way to reach you and a
+          school on it, so the resume tools ask for those; what you type goes into your own resume
+          on your own device and nowhere else. What a student writes stays on the computer they
+          wrote it on until they export or clear it.
         </p>
         <p>
           Avoid pasting confidential employer documents, private client records, medical data,

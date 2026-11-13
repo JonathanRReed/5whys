@@ -351,10 +351,16 @@ export function messageVariantsRules(input: MessageVariantsInput): MessageVarian
           `Thank you for making time to talk. I am interested in the ${role} role${at}.`
         )} I would like to hear what the work looks like from your side.`;
 
+  // A company that ends in a period ("Supply Co.") must not end a sentence
+  // with two. An ellipsis the visitor wrote is left alone.
+  const onePeriod = (text: string) => text.replace(/(?<!\.)\.\.(?!\.)/g, '.');
   return {
-    linkedInMessage,
-    followUpEmail: { subject: `Following up on my ${role} application`, body },
-    introCallOpener,
+    linkedInMessage: onePeriod(linkedInMessage),
+    followUpEmail: {
+      subject: `Following up on my ${role} application`,
+      body: onePeriod(body),
+    },
+    introCallOpener: onePeriod(introCallOpener),
   };
 }
 
