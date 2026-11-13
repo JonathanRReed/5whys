@@ -98,12 +98,15 @@ export function loadApplications(): ApplicationsData {
   }
 }
 
-export function saveApplications(data: ApplicationsData): void {
-  if (typeof window === 'undefined') return;
+/** Persist. Returns false when the browser refused (storage full or blocked). */
+export function saveApplications(data: ApplicationsData): boolean {
+  if (typeof window === 'undefined') return false;
   try {
     window.localStorage.setItem(APPLICATIONS_KEY, JSON.stringify(data));
+    return true;
   } catch {
     /* storage unavailable: the visit keeps working, nothing persists */
+    return false;
   }
 }
 

@@ -6,6 +6,7 @@
  * Display preferences (theme and typeface) are kept: they say nothing about
  * the person, and losing them would only make the next page flash.
  */
+import { announceDeviceCleared } from './device-events';
 import { closeLocalDb, deleteModels, LOCAL_DB_NAME } from './local-db';
 
 const KEEP = new Set(['career-tools-theme', 'career-tools-font']);
@@ -33,6 +34,8 @@ export async function clearDevice(): Promise<ClearResult> {
   } catch {
     complete = false;
   }
+  // Other open tabs empty their editors, so none can save cleared work back.
+  announceDeviceCleared();
 
   // Recordings, the resume file and its structured copy.
   try {
