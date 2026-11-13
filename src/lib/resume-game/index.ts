@@ -18,6 +18,7 @@ export { downloadTextFile, exportDocx } from './exporters';
 export type { HighlightToken } from './highlight';
 export { highlightResume, parseHighlightedResume } from './highlight';
 export { analyzeResumeLength } from './length';
+export { careerBreaks, readPersonalDetailsNote, readSummaryNote } from './notes';
 export { buildReviewReport, REVIEW_FILE_BASE } from './review';
 export type { Register } from './samples';
 export {

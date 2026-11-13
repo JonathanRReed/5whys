@@ -66,19 +66,19 @@ export function analyzeResumeLength(text: string, extractedBulletCount = 0) {
   const longCareer = isLongCareer(text);
   let recommendation: string;
   if (estimatedPages > 2) {
-    recommendation = 'Longer than two pages. Keep your strongest lines and cut the rest.';
+    recommendation = 'Likely longer than two pages. Keep your strongest lines and cut the rest.';
   } else if (words < 200) {
     recommendation = longCareer
       ? 'Short resume. There is room to say what you did in each role and what came of it.'
       : 'Short resume. Projects, coursework, campus jobs, and volunteering all count as experience worth listing.';
   } else if (estimatedPages === 2) {
     recommendation = longCareer
-      ? 'About two pages, common once you have many years of work to show.'
-      : 'About two pages. One page is the norm for a student or a first job. Two is common once you have many years of work to show.';
+      ? 'Likely about two pages, common once you have many years of work to show.'
+      : 'Likely about two pages. One page is the norm for a student or a first job. Two is common once you have many years of work to show.';
   } else {
     recommendation = longCareer
-      ? 'About one page. One or two pages both work once you have many years of work to show.'
-      : 'About one page, the usual length when you are starting out.';
+      ? 'Likely about one page. One or two pages both work once you have many years of work to show.'
+      : 'Likely about one page, the usual length when you are starting out.';
   }
 
   const isOptimalLength = estimatedPages <= 2 && words >= 200;

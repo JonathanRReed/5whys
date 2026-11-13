@@ -18,6 +18,7 @@ import {
 } from '../../lib/posting';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
+import WordingHelp, { type WordingHint } from './WordingHelp';
 
 /** Every state is named in words; colour only repeats it. */
 const STATE_LABEL: Record<CoverageState, { text: string; tone: string }> = {
@@ -32,6 +33,8 @@ type Target = { application: TrackedApplication; role: DecodedRole };
 type Props = {
   /** The resume as it currently reads in the editor. */
   resumeText: string;
+  /** Open a line in the editor with other words for it beside the fields. */
+  onRewriteLine?: (hint: WordingHint) => void;
 };
 
 /**
@@ -40,7 +43,7 @@ type Props = {
  * The summary is a count with its denominator; there is no match percentage,
  * and a missing requirement is never a word to paste in.
  */
-export default function PostingMatch({ resumeText }: Props) {
+export default function PostingMatch({ resumeText, onRewriteLine }: Props) {
   const [targets, setTargets] = React.useState<Target[]>([]);
   const [selected, setSelected] = React.useState<string | null>(null);
   const [desks, setDesks] = React.useState<ApplicationDeskData>(createDefaultDeskData);
@@ -266,6 +269,11 @@ export default function PostingMatch({ resumeText }: Props) {
                           .
                         </p>
                       )}
+                      <WordingHelp
+                        line={miss.text.trim()}
+                        postingTerms={miss.postingTerms}
+                        onRewrite={onRewriteLine}
+                      />
                     </div>
                   ))}
 

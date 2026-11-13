@@ -1,4 +1,5 @@
-import { HARD_SKILLS, matchesTerm, SOFT_SKILLS } from './constants';
+import { HARD_SKILLS, matchesTerm, SOFT_SKILLS, WORK_METHODS } from './constants';
+import { escapeRegExp } from './text';
 
 /**
  * Skill detection with context gates. Short or common-word skill names only
@@ -30,8 +31,32 @@ const SKILL_CONTEXT: Record<string, RegExp> = {
     /\b(?:wrote|write|writing|maintained|authored|created|technical)\s+documentation\b|\bdocumentation\s+(?:for|of|site)\b/i,
 };
 
+// Where a soft skill names a team or a department, not something the visitor
+// can do: "Worked closely with drivers and customer service". Those mentions
+// are set aside before the skill is looked for.
+const NOT_A_SKILL: Record<string, RegExp> = {
+  'customer service':
+    /\b(?:with|and|to|from|for)\s+(?:the\s+)?customer service\b(?!\s+(?:skills?|experience))|\bcustomer service\s+(?:team|department|desk|reps?|representatives?|staff|managers?|center|line)\b/gi,
+};
+
+/**
+ * The skill as the resume writes it: "Excel", "SQL", "S&OP". Skills are
+ * stored lowercase so they can be matched; this is how they are shown.
+ */
+export function skillAsWritten(text: string, skill: string): string {
+  const match = text.match(
+    new RegExp(`(?:^|[^a-z0-9])(${escapeRegExp(skill)})(?:$|[^a-z0-9])`, 'i')
+  );
+  const found = match?.[1];
+  if (!found) return skill;
+  // A word written all in lowercase in the resume still reads as a name here.
+  return found === found.toLowerCase() && !/\s/.test(found) && found.length <= 4
+    ? found.toUpperCase()
+    : found;
+}
+
 // Pre-computed lowercased skill entries to avoid string allocation on every extractSkills execution.
-const HARD_SKILLS_ENTRIES = HARD_SKILLS.map((skill) => ({
+const HARD_SKILLS_ENTRIES = [...HARD_SKILLS, ...WORK_METHODS].map((skill) => ({
   skill,
   lowerSkill: skill.toLowerCase(),
 }));
@@ -58,9 +83,19 @@ export function extractSkills(text: string): { hard: string[]; soft: string[] } 
     skillPresent(text, skill, lowerText, lowerSkill)
   ).map(({ skill }) => skill);
 
-  const soft = SOFT_SKILLS_ENTRIES.filter(({ skill, lowerSkill }) =>
-    matchesTerm(text, skill, lowerText, lowerSkill)
-  ).map(({ skill }) => skill);
+  const soft = SOFT_SKILLS_ENTRIES.filter(({ skill, lowerSkill }) => {
+    const aside = NOT_A_SKILL[skill];
+    const rest = aside ? text.replace(aside, ' ') : text;
+    return matchesTerm(rest, skill, aside ? rest.toLowerCase() : lowerText, lowerSkill);
+  }).map(({ skill }) => skill);
 
-  return { hard: [...new Set(hard)], soft: [...new Set(soft)] };
+  // A shorter name inside a longer one ("WMS" in "Manhattan WMS") is one skill.
+  const unique = [...new Set(hard)];
+  const distinct = unique.filter(
+    (skill) =>
+      !unique.some(
+        (other) => other !== skill && new RegExp(`\\b${escapeRegExp(skill)}\\b`).test(other)
+      )
+  );
+  return { hard: distinct, soft: [...new Set(soft)] };
 }

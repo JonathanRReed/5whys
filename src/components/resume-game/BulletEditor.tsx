@@ -29,6 +29,8 @@ type Props = {
     field: 'verb' | 'quantifier' | 'task' | 'impact',
     value: string
   ) => void;
+  /** Other words for this line, asked for from the posting match. */
+  wording?: { terms: string[]; honestUse: string | null } | null;
 };
 
 const fieldClass =
@@ -41,6 +43,7 @@ export default function BulletEditor({
   index,
   register = 'student',
   onFieldChange,
+  wording,
 }: Props) {
   const suggestions = bullet ? generateBulletSuggestions(bullet, index ?? bullet.original) : [];
   const current = bullet ? bullet.improved || bullet.original : '';
@@ -166,6 +169,26 @@ export default function BulletEditor({
                   : undefined
               }
             />
+
+            {wording && wording.terms.length > 0 && (
+              <div
+                className="space-y-1.5 rounded-2xl border border-foam/40 bg-foam/8 p-4 text-sm"
+                data-testid="wording-hint"
+                tabIndex={-1}
+                id="wording-hint"
+              >
+                <p className="text-foreground">
+                  Words from the posting match, if they are true of this work:{' '}
+                  <span className="font-medium">{wording.terms.join(', ')}</span>.
+                </p>
+                {wording.honestUse && (
+                  <p className="text-xs text-muted-foreground">{wording.honestUse}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Nothing goes into your line until you write it in the fields below.
+                </p>
+              </div>
+            )}
 
             <p className="text-sm text-muted-foreground" data-testid="line-as-written">
               <span className="text-foreground">As written: </span>

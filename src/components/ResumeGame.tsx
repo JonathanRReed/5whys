@@ -47,6 +47,7 @@ import ReviewLines from './resume-game/ReviewLines';
 import ScanResults from './resume-game/ScanResults';
 import Scoreboard from './resume-game/Scoreboard';
 import ShareScoreCard from './resume-game/ShareScoreCard';
+import type { WordingHint } from './resume-game/WordingHelp';
 import Announcer, { useAnnouncer } from './shared/Announcer';
 
 // Analysis is synchronous and instant. This brief transition only exists so
@@ -440,6 +441,34 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     await exportDocx(`${reviewName()}.docx`, reviewText());
   }, [reviewName, reviewText]);
 
+  // Other words for one line, from the posting match. Shown beside the line
+  // in the editor; the visitor writes them in, or does not.
+  const [wording, setWording] = React.useState<(WordingHint & { bulletId: string }) | null>(null);
+  const openWithWording = (hint: WordingHint) => {
+    const plain = (text: string) =>
+      text
+        .replace(/^[-•*]\s*/, '')
+        .replace(/[.\s]+$/, '')
+        .replace(/\s+/g, ' ')
+        .toLowerCase();
+    const wanted = plain(hint.line);
+    const bullet = bullets.find(
+      (item) => plain(item.original) === wanted || plain(item.improved) === wanted
+    );
+    if (!bullet || !scanComplete || needsRescan) {
+      setStatus('Analyze the resume first, then this line opens in the editor.');
+      return;
+    }
+    setSelectedBulletId(bullet.id);
+    setWording({ ...hint, bulletId: bullet.id });
+    window.requestAnimationFrame(() => {
+      document
+        .getElementById('bullet-editor')
+        ?.scrollIntoView?.({ behavior: scrollBehavior(), block: 'start' });
+      document.getElementById('wording-hint')?.focus({ preventScroll: true });
+    });
+  };
+
   const resumeOutOfDate = needsRescan && scanComplete && resumeText.trim().length > 0;
   const sampleResume = register === 'student' ? STUDENT_SAMPLE_RESUME : PROFESSIONAL_SAMPLE_RESUME;
   const placeholder = register === 'student' ? STUDENT_PLACEHOLDER : PROFESSIONAL_PLACEHOLDER;
@@ -544,7 +573,7 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
         />
       )}
 
-      <PostingMatch resumeText={matchText} />
+      <PostingMatch resumeText={matchText} onRewriteLine={openWithWording} />
 
       {!scanComplete && resumeText.trim() && (
         <div className="rounded-2xl border border-dashed border-border/35 bg-overlay/15 p-8 text-center">
@@ -613,6 +642,7 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
             index={bullets.findIndex((b) => b.id === selectedBulletId)}
             register={register}
             onFieldChange={updateBulletField}
+            wording={wording && wording.bulletId === selectedBulletId ? wording : null}
           />
         </div>
       )}
