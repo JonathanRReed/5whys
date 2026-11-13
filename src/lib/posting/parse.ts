@@ -4,9 +4,11 @@
  * the evidence for its section. Nothing is fetched; nothing is guessed.
  */
 
+import { hiringCondition } from './conditions';
 import {
   classifyLegacyLine,
   isBoilerplate,
+  isBoilerplateHere,
   isSectionHeader,
   MAX_REQUIREMENT_LINES,
   MIN_REQUIREMENT_WORDS,
@@ -398,7 +400,7 @@ class PostingParser {
       this.skip(span, 'outside-requirements');
       return;
     }
-    if (isBoilerplate(text)) {
+    if (isBoilerplateHere(text, startsWithAction)) {
       this.skip(span, 'boilerplate');
       return;
     }
@@ -418,6 +420,17 @@ class PostingParser {
     }
     const classification = decideSection(this.context, findCues(text));
     if (classification.section === 'unclassified' && classification.basis === 'none') {
+      // "We do not sponsor visas for this role." reads like a line about the
+      // employer, but it decides who can be hired: kept, as a condition.
+      const condition = hiringCondition(cleanText(text));
+      if (condition) {
+        this.push(span, cleanText(text), {
+          section: 'required',
+          basis: 'cue',
+          cue: condition.label,
+        });
+        return;
+      }
       const reason = descriptionReason(cleanText(text));
       if (reason) {
         this.skip(span, reason);
@@ -475,7 +488,7 @@ class PostingParser {
       const joiner = parts.some((p) => p.includes(',')) ? '; ' : ', ';
       const text = `${lead}: ${parts.join(joiner)}`;
       const span = { start: parent.start, end: items[items.length - 1].end };
-      if (isBoilerplate(text)) {
+      if (isBoilerplateHere(text, startsWithAction)) {
         this.skip(span, 'boilerplate');
         return;
       }

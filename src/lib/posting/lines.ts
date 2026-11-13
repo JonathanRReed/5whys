@@ -89,6 +89,58 @@ export function isBoilerplate(text: string): boolean {
 }
 
 /**
+ * Benefits and hiring checks an employer offers or runs: "Health insurance
+ * and paid time off", "Must pass a background check". The same words can
+ * name the work itself ("Experience processing health insurance claims",
+ * "Conduct background checks for new hires"); `isWorkOn` tells those apart.
+ * Equal-opportunity and marketing text is never work.
+ */
+const OFFERED_PATTERNS: readonly RegExp[] = [
+  /e-?verify/i,
+  /background\s+check/i,
+  /401\s?\(?k\)?/i,
+  /\b(dental|vision)\s+(insurance|coverage|plan)/i,
+  /health\s+(insurance|benefits|coverage)/i,
+  /\bpaid\s+time\s+off\b|\bpto\b/i,
+  /parental\s+leave/i,
+  /tuition\s+(reimbursement|assistance)/i,
+  /commuter\s+benefits/i,
+  /wellness\s+(stipend|program)/i,
+];
+
+/** Openings that offer a benefit to the applicant rather than ask for work. */
+const OFFER_OPENING =
+  /^(?:enjoy|receive|get|earn|eligible|includes?|including|offering|we\s+offer|you(?:'ll|\s+will)\s+(?:get|receive|enjoy|have)|plus|generous|competitive|comprehensive|full|great)\b/i;
+
+/** Requirement grammar: what a person must know or have done. */
+const ASKS_FOR_WORK =
+  /^(?:(?:\d+\+?\s*(?:-\s*\d+\s*)?years?\s+(?:of\s+)?)?(?:prior\s+|previous\s+|hands-on\s+)?(?:experience|knowledge|familiarity|proficiency|expertise|background)\s+(?:in|with|of|using|processing|administering|handling|managing|coordinating|conducting|running)\b|ability\s+to\s+\w+|able\s+to\s+(?!pass\b)\w+)/i;
+
+/**
+ * True when a line that names a benefit or a hiring check is about doing that
+ * work, so it is a requirement or a duty and not boilerplate. `startsWithAction`
+ * is passed in by the caller, which knows the verb list.
+ */
+export function isWorkOn(text: string, startsWithAction: (text: string) => boolean): boolean {
+  const trimmed = text.trim().replace(/^[\s•\-*◦○●‣⁃▪■–—·]+/, '');
+  if (!OFFERED_PATTERNS.some((p) => p.test(trimmed))) return false;
+  if (OFFER_OPENING.test(trimmed)) return false;
+  return ASKS_FOR_WORK.test(trimmed) || startsWithAction(trimmed);
+}
+
+/** Boilerplate, unless it names the work of handling a benefit or a check (`isWorkOn`). */
+export function isBoilerplateHere(
+  text: string,
+  startsWithAction: (text: string) => boolean
+): boolean {
+  if (!isBoilerplate(text)) return false;
+  // A line that also carries equal-opportunity or marketing text stays boilerplate.
+  const withoutOffered = OFFERED_PATTERNS.reduce((rest, p) => rest.replace(p, ' '), text);
+  if (isBoilerplate(withoutOffered)) return true;
+  return !isWorkOn(text, startsWithAction);
+}
+
+/**
  * "Brightline Health - Remote (US)" or "Software Engineer II | New York" is a
  * header, not a requirement: short, mostly capitalized, no verb-shaped words.
  */
