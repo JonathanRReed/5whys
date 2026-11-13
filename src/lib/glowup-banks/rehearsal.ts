@@ -365,6 +365,7 @@ const CHECKS: Record<string, SelfCheckItem[]> = {
     { id: 'ending', label: 'I stopped when I was done' },
   ],
   'q-intro': [
+    { id: 'answered', label: 'I answered the question that was asked' },
     { id: 'now', label: 'I said who I am now, in a sentence or two' },
     { id: 'fits', label: 'I named one thing I have done that fits this job' },
     { id: 'why', label: 'I ended on why I want this job' },
