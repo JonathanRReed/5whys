@@ -33,7 +33,7 @@ export default function CareerHeader({
     <>
       {showHeader && (
         <header className="space-y-4 text-center">
-          <p className="eyebrow eyebrow-accent justify-self-center">Career 5 Whys</p>
+          <p className="eyebrow eyebrow-accent justify-self-center">The Five Whys</p>
           <h1 className="text-4xl font-semibold tracking-tight">Discover your why</h1>
           <p className="mx-auto max-w-2xl text-muted-foreground">
             Five questions, each one built from your previous answer. Choose a track, follow the

@@ -8,13 +8,13 @@ type NavigationProps = {
 
 const navLinks = [
   { href: '/', label: 'Home' },
-  { href: '/start/', label: 'Start Here' },
+  { href: '/start/', label: 'Start here' },
   { href: '/dashboard/', label: 'Dashboard' },
-  { href: '/career/', label: 'Career 5 Whys' },
-  { href: '/resume-game/', label: 'Resume Game' },
-  { href: '/networking-practice/', label: 'Networking' },
-  { href: '/interview-glow-up/', label: 'Interview' },
-  { href: '/application/', label: 'Application Desk' },
+  { href: '/career/', label: 'The Five Whys' },
+  { href: '/resume-game/', label: 'The Resume Game' },
+  { href: '/networking-practice/', label: 'Networking Practice' },
+  { href: '/interview-glow-up/', label: 'Interview Glow Up' },
+  { href: '/application/', label: 'The Application Desk' },
   { href: '/pay/', label: 'Pay' },
 ];
 
@@ -213,7 +213,7 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
           <span className="grid leading-none">
             <span className="font-display text-base font-semibold tracking-tight">5 Whys</span>
             <span
-              className="hidden text-[0.6rem] font-medium uppercase tracking-[0.24em] text-muted-foreground sm:block"
+              className="hidden text-[0.72rem] font-medium uppercase tracking-[0.24em] text-muted-foreground sm:block"
               style={{ fontFamily: 'var(--font-mono)' }}
             >
               Career Studio

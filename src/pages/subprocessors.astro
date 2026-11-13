@@ -99,7 +99,9 @@ const processors = [
         <p>
           Cloudflare processes request metadata to deliver the pages, block abuse, and apply
           security controls. The site loads no analytics script, and its security policy lets a
-          page talk only to this site's own address. That infrastructure processing is separate
+          page talk only to this site's own address. If a request to this site fails, your browser
+          may send Cloudflare a short error report (the address, the time, and the kind of
+          failure). That is Cloudflare's network error logging, and it carries nothing you wrote. That infrastructure processing is separate
           from the career content you draft locally inside the browser.
         </p>
         <p>

@@ -147,19 +147,19 @@ export default function ScanResults({
               <div className="mt-2 grid grid-cols-3 gap-2 text-center text-sm">
                 <div>
                   <p className="text-lg font-semibold text-foreground">{signalReport.wordCount}</p>
-                  <p className="text-[10px] text-muted-foreground">Words</p>
+                  <p className="text-[0.72rem] text-muted-foreground">Words</p>
                 </div>
                 <div>
                   <p className="text-lg font-semibold text-foreground">
                     {signalReport.estimatedPages}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">Est. pages</p>
+                  <p className="text-[0.72rem] text-muted-foreground">Est. pages</p>
                 </div>
                 <div>
                   <p className="text-lg font-semibold text-foreground">
                     {signalReport.bulletCount}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">Lines scored</p>
+                  <p className="text-[0.72rem] text-muted-foreground">Lines scored</p>
                 </div>
               </div>
               <p
@@ -197,7 +197,7 @@ export default function ScanResults({
               </p>
               {signalReport.hardSkills.length > 0 && (
                 <div className="mt-2">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  <p className="text-[0.72rem] uppercase tracking-wide text-muted-foreground">
                     Tools and methods
                   </p>
                   <div className="mt-1 flex flex-wrap gap-1.5">
@@ -214,7 +214,7 @@ export default function ScanResults({
               )}
               {signalReport.softSkills.length > 0 && (
                 <div className="mt-2">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  <p className="text-[0.72rem] uppercase tracking-wide text-muted-foreground">
                     Ways of working
                   </p>
                   <div className="mt-1 flex flex-wrap gap-1.5">
@@ -331,7 +331,7 @@ export default function ScanResults({
                           className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-overlay/40 px-2.5 py-1 text-xs text-muted-foreground"
                         >
                           <span>{kw.word}</span>
-                          <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] text-primary">
+                          <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[0.72rem] text-primary">
                             {kw.count}
                           </span>
                         </span>

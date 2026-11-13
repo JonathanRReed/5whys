@@ -69,7 +69,7 @@ it('closes open compact tools menu when Escape key is pressed', () => {
   fireEvent.click(compactToolsBtn);
   expect(compactToolsBtn).toHaveAttribute('aria-expanded', 'true');
   // The tools live only in this menu now, so opening it is what shows the link.
-  expect(screen.getAllByRole('link', { name: 'Resume Game' }).length).toBeGreaterThan(0);
+  expect(screen.getAllByRole('link', { name: 'The Resume Game' }).length).toBeGreaterThan(0);
 
   // Press Escape
   fireEvent.keyDown(window, { key: 'Escape' });
@@ -210,10 +210,10 @@ it('keeps internal pointer presses open and allows each tool link to activate', 
   const { container } = render(<Navigation currentPath="/" />);
   const trigger = screen.getAllByRole('button', { name: /tools/i })[0];
   const destinations = [
-    ['Career 5 Whys', '/career/'],
-    ['Resume Game', '/resume-game/'],
-    ['Networking', '/networking-practice/'],
-    ['Interview', '/interview-glow-up/'],
+    ['The Five Whys', '/career/'],
+    ['The Resume Game', '/resume-game/'],
+    ['Networking Practice', '/networking-practice/'],
+    ['Interview Glow Up', '/interview-glow-up/'],
   ];
 
   for (const [name, href] of destinations) {

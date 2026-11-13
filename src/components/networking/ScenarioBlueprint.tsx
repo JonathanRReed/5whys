@@ -70,7 +70,7 @@ export default function ScenarioBlueprint({ currentScenario, scenarioSteps, time
                   aria-current={isActive ? 'step' : undefined}
                 >
                   <span
-                    className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
+                    className={`flex h-5 w-5 items-center justify-center rounded-full text-[0.72rem] font-bold ${
                       isActive
                         ? 'bg-foam text-background'
                         : isPast

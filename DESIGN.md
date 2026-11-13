@@ -89,7 +89,7 @@ a shadow on floating ones.
 
 ### Buttons
 
-- Primary: bg-[hsl(var(--primary))], rounded-full, px-5 py-2.5
+- Primary: bg-[hsl(var(--primary))], rounded-lg (8px) everywhere, px-5 py-2.5. One shape for every button; only the top navigation uses pills.
 - Ghost: transparent bg, hover:bg-[hsl(var(--overlay)/0.3)]
 - Outline: border only, subtle hover
 

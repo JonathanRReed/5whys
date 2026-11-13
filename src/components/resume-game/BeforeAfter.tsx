@@ -50,13 +50,15 @@ export default function BeforeAfter({ bullets }: Props) {
                 </p>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="rounded-2xl border border-destructive/25 bg-destructive/4 p-4 text-sm text-muted-foreground">
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-2">
+                    <p className="text-[0.72rem] uppercase tracking-[0.2em] text-muted-foreground mb-2">
                       Before
                     </p>
                     <p className="opacity-70">{bullet.original}</p>
                   </div>
                   <div className="rounded-2xl border border-love/40 bg-love/6 p-4 text-sm text-foreground font-medium">
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-love mb-2">After</p>
+                    <p className="text-[0.72rem] uppercase tracking-[0.2em] text-love mb-2">
+                      After
+                    </p>
                     <p>{bullet.improved}</p>
                   </div>
                 </div>

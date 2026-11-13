@@ -39,14 +39,14 @@ import { scoreBullet } from './resume-game/scoring';
 import { STRONG_SCORE } from './resume-game/thresholds';
 
 export type ToolName =
-  | 'Career 5 Whys'
-  | 'Resume Game'
+  | 'The Five Whys'
+  | 'The Resume Game'
   | 'Networking Practice'
   | 'Interview Glow Up';
 
 export const TOOL_URLS: Record<ToolName, string> = {
-  'Career 5 Whys': '/career/',
-  'Resume Game': '/resume-game/',
+  'The Five Whys': '/career/',
+  'The Resume Game': '/resume-game/',
   'Networking Practice': '/networking-practice/',
   'Interview Glow Up': '/interview-glow-up/workspace/',
 };
@@ -509,18 +509,18 @@ export function readCareerDashboard(): CareerDashboardData {
   const recentActivity: CareerDashboardData['recentActivity'] = [];
   if (resume?.lastAnalyzedAt) {
     recentActivity.push({
-      tool: 'Resume Game',
+      tool: 'The Resume Game',
       action: `Analyzed ${resume.bullets.length} bullets`,
       date: resume.lastAnalyzedAt,
-      url: TOOL_URLS['Resume Game'],
+      url: TOOL_URLS['The Resume Game'],
     });
   }
   if (latestSnapshot) {
     recentActivity.push({
-      tool: 'Career 5 Whys',
+      tool: 'The Five Whys',
       action: `Reflected on "${latestSnapshot.topic || 'Career direction'}"`,
       date: latestSnapshot.timestamp,
-      url: TOOL_URLS['Career 5 Whys'],
+      url: TOOL_URLS['The Five Whys'],
     });
   }
   if (networking?.latestSessionDate) {
@@ -557,9 +557,9 @@ export function readCareerDashboard(): CareerDashboardData {
       : latestSnapshot?.nextStep || sessionSynthesis?.nextStep || null;
   if (reflectionNextStep) {
     nextActions.push({
-      tool: 'Career 5 Whys',
+      tool: 'The Five Whys',
       text: reflectionNextStep,
-      href: TOOL_URLS['Career 5 Whys'],
+      href: TOOL_URLS['The Five Whys'],
     });
   }
   if (networking?.nextStep) {
@@ -616,9 +616,9 @@ export function readCareerDashboard(): CareerDashboardData {
   const resumeNeedsRescan = hasResumeAnalysis && resume?.needsRescan !== false;
   if (resumeNeedsRescan) {
     recommendations.push({
-      tool: 'Resume Game',
+      tool: 'The Resume Game',
       text: 'Your saved resume results need a refresh before using their feedback.',
-      href: TOOL_URLS['Resume Game'],
+      href: TOOL_URLS['The Resume Game'],
       cta: 'Review changed resume',
     });
   }
@@ -647,11 +647,11 @@ export function readCareerDashboard(): CareerDashboardData {
     if (weakest && weakestScore < 60) {
       const excerpt = clip(weakest.original || '', 70);
       recommendations.push({
-        tool: 'Resume Game',
+        tool: 'The Resume Game',
         text: excerpt
           ? `Your lowest bullet scores ${weakestScore}: "${excerpt}".`
           : `Your lowest bullet scores ${weakestScore}.`,
-        href: `${TOOL_URLS['Resume Game']}?bullet=${encodeURIComponent(weakest.id)}`,
+        href: `${TOOL_URLS['The Resume Game']}?bullet=${encodeURIComponent(weakest.id)}`,
         cta: 'Rewrite it',
       });
     }
@@ -676,9 +676,9 @@ export function readCareerDashboard(): CareerDashboardData {
   // A finished chain that was never kept.
   if (sessionSynthesis?.isComplete && reflectionHasDraft) {
     recommendations.push({
-      tool: 'Career 5 Whys',
+      tool: 'The Five Whys',
       text: 'Your five-round reflection is complete but not saved as a snapshot.',
-      href: TOOL_URLS['Career 5 Whys'],
+      href: TOOL_URLS['The Five Whys'],
       cta: 'Save it',
     });
   }
@@ -714,19 +714,19 @@ export function readCareerDashboard(): CareerDashboardData {
   // Quiet pointers for tools with nothing saved yet.
   if (!resume?.bullets.length && !resumeNeedsRescan) {
     recommendations.push({
-      tool: 'Resume Game',
+      tool: 'The Resume Game',
       text: resume?.resumeText?.trim()
         ? 'Your resume draft is ready to review.'
         : 'No resume scored yet.',
-      href: TOOL_URLS['Resume Game'],
+      href: TOOL_URLS['The Resume Game'],
       cta: 'Paste yours to see which bullets carry proof',
     });
   }
   if (!why.snapshots.length && !sessionSynthesis?.isComplete) {
     recommendations.push({
-      tool: 'Career 5 Whys',
+      tool: 'The Five Whys',
       text: 'No saved reflection yet.',
-      href: TOOL_URLS['Career 5 Whys'],
+      href: TOOL_URLS['The Five Whys'],
       cta: 'Five rounds of "why" give the other tools a direction',
     });
   }

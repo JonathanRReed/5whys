@@ -7,7 +7,7 @@ import GuideCoach from '../../components/shared/GuideCoach';
 ---
 
 <Base
-  title="Interview Workspace"
+  title="Interview Glow Up · Workspace"
   description="Decode a job posting, write interview stories you can prove, keep a library of them, and build a packet with a one-screen cheat sheet for the call."
   breadcrumbs={[
     { label: 'Home', href: '/' },
@@ -25,7 +25,7 @@ import GuideCoach from '../../components/shared/GuideCoach';
       accent="love"
     />
     <GuideCoach client:load tool="interview-glow-up" />
-    <section class="mx-auto w-full max-w-7xl">
+    <section class="mx-auto min-h-[70svh] w-full max-w-7xl">
       <ErrorBoundary client:load>
         <InterviewGlowUpWorkspace client:load />
       </ErrorBoundary>

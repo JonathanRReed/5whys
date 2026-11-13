@@ -84,12 +84,12 @@ export default function WhyStepper({ responses, sequentialCount }: WhyStepperPro
                     {response.trim().length ? response : 'Awaiting insight'}
                   </p>
                   {isFocus && (
-                    <span className="absolute -top-2 right-3 rounded-full border border-primary/60 bg-primary/20 px-3 py-0.5 text-[10px] uppercase tracking-widest text-primary">
+                    <span className="absolute -top-2 right-3 rounded-full border border-primary/60 bg-primary/20 px-3 py-0.5 text-[0.72rem] uppercase tracking-widest text-primary">
                       current node
                     </span>
                   )}
                   {previous && !response && (
-                    <span className="mt-2 block text-[10px] uppercase tracking-wide text-iris/80">
+                    <span className="mt-2 block text-[0.72rem] uppercase tracking-wide text-iris/80">
                       add continuation
                     </span>
                   )}

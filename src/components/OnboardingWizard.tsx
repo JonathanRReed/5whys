@@ -119,7 +119,7 @@ function getRecommendation(level: string, challenge: string): Recommendation {
       };
     }
     return {
-      title: 'Start with Career 5 Whys',
+      title: 'Start with the Five Whys',
       description:
         level === 'transition'
           ? 'Test whether the reason behind your pivot survives five rounds of "why" before you rebuild everything else around it.'
@@ -485,11 +485,11 @@ export default function OnboardingWizard() {
           <p className="text-sm text-muted-foreground">Or explore other tools:</p>
           <div className="grid gap-3 sm:grid-cols-3">
             {[
-              { name: 'Career 5 Whys', url: '/career/', desc: 'Clarify direction' },
-              { name: 'Resume Game', url: '/resume-game/', desc: 'Polish bullets' },
+              { name: 'The Five Whys', url: '/career/', desc: 'Clarify direction' },
+              { name: 'The Resume Game', url: '/resume-game/', desc: 'Polish bullets' },
               { name: 'Interview Glow Up', url: '/interview-glow-up/', desc: 'Prep stories' },
-              { name: 'Networking', url: '/networking-practice/', desc: 'Rehearse pitch' },
-              { name: 'Application Desk', url: '/application/', desc: 'Work one posting' },
+              { name: 'Networking Practice', url: '/networking-practice/', desc: 'Rehearse pitch' },
+              { name: 'The Application Desk', url: '/application/', desc: 'Work one posting' },
               { name: 'Pay', url: '/pay/', desc: 'Weigh an offer' },
             ]
               .filter((t) => !recommendation.url.startsWith(t.url))

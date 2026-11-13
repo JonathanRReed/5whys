@@ -71,7 +71,7 @@ export default function ResumeInput({
               accept=".txt,.md,.markdown,.text,.docx,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,text/plain,text/markdown"
               onChange={handleFileChange}
               aria-label="Upload resume file (PDF, DOCX, TXT, or Markdown)"
-              className="w-full md:w-auto border-border/50 bg-overlay/30 text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+              className="h-auto w-full cursor-pointer border-border/50 bg-transparent p-1.5 text-sm text-muted-foreground file:mr-3 file:cursor-pointer file:rounded-md file:border file:border-solid file:border-border/60 file:bg-overlay/40 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-foreground hover:file:bg-overlay/60 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2 md:w-auto"
             />
           </div>
           <div className="flex flex-col gap-2 w-full md:w-auto md:flex-row">

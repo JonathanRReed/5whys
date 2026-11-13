@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
 const TOOL_LINKS = [
   {
-    name: 'Career 5 Whys',
+    name: 'The Five Whys',
     url: '/career/',
     desc: 'Clarify your core motivation',
     color: 'text-foam',
@@ -18,7 +18,7 @@ const TOOL_LINKS = [
     icon: 'M7 8h10M7 12h4',
   },
   {
-    name: 'Resume Game',
+    name: 'The Resume Game',
     url: '/resume-game/',
     desc: 'Score and rewrite bullets',
     color: 'text-love',
@@ -42,7 +42,7 @@ const TOOL_LINKS = [
     icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
   },
   {
-    name: 'Application Desk',
+    name: 'The Application Desk',
     url: '/application/',
     desc: 'Work one posting from start to send',
     color: 'text-lichen',
@@ -131,7 +131,8 @@ export default function CareerDashboard() {
 
   if (!data) {
     return (
-      <div className="mx-auto w-full max-w-6xl space-y-8">
+      // As tall as the page it becomes, so the footer does not jump when it loads.
+      <div className="mx-auto min-h-[100svh] w-full max-w-6xl space-y-8">
         <div className="space-y-2">
           <div className="h-8 w-48 animate-pulse rounded-lg bg-overlay/40" />
           <div className="h-4 w-72 animate-pulse rounded-lg bg-overlay/30" />
@@ -154,7 +155,7 @@ export default function CareerDashboard() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-2">
-          <h2 className="text-3xl font-semibold tracking-tight">Where things stand</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">Where things stand</h2>
           <p className="text-muted-foreground">
             Your progress across all tools. Everything stays on your device.
           </p>
@@ -340,7 +341,7 @@ export default function CareerDashboard() {
                 {data.reflection.latestTopic}
               </p>
             )}
-            <blockquote className="border-l-2 border-foam/50 pl-4 text-sm leading-relaxed text-foreground">
+            <blockquote className="rounded-lg bg-foam/8 px-4 py-3 font-display text-base leading-relaxed text-foreground">
               {data.reflection.whyStatement}
             </blockquote>
             {data.reflection.rootReason && (
@@ -448,7 +449,7 @@ function EmptyState({ onRestored }: { onRestored: () => void }) {
         </div>
       </div>
       <div className="space-y-3">
-        <h2 className="text-3xl font-semibold tracking-tight">Nothing saved yet</h2>
+        <h2 className="text-2xl font-semibold tracking-tight">Nothing saved yet</h2>
         <p className="text-muted-foreground">
           This page summarizes work you save in the tools, and it all stays in this browser. Take
           the short career review to pick a starting point.

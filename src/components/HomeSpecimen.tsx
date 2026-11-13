@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {
+  findVaguePhrases,
   isSourceSpan,
   type PostingRequirement,
   type PostingSection,
@@ -86,6 +87,34 @@ export default function HomeSpecimen() {
     }
   };
 
+  // Phrases that sound like information and are not: each comes with a
+  // question the visitor could ask the employer.
+  const vague = React.useMemo(
+    () => (requirements ? findVaguePhrases(text) : []),
+    [requirements, text]
+  );
+  /** The text from `from` to `to`, with any vague phrase inside it marked. */
+  const slice = (from: number, to: number): React.ReactNode[] => {
+    const nodes: React.ReactNode[] = [];
+    let at = from;
+    for (const hit of vague) {
+      if (hit.start < at || hit.end > to) continue;
+      if (hit.start > at) nodes.push(text.slice(at, hit.start));
+      nodes.push(
+        <span
+          key={`vague-${hit.start}`}
+          className="underline decoration-madder decoration-wavy decoration-1 underline-offset-4"
+        >
+          <span className="sr-only">Worth asking about: </span>
+          {text.slice(hit.start, hit.end)}
+        </span>
+      );
+      at = hit.end;
+    }
+    if (at < to) nodes.push(text.slice(at, to));
+    return nodes;
+  };
+
   const marks = (requirements ?? [])
     .filter((r) => SHOWN.includes(r.section) && isSourceSpan(r.span, text))
     .sort((a, b) => (a.span?.start ?? 0) - (b.span?.start ?? 0));
@@ -94,7 +123,7 @@ export default function HomeSpecimen() {
   for (const requirement of marks) {
     const span = requirement.span;
     if (!span || span.start < cursor) continue;
-    if (span.start > cursor) pieces.push(text.slice(cursor, span.start));
+    if (span.start > cursor) pieces.push(...slice(cursor, span.start));
     pieces.push(
       <mark
         key={requirement.id}
@@ -105,12 +134,14 @@ export default function HomeSpecimen() {
         )}
       >
         <span className="sr-only">{LABEL[requirement.section]}: </span>
-        {text.slice(span.start, span.end)}
+        {slice(span.start, span.end)}
       </mark>
     );
     cursor = span.end;
   }
-  if (cursor < text.length) pieces.push(text.slice(cursor));
+  if (cursor < text.length) pieces.push(...slice(cursor, text.length));
+  // One question per phrase, in the order the posting uses them.
+  const asks = [...new Map(vague.map((hit) => [hit.id, hit])).values()].slice(0, 4);
 
   const counts = SHOWN.map((section) => ({
     section,
@@ -121,11 +152,11 @@ export default function HomeSpecimen() {
     <div className="grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-start">
       <div className="space-y-5 lg:sticky lg:top-28">
         <h2 className="text-3xl text-foreground sm:text-[2.4rem] sm:leading-[1.08]">
-          A job posting is written in code. Sort it.
+          A job posting is written in code. Decode it.
         </h2>
         <p className="max-w-[46ch] text-pretty text-base leading-relaxed text-muted-foreground">
           {own === null
-            ? 'This is a made-up posting. Press the button and the same tool the Application Desk uses will sort what it asks for, right here on your device.'
+            ? 'This is a made-up posting. Press the button and the same tool the Application Desk uses will sort what it asks for and point out what it leaves unsaid, right here on your device.'
             : 'Paste a posting you are looking at. It is sorted on your device and goes nowhere.'}
         </p>
         <div className="flex flex-wrap items-center gap-3">
@@ -153,7 +184,7 @@ export default function HomeSpecimen() {
               disabled={!live || !source.trim()}
               className="inline-flex min-h-11 items-center rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
             >
-              {live ? 'Sort what it asks for' : 'Getting ready'}
+              {live ? 'Decode this posting' : 'Getting ready'}
             </button>
           )}
           {!requirements && live && (
@@ -187,6 +218,25 @@ export default function HomeSpecimen() {
               </li>
             ))}
         </ul>
+        {asks.length > 0 && (
+          <div className="space-y-2 border-t border-border/40 pt-4" data-testid="home-asks">
+            <p className="text-sm font-medium text-foreground">
+              <span className="underline decoration-madder decoration-wavy decoration-1 underline-offset-4">
+                Worth asking about
+              </span>
+            </p>
+            <ul className="space-y-2.5 text-sm">
+              {asks.map((hit) => (
+                <li key={hit.id} className="space-y-0.5">
+                  <span className="block text-foreground">"{hit.text}"</span>
+                  <span className="block leading-relaxed text-muted-foreground">
+                    {hit.phrase.questions[0]}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       {own !== null && !requirements ? (

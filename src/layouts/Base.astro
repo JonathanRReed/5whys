@@ -3,7 +3,9 @@ import { siteConfig, baseSchemas } from '../config/site';
 import Seo from '../components/Seo.astro';
 import Navigation from '../components/Navigation';
 import UpdateNotice from '../components/UpdateNotice';
-import '@fontsource-variable/fraunces/full.css';
+// Upright headings use weight and optical size only, so they load the cut
+// with those two axes: 67 KB in place of 121 KB on every page.
+import '@fontsource-variable/fraunces/opsz.css';
 import '@fontsource-variable/fraunces/full-italic.css';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
@@ -311,7 +313,7 @@ const noScriptParagraphs = [...defaultNoScriptContext, ...pageNoScriptContext].f
                 >Jonathan R. Reed</a
               >
             </p>
-            <p class="eyebrow text-[0.62rem]">No account · Local-only · Open source</p>
+            <p class="eyebrow text-[0.72rem]">No account · Local-only · Open source</p>
           </div>
         </div>
       </footer>

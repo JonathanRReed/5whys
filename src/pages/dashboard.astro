@@ -1,4 +1,5 @@
 ---
+import PlateHeader from '../components/PlateHeader.astro';
 import Base from '../layouts/Base.astro';
 import CareerDashboard from '../components/CareerDashboard';
 
@@ -13,12 +14,14 @@ const noScriptContext = [
   description="Your unified career progress dashboard. See scores, skills, recent activity, and recommended next steps across all tools."
   noScriptContext={noScriptContext}
 >
-  <div class="reveal relative mx-auto w-full max-w-6xl px-4 py-8 sm:py-12">
-    <h1 class="sr-only">Career dashboard</h1>
-    <p class="sr-only">
-      A private summary of the work you have saved in this browser across the career tools,
-      with recent activity and a suggested next step. Nothing is loaded from a server.
-    </p>
+  <div class="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-4 sm:pt-6">
+    <PlateHeader
+      tag="The studio · Your work"
+      roman=""
+      title="Dashboard"
+      description="What you have saved on this device across the tools, and what to do next. Nothing here is loaded from a server."
+      accent="foam"
+    />
     <CareerDashboard client:load />
   </div>
 </Base>

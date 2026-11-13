@@ -458,7 +458,7 @@ function PageSpecimen({
                 height: `${Math.max((box.height / height) * 100, 0.6)}%`,
               }}
             >
-              <span className="-translate-x-full pr-1 font-mono text-[0.5rem] leading-none tabular-nums text-muted-foreground">
+              <span className="-translate-x-full pr-1 font-mono text-[0.65rem] leading-none tabular-nums text-muted-foreground">
                 {orderIndex.get(line.id)}
               </span>
             </span>

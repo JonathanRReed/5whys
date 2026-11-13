@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('the homepage sorts a sample posting on the device with one press', async ({ page }) => {
+test('the homepage decodes a sample posting on the device with one press', async ({ page }) => {
   await page.goto('/');
   const requests: string[] = [];
   page.on('request', (request) => requests.push(request.url()));
@@ -12,10 +12,12 @@ test('the homepage sorts a sample posting on the device with one press', async (
   await expect(async () => {
     // Once a press has taken, the button is renamed; do not press again.
     if ((await specimen.locator('mark').count()) === 0) {
-      await page.getByRole('button', { name: 'Sort what it asks for' }).click({ timeout: 1000 });
+      await page.getByRole('button', { name: 'Decode this posting' }).click({ timeout: 1000 });
     }
     await expect(specimen.locator('mark').first()).toBeVisible({ timeout: 2000 });
   }).toPass();
+  // It also names what the posting leaves unsaid, with a question to ask.
+  await expect(page.getByTestId('home-asks').getByRole('listitem')).not.toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Do this with a real posting' })).toHaveAttribute(
     'href',
     '/application/'
@@ -49,7 +51,7 @@ test('a posting pasted into the demo is sorted and carried to the desk', async (
     await expect(page.getByTestId('home-own-posting')).toBeVisible({ timeout: 2000 });
   }).toPass();
   await page.getByTestId('home-own-posting').fill(posting);
-  await page.getByRole('button', { name: 'Sort what it asks for' }).click();
+  await page.getByRole('button', { name: 'Decode this posting' }).click();
   await expect(page.getByTestId('home-specimen').locator('mark')).toHaveCount(3);
   await page.getByRole('link', { name: 'Take this posting to the desk' }).click();
   await expect(page).toHaveURL(/\/application\/$/);
