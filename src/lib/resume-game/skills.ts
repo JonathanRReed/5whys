@@ -30,6 +30,28 @@ const SKILL_CONTEXT: Record<string, RegExp> = {
     /\b(?:wrote|write|writing|maintained|authored|created|technical)\s+documentation\b|\bdocumentation\s+(?:for|of|site)\b/i,
 };
 
+// Fast-path substring requirements per gated skill to bypass expensive RegExp evaluations
+// (including lookaheads across full strings) when the necessary terms are absent from lowerText.
+const SKILL_GATE_FAST_PATHS: Record<string, string[]> = {
+  spring: ['spring'],
+  go: ['go'],
+  r: ['r'],
+  express: ['express'],
+  chef: ['chef'],
+  shell: ['shell', 'bash', 'zsh'],
+  oracle: ['oracle', 'pl/sql'],
+  unity: ['unity'],
+  sas: ['sas'],
+  lean: ['lean', 'six sigma'],
+  sketch: ['sketch'],
+  notion: ['notion'],
+  lambda: ['lambda'],
+  sem: ['sem'],
+  premiere: ['premiere'],
+  git: ['git'],
+  documentation: ['documentation'],
+};
+
 // Pre-computed lowercased skill entries to avoid string allocation on every extractSkills execution.
 const HARD_SKILLS_ENTRIES = HARD_SKILLS.map((skill) => ({
   skill,
@@ -43,7 +65,14 @@ const SOFT_SKILLS_ENTRIES = SOFT_SKILLS.map((skill) => ({
 
 function skillPresent(text: string, skill: string, lowerText: string, lowerSkill: string): boolean {
   const gate = SKILL_CONTEXT[skill];
-  if (gate) return gate.test(text);
+  if (gate) {
+    // Fast path optimization: skip expensive gated RegExp matching if required substrings are missing.
+    const fastPath = SKILL_GATE_FAST_PATHS[skill];
+    if (fastPath && !fastPath.some((sub) => lowerText.includes(sub))) {
+      return false;
+    }
+    return gate.test(text);
+  }
   return matchesTerm(text, skill, lowerText, lowerSkill);
 }
 
