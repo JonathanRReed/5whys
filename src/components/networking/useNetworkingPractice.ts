@@ -1,5 +1,12 @@
 import * as React from 'react';
 import scenarioData from '../../data/networking-scenarios.json';
+import {
+  completeRatings,
+  joinLabels,
+  missingRatingLabels,
+  type PartialRatings,
+  RATING_FIELDS,
+} from '../../lib/networking-advice';
 import type {
   NetworkingPracticeSession,
   NetworkingPracticeVersion,
@@ -52,7 +59,9 @@ export type Ratings = {
   authenticity: number;
 };
 
-const defaultRatings: Ratings = { confidence: 3, clarity: 3, rapport: 3, authenticity: 3 };
+// Nothing is rated until the visitor rates it. A default of 3 used to show as
+// an average and get saved as a real rating.
+const unrated: PartialRatings = {};
 const emptyReflection: PracticeReflection = {
   humanNote: '',
   nervesNote: '',
@@ -68,14 +77,44 @@ const DRAFT_MAX_LENGTH = 1500;
 // key too, to tell a drafted-but-never-practiced intro from a blank one.
 export const DRAFT_STORAGE_KEY = 'networking-practice-draft';
 
+// Format 2 stores only the ratings the visitor set. Older drafts stored all
+// four, with a default of 3 for any the visitor never moved.
+const DRAFT_RATING_FORMAT = 2;
+const LEGACY_DEFAULT_RATING = 3;
+
 type StoredDraft = {
   text: string;
-  ratings: Ratings;
+  ratings: PartialRatings;
+  /** Kept for older readers and backups: true when any rating is set. */
   ratingsTouched: boolean;
+  ratingFormat?: number;
   reflection: PracticeReflection;
   versionId: string | null;
   updatedAt: string;
 };
+
+function isRating(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 5;
+}
+
+/**
+ * Reads the ratings out of a stored draft. A format 2 draft holds only what the
+ * visitor set. An older draft cannot say which sliders were moved, so a value
+ * of 3 (the old default) is treated as not rated; the others were moved.
+ */
+function readDraftRatings(data: Partial<StoredDraft>): PartialRatings {
+  const raw = (data.ratings ?? {}) as Record<string, unknown>;
+  const legacy = data.ratingFormat !== DRAFT_RATING_FORMAT;
+  if (legacy && data.ratingsTouched !== true) return {};
+  const ratings: PartialRatings = {};
+  for (const { key } of RATING_FIELDS) {
+    const value = raw[key];
+    if (!isRating(value)) continue;
+    if (legacy && value === LEGACY_DEFAULT_RATING) continue;
+    ratings[key] = value;
+  }
+  return ratings;
+}
 
 function readStoredDraft(): StoredDraft | null {
   if (typeof window === 'undefined') return null;
@@ -83,17 +122,12 @@ function readStoredDraft(): StoredDraft | null {
     const raw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
     if (!raw) return null;
     const data = JSON.parse(raw) as Partial<StoredDraft>;
-    const ratings = (data.ratings ?? {}) as Partial<Ratings>;
     const reflection = (data.reflection ?? {}) as Partial<PracticeReflection>;
     return {
       text: typeof data.text === 'string' ? data.text.slice(0, DRAFT_MAX_LENGTH) : '',
-      ratings: {
-        confidence: typeof ratings.confidence === 'number' ? ratings.confidence : 3,
-        clarity: typeof ratings.clarity === 'number' ? ratings.clarity : 3,
-        rapport: typeof ratings.rapport === 'number' ? ratings.rapport : 3,
-        authenticity: typeof ratings.authenticity === 'number' ? ratings.authenticity : 3,
-      },
+      ratings: readDraftRatings(data),
       ratingsTouched: data.ratingsTouched === true,
+      ratingFormat: DRAFT_RATING_FORMAT,
       reflection: {
         humanNote: typeof reflection.humanNote === 'string' ? reflection.humanNote : '',
         nervesNote: typeof reflection.nervesNote === 'string' ? reflection.nervesNote : '',
@@ -171,12 +205,23 @@ export function useNetworkingPractice() {
   );
   const [sessions, setSessions] = useHydratedState<NetworkingPracticeSession[]>([], loadSessions);
   const [storageNotice, setStorageNotice] = React.useState<string | null>(null);
-  const [currentVersionId, setCurrentVersionId] = React.useState<string>(fallbackVersion.id);
-  const [ratings, setRatings] = React.useState<Ratings>(defaultRatings);
-  const [ratingsTouched, setRatingsTouched] = React.useState(false);
+  const [currentVersionId, setCurrentVersionIdState] = React.useState<string>(fallbackVersion.id);
+  const [ratings, setRatings] = React.useState<PartialRatings>(unrated);
   const [reflection, setReflection] = React.useState<PracticeReflection>(emptyReflection);
   const [draft, setDraftState] = React.useState('');
   const [draftHydrated, setDraftHydrated] = React.useState(false);
+
+  // The draft is written only after the visitor changes something. Opening the
+  // page and reading the stored draft must not write a fresh one, or another
+  // tab's newer draft could be overwritten.
+  const draftChangedRef = React.useRef(false);
+  const markDraftChanged = React.useCallback(() => {
+    draftChangedRef.current = true;
+  }, []);
+  const setCurrentVersionId = React.useCallback((id: string) => {
+    draftChangedRef.current = true;
+    setCurrentVersionIdState(id);
+  }, []);
 
   const { timer, resetTimer, startTimer, pauseTimer, setTimerLength } = useTimer();
   const { copiedKey, handleCopy } = useClipboard();
@@ -189,7 +234,6 @@ export function useNetworkingPractice() {
     if (stored) {
       setDraftState(stored.text);
       setRatings(stored.ratings);
-      setRatingsTouched(stored.ratingsTouched);
       setReflection(stored.reflection);
       setPendingVersionId(stored.versionId);
     }
@@ -199,22 +243,23 @@ export function useNetworkingPractice() {
   React.useEffect(() => {
     if (!pendingVersionId) return;
     if (versions.some((v) => v.id === pendingVersionId)) {
-      setCurrentVersionId(pendingVersionId);
+      setCurrentVersionIdState(pendingVersionId);
       setPendingVersionId(null);
     }
   }, [pendingVersionId, versions]);
 
   React.useEffect(() => {
-    if (!draftHydrated) return;
+    if (!draftHydrated || !draftChangedRef.current) return;
     writeStoredDraft({
       text: draft,
       ratings,
-      ratingsTouched,
+      ratingsTouched: Object.keys(ratings).length > 0,
+      ratingFormat: DRAFT_RATING_FORMAT,
       reflection,
       versionId: currentVersionId,
       updatedAt: new Date().toISOString(),
     });
-  }, [draft, ratings, ratingsTouched, reflection, currentVersionId, draftHydrated]);
+  }, [draft, ratings, reflection, currentVersionId, draftHydrated]);
 
   const currentVersion = React.useMemo(
     () => versions.find((v) => v.id === currentVersionId) ?? versions[0],
@@ -276,7 +321,7 @@ export function useNetworkingPractice() {
 
   React.useEffect(() => {
     if (!currentVersion && versions.length) {
-      setCurrentVersionId(versions[0].id);
+      setCurrentVersionIdState(versions[0].id);
     }
   }, [currentVersion, versions]);
 
@@ -287,6 +332,7 @@ export function useNetworkingPractice() {
   }, [storageNotice]);
 
   const setDraft = React.useCallback((value: string) => {
+    draftChangedRef.current = true;
     setDraftState(value.slice(0, DRAFT_MAX_LENGTH));
   }, []);
 
@@ -347,7 +393,7 @@ export function useNetworkingPractice() {
     setVersions((prev) => [nextVersion, ...prev]);
     setCurrentVersionId(nextVersion.id);
     setStorageNotice(`Started "${title}". Rename it below if you like.`);
-  }, [presetScenario, versions, setVersions]);
+  }, [presetScenario, versions, setVersions, setCurrentVersionId]);
 
   const deleteCurrentVersion = React.useCallback(() => {
     if (!currentVersion) return;
@@ -361,7 +407,7 @@ export function useNetworkingPractice() {
       }
       return next;
     });
-  }, [currentVersion, currentVersionId, fallbackVersion, setVersions]);
+  }, [currentVersion, currentVersionId, fallbackVersion, setVersions, setCurrentVersionId]);
 
   const saveCurrentSession = React.useCallback(() => {
     if (!currentVersion) return;
@@ -372,9 +418,12 @@ export function useNetworkingPractice() {
       );
       return;
     }
-    if (!ratingsTouched) {
+    const rated = completeRatings(ratings);
+    if (!rated) {
       setStorageNotice(
-        'Rate the rep first. Move at least one slider so the history reflects how it actually went.'
+        `Rate the rep first. ${joinLabels(missingRatingLabels(ratings))} ${
+          missingRatingLabels(ratings).length === 1 ? 'is' : 'are'
+        } not rated yet.`
       );
       return;
     }
@@ -394,7 +443,7 @@ export function useNetworkingPractice() {
           createdAt: new Date().toISOString(),
         },
       ],
-      ratings,
+      ratings: rated,
       reflection: {
         humanNote: reflection.humanNote.trim(),
         nervesNote: reflection.nervesNote.trim(),
@@ -411,9 +460,9 @@ export function useNetworkingPractice() {
       return;
     }
     setSessions((prev) => [session, ...prev].slice(0, SESSION_LIMIT));
+    markDraftChanged();
     setReflection(emptyReflection);
-    setRatings(defaultRatings);
-    setRatingsTouched(false);
+    setRatings(unrated);
     resetTimer();
     setStorageNotice('Rep saved to your local history. Your draft stays for the next one.');
   }, [
@@ -421,10 +470,10 @@ export function useNetworkingPractice() {
     draft,
     timer.elapsed,
     ratings,
-    ratingsTouched,
     reflection,
     resetTimer,
     setSessions,
+    markDraftChanged,
   ]);
 
   const removeSession = React.useCallback(
@@ -471,23 +520,26 @@ export function useNetworkingPractice() {
   }, [sessions, setSessions]);
 
   const handleRatingChange = React.useCallback((key: keyof Ratings, value: number) => {
+    draftChangedRef.current = true;
     setRatings((prev) => ({ ...prev, [key]: value }));
-    setRatingsTouched(true);
   }, []);
 
   const handleReflectionField = React.useCallback(
     (key: keyof PracticeReflection, value: string) => {
+      draftChangedRef.current = true;
       setReflection((prev) => ({ ...prev, [key]: value }));
     },
     []
   );
 
   const handleResetReview = React.useCallback(() => {
+    draftChangedRef.current = true;
     resetTimer();
-    setRatings(defaultRatings);
-    setRatingsTouched(false);
+    setRatings(unrated);
     setReflection(emptyReflection);
   }, [resetTimer]);
+
+  const missingRatings = React.useMemo(() => missingRatingLabels(ratings), [ratings]);
 
   const sessionsAtCapacity = sessions.length >= SESSION_LIMIT;
 
@@ -500,7 +552,7 @@ export function useNetworkingPractice() {
     setCurrentVersionId,
     timer,
     ratings,
-    ratingsTouched,
+    missingRatings,
     reflection,
     draft,
     setDraft,

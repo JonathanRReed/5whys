@@ -155,6 +155,13 @@ it('resumes a paused rep without resetting its elapsed practice time', () => {
   expect(screen.getByText('00:12 practiced this rep')).toBeInTheDocument();
 });
 
+/** A rep saves only once all four ratings are set. */
+function rateAllFour(
+  rate: (key: 'confidence' | 'clarity' | 'rapport' | 'authenticity', value: number) => void
+) {
+  for (const key of ['confidence', 'clarity', 'rapport', 'authenticity'] as const) rate(key, 4);
+}
+
 it.each([30, 60, 120, 300])(
   'saves only the restarted rep duration for a %i-second practice',
   (seconds) => {
@@ -162,7 +169,7 @@ it.each([30, 60, 120, 300])(
     act(() => {
       result.current.setTimerLength(seconds);
       result.current.setDraft('I built a synthetic test project for a student team.');
-      result.current.handleRatingChange('clarity', 4);
+      rateAllFour(result.current.handleRatingChange);
     });
     act(() => result.current.startTimer());
     act(() => vi.advanceTimersByTime(seconds * 1000));
@@ -183,7 +190,7 @@ it('saves actual partial practice after restarting and pausing rather than the s
   act(() => {
     result.current.setTimerLength(30);
     result.current.setDraft('A synthetic intro for practice.');
-    result.current.handleRatingChange('clarity', 4);
+    rateAllFour(result.current.handleRatingChange);
   });
   act(() => result.current.startTimer());
   act(() => vi.advanceTimersByTime(30000));

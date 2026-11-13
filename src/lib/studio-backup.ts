@@ -295,6 +295,7 @@ const STORE_CHECKS: Record<StudioStorageKey, (value: unknown) => boolean> = {
       ratings,
       reflection: notes,
       ratingsTouched: isBoolean,
+      ratingFormat: isNumber,
       versionId: nullableText,
       updatedAt: isText,
     }),

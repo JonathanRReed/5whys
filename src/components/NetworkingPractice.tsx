@@ -192,8 +192,8 @@ export default function NetworkingPractice({
             <CardHeader>
               <CardTitle className="text-iris">Rate this rep</CardTitle>
               <p className="mt-2 text-sm text-muted-foreground">
-                Score it honestly after you say it out loud. Green means 4 or higher, and that is
-                the target. The next step tracks your lowest score.
+                Rate it honestly after you say it out loud, 1 to 5 on each. Green means 4 or higher,
+                and that is the target. The next step tracks your lowest rating.
               </p>
             </CardHeader>
             <CardContent className="grid gap-6 lg:grid-cols-2">
@@ -205,7 +205,7 @@ export default function NetworkingPractice({
                 onResetReview={state.handleResetReview}
                 sessionsAtCapacity={state.sessionsAtCapacity}
                 draftEmpty={state.draft.trim().length === 0}
-                ratingsTouched={state.ratingsTouched}
+                missingRatings={state.missingRatings}
               />
             </CardContent>
           </Card>

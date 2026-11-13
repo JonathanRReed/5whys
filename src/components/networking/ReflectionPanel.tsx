@@ -1,3 +1,4 @@
+import { joinLabels } from '../../lib/networking-advice';
 import type { PracticeReflection } from '../../utils/storage';
 import { SESSION_LIMIT } from '../../utils/storage';
 import { Button } from '../ui/button';
@@ -11,7 +12,8 @@ type Props = {
   onResetReview: () => void;
   sessionsAtCapacity: boolean;
   draftEmpty: boolean;
-  ratingsTouched: boolean;
+  /** Labels of the ratings not set yet. Empty when all four are rated. */
+  missingRatings: string[];
 };
 
 const REFLECTION_FIELDS = [
@@ -48,7 +50,7 @@ export default function ReflectionPanel({
   onResetReview,
   sessionsAtCapacity,
   draftEmpty,
-  ratingsTouched,
+  missingRatings,
 }: Props) {
   return (
     <div className="space-y-6">
@@ -88,9 +90,10 @@ export default function ReflectionPanel({
           <p className="text-xs text-muted-foreground" data-guide="rep-not-ready">
             Write your intro above to save this rep. The history stores your actual words.
           </p>
-        ) : !ratingsTouched ? (
+        ) : missingRatings.length > 0 ? (
           <p className="text-xs text-muted-foreground" data-guide="rep-not-ready">
-            Move at least one slider so the rep is rated before it is saved.
+            Rate all four to save this rep. {joinLabels(missingRatings)}{' '}
+            {missingRatings.length === 1 ? 'is' : 'are'} not rated yet.
           </p>
         ) : null}
         {sessionsAtCapacity ? (
