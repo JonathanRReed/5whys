@@ -1,7 +1,10 @@
 import * as React from 'react';
 import {
   type ApplicationDesk as Desk,
+  type DeskStation,
   deadlineInWords,
+  isDeskStation,
+  setLastStation,
   stationsWithContent,
   titleFromPosting,
 } from '../../lib/application-desk';
@@ -13,6 +16,7 @@ import {
   setActiveApplication,
   updateApplication,
 } from '../../lib/applications';
+import { withRole } from '../../lib/career-bridge';
 import { fullLetter } from '../../lib/desk-checks';
 import { switchRole, updateRole } from '../../lib/glowup-store';
 import { requirementsFromBullets } from '../../lib/posting';
@@ -30,7 +34,7 @@ import ResumeStation from './ResumeStation';
 import SendStation, { MarkSent, sendState } from './SendStation';
 import { type DeskLoss, useDesk } from './useDesk';
 
-type Station = 'posting' | 'qualifications' | 'bullets' | 'resume' | 'letter' | 'send';
+type Station = DeskStation;
 
 const STATIONS: { id: Station; label: string }[] = [
   { id: 'posting', label: 'Posting' },
@@ -41,8 +45,7 @@ const STATIONS: { id: Station; label: string }[] = [
   { id: 'send', label: 'Before you send' },
 ];
 
-const isStation = (value: string | null): value is Station =>
-  STATIONS.some((station) => station.id === value);
+const isStation = (value: string | null): value is Station => isDeskStation(value);
 
 /** The label a field is shown with, for the copy of what was on screen. */
 function fieldLabel(field: HTMLInputElement | HTMLTextAreaElement): string {
@@ -147,7 +150,16 @@ export default function ApplicationDesk() {
   const snapshot = React.useCallback(() => collectText(rootRef.current, deskRef.current), []);
   const desk = useDesk({ snapshot });
   deskRef.current = desk.application ? desk.desk : null;
-  const { ready, applications, application, role, select, changeApplications, changeGlow } = desk;
+  const {
+    ready,
+    applications,
+    application,
+    role,
+    select,
+    changeApplications,
+    changeGlow,
+    changeDesks,
+  } = desk;
   // The interview tools open on whichever role is current. Make it this
   // application's before leaving, so they show this posting and not the last
   // one worked on. Saved before the page changes; nothing is written when the
@@ -216,17 +228,38 @@ export default function ApplicationDesk() {
     setAdding(false);
   }, [shownId]);
 
-  React.useEffect(() => {
-    const wanted = new URLSearchParams(window.location.search).get('station');
-    if (isStation(wanted)) setStation(wanted);
-  }, []);
-
   const openStation = (next: string) => {
     if (!isStation(next)) return;
     setStation(next);
     const url = new URL(window.location.href);
     url.searchParams.set('station', next);
     window.history.replaceState(null, '', url);
+  };
+
+  // The station to open on: the one the address names, else the one the
+  // visitor last opened for this application. Opening one writes nothing;
+  // only choosing a station is remembered.
+  const remembered = desk.desk.lastStation;
+  const firstOpen = React.useRef(true);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: decided once per application shown
+  React.useEffect(() => {
+    if (!ready || !shownId) return;
+    if (firstOpen.current) {
+      firstOpen.current = false;
+      const wanted = new URLSearchParams(window.location.search).get('station');
+      if (isStation(wanted)) {
+        setStation(wanted);
+        return;
+      }
+    }
+    if (remembered) openStation(remembered);
+  }, [ready, shownId]);
+
+  /** A station the visitor chose: opened, and remembered for this application. */
+  const chooseStation = (next: string) => {
+    openStation(next);
+    const appId = application?.id;
+    if (appId && isStation(next)) changeDesks((data) => setLastStation(data, appId, next));
   };
 
   const create = (event: React.FormEvent) => {
@@ -566,7 +599,7 @@ export default function ApplicationDesk() {
 
       {adding && form}
 
-      <Tabs value={station} onValueChange={openStation}>
+      <Tabs value={station} onValueChange={chooseStation}>
         <TabsList className="w-full flex-wrap justify-start gap-1 bg-transparent p-0 group-data-[orientation=horizontal]/tabs:h-auto">
           {STATIONS.map((item, index) => (
             <TabsTrigger
@@ -621,14 +654,14 @@ export default function ApplicationDesk() {
           <>
             <a
               className="underline underline-offset-4 hover:text-foam"
-              href="/interview-glow-up/workspace/?tab=stories"
+              href={withRole('/interview-glow-up/workspace/?tab=stories', role.id)}
               onClick={openOnThisRole}
             >
               Build interview stories
             </a>
             <a
               className="underline underline-offset-4 hover:text-foam"
-              href="/interview-glow-up/rehearse/"
+              href={withRole('/interview-glow-up/rehearse/', role.id)}
               onClick={openOnThisRole}
             >
               Rehearse the interview

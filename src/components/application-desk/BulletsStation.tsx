@@ -2,7 +2,6 @@ import * as React from 'react';
 import { updateBulletsFlow } from '../../lib/application-desk';
 import { type DraftFields, draftBullet, draftFields, hasEveryPart } from '../../lib/bullet-draft';
 import { deskRequirements } from '../../lib/desk-checks';
-import { keepDeskDraft, readDeskDraft } from '../../lib/desk-drafts';
 import { hiringCondition, requirementsFromBullets } from '../../lib/posting';
 import { fromText } from '../../lib/resume-doc/model';
 import { bulletsByRole, withAchievementLines } from '../../lib/resume-doc/tailor';
@@ -15,24 +14,6 @@ import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { useDeskExamples } from './examples';
 import type { DeskState } from './useDesk';
-
-/** Where a draft waits while the visitor is on another station. */
-const DRAFT_FIELD = 'bullet-draft';
-
-function readDraft(applicationId: string): DraftFields | null {
-  const raw = readDeskDraft(applicationId, DRAFT_FIELD);
-  if (!raw) return null;
-  try {
-    const value = JSON.parse(raw) as Partial<DraftFields>;
-    return {
-      verb: typeof value.verb === 'string' ? value.verb : '',
-      task: typeof value.task === 'string' ? value.task : '',
-      result: typeof value.result === 'string' ? value.result : '',
-    };
-  } catch {
-    return null;
-  }
-}
 
 /**
  * The bullets already on the visitor's resume, under the job each is in, so
@@ -79,21 +60,16 @@ export default function BulletsStation({ desk }: { desk: DeskState }) {
   React.useEffect(() => {
     setWantedId(new URLSearchParams(window.location.search).get('requirement'));
   }, []);
-  // A first draft built only from the two answers above, in fields the
-  // visitor edits before using it. Null until they ask for one.
-  const [draft, setDraftState] = React.useState<DraftFields | null>(null);
   const [used, setUsed] = React.useState<0 | 1 | null>(null);
   const appId = application?.id ?? null;
-  // A draft is kept while the visitor works on other stations, for this
-  // application only. It is never written to storage: it is built again from
-  // the two steps above, which are.
-  React.useEffect(() => {
-    setDraftState(appId ? readDraft(appId) : null);
-    setUsed(null);
-  }, [appId]);
+  // A first draft built only from the two answers above, in fields the
+  // visitor edits before using it. It is saved with this application's desk,
+  // so it survives a reload, and only once the visitor asks for one or edits
+  // it: opening the station writes nothing.
+  const draft = desk.desk.bullets.draft ?? null;
   const setDraft = (next: DraftFields | null) => {
-    setDraftState(next);
-    if (appId) keepDeskDraft(appId, DRAFT_FIELD, next ? JSON.stringify(next) : null);
+    if (!appId) return;
+    changeDesks((data) => updateBulletsFlow(data, appId, { draft: next }));
   };
   const { resumeText, rewrites } = desk;
   const fromResume = React.useMemo(() => resumeLines(resumeText, rewrites), [resumeText, rewrites]);

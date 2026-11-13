@@ -75,12 +75,24 @@ export interface BulletSlot {
   included: boolean;
 }
 
+/** A first draft of a bullet, in three parts the visitor edits. */
+export interface BulletDraft {
+  verb: string;
+  task: string;
+  result: string;
+}
+
 /** The guided bullets flow: one experience, its impact, two bullets, a reflection. */
 export interface BulletsFlow {
   experience: string;
   impact: string;
   bullets: [BulletSlot, BulletSlot];
   reflection: string;
+  /**
+   * The draft built from the two answers, as the visitor last edited it.
+   * Absent until they ask for one, and in desks saved before it was kept.
+   */
+  draft?: BulletDraft;
 }
 
 export type MessageKind = 'linkedin' | 'follow-up-email' | 'intro-call';
@@ -204,6 +216,21 @@ export interface ResumeSelection {
   updatedAt: number;
 }
 
+/** The desk's stations, in the order they are shown. */
+export const DESK_STATIONS = [
+  'posting',
+  'qualifications',
+  'bullets',
+  'resume',
+  'letter',
+  'send',
+] as const;
+
+export type DeskStation = (typeof DESK_STATIONS)[number];
+
+export const isDeskStation = (value: unknown): value is DeskStation =>
+  typeof value === 'string' && (DESK_STATIONS as readonly string[]).includes(value);
+
 export interface ApplicationDesk {
   qualifications: QualificationRow[];
   actionPlan: ActionStep[];
@@ -214,6 +241,12 @@ export interface ApplicationDesk {
   offer: OfferWorksheet;
   /** Null until the student picks; the export decides what that means. */
   resumeSelection: ResumeSelection | null;
+  /**
+   * The station the visitor last opened for this application, so the desk
+   * reopens there. Absent until they pick one. Not work: it does not move
+   * `updatedAt`.
+   */
+  lastStation?: DeskStation;
   updatedAt: number;
 }
 
@@ -330,6 +363,12 @@ function normalizeSlot(value: unknown): BulletSlot {
   };
 }
 
+/** A saved draft, or null when there is none or it is not the right shape. */
+function normalizeDraft(value: unknown): BulletDraft | null {
+  if (!isRecord(value)) return null;
+  return { verb: text(value.verb), task: text(value.task), result: text(value.result) };
+}
+
 function normalizeVariant(value: unknown, now: number): MessageVariant | null {
   if (!isRecord(value)) return null;
   const variantText = text(value.text);
@@ -394,6 +433,8 @@ export function normalizeDesk(value: unknown, now = Date.now()): ApplicationDesk
       bullets: [normalizeSlot(slots[0]), normalizeSlot(slots[1])],
       reflection: text(b.reflection),
     };
+    const draft = normalizeDraft(b.draft);
+    if (draft) desk.bullets.draft = draft;
   }
   if (isRecord(value.letter)) {
     const l = value.letter;
@@ -456,20 +497,19 @@ export function normalizeDesk(value: unknown, now = Date.now()): ApplicationDesk
           )
         ),
       ],
+      // Repeats are kept: a resume can hold the same line twice, and choosing
+      // both is two choices.
       ...(Array.isArray(value.resumeSelection.bulletTexts)
         ? {
-            bulletTexts: [
-              ...new Set(
-                value.resumeSelection.bulletTexts.filter(
-                  (entry): entry is string => typeof entry === 'string' && !!entry
-                )
-              ),
-            ],
+            bulletTexts: value.resumeSelection.bulletTexts.filter(
+              (entry): entry is string => typeof entry === 'string' && !!entry
+            ),
           }
         : {}),
       updatedAt: time(value.resumeSelection.updatedAt, now),
     };
   }
+  if (isDeskStation(value.lastStation)) desk.lastStation = value.lastStation;
   desk.updatedAt = time(value.updatedAt, now);
   return desk;
 }
@@ -687,6 +727,8 @@ export function updateBulletsFlow(
   changes: Partial<Pick<BulletsFlow, 'experience' | 'impact' | 'reflection'>> & {
     /** Replace one of the two bullets. */
     bullet?: { index: 0 | 1; slot: Partial<BulletSlot> };
+    /** Replace the draft; null removes it. */
+    draft?: Partial<BulletDraft> | null;
   }
 ): ApplicationDeskData {
   return updateDesk(data, applicationId, (desk) => {
@@ -700,6 +742,16 @@ export function updateBulletsFlow(
         included: typeof included === 'boolean' ? included : current.included,
       };
     }
+    const draft =
+      changes.draft === undefined
+        ? desk.bullets.draft
+        : changes.draft === null
+          ? undefined
+          : {
+              verb: text(changes.draft.verb ?? desk.bullets.draft?.verb),
+              task: text(changes.draft.task ?? desk.bullets.draft?.task),
+              result: text(changes.draft.result ?? desk.bullets.draft?.result),
+            };
     return {
       ...desk,
       bullets: {
@@ -709,9 +761,28 @@ export function updateBulletsFlow(
         bullets,
         reflection:
           typeof changes.reflection === 'string' ? changes.reflection : desk.bullets.reflection,
+        ...(draft ? { draft } : {}),
       },
     };
   });
+}
+
+/**
+ * Remember the station the visitor opened, so the desk reopens there. Only
+ * an application that is tracked gets a desk, and opening a station is not
+ * work: a desk that already exists keeps its `updatedAt`. Returns `data`
+ * unchanged when the station is already the one remembered.
+ */
+export function setLastStation(
+  data: ApplicationDeskData,
+  applicationId: string,
+  station: DeskStation
+): ApplicationDeskData {
+  if (!applicationId || UNSAFE_KEYS.has(applicationId) || !isDeskStation(station)) return data;
+  const existing = data.desks[applicationId];
+  if (existing?.lastStation === station) return data;
+  const desk = existing ?? createEmptyDesk(Date.now());
+  return { ...data, desks: { ...data.desks, [applicationId]: { ...desk, lastStation: station } } };
 }
 
 export function updateLetter(
@@ -890,8 +961,10 @@ export function setResumeSelection(
         ? null
         : {
             bulletIds: [...new Set(bulletIds.filter((id) => typeof id === 'string' && !!id))],
+            // Words may repeat: two identical lines chosen are two choices,
+            // and each is matched back to its own line after a reload.
             ...(bulletTexts
-              ? { bulletTexts: [...new Set(bulletTexts.filter((entry) => !!entry))] }
+              ? { bulletTexts: bulletTexts.filter((entry) => typeof entry === 'string' && !!entry) }
               : {}),
             updatedAt: Date.now(),
           },
