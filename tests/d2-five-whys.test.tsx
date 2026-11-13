@@ -7,7 +7,6 @@ import {
   answerPhrases,
   hasPhrase,
   outcomeText,
-  readReflectionForReuse,
   removePhrase,
 } from '../src/components/career-5whys/outcome';
 import type { WhyOutcome as Outcome } from '../src/components/career-5whys/shared';
@@ -27,6 +26,7 @@ import {
 } from '../src/components/career-5whys/shared';
 import WhyForm from '../src/components/career-5whys/WhyForm';
 import WhyOutcome from '../src/components/career-5whys/WhyOutcome';
+import { readReflectionForReuse } from '../src/lib/career-bridge';
 
 beforeEach(() => localStorage.clear());
 afterEach(cleanup);

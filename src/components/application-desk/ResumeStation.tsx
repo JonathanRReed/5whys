@@ -406,7 +406,10 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
       readResumeText() !== resumeText ||
       savedRewrites.length !== rewrites.length ||
       savedRewrites.some(
-        (r, i) => r.original !== rewrites[i].original || r.improved !== rewrites[i].improved
+        (r, i) =>
+          r.original !== rewrites[i].original ||
+          r.improved !== rewrites[i].improved ||
+          r.occurrence !== rewrites[i].occurrence
       )
     ) {
       desk.refresh();

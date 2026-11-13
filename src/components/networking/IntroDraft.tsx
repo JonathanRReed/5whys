@@ -1,6 +1,6 @@
 import * as React from 'react';
+import type { ReflectionForReuse } from '../../lib/career-bridge';
 import { describeShape, draftShape } from '../../lib/networking-advice';
-import type { ReflectionForReuse } from '../career-5whys/outcome';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Label } from '../ui/label';

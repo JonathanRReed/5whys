@@ -1,6 +1,6 @@
 import * as React from 'react';
+import { type ReflectionForReuse, readReflectionForReuse } from '../lib/career-bridge';
 import { cn } from '../lib/utils';
-import { type ReflectionForReuse, readReflectionForReuse } from './career-5whys/outcome';
 import ConversationIngredients from './networking/ConversationIngredients';
 import IntroDraft from './networking/IntroDraft';
 import NetworkingHeader from './networking/NetworkingHeader';

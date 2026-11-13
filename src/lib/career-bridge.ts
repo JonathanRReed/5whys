@@ -51,6 +51,7 @@ import { type PostingRequirement, requirementsFromBullets } from './posting';
 import { type CareerProfile, readProfile } from './profile';
 import { bulletRewrites } from './resume-doc/export';
 import { scoreBullet } from './resume-game/scoring';
+import { skillAsWritten } from './resume-game/skills';
 import { STRONG_SCORE } from './resume-game/thresholds';
 
 export type ToolName =
@@ -1136,7 +1137,11 @@ export function readCareerDashboard(): CareerDashboardData {
   // Name the detected skills and turn them into stories.
   const hardSkills = resumeNeedsRescan ? [] : (resume?.signalReport?.hardSkills ?? []);
   if (hardSkills.length && !glowup?.storyCount) {
-    const named = hardSkills.slice(0, 3).join(', ');
+    // As the resume writes them: "SQL" and "Excel", not "sql" and "excel".
+    const named = hardSkills
+      .slice(0, 3)
+      .map((skill) => skillAsWritten(resume?.resumeText ?? '', skill))
+      .join(', ');
     const extra = hardSkills.length > 3 ? ` and ${hardSkills.length - 3} more` : '';
     recommendations.push({
       tool: 'Interview Glow Up',
