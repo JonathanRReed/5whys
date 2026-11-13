@@ -50,7 +50,7 @@ describe('guide state helpers', () => {
   it('counts only steps that newly passed', () => {
     const guide = GUIDES['interview-glow-up'];
     if (!guide) throw new Error('no guide');
-    expect(furthestNewlyPassed(guide, new Set(['paste', 'save-story']), new Set())).toBe(5);
+    expect(furthestNewlyPassed(guide, new Set(['paste', 'save-story']), new Set())).toBe(4);
     expect(furthestNewlyPassed(guide, new Set(['save-story']), new Set(['save-story']))).toBe(-1);
   });
 
@@ -70,7 +70,7 @@ describe('the coach follows the page', () => {
     render(<GuideCoach tool="interview-glow-up" />);
     look();
     const coach = screen.getByRole('complementary', { name: 'Guide' });
-    expect(coach).toHaveTextContent('Step 7 of 8');
+    expect(coach).toHaveTextContent('Step 6 of 6');
     window.history.replaceState(null, '', '/');
   });
 
@@ -92,7 +92,7 @@ describe('the coach follows the page', () => {
     render(<GuideCoach tool="rehearsal" />);
     const coach = screen.getByRole('complementary', { name: 'Guide' });
     look(3);
-    expect(coach).toHaveTextContent('Step 1 of 6');
+    expect(coach).toHaveTextContent('Step 1 of 5');
     expect(loadGuideProgress('rehearsal')?.done).toEqual([]);
   });
 
@@ -101,7 +101,7 @@ describe('the coach follows the page', () => {
     saveProgress('rehearsal', { mode: 'guided', done: ['start', 'answer'], finished: false });
     render(<GuideCoach tool="rehearsal" />);
     look(3);
-    expect(screen.getByRole('complementary', { name: 'Guide' })).toHaveTextContent('Step 3 of 6');
+    expect(screen.getByRole('complementary', { name: 'Guide' })).toHaveTextContent('Step 3 of 5');
   });
 
   it('starts again at step 1 even when the page already holds the work', () => {
@@ -114,9 +114,11 @@ describe('the coach follows the page', () => {
       finished: true,
     });
     render(<GuideCoach tool="interview-glow-up" />);
-    fireEvent.click(screen.getByRole('button', { name: 'Start the guide again' }));
+    // A finished guide is not docked over the page on a later visit; the bar starts it again.
+    expect(screen.queryByRole('complementary', { name: 'Guide' })).toBeNull();
+    fireEvent.click(screen.getByRole('radio', { name: /^Guide/ }));
     look(2);
-    expect(screen.getByRole('complementary', { name: 'Guide' })).toHaveTextContent('Step 1 of 8');
+    expect(screen.getByRole('complementary', { name: 'Guide' })).toHaveTextContent('Step 1 of 6');
   });
 
   it('goes back a step and stays there', () => {
@@ -155,8 +157,7 @@ describe('the coach follows the page', () => {
       finished: true,
     });
     render(<GuideCoach tool="career" />);
-    const coach = screen.getByRole('complementary', { name: 'Guide' });
-    expect(coach).toHaveTextContent(
+    expect(document.querySelector('[data-guide-bar]')).toHaveTextContent(
       'On a shared or lab computer, export your work from the dashboard and then clear this device.'
     );
     expect(screen.getByRole('link', { name: 'Open the dashboard' })).toHaveAttribute(

@@ -10,7 +10,8 @@ export type CareerFocus =
   | 'resume'
   | 'starting'
   | 'interview'
-  | 'networking';
+  | 'networking'
+  | 'offer';
 
 /**
  * The stage as the visitor answered it. "High school or first job" is kept
@@ -37,6 +38,7 @@ const FOCUSES: CareerFocus[] = [
   'starting',
   'interview',
   'networking',
+  'offer',
 ];
 
 export const isStage = (value: unknown): value is CareerStage =>
@@ -113,7 +115,7 @@ export const STAGE_LABELS: Record<StageAnswer, string> = {
   student: 'Student',
   early: 'Early career',
   mid: 'Mid-level',
-  senior: 'Senior / Lead',
+  senior: 'Senior or lead at work',
   transition: 'Transitioning',
 };
 
@@ -124,4 +126,5 @@ export const FOCUS_LABELS: Record<CareerFocus, string> = {
   starting: 'Not much to show yet',
   interview: 'Interview prep',
   networking: 'Networking anxiety',
+  offer: 'An offer to answer',
 };

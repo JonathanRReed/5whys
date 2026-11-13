@@ -377,7 +377,7 @@ describe('4. Before you send, more honest (C 6, A A12)', () => {
 
   it('states the real number of computed checks in the guide and on the page', () => {
     const step = applicationGuide.steps.find((s) => s.id === 'check');
-    expect(step?.body).toContain('Five checks are computed');
+    expect(step?.why).toContain('Five checks are computed');
     expect(SEND_CHECK_IDS).toHaveLength(5);
     seed([{ id: 'a', title: 'Intern', lines: [EXCEL] }]);
     const desk = createEmptyDesk(1);
@@ -659,7 +659,7 @@ describe('8. the career review (S F17, A C1, X tremor)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'I do not have much to show yet' }));
     expect(screen.getByRole('link', { name: /Start now/ })).toHaveAttribute(
       'href',
-      '/resume-game/?start=blank'
+      '/resume-game/?start=blank&guide=1'
     );
     expect(readProfile()).toMatchObject({ stage: 'student', focus: 'starting', firstJob: true });
     expect(screen.getByText('High school or first job · Not much to show yet')).toBeInTheDocument();

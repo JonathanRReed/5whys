@@ -11,7 +11,7 @@ const TITLE_STEPS: GuideStep[] = [
   {
     id: 'title',
     title: 'Type a job title',
-    body: 'Type the title from the posting into "Job title". Matching occupations appear under it as you type.',
+    body: 'Use the title from the posting.',
     why: 'The search runs on this device. What you type is not sent anywhere.',
     target: '[data-guide="pay-title"]',
     done: { kind: 'exists', selector: '[data-guide="pay-candidates"]' },
@@ -19,8 +19,8 @@ const TITLE_STEPS: GuideStep[] = [
   {
     id: 'occupation',
     title: 'Pick the occupation that fits',
-    body: 'Titles mean different things at different employers. Choose the occupation in the list that matches the work.',
-    why: 'If nothing fits, try a plainer version of the title.',
+    body: 'Choose the one that matches the work, not the title.',
+    why: 'Titles mean different things at different employers.',
     target: '[data-guide="pay-candidates"]',
     done: { kind: 'exists', selector: '[data-testid="pay-occupation"]' },
   },
@@ -31,23 +31,22 @@ const WORKSHEET_STEPS: GuideStep[] = [
   {
     id: 'base',
     title: 'Enter the base pay',
-    body: 'In the "Offer worksheet", type the base pay from an offer or a posting into "Base pay".',
-    why: 'Use the figure you were given. Never guess one.',
+    body: 'Use the figure from the offer or the posting.',
+    why: 'A figure you were given keeps every number below honest. Never guess one.',
     target: '[data-guide="offer-basePay"]',
     done: { kind: 'filled', selector: '[data-guide="offer-basePay"]' },
   },
   {
     id: 'period',
-    title: 'Say how it is paid',
-    body: 'Under "Paid", choose whether that figure is per hour, per week, per month, or per year.',
+    title: 'Say how often it is paid',
+    body: 'Under "Paid": an hour, a week, a month or a year.',
     target: '[data-guide="offer-period"]',
     done: { kind: 'filled', selector: '[data-guide="offer-period"]' },
   },
   {
     id: 'time',
-    title: 'Add the hours and weeks',
-    body: 'Fill in "Hours a week" and "Weeks a year". Each figure on the right that says "Needs more detail" fills in once both are there.',
-    why: 'Nothing is assumed, so a summer internship is never counted as a full year.',
+    title: 'Add hours a week and weeks a year',
+    why: 'Nothing is assumed, so a summer job is never counted as a full year.',
     target: '[data-guide="offer-hoursPerWeek"]',
     done: {
       kind: 'text',
@@ -60,12 +59,17 @@ const WORKSHEET_STEPS: GuideStep[] = [
 export const payGuide: Guide = {
   tool: 'pay',
   invitation: hasWages
-    ? 'New to this? The guide walks you through finding the occupation behind a job title and putting an offer into plain terms.'
-    : 'New to this? The guide walks you through putting an offer or a posted rate into plain terms.',
+    ? 'New to this? The guide walks you through finding an occupation and putting an offer into plain terms.'
+    : 'New to this? The guide walks you through putting an offer into plain terms.',
   steps: hasWages ? [...TITLE_STEPS, ...WORKSHEET_STEPS] : WORKSHEET_STEPS,
+  challenge: {
+    title: 'Add a second offer and compare them',
+    body: 'Save this one as an offer, add another, and fill it in.',
+    done: { kind: 'exists', selector: '[data-testid="offer-compare"]' },
+  },
   finish: {
     title: 'The offer is in plain terms',
-    body: 'The worksheet is kept only when it belongs to an application. Start one on the Application Desk to save it with the job.',
-    link: { label: 'Open the Application Desk', href: '/application/' },
+    body: 'Press "Save it as an offer" to keep it. Then hold it against what you want.',
+    link: { label: 'Check it against your reason', href: '/career/' },
   },
 };

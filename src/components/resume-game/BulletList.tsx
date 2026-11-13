@@ -31,6 +31,7 @@ const BulletItem = React.memo(function BulletItem({ bullet, isSelected, onSelect
       )}
       onClick={() => onSelect(bullet.id)}
       aria-pressed={isSelected}
+      data-guide-improved={bullet.edited && delta > 0 ? '' : undefined}
     >
       <p
         className="overflow-hidden text-sm text-foreground"

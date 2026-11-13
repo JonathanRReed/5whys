@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { startPath } from '../lib/path';
 import {
   clearProfile,
   FOCUS_LABELS,
@@ -12,6 +13,7 @@ import {
 } from '../lib/profile';
 import { cn } from '../lib/utils';
 import ConfirmButton from './shared/ConfirmButton';
+import PathCard from './shared/PathCard';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 
@@ -53,7 +55,7 @@ const STEPS: Step[] = [
         icon: 'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M12 16h.01',
       },
       {
-        label: 'Senior / Lead',
+        label: 'Senior or lead at work',
         value: 'senior',
         icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z',
       },
@@ -98,6 +100,11 @@ const STEPS: Step[] = [
         value: 'networking',
         icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
       },
+      {
+        label: 'I have an offer to answer',
+        value: 'offer',
+        icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+      },
     ],
   },
 ];
@@ -126,7 +133,7 @@ function getRecommendation(level: string, challenge: string): Recommendation {
         description: student
           ? 'You do not need a job title yet. Trace what already holds your attention until a direction shows up.'
           : 'Before optimizing the job you have, check what actually pulls you. The Interest Path digs into that.',
-        url: '/career/',
+        url: '/career/?guide=1',
         accent: 'foam',
         steps: [
           'Choose the Interest Path track and name something you keep coming back to.',
@@ -148,7 +155,7 @@ function getRecommendation(level: string, challenge: string): Recommendation {
           : level === 'senior'
             ? 'Name what the next move is actually for. Five rounds of "why" separate a real reason from a restless one.'
             : 'Clarify your core motivation before polishing anything else.',
-      url: '/career/',
+      url: '/career/?guide=1',
       accent: 'foam',
       steps: [
         'Answer the five "why" prompts to surface your root motivation.',
@@ -167,7 +174,7 @@ function getRecommendation(level: string, challenge: string): Recommendation {
       title: 'Start a resume from nothing',
       description:
         'You do not need a resume to start one. A few short questions about school, a job, or something you do outside class become your first lines. Babysitting, sports, caring for family and volunteering all count.',
-      url: '/resume-game/?start=blank',
+      url: '/resume-game/?start=blank&guide=1',
       accent: 'love',
       steps: [
         'Open the Resume Game on its start-from-nothing form.',
@@ -213,7 +220,7 @@ function getRecommendation(level: string, challenge: string): Recommendation {
         : level === 'transition'
           ? 'Translate your old-domain bullets into evidence the new field can read. Score them, then rewrite the weak ones.'
           : 'Score your bullets, pull out the skills they already show, and rewrite the weak ones.',
-      url: '/resume-game/',
+      url: '/resume-game/?guide=1',
       accent: 'love',
       steps: [
         exploring
@@ -242,7 +249,7 @@ function getRecommendation(level: string, challenge: string): Recommendation {
             : exploring
               ? 'First interviews reward preparation over experience. Paste the posting and build stories from projects and jobs you already have.'
               : 'Paste the posting and build a story with proof for each thing it asks for.',
-      url: '/interview-glow-up/',
+      url: '/interview-glow-up/workspace/?guide=1',
       accent: 'iris',
       steps: [
         'Paste the job posting to see the skills it asks for.',
@@ -258,6 +265,26 @@ function getRecommendation(level: string, challenge: string): Recommendation {
       icon: 'M13 10V3L4 14h7v7l9-11h-7z',
     };
   }
+  if (challenge === 'offer') {
+    return {
+      title: 'Put the offer into plain terms on Pay',
+      description: exploring
+        ? 'An hourly rate, a salary and a bonus are hard to compare in your head. Enter what the offer says and see it by the hour, the week and the year.'
+        : 'Enter base pay, bonus and hours as written, and see the offer by the hour, the week and the year, beside any other offer you hold.',
+      url: '/pay/?guide=1',
+      accent: 'gold',
+      steps: [
+        'Enter the pay and how often it is paid, then the hours a week.',
+        'Add another offer, or the job you have now, to see them side by side.',
+        'Write down what you still need to ask before you answer.',
+      ],
+      stats: [
+        { label: 'You bring', value: 'The offer, as written' },
+        { label: 'You leave with', value: 'The same pay in plain terms' },
+      ],
+      icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 9v1',
+    };
+  }
   return {
     title: 'Start with Networking Practice',
     description: student
@@ -265,7 +292,7 @@ function getRecommendation(level: string, challenge: string): Recommendation {
       : level === 'senior'
         ? 'Peer intros and panels need a sharper opener than your title. Rehearse it against the clock.'
         : 'Timed scenarios and honest self-ratings, one rep at a time.',
-    url: '/networking-practice/',
+    url: '/networking-practice/?guide=1',
     accent: 'gold',
     steps: [
       'Pick a situation that matches your next event.',
@@ -474,7 +501,13 @@ export default function OnboardingWizard() {
             </dl>
             <div>
               <Button asChild size="lg" className="px-5">
-                <a href={recommendation.url}>
+                <a
+                  href={recommendation.url}
+                  onClick={() => {
+                    // The first stop of the path for this answer is this tool.
+                    if (isFocus(answers[1])) startPath(answers[1]);
+                  }}
+                >
                   Start now
                   <svg
                     aria-hidden="true"
@@ -490,6 +523,8 @@ export default function OnboardingWizard() {
             </div>
           </CardContent>
         </Card>
+
+        {isFocus(answers[1]) && <PathCard offer={answers[1]} />}
 
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">Or explore other tools:</p>
@@ -510,7 +545,11 @@ export default function OnboardingWizard() {
               { name: 'The Application Desk', url: '/application/', desc: 'Work one posting' },
               { name: 'Pay', url: '/pay/', desc: 'Weigh an offer' },
             ]
-              .filter((t) => !recommendation.url.startsWith(t.url))
+              .filter(
+                (t) =>
+                  !recommendation.url.startsWith(t.url) &&
+                  !t.url.startsWith(recommendation.url.split('?')[0])
+              )
               .map((tool) => (
                 <li key={tool.name}>
                   <a

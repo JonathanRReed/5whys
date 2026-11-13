@@ -8,6 +8,7 @@ import ApplicationsPanel, { NewApplicationForm } from './ApplicationsPanel';
 import BackupControls from './BackupControls';
 import StoragePanel from './StoragePanel';
 import ErrorBoundary from './shared/ErrorBoundary';
+import PathCard from './shared/PathCard';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
 const TOOL_LINKS = [
@@ -273,6 +274,9 @@ function Summary({ data, onChanged }: { data: CareerDashboardData; onChanged: ()
           </a>
         )}
       </div>
+
+      {/* The guided path, when the career review started one. */}
+      <PathCard />
 
       {/* One quiet line when the whole loop is actually closed. */}
       {data.arcLine && <p className="text-sm text-foam">{data.arcLine}</p>}

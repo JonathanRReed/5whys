@@ -44,7 +44,10 @@ export default function WhySummary({
         </div>
 
         {isComplete && answers && onRootChange && (
-          <fieldset className="m-0 min-w-0 space-y-2 border-0 p-0">
+          <fieldset
+            className="m-0 min-w-0 space-y-2 border-0 p-0"
+            data-guide-root={rootIndex === undefined ? undefined : 'chosen'}
+          >
             <legend className="font-display text-lg font-semibold text-foreground">
               Which answer is the real reason?
             </legend>

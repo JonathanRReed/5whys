@@ -68,3 +68,45 @@ test('an empty story library leads to the first story', async ({ page }) => {
   await expect(page.locator('#story-play')).toBeVisible();
   await expect(page.getByText(/3 words or more counts as an answer/).first()).toBeVisible();
 });
+
+test('the career review starts a guided path that hands off from tool to tool', async ({
+  page,
+}) => {
+  await page.goto('/start/');
+  await waitForHydration(page);
+  await page.getByRole('button', { name: 'Student', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /biggest challenge/ })).toBeVisible();
+  // The review ignores a tap that lands right after the question changes.
+  await page.waitForTimeout(500);
+  await page.getByRole('button', { name: 'I have an offer to answer' }).click();
+
+  const card = page.getByTestId('path-card');
+  await expect(card).toContainText('Answer an offer');
+  await expect(card).toContainText('2 stops');
+  await page.getByRole('link', { name: /Start now/ }).click();
+  await expect(page).toHaveURL(/\/pay\/\?guide=1$/);
+  await waitForHydration(page);
+  await expect(page.locator('[data-guide-bar]')).toContainText('Stop 1 of 2 on your path.');
+
+  const coach = page.locator('aside[aria-label="Guide"]');
+  await page.getByLabel('Base pay').fill('18');
+  await page.getByLabel('Paid').selectOption('hour');
+  await page.getByLabel('Hours a week').fill('20');
+  await page.getByLabel('Weeks a year').fill('10');
+  await expect(coach).toContainText('Guide finished');
+  // The closing task is offered, and the way onward is the next stop.
+  await expect(coach.locator('[data-guide-challenge="open"]').first()).toContainText(
+    'Add a second offer and compare them'
+  );
+  const next = coach.getByRole('link', { name: 'Next stop: Check it against what you want' });
+  await expect(next.first()).toHaveAttribute('href', '/career/?guide=1');
+  await next.first().click();
+  await waitForHydration(page);
+  await expect(page.locator('[data-guide-bar]')).toContainText('Stop 2 of 2 on your path.');
+  await expect(coach).toContainText('Step 1 of 7');
+
+  // The review remembers how far along the path is.
+  await page.goto('/start/');
+  await waitForHydration(page);
+  await expect(page.getByTestId('path-card')).toContainText('1 of 2 stops done');
+});

@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { Label } from '../ui/label';
 import {
   Select,
@@ -27,6 +28,8 @@ const GROUPS = [
  * buttons that used to sit above the practice box.
  */
 export default function ScenarioPicker({ scenarios, currentScenario, onScenarioChange }: Props) {
+  // For the guide: true once the visitor has used the picker.
+  const [picked, setPicked] = React.useState(false);
   const groups = GROUPS.map((group) => ({
     ...group,
     scenarios: scenarios.filter((scenario) => scenario.audience === group.audience),
@@ -44,9 +47,20 @@ export default function ScenarioPicker({ scenarios, currentScenario, onScenarioC
         >
           Scenario
         </Label>
-        <Select value={currentScenario?.id ?? ''} onValueChange={onScenarioChange}>
+        <Select
+          value={currentScenario?.id ?? ''}
+          onValueChange={(value) => {
+            setPicked(true);
+            onScenarioChange(value);
+          }}
+          onOpenChange={(open) => {
+            // Opening the list and keeping the same situation is a choice too.
+            if (!open) setPicked(true);
+          }}
+        >
           <SelectTrigger
             id="scenario"
+            data-guide-scenario={picked ? 'picked' : undefined}
             className="h-auto min-h-12 w-full min-w-0 max-w-full rounded-xl border-border/60 bg-overlay/30 py-3 text-left text-base whitespace-normal [&>span]:line-clamp-none [&>span]:whitespace-normal"
           >
             <SelectValue placeholder="Pick a scenario" />

@@ -725,7 +725,7 @@ export default function RehearsalRoom() {
 
   if (phase === 'review' && take) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4" data-guide-review={index}>
         <p className="font-mono text-xs tabular-nums text-muted-foreground">
           Question {index + 1} of {questions.length}
         </p>

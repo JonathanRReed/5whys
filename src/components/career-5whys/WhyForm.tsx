@@ -91,6 +91,7 @@ export default function WhyForm({
                   showRule || locked ? `${exampleId}-question ${ruleId}` : `${exampleId}-question`
                 }
                 value={response}
+                data-answered={answered ? '' : undefined}
                 onChange={(event) => onResponseChange(index, event.target.value)}
                 placeholder={
                   locked ? '' : 'A sentence or two in your own words. Be specific and concrete.'

@@ -20,7 +20,10 @@ test('the career review recommends a tool and saves the profile', async ({ page 
   await page.getByRole('button', { name: 'Unclear direction' }).click();
 
   await expect(page.getByRole('heading', { name: 'Here is your starting point' })).toBeVisible();
-  await expect(page.getByRole('link', { name: /Start now/ })).toHaveAttribute('href', '/career/');
+  await expect(page.getByRole('link', { name: /Start now/ })).toHaveAttribute(
+    'href',
+    '/career/?guide=1'
+  );
   await expect(page.getByText('2 min')).toHaveCount(0);
 
   const profile = JSON.parse((await readStorage(page, 'career-tools-profile')) ?? 'null');
@@ -127,7 +130,7 @@ test('someone with little to show is sent to start a resume from nothing', async
   await page.getByRole('button', { name: 'I do not have much to show yet' }).click();
   await expect(page.getByRole('link', { name: /Start now/ })).toHaveAttribute(
     'href',
-    '/resume-game/?start=blank'
+    '/resume-game/?start=blank&guide=1'
   );
   const profile = JSON.parse((await readStorage(page, 'career-tools-profile')) ?? 'null');
   expect(profile).toMatchObject({ stage: 'student', focus: 'starting', firstJob: true });
