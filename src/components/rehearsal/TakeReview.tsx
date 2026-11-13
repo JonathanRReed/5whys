@@ -23,8 +23,9 @@ const SELF_CHECK = [
   { id: 'ending', label: 'I stopped when I was done' },
 ];
 
+/** Whole seconds, counted down like the audio player's own clock, so the two agree. */
 const clock = (seconds: number) => {
-  const whole = Math.max(0, Math.round(seconds));
+  const whole = Math.max(0, Math.floor(seconds));
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
 };
 
@@ -111,6 +112,15 @@ export default function TakeReview({
   // A typed answer has no pace or pauses, and words like "so" in writing are not fillers.
   const delivery = spoken && countDelivery;
   const fillers = delivery ? (facts?.fillers.filter((filler) => filler.count > 0) ?? []) : [];
+  const hasWords = Boolean(take.text.trim());
+  // Words typed for a recording (no transcript segments) still give a pace
+  // the visitor can check: their own words over the recording's length.
+  const typedForRecording = spoken && take.segments.length === 0;
+  const paceText = !hasWords
+    ? 'Needs a transcript'
+    : facts?.wordsPerMinute
+      ? `${Math.round(facts.wordsPerMinute)} words a minute`
+      : 'Too short to count';
 
   return (
     <div className="space-y-8">
@@ -175,16 +185,20 @@ export default function TakeReview({
               <div className="flex justify-between gap-4 px-4 py-2.5">
                 <dt className="text-muted-foreground">Words</dt>
                 <dd className="font-mono tabular-nums" data-testid="take-words">
-                  {facts?.wordCount ?? 0}
+                  {/* A recording with nothing written yet has not been counted, not silent. */}
+                  {spoken && !hasWords ? 'Needs a transcript' : (facts?.wordCount ?? 0)}
                 </dd>
               </div>
               {delivery && (
                 <div className="flex justify-between gap-4 px-4 py-2.5">
                   <dt className="text-muted-foreground">Pace</dt>
-                  <dd className="font-mono tabular-nums">
-                    {facts?.wordsPerMinute
-                      ? `${Math.round(facts.wordsPerMinute)} words a minute`
-                      : 'Needs a transcript'}
+                  <dd className="text-right font-mono tabular-nums" data-testid="take-pace">
+                    {paceText}
+                    {hasWords && facts?.wordsPerMinute && typedForRecording ? (
+                      <span className="block font-sans text-xs text-muted-foreground">
+                        From what you typed, over the recording's length
+                      </span>
+                    ) : null}
                   </dd>
                 </div>
               )}

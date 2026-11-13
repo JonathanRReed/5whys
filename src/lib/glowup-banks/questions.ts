@@ -35,6 +35,16 @@ const STUDENT_EARLY: readonly Audience[] = ['student', 'early-career'];
 const CHANGER: readonly Audience[] = ['career-changer'];
 const SEASONED: readonly Audience[] = ['experienced', 'career-changer'];
 
+/**
+ * Questions about the terms of a job rather than a story: asked in the
+ * rehearsal room only when the posting has a work-authorization line, or
+ * when the visitor adds them. They carry no skill, so they never show up as
+ * story questions.
+ */
+export const WORK_AUTHORIZATION_QUESTION_ID = 'q-work-authorization';
+export const SALARY_QUESTION_ID = 'q-salary-expectations';
+export const TERMS_QUESTION_IDS = [WORK_AUTHORIZATION_QUESTION_ID, SALARY_QUESTION_ID] as const;
+
 export const QUESTION_BANK: QuestionPrompt[] = [
   // General Questions
   {
@@ -50,6 +60,28 @@ export const QUESTION_BANK: QuestionPrompt[] = [
       'What made you apply for this role in particular?',
       'Which part of that are you proudest of?',
     ],
+  },
+  {
+    id: WORK_AUTHORIZATION_QUESTION_ID,
+    text: 'Will you now or in the future require sponsorship to work in this role?',
+    skillIds: [],
+    category: 'general',
+    audiences: ALL,
+    strongAnswer:
+      "A truthful, brief answer, then a return to why you fit the role. Know what your status allows before the interview by asking your school's international student office.",
+    commonMistake:
+      "Guessing about what your status allows instead of asking your school's international student office before the interview.",
+  },
+  {
+    id: SALARY_QUESTION_ID,
+    text: 'What are your salary expectations?',
+    skillIds: [],
+    category: 'general',
+    audiences: ALL,
+    strongAnswer:
+      'A range you looked up for this kind of role in this place, said plainly, and openness to talking about the whole offer.',
+    commonMistake:
+      'Naming a number you have not looked up, or saying any amount is fine before you know what the job pays.',
   },
   {
     id: 'q-why-company',

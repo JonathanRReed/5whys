@@ -5,7 +5,14 @@
  */
 
 import type { Audience } from './audience';
-import { getQuestionById, type QuestionPrompt, questionFits, questionsFor } from './questions';
+import {
+  getQuestionById,
+  type QuestionPrompt,
+  questionFits,
+  questionsFor,
+  TERMS_QUESTION_IDS,
+  WORK_AUTHORIZATION_QUESTION_ID,
+} from './questions';
 import { SKILL_MAP } from './skills';
 
 export interface RehearsalQuestion {
@@ -85,6 +92,13 @@ export interface RehearsalPlanInput {
   fromPosting?: readonly RehearsalQuestion[];
   /** Skills the posting names, so technical questions are offered only when asked for. */
   postingSkillIds?: Iterable<string>;
+  /**
+   * The posting's line about work authorization or sponsorship, verbatim.
+   * When there is one, the room asks the sponsorship question and shows it.
+   */
+  workAuthorizationLine?: string | null;
+  /** Questions about the terms of the job the visitor chose to add. */
+  extras?: readonly string[];
 }
 
 /**
@@ -140,6 +154,17 @@ export function planRehearsal(input: RehearsalPlanInput): RehearsalQuestion[] {
     if (filled >= slots) break;
     if (add(fromBank(question))) filled++;
   }
+
+  // Terms of the job come after the stories and before the close: the
+  // sponsorship question when the posting raises it, then any the visitor
+  // added.
+  const terms = new Set(input.extras ?? []);
+  if (input.workAuthorizationLine) {
+    const question = getQuestionById(WORK_AUTHORIZATION_QUESTION_ID);
+    if (question) add(fromBank(question, input.workAuthorizationLine));
+    terms.delete(WORK_AUTHORIZATION_QUESTION_ID);
+  }
+  for (const id of TERMS_QUESTION_IDS) if (terms.has(id)) add(bank(id));
 
   if (closing) plan.push(closing);
   return plan;
