@@ -102,7 +102,9 @@ test('bullets written on the desk are in the tailored resume, under the job', as
   await expect(written).toBeChecked();
   const box = await written.boundingBox();
   expect(box?.height ?? 0).toBeGreaterThanOrEqual(24);
-  await expect(page.getByLabel(/Place it after/)).toContainText('Tracked weekly inventory');
+  await expect(page.getByTestId('desk-bullet-place-note-0')).toContainText(
+    'Under FreshWay Market, Cashier, 2025 to present, the one job on your resume.'
+  );
   const [download] = await Promise.all([
     page.waitForEvent('download'),
     page.getByRole('button', { name: 'Download the resume for this role (.docx)' }).click(),
