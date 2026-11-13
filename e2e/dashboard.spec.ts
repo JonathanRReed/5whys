@@ -163,12 +163,13 @@ test('one button clears everything written on a shared computer', async ({ page 
   await expect(page.getByText('On a shared or lab computer')).toBeVisible();
   const clear = page.getByRole('button', { name: 'Clear everything on this device' });
   await clear.click();
-  // It arms in place and says what will be lost before anything is deleted.
-  await expect(page.getByText(/Delete everything you wrote/)).toBeVisible();
+  // It arms in place with a verb; what will be lost is written beside it.
+  await expect(page.getByRole('button', { name: 'Delete everything now' })).toBeVisible();
+  await expect(page.getByText(/Clearing deletes everything you wrote/)).toBeVisible();
   expect(
     await page.evaluate(() => localStorage.getItem('networking-practice-draft'))
   ).not.toBeNull();
-  await page.getByRole('button', { name: /Delete everything you wrote/ }).click();
+  await page.getByRole('button', { name: 'Delete everything now' }).click();
   await page.waitForURL((url) => url.pathname === '/');
   const left = await page.evaluate(() => Object.keys(localStorage).sort());
   expect(left).toEqual(['career-tools-theme']);

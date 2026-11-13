@@ -75,7 +75,7 @@ test('finding 1: clearing everything in one tab empties the desk in another', as
   const dashboard = await open(context, '/dashboard/');
   const clear = dashboard.getByRole('button', { name: 'Clear everything on this device' });
   await clear.click();
-  await dashboard.getByRole('button', { name: /Delete everything you wrote/ }).click();
+  await dashboard.getByRole('button', { name: 'Delete everything now' }).click();
   await expect.poll(() => readStorage(desk, 'career-applications')).toBeNull();
 
   await desk.bringToFront();
