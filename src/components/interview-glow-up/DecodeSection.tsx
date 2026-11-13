@@ -1,5 +1,11 @@
 import * as React from 'react';
 import {
+  loadApplicationDesks,
+  remapLinkedDesks,
+  saveApplicationDesks,
+} from '../../lib/application-desk';
+import { loadApplications } from '../../lib/applications';
+import {
   type Audience,
   getSkillName,
   postingRepeatedTerms,
@@ -18,10 +24,13 @@ import {
   updateRole,
 } from '../../lib/glowup-store';
 import {
+  bulletsFromRequirements,
   decodePostingToBullets,
   hiringCondition,
   type PostingSection,
   parsePosting as readPosting,
+  redecodeRequirements,
+  requirementsFromBullets,
   requirementToBullet,
   SAMPLE_POSTING,
   type SetAsideReason,
@@ -108,6 +117,28 @@ function shortText(text: string): string {
 
 const EMPTY_FIELDS: RoleFields = { jobTitle: '', company: '', jdUrl: '', rawJdText: '' };
 
+/**
+ * Move the qualification rows of every application on this posting to their
+ * requirements' new ids, after the posting is decoded again. Written only
+ * when a row actually moved or went.
+ */
+function remapDesksFor(
+  roleId: string,
+  moved: ReadonlyMap<string, string>,
+  parsedIds: ReadonlySet<string>
+): void {
+  const linked = loadApplications()
+    .applications.filter((a) => a.roleId === roleId)
+    .map((a) => a.id);
+  if (linked.length === 0) return;
+  const desks = loadApplicationDesks();
+  const next = remapLinkedDesks(desks, linked, moved, parsedIds);
+  const changed = linked.some(
+    (id) => desks.desks[id] && next.desks[id]?.qualifications !== desks.desks[id].qualifications
+  );
+  if (changed) saveApplicationDesks(next);
+}
+
 export default function DecodeSection({
   data,
   setData,
@@ -170,7 +201,23 @@ export default function DecodeSection({
   // tell a requirement from the employer's address.
   const parsePosting = () => {
     if (!fields.rawJdText.trim()) return;
-    const { parsed, bullets: parsedBullets } = decodePostingToBullets(fields.rawJdText);
+    const decoded = decodePostingToBullets(fields.rawJdText);
+    const { parsed } = decoded;
+    let parsedBullets = decoded.bullets;
+    if (currentRole && bullets.length > 0) {
+      // Parsing again keeps what was decided, here or on the Application
+      // Desk: each confirmation, dismissal and edit follows its line, and
+      // where the visitor stands on each requirement follows it too, on every
+      // application that uses this posting.
+      const redecoded = redecodeRequirements(
+        requirementsFromBullets(bullets),
+        currentRole.parsedJdText ?? currentRole.rawJdText ?? '',
+        parsed.requirements,
+        parsed.text
+      );
+      parsedBullets = bulletsFromRequirements(redecoded.requirements, bullets);
+      remapDesksFor(currentRole.id, redecoded.moved, redecoded.parsedIds);
+    }
     const setAside = parsed.setAside.filter((line) => line.reason !== 'heading').length;
     announce(
       `Lines from the posting (${parsedBullets.length}).${setAside > 0 ? ` Set aside ${setAside} ${setAside === 1 ? 'line' : 'lines'} that are not requirements.` : ''}`
@@ -398,7 +445,7 @@ export default function DecodeSection({
           )}
           {bullets.length > 0 && (
             <span className="text-xs text-muted-foreground">
-              Parsing again replaces the tags below.
+              Parsing again keeps your choices on lines that did not change.
             </span>
           )}
         </div>

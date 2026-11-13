@@ -11,6 +11,7 @@ import {
   readStoredJson,
   STORAGE_KEY,
   saveData,
+  switchRole,
 } from '../../lib/glowup-store';
 import { readProfile } from '../../lib/profile';
 import { Button } from '../ui/button';
@@ -32,6 +33,30 @@ import WorkspaceTabs, { type Tab } from './WorkspaceTabs';
 
 const SAVE_DEBOUNCE_MS = 300;
 const TABS: Tab[] = ['decode', 'stories', 'packet', 'vault'];
+
+/**
+ * The role a link asked for ("?role=r1"), when it is one of the saved roles.
+ * An unknown id is ignored.
+ */
+function readRoleFromUrl(data: GlowUpData): string | null {
+  if (typeof window === 'undefined') return null;
+  const wanted = new URLSearchParams(window.location.search).get('role');
+  return wanted && data.roles.some((r) => r.id === wanted) ? wanted : null;
+}
+
+/**
+ * Take the role back out of the address once it is current, so a reload
+ * after switching to another role opens on that one.
+ */
+function forgetRoleInUrl(): void {
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('role');
+    window.history.replaceState(window.history.state, '', url);
+  } catch {
+    // The address keeps the role; it still names a saved role.
+  }
+}
 
 function readTabFromUrl(): Tab | null {
   if (typeof window === 'undefined') return null;
@@ -103,10 +128,16 @@ export default function InterviewGlowUpWorkspace() {
     const raw = readStoredJson();
     const stored = loadData();
     baseRef.current = { raw, data: stored };
-    const loaded = stored.currentRoleId
+    const opened = stored.currentRoleId
       ? ensurePacketForRole(stored, stored.currentRoleId)
       : stored;
-    loadedJsonRef.current = JSON.stringify(loaded);
+    loadedJsonRef.current = JSON.stringify(opened);
+    // A link that names a role ("?role=r1", from the dashboard or the desk)
+    // opens on it, even in a new tab. That is the change the role switcher
+    // makes, so it is saved like one. With no role named, nothing is written.
+    const asked = readRoleFromUrl(stored);
+    const loaded = asked && asked !== opened.currentRoleId ? switchRole(opened, asked) : opened;
+    if (asked) forgetRoleInUrl();
     setData(loaded);
     setAudience(audienceForProfile(readProfile()));
     setHydrated(true);
@@ -305,7 +336,7 @@ export default function InterviewGlowUpWorkspace() {
           </span>
           <span className="ml-auto flex flex-wrap items-center">
             <a
-              href="/interview-glow-up/rehearse/"
+              href={`/interview-glow-up/rehearse/?role=${encodeURIComponent(currentRole.id)}`}
               className="mr-3 inline-flex min-h-6 items-center underline underline-offset-4 hover:text-foam focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-foam"
             >
               Rehearse out loud
