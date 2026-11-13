@@ -31,6 +31,7 @@ export {
   questionsFor,
   resolveQuestionText,
   SUGGESTED_QUESTIONS_TO_ASK,
+  TERMS_QUESTION_IDS,
 } from './questions';
 export {
   CAREER_CHANGER_MUST_ASK,

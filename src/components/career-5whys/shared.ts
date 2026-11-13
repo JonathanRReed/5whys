@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { isNonAnswer, isRealAnswer, NON_ANSWER_FOLLOW_UP } from '../../lib/non-answer';
 import { isStudentLike, readProfile } from '../../lib/profile';
 
 export const WHY_COUNT = 5;
@@ -31,17 +32,24 @@ export type TrackConfig = {
   label: string;
   description: string;
   topicLabel: string;
+  /** Student register, the default. */
   topicPlaceholder: string;
   questions: readonly QuestionBuilder[];
+  /** Student register, the default. */
   example: TrackExample;
+  /** Shown instead when a saved profile says the visitor is past school. */
+  professional?: { topicPlaceholder: string; example: TrackExample };
 };
+
+/** Which voice the samples speak in. Students first, always. */
+export type Register = 'student' | 'professional';
 
 export const TRACKS: Record<'career' | 'interest', TrackConfig> = {
   career: {
     label: 'Career Path',
     description: 'You have a target role or industry in mind and want to pressure-test the reason.',
     topicLabel: 'Target role / path',
-    topicPlaceholder: 'e.g., Product manager, UX researcher, nurse practitioner',
+    topicPlaceholder: 'e.g., Nursing, teaching, software developer',
     questions: [
       ({ topic }) => `What is pulling you toward ${topic} right now? Name the most concrete thing.`,
       ({ prev }) =>
@@ -60,15 +68,29 @@ export const TRACKS: Record<'career' | 'interest', TrackConfig> = {
           : 'Last layer. What value or need sits at the root of all this?',
     ],
     example: {
-      persona: 'Career changer, six years in customer support, aiming at product management',
-      topic: 'Product manager',
+      persona: 'Second-year community college student, set on nursing',
+      topic: 'Nursing',
       answers: [
-        'I keep getting pulled into fixing the product instead of apologizing for it. Twice this year I wrote specs for bugs that support kept eating, and both got shipped.',
-        'I am tired of being downstream of decisions I could see coming. In support I catch the cost of a bad call six weeks late, after it has already burned users and my team.',
-        'I want to be in the room where the tradeoffs get made. Watching preventable problems repeat makes me feel useless, and I have proof I can spot them early.',
-        'If I stay where I am, I get better at absorbing damage instead of preventing it. Ten more years of that is a skill set I do not want.',
-        'I need my work to change outcomes, not just soften them. Agency over prevention is what I am actually chasing, more than the title.',
+        'I like the clinical rotation shadow days more than anything else in my classes. Being on the floor felt like the first time school was pointed at something real.',
+        'On the floor I could see a person get calmer because someone explained what was happening to them. In class nothing changes for anyone when I get an answer right.',
+        'When my little brother was in the hospital, the nurse was the only one who told us what the machines meant. I remember how much that helped my mom.',
+        'I want to be the person who makes a scary place less confusing for a family. Being useful in a hard moment matters more to me than the title.',
+        'I need work where helping someone understand what is happening is part of the job, not extra. That is what I would check for in any path, nursing or not.',
       ],
+    },
+    professional: {
+      topicPlaceholder: 'e.g., Product manager, UX researcher, nurse practitioner',
+      example: {
+        persona: 'Career changer, six years in customer support, aiming at product management',
+        topic: 'Product manager',
+        answers: [
+          'I keep getting pulled into fixing the product instead of apologizing for it. Twice this year I wrote specs for bugs that support kept eating, and both got shipped.',
+          'I am tired of being downstream of decisions I could see coming. In support I catch the cost of a bad call six weeks late, after it has already burned users and my team.',
+          'I want to be in the room where the tradeoffs get made. Watching preventable problems repeat makes me feel useless, and I have proof I can spot them early.',
+          'If I stay where I am, I get better at absorbing damage instead of preventing it. Ten more years of that is a skill set I do not want.',
+          'I need my work to change outcomes, not just soften them. Agency over prevention is what I am actually chasing, more than the title.',
+        ],
+      },
     },
   },
   interest: {
@@ -78,7 +100,7 @@ export const TRACKS: Record<'career' | 'interest', TrackConfig> = {
     topicPlaceholder: 'e.g., Biology, game design, writing, climate',
     questions: [
       ({ topic }) =>
-        `What specifically pulls you in about ${topic}? Not the whole subject, the exact part you would do for free.`,
+        `What specifically pulls you in about ${topic}? Not the whole subject, the exact part that holds your attention.`,
       ({ prev }) =>
         prev
           ? `Why "${prev}" and not the things next to it? What makes that part the one that sticks?`
@@ -112,6 +134,16 @@ export const TRACKS: Record<'career' | 'interest', TrackConfig> = {
 
 export type Track = keyof typeof TRACKS;
 
+/** The placeholder and worked example for a track in the visitor's register. */
+export function trackSamples(
+  track: Track,
+  register: Register
+): { topicPlaceholder: string; example: TrackExample } {
+  const config = TRACKS[track];
+  if (register === 'professional' && config.professional) return config.professional;
+  return { topicPlaceholder: config.topicPlaceholder, example: config.example };
+}
+
 export type WhySnapshot = {
   id: string;
   timestamp: string;
@@ -123,6 +155,8 @@ export type WhySnapshot = {
   track: Track;
   topic: string;
   responses: string[];
+  /** The answer the visitor chose as the real reason, when they chose one. */
+  rootIndex?: number;
   updatedAt: string;
   version: number;
 };
@@ -211,6 +245,19 @@ export function normalizeSnapshot(entry: unknown): WhySnapshot | null {
   // Snapshots saved before version 3 carry no root reason or next step;
   // derive both from the answers so old history still feeds the dashboard.
   const derived = computeSynthesis(responses, topic, track);
+  const rootReason = typeof data.rootReason === 'string' ? data.rootReason : derived.root;
+  // Snapshots saved before the choice was stored still name the root in
+  // words; find the answer it came from so loading keeps that choice.
+  const rootIndex =
+    validRootIndex(data.rootIndex) ??
+    (rootReason
+      ? (() => {
+          const found = responses.findIndex(
+            (response) => response.trim() && firstSentence(response) === rootReason
+          );
+          return found === -1 || found === WHY_COUNT - 1 ? undefined : found;
+        })()
+      : undefined);
   return {
     id: typeof data.id === 'string' ? data.id : `snapshot_${cryptoRandom()}`,
     timestamp: typeof data.timestamp === 'string' ? data.timestamp : new Date().toISOString(),
@@ -218,14 +265,39 @@ export function normalizeSnapshot(entry: unknown): WhySnapshot | null {
       typeof data.whyStatement === 'string' && data.whyStatement
         ? data.whyStatement
         : derived.whyStatement,
-    rootReason: typeof data.rootReason === 'string' ? data.rootReason : derived.root,
+    rootReason,
     nextStep: typeof data.nextStep === 'string' ? data.nextStep : derived.nextStep,
     track,
     topic,
     responses,
+    ...(rootIndex !== undefined ? { rootIndex } : {}),
     updatedAt: typeof data.updatedAt === 'string' ? data.updatedAt : new Date().toISOString(),
     version: typeof data.version === 'number' ? data.version : 1,
   } satisfies WhySnapshot;
+}
+
+/**
+ * The snapshot history as stored right now, or null when it cannot be read.
+ * Read again before every change, so a save in one tab never drops what
+ * another tab saved.
+ */
+export function readStoredHistory(): WhySnapshot[] | null {
+  if (!isBrowser()) return [];
+  try {
+    const stored = window.localStorage.getItem(HISTORY_KEY);
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((entry) => normalizeSnapshot(entry)).filter(Boolean) as WhySnapshot[];
+  } catch (err) {
+    console.warn('Unable to load why snapshot history', err);
+    return null;
+  }
+}
+
+/** The same saved snapshot: same id and same save time. */
+export function sameSnapshot(a: WhySnapshot, b: WhySnapshot): boolean {
+  return a.id === b.id && a.timestamp === b.timestamp;
 }
 
 /**
@@ -291,9 +363,13 @@ export function topicLabel(raw: string, track: Track): string {
   return readsLikeSentence ? fallback : normalized;
 }
 
+/** Answers up to this many words are quoted whole in the next question. */
+export const QUOTE_MAX_WORDS = 14;
+
 /**
- * Condense a free-text answer into a short quotable fragment:
- * first sentence, capped at a word limit, trailing punctuation stripped.
+ * Condense a free-text answer into a short quotable fragment: the first
+ * sentence, cut at a word boundary when it runs past the limit. A cut is
+ * marked with an ellipsis so it never reads as the whole answer.
  */
 export function condenseAnswer(raw: unknown, maxWords = 10): string {
   const text = (typeof raw === 'string' ? raw : '').replace(/\s+/g, ' ').trim();
@@ -307,7 +383,22 @@ export function condenseAnswer(raw: unknown, maxWords = 10): string {
     .join(' ')
     .replace(/[.,;:!?]+$/, '')
     .trim();
-  return truncated ? `${clipped}...` : clipped;
+  return truncated ? `${clipped}\u2026` : clipped;
+}
+
+/**
+ * The previous answer as the next question may quote it: the whole first
+ * sentence when it is short, or nothing when it is long. A question never
+ * quotes a clipped answer, because "Why does "I just need a..." matter" reads
+ * as if the cut were what the visitor said. Placeholders such as "idk" are
+ * not quoted either.
+ */
+export function quotableAnswer(raw: unknown): string {
+  if (!isRealAnswer(raw)) return '';
+  const text = (raw as string).replace(/\s+/g, ' ').trim();
+  const sentenceMatch = text.match(/^[^.!?]+/);
+  const sentence = (sentenceMatch ? sentenceMatch[0] : text).replace(/[.,;:!?]+$/, '').trim();
+  return sentence.split(' ').length <= QUOTE_MAX_WORDS ? sentence : '';
 }
 
 /**
@@ -323,7 +414,7 @@ export function buildPrompts(track: Track, topic: string, responses: string[]): 
   return config.questions.map((build, index) =>
     build({
       topic: label,
-      prev: index === 0 ? '' : condenseAnswer(safe[index - 1]),
+      prev: index === 0 ? '' : quotableAnswer(safe[index - 1]),
     })
   );
 }
@@ -400,6 +491,7 @@ export function isNearRepeat(current: string, previous: string): boolean {
 export function getAnswerNudge(current: string, previous: string): string | null {
   const trimmed = current.trim();
   if (!trimmed) return null;
+  if (isNonAnswer(trimmed)) return NON_ANSWER_FOLLOW_UP;
   if (previous.trim() && isNearRepeat(trimmed, previous.trim())) {
     return 'This mostly restates your last answer. Go one level down: what does it protect, cost, or prove?';
   }
@@ -480,7 +572,9 @@ export function computeSynthesis(
 ): Synthesis {
   const safe = ensureResponsesLength(responses);
   const topicText = typeof topic === 'string' ? topic.trim() : '';
-  const firstEmpty = safe.findIndex((response) => response.trim().length === 0);
+  // A placeholder such as "idk" holds the chain where it is, the same as an
+  // empty box: it is not captured, quoted, or counted toward completion.
+  const firstEmpty = safe.findIndex((response) => !isRealAnswer(response));
   const sequentialCount = firstEmpty === -1 ? WHY_COUNT : firstEmpty;
   const progressPercent = Math.round((sequentialCount / WHY_COUNT) * 100);
   const isComplete = sequentialCount === WHY_COUNT;

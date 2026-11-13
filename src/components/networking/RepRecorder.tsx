@@ -8,7 +8,10 @@ const clock = (seconds: number) =>
   `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
 
 type Props = {
-  /** What was being practised, saved with a kept recording. */
+  /**
+   * What is being practised. It is read when recording starts and saved
+   * with the take, so editing the draft afterwards cannot relabel it.
+   */
   label: string;
 };
 
@@ -27,6 +30,10 @@ export default function RepRecorder({ label }: Props) {
   const [keptTake, setKeptTake] = React.useState<typeof take>(null);
   const kept = Boolean(take && take === keptTake);
   const [notice, setNotice] = React.useState<string | null>(null);
+  // A save in flight. A second press while it runs would store the take twice.
+  const [keeping, setKeeping] = React.useState(false);
+  const keepingRef = React.useRef(false);
+  const takeLabel = React.useRef(label);
   const recorder = React.useRef<SpeechRecorder | null>(null);
   const starting = React.useRef(false);
   const startedAt = React.useRef(0);
@@ -69,6 +76,7 @@ export default function RepRecorder({ label }: Props) {
       const { createRecorder } = await loadFeature(import('../../lib/speech'));
       recorder.current = createRecorder({ onLevel: setLevel });
       await recorder.current.start();
+      takeLabel.current = label;
       startedAt.current = performance.now();
       setElapsed(0);
       setRecording(true);
@@ -99,18 +107,25 @@ export default function RepRecorder({ label }: Props) {
   };
 
   const keep = async () => {
-    if (!take) return;
+    if (!take || kept || keepingRef.current) return;
+    keepingRef.current = true;
+    setKeeping(true);
     const saving = take;
-    const { saveRecording } = await loadFeature(import('../../lib/local-db'));
-    const result = await saveRecording({
-      tool: 'networking-practice',
-      question: label,
-      durationMs: take.durationMs,
-      audio: take.blob,
-      mimeType: take.mimeType,
-    });
-    if (result.ok) setKeptTake(saving);
-    else setNotice(result.message);
+    try {
+      const { saveRecording } = await loadFeature(import('../../lib/local-db'));
+      const result = await saveRecording({
+        tool: 'networking-practice',
+        question: takeLabel.current,
+        durationMs: saving.durationMs,
+        audio: saving.blob,
+        mimeType: saving.mimeType,
+      });
+      if (result.ok) setKeptTake(saving);
+      else setNotice(result.message);
+    } finally {
+      keepingRef.current = false;
+      setKeeping(false);
+    }
   };
 
   return (
@@ -167,9 +182,9 @@ export default function RepRecorder({ label }: Props) {
               size="sm"
               variant="ghost"
               onClick={() => void runFeature(keep)}
-              disabled={kept}
+              disabled={kept || keeping}
             >
-              {kept ? 'Kept on this device' : 'Keep this recording'}
+              {kept ? 'Kept on this device' : keeping ? 'Keeping' : 'Keep this recording'}
             </Button>
           </div>
         </div>

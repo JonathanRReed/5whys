@@ -9,6 +9,7 @@
  * The data structure is already JSON-serializable for easy migration.
  */
 
+import { isRealAnswer } from './non-answer';
 import {
   isPostingSection,
   isSourceSpan,
@@ -221,14 +222,20 @@ export function loadData(): GlowUpData {
   }
 }
 
-export function saveData(data: GlowUpData): void {
-  if (typeof window === 'undefined') return;
+/**
+ * Write the workspace. Returns false when the browser refused (storage full
+ * or blocked), so the page never says "Saved" for an edit that was not kept.
+ */
+export function saveData(data: GlowUpData): boolean {
+  if (typeof window === 'undefined') return false;
 
   try {
     const json = JSON.stringify(data);
     localStorage.setItem(STORAGE_KEY, json);
+    return true;
   } catch (error) {
     console.error('[GlowUp] Failed to save data:', error);
+    return false;
   }
 }
 
@@ -241,8 +248,12 @@ export function clearAllData(): void {
 // Export/Import
 // ============================================================================
 
-export function exportJSON(): void {
-  const data = loadData();
+/**
+ * Download the workspace as a backup file. Pass the data on screen when it
+ * may be newer than what storage holds, for example after a failed save.
+ */
+export function exportJSON(current?: GlowUpData): void {
+  const data = current ?? loadData();
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
 
@@ -546,6 +557,8 @@ export function getTopGaps(
   const storySkills = new Set<string>();
 
   for (const story of data.stories) {
+    // "idk" is not a story yet, so it cannot close a gap.
+    if (!isRealAnswer(story.play)) continue;
     storySkills.add(story.primarySkillId);
     for (const id of story.otherSkillIds) storySkills.add(id);
   }

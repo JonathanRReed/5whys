@@ -1,14 +1,16 @@
 import * as React from 'react';
-import { clearAllData, exportJSON } from '../../lib/glowup-store';
+import { clearAllData, exportJSON, type GlowUpData } from '../../lib/glowup-store';
 import ConfirmButton from '../shared/ConfirmButton';
 
 type Props = {
   onClearData: () => void;
+  /** The workspace as it is on screen, which can be newer than storage. */
+  data?: GlowUpData;
 };
 
 const EXPORT_FEEDBACK_MS = 2000;
 
-export default function WorkspaceHeader({ onClearData }: Props) {
+export default function WorkspaceHeader({ onClearData, data }: Props) {
   const [exportCount, setExportCount] = React.useState(0);
   const [showExportFeedback, setShowExportFeedback] = React.useState(false);
   const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -20,7 +22,7 @@ export default function WorkspaceHeader({ onClearData }: Props) {
   }, []);
 
   const handleExport = () => {
-    exportJSON();
+    exportJSON(data);
     setExportCount((count) => count + 1);
     setShowExportFeedback(true);
     if (timeoutRef.current !== null) clearTimeout(timeoutRef.current);
@@ -58,7 +60,7 @@ export default function WorkspaceHeader({ onClearData }: Props) {
           onClick={handleExport}
           className="rounded-lg border border-border/50 bg-overlay/30 px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-overlay/50 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
         >
-          Export JSON
+          Download a backup file
         </button>
         <ConfirmButton confirmLabel="Delete every role, story, and packet?" onConfirm={handleClear}>
           Clear data

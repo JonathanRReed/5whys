@@ -23,10 +23,15 @@ import {
   toggleStoryInPacket,
   updateStory,
 } from '../../lib/glowup-store';
+import { isNonAnswer, isRealAnswer, NON_ANSWER_FOLLOW_UP } from '../../lib/non-answer';
 import { cn } from '../../lib/utils';
 import Announcer, { useAnnouncer } from '../shared/Announcer';
 import { LightbulbIcon, PencilIcon, WarningIcon, XIcon } from './icons';
 import SkillSelect from './SkillSelect';
+
+/** The story being written, kept by the workspace so a tab switch does not drop it. */
+export type StoryEditor = { editingId: string | null; formData: Partial<Story> };
+export const CLOSED_EDITOR: StoryEditor = { editingId: null, formData: {} };
 
 type Props = {
   data: GlowUpData;
@@ -35,7 +40,20 @@ type Props = {
   currentPacket: InterviewPacket | undefined;
   onGoToDecode: () => void;
   audience?: Audience;
+  /** Supplied by the workspace so an unsaved story survives switching tabs. */
+  editor?: StoryEditor;
+  onEditorChange?: React.Dispatch<React.SetStateAction<StoryEditor>>;
 };
+
+/** The one line the cheat sheet shows: the proof's first sentence, kept short. */
+export function proofLine(proof: string): string {
+  const text = proof.replace(/\s+/g, ' ').trim();
+  if (!text) return '';
+  const sentence = (text.match(/^[^.!?]+[.!?]?/)?.[0] ?? text).trim();
+  if (sentence.length <= 100) return sentence;
+  const cut = sentence.slice(0, 100);
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(' '), 60)).trimEnd()}\u2026`;
+}
 
 const MAX_SKILL_SUGGESTIONS = 8;
 
@@ -44,7 +62,6 @@ const EXAMPLES = {
   student: {
     trigger: 'Club sign-up fix, campus job rush',
     hook: 'The club sign-up sheet kept losing people halfway through...',
-    proofSnippet: 'Finished on time, or: the club still uses it',
     proof: 'A grade, a before and after, what an instructor or manager said...',
     proofHint:
       'Numbers you can stand behind, feedback, or a before and after. No business numbers? A grade, the size of the job, or what an instructor said counts too.',
@@ -52,7 +69,6 @@ const EXAMPLES = {
   work: {
     trigger: 'Holiday schedule, freight backlog',
     hook: 'Trucks were sitting half unloaded at the end of every shift...',
-    proofSnippet: 'Trucks worked the same day, or: fewer last-minute schedule changes',
     proof: 'Hours saved, errors caught, a schedule that held, what a manager or customer said...',
     proofHint:
       'Numbers you can stand behind, feedback, or a before and after: hours saved, counts that matched, a schedule that held.',
@@ -66,11 +82,15 @@ export default function StoriesSection({
   currentPacket,
   onGoToDecode,
   audience = 'student',
+  editor: liftedEditor,
+  onEditorChange,
 }: Props) {
   const student = usesStudentExamples(audience);
   const examples = student ? EXAMPLES.student : EXAMPLES.work;
-  const [editingId, setEditingId] = React.useState<string | null>(null);
-  const [formData, setFormData] = React.useState<Partial<Story>>({});
+  const [ownEditor, setOwnEditor] = React.useState<StoryEditor>(CLOSED_EDITOR);
+  const { editingId, formData } = liftedEditor ?? ownEditor;
+  const setEditor = onEditorChange ?? setOwnEditor;
+  const setFormData = (next: Partial<Story>) => setEditor((prev) => ({ ...prev, formData: next }));
   const [customQuestion, setCustomQuestion] = React.useState('');
   const [showGeneralQuestions, setShowGeneralQuestions] = React.useState(false);
   const [announcement, announce] = useAnnouncer();
@@ -85,29 +105,41 @@ export default function StoriesSection({
 
   const startNew = (skillId?: string) => {
     focusAfterRender(editorHeadingRef);
-    setEditingId('new');
     setCustomQuestion('');
     setShowGeneralQuestions(false);
-    setFormData({
-      primarySkillId: skillId ?? '',
-      otherSkillIds: [],
-      trigger: '',
-      hook: '',
-      proofSnippet: '',
-      play: '',
-      proof: '',
-      confidence: 30,
-      readiness: 'rough',
-      questionPrompts: [],
-      tags: [],
+    setEditor({
+      editingId: 'new',
+      formData: {
+        primarySkillId: skillId ?? '',
+        otherSkillIds: [],
+        trigger: '',
+        hook: '',
+        proofSnippet: '',
+        play: '',
+        proof: '',
+        confidence: 30,
+        readiness: 'rough',
+        questionPrompts: [],
+        tags: [],
+      },
     });
   };
 
   const saveStory = () => {
-    if (!formData.primarySkillId || !formData.play) return;
+    if (!formData.primarySkillId || !isRealAnswer(formData.play)) return;
     const readiness = formData.readiness ?? readinessOf(formData);
+    // The proof is asked for once. Its first line is what the cheat sheet
+    // shows; an older story keeps its own line while its proof is unchanged.
+    const original = data.stories.find((story) => story.id === editingId);
+    const proof = formData.proof ?? '';
+    const proofSnippet =
+      original?.proofSnippet && (original.proof || original.proofSnippet) === proof
+        ? original.proofSnippet
+        : proofLine(proof);
     const payload = {
       ...formData,
+      proof,
+      proofSnippet,
       readiness,
       confidence: READINESS.find((r) => r.id === readiness)?.confidence ?? 60,
     };
@@ -126,17 +158,16 @@ export default function StoriesSection({
       editingId === 'new' && currentPacket ? 'Story saved and added to the packet.' : 'Story saved.'
     );
     focusAfterRender(newStoryRef);
-    setEditingId(null);
-    setFormData({});
+    setEditor(CLOSED_EDITOR);
   };
 
   const cancelEdit = () => {
     focusAfterRender(newStoryRef);
-    setEditingId(null);
-    setFormData({});
+    setEditor(CLOSED_EDITOR);
   };
 
-  const canSave = Boolean(formData.primarySkillId && formData.play);
+  const playIsPlaceholder = isNonAnswer(formData.play);
+  const canSave = Boolean(formData.primarySkillId && isRealAnswer(formData.play));
   const playSentences = (formData.play ?? '').split(/[.!?]+/).filter((s) => s.trim()).length;
   const hasNumbers = /[$%#0-9]/.test(formData.proof ?? '');
   const topGaps = currentRole ? getTopGaps(data, currentRole.bullets) : [];
@@ -243,26 +274,28 @@ export default function StoriesSection({
           </div>
 
           <div className="space-y-1 text-xs leading-relaxed text-muted-foreground">
-            <p>A story has four parts:</p>
-            <ul className="list-inside list-disc space-y-0.5 pl-2">
+            <p>Tell it in the order you would say it out loud:</p>
+            <ol className="list-inside list-decimal space-y-0.5 pl-2">
               <li>
-                <strong className="text-foreground">Trigger</strong>: a short name that brings the
-                story back to mind.
+                <strong className="text-foreground">The situation</strong> (the hook): what was
+                going on, in a sentence.
               </li>
               <li>
-                <strong className="text-foreground">Hook</strong>: the situation, in a sentence.
+                <strong className="text-foreground">What you did</strong> (the play).
               </li>
               <li>
-                <strong className="text-foreground">Play</strong>: what you did.
+                <strong className="text-foreground">What came of it</strong> (the proof).
               </li>
-              <li>
-                <strong className="text-foreground">Proof</strong>: what came of it.
-              </li>
-            </ul>
+            </ol>
             <p>
-              If you know STAR: Situation and Task are the Hook, Action is the Play, and Result is
-              the Proof.
+              Give it a short name too (the trigger), so it comes back to mind in the room. If you
+              know STAR: Situation and Task are the hook, Action is the play, Result is the proof.
             </p>
+            {editingId === 'new' && (
+              <p className="text-foreground">
+                Not saved yet. It stays here if you switch tabs; press Save to keep it.
+              </p>
+            )}
           </div>
 
           {student ? (
@@ -442,16 +475,16 @@ export default function StoriesSection({
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label
                 htmlFor="story-trigger"
                 className="mb-1 block text-sm font-medium text-foreground"
               >
-                Trigger
+                A short name for it (trigger)
               </label>
               <p className="mb-1 text-xs text-muted-foreground">
-                A short name, a few words, that brings this story back to mind.
+                A few words that bring this story back to mind.
               </p>
               <input
                 id="story-trigger"
@@ -467,10 +500,10 @@ export default function StoriesSection({
                 htmlFor="story-hook"
                 className="mb-1 block text-sm font-medium text-foreground"
               >
-                Hook
+                The situation (hook)
               </label>
               <p className="mb-1 text-xs text-muted-foreground">
-                The situation in a sentence: what was going on, or what was wrong?
+                What was going on, or what was wrong, in a sentence.
               </p>
               <input
                 id="story-hook"
@@ -478,25 +511,6 @@ export default function StoriesSection({
                 value={formData.hook ?? ''}
                 onChange={(e) => setFormData({ ...formData, hook: e.target.value })}
                 placeholder={examples.hook}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="story-proof-snippet"
-                className="mb-1 block text-sm font-medium text-foreground"
-              >
-                Proof in one line
-              </label>
-              <p className="mb-1 text-xs text-muted-foreground">
-                What came of it, short enough to glance at during the call.
-              </p>
-              <input
-                id="story-proof-snippet"
-                type="text"
-                value={formData.proofSnippet ?? ''}
-                onChange={(e) => setFormData({ ...formData, proofSnippet: e.target.value })}
-                placeholder={examples.proofSnippet}
                 className={inputClass}
               />
             </div>
@@ -508,7 +522,7 @@ export default function StoriesSection({
               className="mb-1 flex items-center justify-between text-sm font-medium text-foreground"
             >
               <span>
-                Play: what you did <span aria-hidden="true">*</span>
+                What you did (play) <span aria-hidden="true">*</span>
                 <span className="sr-only">(required)</span>
               </span>
               {playSentences > 4 && (
@@ -527,13 +541,16 @@ export default function StoriesSection({
               aria-describedby={canSave ? undefined : 'story-save-missing'}
               value={formData.play ?? ''}
               onChange={(e) => setFormData({ ...formData, play: e.target.value })}
-              placeholder="What was the challenge? What exactly did you do?"
+              placeholder="What exactly did you do, and what did you decide?"
               rows={4}
               className={cn(
                 'w-full rounded-lg border bg-overlay/30 px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2',
                 playSentences > 4 ? 'border-gold/50' : 'border-border/50'
               )}
             />
+            {playIsPlaceholder && (
+              <p className="mt-1 text-sm text-foreground">{NON_ANSWER_FOLLOW_UP}</p>
+            )}
           </div>
 
           <div>
@@ -541,7 +558,7 @@ export default function StoriesSection({
               htmlFor="story-proof"
               className="mb-1 flex items-center justify-between text-sm font-medium text-foreground"
             >
-              <span>Proof: what came of it</span>
+              <span>What came of it (proof)</span>
               {!hasNumbers && formData.proof && formData.proof.length > 10 && (
                 <span className="flex items-center gap-1 text-xs text-gold">
                   <LightbulbIcon className="h-3 w-3" />
@@ -695,7 +712,9 @@ export default function StoriesSection({
                 ? 'To save, choose the skill this story proves and write what you did.'
                 : !formData.primarySkillId
                   ? 'To save, choose the skill this story proves.'
-                  : 'To save, write what you did.'}
+                  : playIsPlaceholder
+                    ? 'To save, say a little more about what you did.'
+                    : 'To save, write what you did.'}
             </p>
           )}
         </div>
@@ -704,7 +723,7 @@ export default function StoriesSection({
       {!editingId && recentStories.length > 0 && (
         <div className="space-y-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Recent Stories
+            Recent stories
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {recentStories.map((story) => (
@@ -737,8 +756,11 @@ export default function StoriesSection({
                       type="button"
                       onClick={() => {
                         focusAfterRender(editorHeadingRef);
-                        setEditingId(story.id);
-                        setFormData(story);
+                        // Older stories may hold their proof only in the short line.
+                        setEditor({
+                          editingId: story.id,
+                          formData: { ...story, proof: story.proof || story.proofSnippet },
+                        });
                         setCustomQuestion('');
                         setShowGeneralQuestions(false);
                       }}

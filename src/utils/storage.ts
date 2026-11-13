@@ -8,6 +8,8 @@ export type NetworkingPracticeVersion = {
   where: string;
   what: string;
   notes?: string;
+  /** The intro's own words, kept when the visitor switches to another intro. */
+  draft?: string;
   updatedAt: string;
 };
 
@@ -140,6 +142,7 @@ function normalizeVersion(raw: unknown): NetworkingPracticeVersion | null {
     where: normalizeStringField(data.where),
     what: normalizeStringField(data.what),
     notes: normalizeStringField(data.notes),
+    ...(typeof data.draft === 'string' ? { draft: data.draft.slice(0, 1500) } : {}),
     updatedAt: typeof data.updatedAt === 'string' ? data.updatedAt : new Date().toISOString(),
   };
 }

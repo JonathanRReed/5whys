@@ -31,6 +31,24 @@ export interface GuideStep {
   /** The part of the page this step is about. Highlighted and scrolled to. */
   target?: string;
   done: GuideCheck;
+  /**
+   * Page state that shows this step is already behind the visitor, such as a
+   * saved story or a decoded posting. Read on load and whenever the page
+   * changes, not only while the step is current, so a page that opens with
+   * work already done starts the coach at the right step.
+   */
+  passed?: GuideCheck;
+  /**
+   * What must be on the page for this step to make sense. When it stays
+   * missing (after a reload, say), the coach goes back to the last earlier
+   * step that still makes sense.
+   */
+  needs?: GuideCheck;
+  /**
+   * A control that puts the target on the page, such as its tab. "Show me
+   * where" presses it first when the target is not there.
+   */
+  reveal?: string;
   /** A shortcut for someone with nothing of their own to try it on. */
   example?: { label: string; click: string };
 }
@@ -154,6 +172,68 @@ export function markStepDone(guide: Guide, progress: GuideProgress, stepId: stri
   if (progress.done.includes(stepId)) return progress;
   const done = [...progress.done, stepId];
   return { ...progress, done, finished: guide.steps.every((step) => done.includes(step.id)) };
+}
+
+/** Every step up to and including `index` done, keeping the rest as they were. */
+export function advanceTo(guide: Guide, progress: GuideProgress, index: number): GuideProgress {
+  const ids = guide.steps.slice(0, index + 1).map((step) => step.id);
+  if (ids.every((id) => progress.done.includes(id))) return progress;
+  const done = [...progress.done, ...ids.filter((id) => !progress.done.includes(id))];
+  return { ...progress, done, finished: guide.steps.every((step) => done.includes(step.id)) };
+}
+
+/** Ids of the steps whose `passed` check holds on the page right now. */
+export function passedSteps(guide: Guide, root: ParentNode): Set<string> {
+  return new Set(
+    guide.steps
+      .filter((step) => step.passed && evaluateCheck(step.passed, root))
+      .map((step) => step.id)
+  );
+}
+
+/**
+ * The furthest step that has newly passed since the last look, or -1. Only a
+ * change counts, so a visitor who restarts the guide on a page full of work
+ * is not thrown straight to the end.
+ */
+export function furthestNewlyPassed(
+  guide: Guide,
+  now: ReadonlySet<string>,
+  before: ReadonlySet<string>
+): number {
+  let furthest = -1;
+  guide.steps.forEach((step, index) => {
+    if (now.has(step.id) && !before.has(step.id)) furthest = index;
+  });
+  return furthest;
+}
+
+/**
+ * When the current step needs something the page no longer shows, the index
+ * of the step to go back to: the last earlier step whose needs hold, or that
+ * needs nothing. Null when the current step still makes sense.
+ */
+export function stepBackIndex(
+  guide: Guide,
+  progress: GuideProgress,
+  root: ParentNode
+): number | null {
+  const step = currentStep(guide, progress);
+  if (!step?.needs || evaluateCheck(step.needs, root)) return null;
+  const at = guide.steps.indexOf(step);
+  for (let index = at - 1; index >= 0; index -= 1) {
+    const earlier = guide.steps[index];
+    if (!earlier.needs || evaluateCheck(earlier.needs, root)) return index;
+  }
+  return 0;
+}
+
+/** Undo every step from `index` on, so the coach is back on that step. */
+export function reopenFrom(guide: Guide, progress: GuideProgress, index: number): GuideProgress {
+  const keep = new Set(guide.steps.slice(0, index).map((step) => step.id));
+  const done = progress.done.filter((id) => keep.has(id));
+  if (done.length === progress.done.length && !progress.finished) return progress;
+  return { ...progress, done, finished: false };
 }
 
 /** Start over from the first step, in guided mode. */

@@ -326,7 +326,7 @@ test('the coach stays usable on a short laptop screen, above the footer', async 
   await waitForHydration(page);
   // The link turned the guide on without a click.
   const coach = await openCoach(page);
-  await expect(coach).toContainText('Step 1 of 8');
+  await expect(coach).toContainText('Step 1 of 6');
   // Nothing else on the page may sit on top of the coach's own buttons.
   for (const name of ['Skip this step', 'Show me where']) {
     const covered = await coach.getByRole('button', { name }).evaluate((button) => {
@@ -337,9 +337,9 @@ test('the coach stays usable on a short laptop screen, above the footer', async 
     expect(covered, `${name} is covered`).toBe(false);
   }
   await coach.getByRole('button', { name: 'Skip this step' }).click();
-  await expect(coach).toContainText('Step 2 of 8');
+  await expect(coach).toContainText('Step 2 of 6');
   // The same holds at the bottom of the page, where the footer is.
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await (await openCoach(page)).getByRole('button', { name: 'Skip this step' }).click();
-  await expect(coach).toContainText('Step 3 of 8');
+  await expect(coach).toContainText('Step 3 of 6');
 });

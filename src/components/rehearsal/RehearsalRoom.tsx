@@ -3,14 +3,18 @@ import {
   type Audience,
   audienceForProfile,
   detectSkillsFromText,
+  getQuestionById,
   planRehearsal,
+  type RehearsalPlanInput,
   type RehearsalQuestion,
   storiesForQuestion,
+  TERMS_QUESTION_IDS,
 } from '../../lib/glowup-banks';
 import type { DecodedRole, Story } from '../../lib/glowup-store';
 import { loadData, requirementBullets } from '../../lib/glowup-store';
 import { loadFeature, reportFeatureFailure, runFeature } from '../../lib/lazy-feature';
 import type { HostedModel, ModelState } from '../../lib/models';
+import { hiringCondition } from '../../lib/posting/conditions';
 import type { RecordedAudio, SpeechRecorder } from '../../lib/speech';
 import { cn, focusWhenReady } from '../../lib/utils';
 import { formatBytes } from '../StoragePanel';
@@ -21,6 +25,17 @@ import { Textarea } from '../ui/textarea';
 import TakeReview, { type Take } from './TakeReview';
 
 type Phase = 'setup' | 'asking' | 'review' | 'done';
+
+/** The posting's line about work authorization or sponsorship, verbatim, if it has one. */
+export function workAuthorizationLine(role: DecodedRole | null): string | null {
+  if (!role) return null;
+  const lines = [...role.bullets.map((b) => b.text), ...role.rawJdText.split('\n')];
+  return (
+    lines
+      .map((line) => line.trim())
+      .find((line) => line && hiringCondition(line)?.kind === 'work-authorization') ?? null
+  );
+}
 type AnswerMode = 'speak' | 'type';
 
 const clock = (seconds: number) =>
@@ -34,7 +49,14 @@ const clock = (seconds: number) =>
  */
 export default function RehearsalRoom() {
   const [role, setRole] = React.useState<DecodedRole | null>(null);
-  const [questions, setQuestions] = React.useState<RehearsalQuestion[]>([]);
+  // What the session is built from, read once; the questions follow it and
+  // the extra questions the visitor adds for this visit.
+  const [planBase, setPlanBase] = React.useState<RehearsalPlanInput | null>(null);
+  const [extras, setExtras] = React.useState<string[]>([]);
+  const questions = React.useMemo<RehearsalQuestion[]>(
+    () => (planBase ? planRehearsal({ ...planBase, extras }) : []),
+    [planBase, extras]
+  );
   const [audience, setAudience] = React.useState<Audience>('student');
   const [requirementCount, setRequirementCount] = React.useState(0);
   // The visitor's saved stories, read once. The room never writes them.
@@ -123,15 +145,23 @@ export default function RehearsalRoom() {
       );
       setAudience(who);
       setRequirementCount(requirements.length);
-      setQuestions(planRehearsal({ audience: who, fromPosting, postingSkillIds }));
+      setPlanBase({
+        audience: who,
+        fromPosting,
+        postingSkillIds,
+        workAuthorizationLine: workAuthorizationLine(current),
+      });
     })().catch((error) => {
       // The question bank could not load (offline, first visit): say so, and
       // still give the room its standing questions.
       reportFeatureFailure(error);
       if (!cancelled) {
-        setQuestions(
-          planRehearsal({ audience: 'student', fromPosting: [], postingSkillIds: new Set() })
-        );
+        setPlanBase({
+          audience: 'student',
+          fromPosting: [],
+          postingSkillIds: new Set(),
+          workAuthorizationLine: workAuthorizationLine(current),
+        });
       }
     });
     void (async () => {
@@ -391,6 +421,20 @@ export default function RehearsalRoom() {
     else setNotice(result.message);
   };
 
+  /** Move on without answering. Nothing is counted for a skipped question. */
+  const skip = () => {
+    // Call off a microphone that is still being opened, keeping the answer mode.
+    startRun.current += 1;
+    recorder.current?.cancel();
+    recorder.current = null;
+    if (index + 1 < questions.length) {
+      ask(index + 1);
+      return;
+    }
+    setPhase('done');
+    focusWhenReady('rehearsal-done-heading');
+  };
+
   if (!questions.length) {
     return <p className="text-sm text-muted-foreground">Setting up the room.</p>;
   }
@@ -462,6 +506,45 @@ export default function RehearsalRoom() {
               unless you choose to keep one, and none is ever sent anywhere.
             </p>
           )}
+        </fieldset>
+
+        <fieldset className="mx-0 min-w-0 space-y-2 border-0 p-0" data-guide="rehearsal-extras">
+          <legend className="font-display text-lg font-semibold">
+            Questions about the job itself
+          </legend>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            Not about a story, but often asked. Add them if they could come up for you.
+          </p>
+          {TERMS_QUESTION_IDS.map((id) => {
+            const question = getQuestionById(id);
+            if (!question) return null;
+            const fromPosting = id === 'q-work-authorization' && planBase?.workAuthorizationLine;
+            return (
+              <label key={id} className="flex cursor-pointer items-start gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  checked={Boolean(fromPosting) || extras.includes(id)}
+                  disabled={Boolean(fromPosting)}
+                  onChange={(event) =>
+                    setExtras((current) =>
+                      event.target.checked
+                        ? [...current, id]
+                        : current.filter((value) => value !== id)
+                    )
+                  }
+                  className="mt-0.5 h-4 w-4 accent-[hsl(var(--love))]"
+                />
+                <span>
+                  {question.text}
+                  {fromPosting && (
+                    <span className="block text-xs text-muted-foreground">
+                      Included, because the posting mentions work authorization.
+                    </span>
+                  )}
+                </span>
+              </label>
+            );
+          })}
         </fieldset>
 
         {hasVoice && (
@@ -722,7 +805,8 @@ export default function RehearsalRoom() {
             )}
           </div>
         )}
-        {(hasVoice || prepared) && current && (
+        {/* Only offered when the question was read aloud in the first place. */}
+        {readAloud && current && (hasVoice || prepared?.has(current.question)) && (
           <Button type="button" size="sm" variant="ghost" onClick={() => speak(current.question)}>
             Hear it again
           </Button>
@@ -792,6 +876,14 @@ export default function RehearsalRoom() {
             }
           >
             Review my answer
+          </Button>
+        </div>
+      )}
+
+      {!recording && (
+        <div className="border-t border-border/40 pt-4">
+          <Button type="button" size="sm" variant="ghost" onClick={skip}>
+            {index + 1 < questions.length ? 'Skip to the next question' : 'Skip and finish'}
           </Button>
         </div>
       )}

@@ -46,22 +46,27 @@ describe('Glow Up copy', () => {
     expect(source['src/pages/interview-glow-up/workspace.astro']).toMatch(
       /HUD, a one-screen cheat sheet for the call/
     );
+    // Plain words first, the short name beside them.
     expect(source['src/components/interview-glow-up/PacketSection.tsx']).toMatch(
-      /The HUD is a one-screen cheat sheet for the call/
+      /one-screen cheat sheet \(the HUD\)/
+    );
+    expect(source['src/components/interview-glow-up/PacketSection.tsx']).toMatch(
+      /what you\s+bring to the interview \(the packet\)/
     );
   });
 
   it('explains Trigger, Hook, Play, and Proof in a short phrase', () => {
-    for (const file of [
-      'src/components/interview-glow-up/StoriesSection.tsx',
-      'src/components/interview-glow-up/InterviewGlowUpAdvice.tsx',
-    ]) {
-      const text = source[file];
-      expect(text, file).toMatch(/Trigger[\s\S]{0,160}?a short name/i);
-      expect(text, file).toMatch(/Hook/);
-      expect(text, file).toMatch(/Play/);
-      expect(text, file).toMatch(/Proof/);
-    }
+    const advice = source['src/components/interview-glow-up/InterviewGlowUpAdvice.tsx'];
+    expect(advice).toMatch(/Trigger[\s\S]{0,160}?a short name/i);
+    expect(advice).toMatch(/Hook/);
+    expect(advice).toMatch(/Play/);
+    expect(advice).toMatch(/Proof/);
+    // The story form leads with plain words and keeps the short name beside them.
+    const form = source['src/components/interview-glow-up/StoriesSection.tsx'];
+    expect(form).toMatch(/A short name for it \(trigger\)/);
+    expect(form).toMatch(/The situation \(hook\)/);
+    expect(form).toMatch(/What you did \(play\)/);
+    expect(form).toMatch(/What came of it \(proof\)/);
   });
 
   it('carries work examples beside the student ones', () => {

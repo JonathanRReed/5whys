@@ -12,6 +12,8 @@ export const networkingPracticeGuide: Guide = {
       why: 'The timer length and the sample lines follow the situation you pick.',
       target: '#scenario',
       done: { kind: 'manual' },
+      // Writing a draft means the situation is picked.
+      passed: { kind: 'filled', selector: '#intro-draft', minLength: 1 },
     },
     {
       id: 'draft',
@@ -20,6 +22,7 @@ export const networkingPracticeGuide: Guide = {
       why: "Use your own words. If a line only works with someone else's achievements in it, cut it.",
       target: '#intro-draft',
       done: { kind: 'filled', selector: '#intro-draft', minLength: 40 },
+      passed: { kind: 'filled', selector: '#intro-draft', minLength: 40 },
     },
     {
       id: 'timer',

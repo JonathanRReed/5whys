@@ -381,33 +381,58 @@ export function useNetworkingPractice() {
     [currentVersion, setVersions]
   );
 
+  /**
+   * Each saved intro keeps its own words. Before the page moves to another
+   * intro, the words on screen are stored with the one being left.
+   */
+  const keepDraftWithCurrentVersion = React.useCallback(() => {
+    if (!currentVersion || (currentVersion.draft ?? '') === draft) return;
+    const kept: NetworkingPracticeVersion = { ...currentVersion, draft };
+    saveVersion(kept);
+    setVersions((existing) => existing.map((item) => (item.id === kept.id ? kept : item)));
+  }, [currentVersion, draft, setVersions]);
+
+  const selectVersion = React.useCallback(
+    (id: string) => {
+      if (id === currentVersion?.id) return;
+      const target = versions.find((item) => item.id === id);
+      if (!target) return;
+      keepDraftWithCurrentVersion();
+      setCurrentVersionId(id);
+      setDraftState(target.draft ?? '');
+    },
+    [currentVersion?.id, versions, keepDraftWithCurrentVersion, setCurrentVersionId]
+  );
+
   const createNewVersion = React.useCallback(() => {
     const scenario = presetScenario ?? scenarios[0];
     if (!scenario) return;
+    keepDraftWithCurrentVersion();
     // Name it automatically; the "Name this intro" field renames it inline.
     const existing = versions.filter((v) => v.scenarioId === scenario.id).length;
     const title =
       existing > 0 ? `${scenario.title} intro ${existing + 1}` : `${scenario.title} intro`;
-    const nextVersion = scenarioToVersion(scenario, title);
+    const nextVersion = { ...scenarioToVersion(scenario, title), draft: '' };
     saveVersion(nextVersion);
     setVersions((prev) => [nextVersion, ...prev]);
     setCurrentVersionId(nextVersion.id);
-    setStorageNotice(`Started "${title}". Rename it below if you like.`);
-  }, [presetScenario, versions, setVersions, setCurrentVersionId]);
+    setDraftState('');
+    setStorageNotice(
+      `Started "${title}" with a blank draft. Your other intro keeps its words under Saved intros.`
+    );
+  }, [presetScenario, versions, setVersions, setCurrentVersionId, keepDraftWithCurrentVersion]);
 
   const deleteCurrentVersion = React.useCallback(() => {
     if (!currentVersion) return;
     const idToDelete = currentVersion.id;
     deleteVersion(idToDelete);
-    setVersions((prev) => {
-      const filtered = prev.filter((v) => v.id !== idToDelete);
-      const next = filtered.length ? filtered : [fallbackVersion];
-      if (idToDelete === currentVersionId) {
-        setCurrentVersionId(next[0].id);
-      }
-      return next;
-    });
-  }, [currentVersion, currentVersionId, fallbackVersion, setVersions, setCurrentVersionId]);
+    const filtered = versions.filter((v) => v.id !== idToDelete);
+    const next = filtered.length ? filtered : [fallbackVersion];
+    setVersions(next);
+    setCurrentVersionId(next[0].id);
+    // The deleted intro's words go with it; show the words of the one now open.
+    setDraftState(next[0].draft ?? '');
+  }, [currentVersion, versions, fallbackVersion, setVersions, setCurrentVersionId]);
 
   const saveCurrentSession = React.useCallback(() => {
     if (!currentVersion) return;
@@ -549,7 +574,7 @@ export function useNetworkingPractice() {
     sessions,
     storageNotice,
     currentVersionId,
-    setCurrentVersionId,
+    setCurrentVersionId: selectVersion,
     timer,
     ratings,
     missingRatings,

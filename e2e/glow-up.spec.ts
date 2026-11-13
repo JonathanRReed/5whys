@@ -31,7 +31,7 @@ test('a job is decoded, a story is built into the packet, and the HUD opens abov
 
   await page.locator('#jd-text').fill(JOB_POSTING);
   await page.getByRole('button', { name: 'Parse the requirements' }).click();
-  await expect(page.getByRole('heading', { name: /Requirements \(\d+\)/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Lines from the posting \(\d+\)/ })).toBeVisible();
   // The company/location header line is not a requirement.
   await expect(page.locator('.max-h-96').getByText('Brightline Health - Remote (US)')).toHaveCount(
     0
@@ -42,7 +42,7 @@ test('a job is decoded, a story is built into the packet, and the HUD opens abov
   // Switching tabs and back keeps the decoded requirements.
   await page.getByRole('tab', { name: /Build stories/ }).click();
   await page.getByRole('tab', { name: /Decode the job/ }).click();
-  await expect(page.getByRole('heading', { name: /Requirements \(\d+\)/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Lines from the posting \(\d+\)/ })).toBeVisible();
 
   await page.getByRole('tab', { name: /Build stories/ }).click();
   await page.getByRole('button', { name: '+ New story' }).click();
@@ -56,11 +56,11 @@ test('a job is decoded, a story is built into the packet, and the HUD opens abov
 
   await expect(page.getByText('Solid', { exact: true })).toBeVisible();
   await page.getByRole('tab', { name: /Pack the proof/ }).click();
-  await expect(page.getByText('1 story in the packet')).toBeVisible();
+  await expect(page.getByText(/1 story in what you\s+bring to the interview/)).toBeVisible();
 
   // The HUD renders above the site chrome and closes on Escape.
-  await page.getByRole('button', { name: 'Open the HUD' }).first().click();
-  const dialog = page.getByRole('dialog', { name: 'Interview HUD' });
+  await page.getByRole('button', { name: 'Open the cheat sheet (HUD)' }).first().click();
+  const dialog = page.getByRole('dialog', { name: /One-screen cheat sheet \(HUD\)/ });
   await expect(dialog).toBeVisible();
   const closeButton = dialog.getByRole('button', { name: 'Close HUD' });
   const hitTest = await closeButton.evaluate((el) => {

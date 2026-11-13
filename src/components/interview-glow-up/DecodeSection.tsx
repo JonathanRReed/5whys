@@ -29,7 +29,11 @@ type Props = {
   setData: React.Dispatch<React.SetStateAction<GlowUpData>>;
   currentRole: DecodedRole | undefined;
   audience?: Audience;
+  /** Whether the last change reached storage. The workspace does the saving. */
+  saveState?: SaveState;
 };
+
+export type SaveState = 'idle' | 'saving' | 'saved' | 'failed';
 
 type RoleFields = Pick<
   DecodedRole,
@@ -58,6 +62,18 @@ function deriveTitle(rawJdText: string): string {
     : '';
 }
 
+/**
+ * Lines that are filler in nearly every posting. A short line is not filler:
+ * "CPR certified" or "Spanish language skills" is often the hardest
+ * requirement on the page.
+ */
+const FILLER_LINE =
+  /\b(?:other (?:related )?duties as (?:assigned|needed|required)|duties (?:may|are subject to) change|not (?:an |intended to be an )?(?:exhaustive|all-inclusive) list|as (?:assigned|directed) by (?:a |your )?(?:supervisor|manager))\b/i;
+
+export function isFillerLine(text: string): boolean {
+  return FILLER_LINE.test(text);
+}
+
 /** A requirement, cut short enough to sit inside a control's name. */
 function shortText(text: string): string {
   return text.length > 60 ? `${text.slice(0, 57).trimEnd()}...` : text;
@@ -65,7 +81,13 @@ function shortText(text: string): string {
 
 const EMPTY_FIELDS: RoleFields = { jobTitle: '', company: '', jdUrl: '', rawJdText: '' };
 
-export default function DecodeSection({ data, setData, currentRole, audience = 'student' }: Props) {
+export default function DecodeSection({
+  data,
+  setData,
+  currentRole,
+  audience = 'student',
+  saveState = 'idle',
+}: Props) {
   const student = usesStudentExamples(audience);
   // Before a role exists, edits live here; the first keystroke creates the
   // role and from then on every field is read from and written to the store.
@@ -125,7 +147,7 @@ export default function DecodeSection({ data, setData, currentRole, audience = '
     const setAside = parsed.setAside.filter((line) => line.reason !== 'heading').length;
     setSkippedCount(setAside);
     announce(
-      `Requirements (${parsedBullets.length}).${setAside > 0 ? ` Set aside ${setAside} ${setAside === 1 ? 'line' : 'lines'} that are not requirements.` : ''}`
+      `Lines from the posting (${parsedBullets.length}).${setAside > 0 ? ` Set aside ${setAside} ${setAside === 1 ? 'line' : 'lines'} that are not requirements.` : ''}`
     );
     const title = fields.jobTitle.trim() ? {} : { jobTitle: deriveTitle(fields.rawJdText) };
     commit(
@@ -156,8 +178,7 @@ export default function DecodeSection({ data, setData, currentRole, audience = '
     [fields.rawJdText, fields.company, fields.jobTitle]
   );
 
-  // Legacy saved roles may still contain very short lines; flag them.
-  const isNoise = (text: string) => text.split(/\s+/).length < 4;
+  const activeCount = bullets.filter((b) => b.status === 'active').length;
 
   const handleBulkTag = (skillId: string) => {
     setBullets(
@@ -181,7 +202,8 @@ export default function DecodeSection({ data, setData, currentRole, audience = '
       {/* Which role, and the autosave state */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          {data.roles.length > 1 && (
+          {/* After "Decode another job", the saved role must stay one choice away. */}
+          {(data.roles.length > 1 || (!currentRole && data.roles.length > 0)) && (
             <Select
               value={currentRole?.id ?? undefined}
               onValueChange={(value) => value && setData(switchRole(data, value))}
@@ -210,12 +232,22 @@ export default function DecodeSection({ data, setData, currentRole, audience = '
           )}
         </div>
         <Announcer message={announcement} />
-        <p className="text-xs text-muted-foreground" aria-live="polite">
-          {currentRole
-            ? savedAt
-              ? 'Saved'
-              : 'Saved in this browser'
-            : 'Saves as soon as you type'}
+        <p
+          className={cn(
+            'text-xs',
+            saveState === 'failed' ? 'font-medium text-destructive' : 'text-muted-foreground'
+          )}
+          aria-live="polite"
+        >
+          {saveState === 'failed'
+            ? 'Not saved: this browser refused the last change'
+            : currentRole
+              ? saveState === 'saving'
+                ? 'Saving'
+                : savedAt && saveState === 'saved'
+                  ? 'Saved'
+                  : 'Saved in this browser'
+              : 'Saves as soon as you type'}
         </p>
       </div>
 
@@ -353,8 +385,24 @@ export default function DecodeSection({ data, setData, currentRole, audience = '
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <h2 className="text-lg font-semibold text-foreground">
-                Requirements ({bullets.length})
+                Lines from the posting ({bullets.length})
               </h2>
+              {requirementTotal !== bullets.length && (
+                <p className="text-xs text-muted-foreground" data-testid="lines-counted">
+                  {requirementTotal} of {bullets.length} are counted below as required, nice to
+                  have, or a duty.
+                  {bullets.some((b) => b.confirmed === true && b.status !== 'ignored')
+                    ? ' Only the lines confirmed on the Application Desk are counted.'
+                    : ''}
+                  {bullets.length - activeCount > 0
+                    ? ` ${bullets.length - activeCount} ${bullets.length - activeCount === 1 ? 'is' : 'are'} ignored.`
+                    : ''}
+                  {activeCount - requirementTotal > 0 &&
+                  !bullets.some((b) => b.confirmed === true && b.status !== 'ignored')
+                    ? ` ${activeCount - requirementTotal} ${activeCount - requirementTotal === 1 ? 'is' : 'are'} not sorted into a section.`
+                    : ''}
+                </p>
+              )}
               {skippedCount !== null && skippedCount > 0 && (
                 <p className="text-xs text-muted-foreground">
                   Set aside {skippedCount} {skippedCount === 1 ? 'line' : 'lines'} that are not
@@ -393,7 +441,7 @@ export default function DecodeSection({ data, setData, currentRole, audience = '
                   'flex items-start gap-3 rounded-lg border p-3 transition-colors',
                   bullet.status === 'ignored'
                     ? 'border-border/20 bg-overlay/10 opacity-50'
-                    : isNoise(bullet.text)
+                    : isFillerLine(bullet.text)
                       ? 'border-gold/30 bg-gold/5'
                       : 'border-border/30 bg-overlay/20'
                 )}
@@ -425,9 +473,9 @@ export default function DecodeSection({ data, setData, currentRole, audience = '
                     )}
                   >
                     {bullet.text}
-                    {isNoise(bullet.text) && bullet.status !== 'ignored' && (
+                    {isFillerLine(bullet.text) && bullet.status !== 'ignored' && (
                       <span className="ml-2 rounded bg-gold/20 px-1.5 py-0.5 text-xs text-foreground">
-                        noise?
+                        often filler
                       </span>
                     )}
                   </p>
