@@ -47,12 +47,48 @@ const SHOWN: PostingSection[] = ['required', 'preferred', 'responsibility'];
  * with a single press. It is the real posting engine, not a recording, so
  * what they see here is what the Application Desk does with their own.
  */
+/**
+ * A second made-up posting, for someone with years of work behind them: a
+ * student internship that asks for college enrollment tells a career changer
+ * in ten seconds that the site is not for them. The employer does not exist.
+ */
+const CHANGER_POSTING = `Project Coordinator
+Northgate Health Partners | Columbus, OH (hybrid)
+
+About the role
+You will keep clinic opening projects on schedule and make sure the people doing the work know what is due and when.
+
+What you will do
+• Build and maintain project schedules for two to three clinic openings a year
+• Run a weekly status meeting and send notes the same day
+• Track budgets against plan and flag variances early
+• Other duties as assigned
+
+What we are looking for
+• 3 or more years coordinating people, schedules, or operations in any industry
+• Experience working with vendors or outside contractors
+• Comfortable with spreadsheets and a scheduling or project tool
+• Clear written communication
+
+Nice to have
+• Experience in healthcare, logistics, or another regulated setting
+• PMP or CAPM certification
+
+We are a fast-paced team with a competitive salary, and you will wear many hats.`;
+
+const SAMPLES = [
+  { id: 'student', label: 'An internship', text: SAMPLE_POSTING },
+  { id: 'changer', label: 'A coordinator role', text: CHANGER_POSTING },
+] as const;
+
 /** Enough for any real posting; keeps a pasted novel from stalling the page. */
 const MAX_POSTING = 20_000;
 
 export default function HomeSpecimen() {
   const [requirements, setRequirements] = React.useState<PostingRequirement[] | null>(null);
-  const [text, setText] = React.useState(SAMPLE_POSTING);
+  const [text, setText] = React.useState<string>(SAMPLE_POSTING);
+  const [sampleId, setSampleId] = React.useState<(typeof SAMPLES)[number]['id']>('student');
+  const sample = SAMPLES.find((entry) => entry.id === sampleId) ?? SAMPLES[0];
   // The visitor's own posting, once they choose to paste one.
   const [own, setOwn] = React.useState<string | null>(null);
   const ownId = React.useId();
@@ -71,7 +107,7 @@ export default function HomeSpecimen() {
     moveFocus.current = null;
   });
 
-  const source = own === null ? SAMPLE_POSTING : own.slice(0, MAX_POSTING);
+  const source = own === null ? sample.text : own.slice(0, MAX_POSTING);
   const sort = () => {
     if (!source.trim()) return;
     const parsed = parsePosting(source);
@@ -86,8 +122,15 @@ export default function HomeSpecimen() {
     moveFocus.current = 'before';
     withViewTransition(() => {
       setRequirements(null);
-      setText(SAMPLE_POSTING);
+      setText(sample.text);
     });
+  };
+
+  const chooseSample = (id: (typeof SAMPLES)[number]['id']) => {
+    const next = SAMPLES.find((entry) => entry.id === id) ?? SAMPLES[0];
+    setSampleId(next.id);
+    setRequirements(null);
+    setText(next.text);
   };
 
   /** Keep the pasted posting for the desk, in this tab only. */
@@ -172,6 +215,27 @@ export default function HomeSpecimen() {
             ? 'This is a made-up posting. Press the button and the same tool the Application Desk uses will sort what it asks for and point out what it leaves unsaid, right here on your device.'
             : 'Paste a posting you are looking at. It is sorted on your device and goes nowhere.'}
         </p>
+        {own === null && !requirements && (
+          <fieldset className="m-0 min-w-0 border-0 p-0">
+            <legend className="mb-1.5 text-sm text-muted-foreground">Sample posting</legend>
+            <div className="flex flex-wrap gap-1.5">
+              {SAMPLES.map((entry) => (
+                <label key={entry.id} className="relative">
+                  <input
+                    type="radio"
+                    name="home-sample"
+                    checked={sampleId === entry.id}
+                    onChange={() => chooseSample(entry.id)}
+                    className="peer absolute inset-0 cursor-pointer opacity-0"
+                  />
+                  <span className="inline-flex min-h-11 items-center rounded-lg border border-border/50 px-3 text-sm text-muted-foreground transition-colors peer-checked:border-foam peer-checked:bg-foam/12 peer-checked:text-foreground peer-hover:text-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring">
+                    {entry.label}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
         <div className="flex flex-wrap items-center gap-3">
           {requirements ? (
             <>
