@@ -14,7 +14,7 @@ const FLOW_STEPS = [
   { label: 'Draft your intro', description: 'Your words, not the samples' },
   { label: 'Run the timer', description: 'Say it out loud' },
   { label: 'Rate the rep', description: 'Score it honestly' },
-  { label: 'Save session', description: 'Track the reps' },
+  { label: 'Save the rep', description: 'Track the reps' },
 ] as const;
 
 function getActiveStep(timer: TimerState | undefined): number {

@@ -38,9 +38,26 @@ export type TimerState = {
   elapsed: number;
   isRunning: boolean;
   startedAt: number | null;
+  /** Seconds already counted when the clock last started. */
+  elapsedAtStart: number;
   /** The length this rep is counting down from. */
   total: number;
 };
+
+/**
+ * Where the clock is now, from the wall clock rather than from how many
+ * ticks arrived. A tab that stalls or sleeps catches up instead of
+ * stretching the rep.
+ */
+export function timerAt(prev: TimerState, now: number): TimerState {
+  if (!prev.isRunning || prev.startedAt === null) return prev;
+  const counted = prev.elapsedAtStart + Math.floor(Math.max(0, now - prev.startedAt) / 1000);
+  const elapsed = Math.min(counted, MAX_ELAPSED_SECONDS);
+  const remaining = Math.max(prev.total - counted, 0);
+  if (remaining === 0) return { ...prev, remaining: 0, elapsed, isRunning: false };
+  if (elapsed === prev.elapsed && remaining === prev.remaining) return prev;
+  return { ...prev, remaining, elapsed };
+}
 
 export function useTimer(initialSeconds: number = DEFAULT_TIMER_SECONDS) {
   const [timer, setTimer] = React.useState<TimerState>({
@@ -48,23 +65,15 @@ export function useTimer(initialSeconds: number = DEFAULT_TIMER_SECONDS) {
     elapsed: 0,
     isRunning: false,
     startedAt: null,
+    elapsedAtStart: 0,
     total: initialSeconds,
   });
 
   React.useEffect(() => {
     if (!timer.isRunning) return;
-    const tick = () => {
-      setTimer((prev) => {
-        if (!prev.isRunning) return prev;
-        const nextRemaining = Math.max(prev.remaining - 1, 0);
-        const nextElapsed = Math.min(prev.elapsed + 1, MAX_ELAPSED_SECONDS);
-        if (nextRemaining === 0) {
-          return { ...prev, remaining: 0, elapsed: nextElapsed, isRunning: false };
-        }
-        return { ...prev, remaining: nextRemaining, elapsed: nextElapsed };
-      });
-    };
-    const interval = window.setInterval(tick, 1000);
+    const tick = () => setTimer((prev) => timerAt(prev, Date.now()));
+    // Ticks only redraw; the time itself comes from the clock.
+    const interval = window.setInterval(tick, 250);
     return () => window.clearInterval(interval);
   }, [timer.isRunning]);
 
@@ -74,29 +83,43 @@ export function useTimer(initialSeconds: number = DEFAULT_TIMER_SECONDS) {
       elapsed: 0,
       isRunning: false,
       startedAt: null,
+      elapsedAtStart: 0,
       total: prev.total,
     }));
   }, []);
 
   const startTimer = React.useCallback(() => {
-    setTimer((prev) => ({
-      ...prev,
-      remaining: prev.remaining === 0 ? prev.total : prev.remaining,
-      elapsed: prev.remaining === 0 ? 0 : prev.elapsed,
-      isRunning: true,
-      startedAt: Date.now(),
-    }));
+    setTimer((prev) => {
+      if (prev.isRunning) return prev;
+      const elapsed = prev.remaining === 0 ? 0 : prev.elapsed;
+      return {
+        ...prev,
+        remaining: prev.remaining === 0 ? prev.total : prev.remaining,
+        elapsed,
+        elapsedAtStart: elapsed,
+        isRunning: true,
+        startedAt: Date.now(),
+      };
+    });
   }, []);
 
   const pauseTimer = React.useCallback(() => {
-    setTimer((prev) => ({ ...prev, isRunning: false }));
+    // Count up to this moment first, so a stalled tick is not lost.
+    setTimer((prev) => ({ ...timerAt(prev, Date.now()), isRunning: false }));
   }, []);
 
   /** Change the rep length. Only allowed while the clock is not running. */
   const setTimerLength = React.useCallback((seconds: number) => {
     setTimer((prev) => {
       if (prev.isRunning) return prev;
-      return { ...prev, total: seconds, remaining: seconds, elapsed: 0, startedAt: null };
+      return {
+        ...prev,
+        total: seconds,
+        remaining: seconds,
+        elapsed: 0,
+        elapsedAtStart: 0,
+        startedAt: null,
+      };
     });
   }, []);
 

@@ -33,8 +33,9 @@ export default function NetworkingHeader({ showHeader = true }: Props) {
       </h1>
       <p className="mx-auto max-w-3xl text-base text-muted-foreground">
         Twelve scenarios, from a career fair with a line behind you to a cold email to a professor.
-        Draft the intro in your own words, run it against a two-minute timer, score it honestly, and
-        keep every rep so you can watch the intro improve.
+        Draft the intro in your own words, run it against a timer set to the situation (thirty
+        seconds for a career fair), score it honestly, and keep every rep so you can watch the intro
+        improve.
       </p>
       <QuickStartTiles
         className="max-w-3xl"
@@ -45,7 +46,7 @@ export default function NetworkingHeader({ showHeader = true }: Props) {
           },
           {
             title: 'Draft and run a rep',
-            body: 'Write the intro you would actually say, then start the two-minute timer and say it out loud.',
+            body: 'Write the intro you would actually say, then start the timer and say it out loud. Its length follows the scenario.',
           },
           {
             title: 'Rate and save',
