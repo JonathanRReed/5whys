@@ -16,6 +16,7 @@ import {
   type QuestionPrompt,
   questionFits,
   SKILL_MAP,
+  tidyQuestionText,
 } from '../glowup-banks';
 import { mentionsKnownTool } from './guards';
 
@@ -388,11 +389,20 @@ function lowerFirst(text: string): string {
   return text[0] ? text[0].toLowerCase() + text.slice(1) : text;
 }
 
+/**
+ * A posting duty as the end of a question: "Build an operating cadence" from
+ * "Build our operating cadence: weekly KPI reviews, quarterly reviews". What
+ * follows a colon is the posting's list of examples, which a spoken question
+ * leaves out. "a" or "an" goes by the sound of the next word.
+ */
 function asTask(phrase: string, past: boolean): string {
-  let task = lowerFirst(phrase).replace(/\bour\s+social media\b/gi, 'social media');
+  const colon = phrase.indexOf(':');
+  const head = colon > 0 ? phrase.slice(0, colon).trim() : phrase;
+  let task = lowerFirst(head || phrase).replace(/\bour\s+social media\b/gi, 'social media');
   task = task.replace(/\bour\b/gi, 'the');
   if (past) task = task.replace(/\bthe\b/i, 'a');
-  return task;
+  // The shared rule for articles, so "a operating cadence" never reaches a question.
+  return tidyQuestionText(task).replace(/[.?]$/, '');
 }
 
 const KIND_NOTES: Record<

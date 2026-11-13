@@ -11,13 +11,18 @@
 import {
   computeSynthesis,
   ensureResponsesLength,
+  lensOf,
   normalizeSnapshot,
+  readOutcome,
   type Track,
   validRootIndex,
   HISTORY_KEY as WHY_HISTORY_KEY,
   SESSION_KEY as WHY_SESSION_KEY,
+  type WhyOutcome,
   type WhySnapshot,
 } from '../components/career-5whys/shared';
+import { isWritten, MORE_SCENARIOS } from '../components/networking/practice-model';
+import scenarioData from '../data/networking-scenarios.json';
 import {
   type ApplicationDeskData,
   createDefaultDeskData,
@@ -25,7 +30,9 @@ import {
   type DeskStationId,
   datedActionSteps,
   getDesk,
+  type LetterDraft,
   loadApplicationDesks,
+  type QualificationRow,
   stationsWithContent,
 } from './application-desk';
 import {
@@ -38,8 +45,11 @@ import {
   sortApplications,
   type TrackedApplication,
 } from './applications';
+import { loadData as loadGlowUp } from './glowup-store';
 import { averageRating, computeNextStep, type Ratings } from './networking-advice';
+import { type PostingRequirement, requirementsFromBullets } from './posting';
 import { type CareerProfile, readProfile } from './profile';
+import { bulletRewrites } from './resume-doc/export';
 import { scoreBullet } from './resume-game/scoring';
 import { STRONG_SCORE } from './resume-game/thresholds';
 
@@ -180,11 +190,13 @@ function readResumeGame(): ResumeGameData | null {
 // Career 5 Whys — src/components/career-5whys/shared.ts
 // ============================================================================
 
-interface WhySession {
+interface WhySession extends WhyOutcome {
   track: Track;
   topic: string;
   responses: string[];
   rootIndex?: number;
+  /** Set when the chain started from an experience rather than a role or interest. */
+  start?: 'experience';
 }
 
 function readCareer5Whys(): { session: WhySession | null; snapshots: WhySnapshot[] } {
@@ -198,12 +210,65 @@ function readCareer5Whys(): { session: WhySession | null; snapshots: WhySnapshot
           responses: ensureResponsesLength(sessionRaw.responses),
           // Which answer the visitor chose as the real reason, when they chose one.
           rootIndex: validRootIndex((sessionRaw as { rootIndex?: unknown }).rootIndex),
+          ...((sessionRaw as { start?: unknown }).start === 'experience'
+            ? { start: 'experience' as const }
+            : {}),
+          ...readOutcome(sessionRaw as Record<string, unknown>),
         }
       : null;
   const snapshots = Array.isArray(historyRaw)
     ? (historyRaw.map((entry) => normalizeSnapshot(entry)).filter(Boolean) as WhySnapshot[])
     : [];
   return { session, snapshots };
+}
+
+/**
+ * The synthesis of the session as the Five Whys shows it: a chain started
+ * from an experience is read with the experience questions and next steps,
+ * not the interest ones it is stored under.
+ */
+function sessionSynthesisOf(session: WhySession) {
+  return computeSynthesis(session.responses, session.topic, lensOf(session), session.rootIndex);
+}
+
+/** A finished reflection another tool can offer back to the visitor. */
+export type ReflectionForReuse = {
+  topic: string;
+  /** The visitor's own statement, or their root reason when they wrote none. */
+  statement: string;
+  mustOffer: string;
+  fromExperience: boolean;
+};
+
+function reuseOf(entry: WhySession): ReflectionForReuse | null {
+  const synthesis = computeSynthesis(entry.responses, entry.topic, lensOf(entry), entry.rootIndex);
+  if (!synthesis.isComplete) return null;
+  const statement = entry.statement?.trim() || synthesis.root;
+  if (!statement) return null;
+  return {
+    topic: entry.topic.trim(),
+    statement,
+    mustOffer: entry.mustOffer?.trim() ?? '',
+    fromExperience: entry.start === 'experience',
+  };
+}
+
+/**
+ * The finished reflection to offer in another tool: the session on screen in
+ * the Five Whys when it is complete, otherwise the newest saved snapshot that
+ * is. Null when there is none. Read only.
+ */
+export function readReflectionForReuse(): ReflectionForReuse | null {
+  try {
+    const why = readCareer5Whys();
+    for (const entry of [...(why.session ? [why.session] : []), ...why.snapshots]) {
+      const found = reuseOf(entry);
+      if (found) return found;
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 // ============================================================================
@@ -224,6 +289,8 @@ interface GlowUpRaw {
   }>;
   stories?: Array<{ id?: string; updatedAt?: number }>;
   packets?: Array<{ roleId?: string; topStoryIds?: unknown[]; updatedAt?: number }>;
+  /** Answers kept from the rehearsal room: written or spoken interview practice. */
+  answers?: Array<{ roleId: string | null; updatedAt?: number }>;
   currentRoleId?: string | null;
 }
 
@@ -231,6 +298,8 @@ export interface GlowUpSummary {
   roleCount: number;
   storyCount: number;
   packetCount: number;
+  /** Rehearsal answers the visitor kept: interview practice, typed or spoken. */
+  answerCount: number;
   currentRoleTitle: string | null;
   currentCompany: string | null;
   lastUpdated: number | null;
@@ -262,6 +331,12 @@ function readGlowUpRaw(): GlowUpRaw | null {
       topStoryIds: Array.isArray(packet.topStoryIds) ? packet.topStoryIds : [],
       updatedAt: numberOr(packet.updatedAt, undefined),
     })),
+    answers: records(data.answers)
+      .filter((answer) => typeof answer.id === 'string' && textOr(answer.text, '').trim())
+      .map((answer) => ({
+        roleId: textOr(answer.roleId, null),
+        updatedAt: numberOr(answer.updatedAt, undefined),
+      })),
     currentRoleId: textOr(data.currentRoleId, null),
   };
 }
@@ -271,6 +346,7 @@ function readGlowUp(data: GlowUpRaw | null): GlowUpSummary | null {
   const roles = data.roles ?? [];
   const stories = data.stories ?? [];
   const packets = data.packets ?? [];
+  const answers = data.answers ?? [];
   const currentRole = roles.find((r) => r.id === data.currentRoleId);
   // Performance optimization: Find max timestamp in O(N) single-pass loops
   // to avoid intermediate array allocations and spread operator overhead.
@@ -283,11 +359,13 @@ function readGlowUp(data: GlowUpRaw | null): GlowUpSummary | null {
   for (const r of roles) updateMax(r.updatedAt);
   for (const s of stories) updateMax(s.updatedAt);
   for (const p of packets) updateMax(p.updatedAt);
+  for (const a of answers) updateMax(a.updatedAt);
 
   return {
     roleCount: roles.length,
     storyCount: stories.length,
     packetCount: packets.length,
+    answerCount: answers.length,
     currentRoleTitle: currentRole?.jobTitle || null,
     currentCompany: currentRole?.company || null,
     lastUpdated: maxUpdated,
@@ -306,7 +384,20 @@ interface NetworkingSessionRaw {
   createdAt?: string;
   ratings?: Partial<Ratings>;
   scenarioTitle?: string;
+  scenarioId?: string;
+  /** The words of the rep's first attempt, which the written advice reads. */
+  script?: string;
 }
+
+/**
+ * Scenarios read on a screen rather than heard (a message, an email), by id.
+ * The tool's own scenario list decides it, so the advice here matches it.
+ */
+const WRITTEN_SCENARIO_IDS = new Set(
+  [...(scenarioData as { id: string; mode: string }[]), ...MORE_SCENARIOS]
+    .filter(isWritten)
+    .map((scenario) => scenario.id)
+);
 
 export interface NetworkingSummary {
   hasDraft: boolean;
@@ -332,6 +423,8 @@ function readNetworking(): NetworkingSummary | null {
   const list: NetworkingSessionRaw[] = records(sessions).map((session) => ({
     createdAt: textOr(session.createdAt, undefined),
     scenarioTitle: textOr(session.scenarioTitle, undefined),
+    scenarioId: textOr(session.scenarioId, undefined),
+    script: textOr(records(session.attempts)[0]?.script, undefined),
     ratings: isRecord(session.ratings) ? (session.ratings as Partial<Ratings>) : undefined,
   }));
   // A rating counts only when all four parts of it are numbers.
@@ -354,7 +447,13 @@ function readNetworking(): NetworkingSummary | null {
     latestSessionDate: latest?.createdAt ?? null,
     latestScenario: latest?.scenarioTitle ?? null,
     averageRating: average,
-    nextStep: latestRatings ? computeNextStep(latestRatings) : null,
+    // The same step the tool shows for this rep, written advice included.
+    nextStep: latestRatings
+      ? computeNextStep(latestRatings, {
+          written: WRITTEN_SCENARIO_IDS.has(latest?.scenarioId ?? ''),
+          draft: latest?.script ?? '',
+        })
+      : null,
     draftedButUnpracticed: list.length === 0 && hasDraft,
   };
 }
@@ -385,6 +484,8 @@ export interface ApplicationSummary {
   decoded: boolean;
   /** Stories packed for the linked role's packet. */
   packetStories: number;
+  /** Rehearsal answers kept for the linked role: interview practice for this job. */
+  keptAnswers?: number;
   /** Which desk stations hold any of the student's work (career-application-desk). */
   stations: Record<DeskStationId, boolean>;
   /**
@@ -482,6 +583,9 @@ function summarizeApplications(
     const packetStories = (packet?.topStoryIds ?? []).filter(
       (id): id is string => typeof id === 'string' && storyIds.has(id)
     ).length;
+    const keptAnswers = roleId
+      ? (glow?.answers ?? []).filter((answer) => answer.roleId === roleId).length
+      : 0;
     return {
       id: app.id,
       title: role?.jobTitle?.trim() || app.title,
@@ -493,6 +597,7 @@ function summarizeApplications(
       roleId,
       decoded,
       packetStories,
+      keptAnswers,
       stations: stationsWithContent(getDesk(desks, app.id)),
       roleMatched: link?.matched ?? false,
       offer: offer.received
@@ -575,6 +680,36 @@ export function readPostingFor(
 }
 
 /**
+ * What "Before you send" checks for one application, as the desk holds it
+ * now: the letter, the posting's requirements, and where the visitor stands
+ * on each. The role is the one saved on the application, as on the desk.
+ * Null when the application is not found. Read only.
+ */
+export function readSendInputs(applicationId: string): {
+  title: string;
+  company: string;
+  letter: LetterDraft;
+  requirements: PostingRequirement[];
+  rows: QualificationRow[];
+} | null {
+  try {
+    const app = loadApplications().applications.find((a) => a.id === applicationId);
+    if (!app) return null;
+    const role = app.roleId ? loadGlowUp().roles.find((r) => r.id === app.roleId) : undefined;
+    const desk = getDesk(loadApplicationDesks(), app.id);
+    return {
+      title: app.title,
+      company: app.company,
+      letter: desk.letter,
+      requirements: requirementsFromBullets(role?.bullets ?? []),
+      rows: desk.qualifications,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * The reason the visitor reached in the Five Whys, in their words, with the
  * topic it was about: from the latest saved snapshot, or a finished session.
  * Null when there is none. Read only.
@@ -587,12 +722,7 @@ export function readReflectionReason(): { reason: string; topic: string } | null
       return { reason: latest.rootReason.trim(), topic: latest.topic.trim() };
     }
     if (!why.session) return null;
-    const synthesis = computeSynthesis(
-      why.session.responses,
-      why.session.topic,
-      why.session.track,
-      why.session.rootIndex
-    );
+    const synthesis = sessionSynthesisOf(why.session);
     return synthesis.isComplete && synthesis.root.trim()
       ? { reason: synthesis.root.trim(), topic: why.session.topic.trim() }
       : null;
@@ -728,14 +858,7 @@ export function readCareerDashboard(): CareerDashboardData {
 
   // A five whys session auto-saves without the user pressing anything, so a
   // finished chain counts as data even when no snapshot was taken.
-  const sessionSynthesis = why.session
-    ? computeSynthesis(
-        why.session.responses,
-        why.session.topic,
-        why.session.track,
-        why.session.rootIndex
-      )
-    : null;
+  const sessionSynthesis = why.session ? sessionSynthesisOf(why.session) : null;
   const latestSnapshot = why.snapshots[0] ?? null;
   const reflectionHasDraft = !!(
     why.session &&
@@ -789,6 +912,7 @@ export function readCareerDashboard(): CareerDashboardData {
     sessionSynthesis?.isComplete ||
     glowup?.storyCount ||
     glowup?.roleCount ||
+    glowup?.answerCount ||
     networking?.sessionCount ||
     networking?.versionCount ||
     networking?.draftedButUnpracticed ||
@@ -836,9 +960,11 @@ export function readCareerDashboard(): CareerDashboardData {
       // the honest name for the work is the decode.
       action: glowup.storyCount
         ? `Working on ${glowup.storyCount === 1 ? '1 story' : `${glowup.storyCount} stories`}`
-        : glowup.roleCount
-          ? `Decoded ${glowup.roleCount === 1 ? 'a posting' : `${glowup.roleCount} postings`}`
-          : 'Started prep',
+        : glowup.answerCount
+          ? `Kept ${glowup.answerCount === 1 ? '1 interview answer' : `${glowup.answerCount} interview answers`}`
+          : glowup.roleCount
+            ? `Decoded ${glowup.roleCount === 1 ? 'a posting' : `${glowup.roleCount} postings`}`
+            : 'Started prep',
       date: new Date(glowup.lastUpdated).toISOString(),
       url: TOOL_URLS['Interview Glow Up'],
     });
@@ -902,7 +1028,7 @@ export function readCareerDashboard(): CareerDashboardData {
           ? {
               tool: 'Interview Glow Up',
               text: `${name} was sent on ${shortDate(app.sentOn)}. Practice for the interview while you wait.`,
-              href: '/interview-glow-up/rehearse/',
+              href: withRole('/interview-glow-up/rehearse/', app.roleId),
               cta: 'Rehearse the interview',
               roleId: app.roleId,
             }
@@ -939,7 +1065,10 @@ export function readCareerDashboard(): CareerDashboardData {
         text: hasStories
           ? `${name} has nothing packed for the call.${when}`
           : `${name} is decoded but no story backs it yet.${when}`,
-        href: `${TOOL_URLS['Interview Glow Up']}?tab=${hasStories ? 'packet' : 'stories'}`,
+        href: withRole(
+          `${TOOL_URLS['Interview Glow Up']}?tab=${hasStories ? 'packet' : 'stories'}`,
+          app.roleId
+        ),
         cta: hasStories ? 'Pack the packet' : 'Build a story',
         roleId: app.roleId,
       });
@@ -1140,30 +1269,49 @@ export function readResumeText(): string {
 }
 
 /**
- * Resume lines the visitor rewrote in the Resume Game, as the original text
- * and its new wording. Read only.
+ * Resume lines the visitor rewrote in the Resume Game, as the original text,
+ * its new wording, and which occurrence of that line it was (counted from 0
+ * in resume order), so a line that appears twice is rewritten in the right
+ * place. Counted the way the Resume Game's own export counts. Read only.
  */
-export function readResumeRewrites(): { original: string; improved: string }[] {
+export function readResumeRewrites(): { original: string; improved: string; occurrence: number }[] {
   if (typeof window === 'undefined') return [];
   try {
     const raw = window.localStorage.getItem(RESUME_SESSION_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as { bullets?: unknown };
     if (!Array.isArray(parsed.bullets)) return [];
-    return parsed.bullets.flatMap((bullet: unknown) => {
-      if (!bullet || typeof bullet !== 'object') return [];
-      const { original, improved, edited } = bullet as Record<string, unknown>;
-      return edited === true &&
-        typeof original === 'string' &&
-        typeof improved === 'string' &&
-        improved.trim() &&
-        improved.trim() !== original.trim()
-        ? [{ original, improved }]
-        : [];
+    // Every line counts toward the occurrence, edited or not, so the count
+    // matches the line's place on the resume.
+    const bullets = parsed.bullets.map((bullet: unknown) => {
+      const { original, improved, edited } = isRecord(bullet) ? bullet : {};
+      return {
+        original: typeof original === 'string' ? original : '',
+        improved: typeof improved === 'string' ? improved : '',
+        edited: edited === true,
+      };
     });
+    return bulletRewrites(bullets)
+      .filter((rewrite) => rewrite.improved.trim() !== rewrite.original.trim())
+      .map(({ original, improved, occurrence }) => ({
+        original,
+        improved,
+        occurrence: occurrence ?? 0,
+      }));
   } catch {
     return [];
   }
+}
+
+/**
+ * A link into the interview tools that names the role it is about, so it
+ * opens on that role even in a new tab: "/interview-glow-up/rehearse/?role=r1".
+ */
+export function withRole(href: string, roleId: string | null | undefined): string {
+  if (!roleId) return href;
+  const [path, hash] = href.split('#');
+  const joiner = path.includes('?') ? '&' : '?';
+  return `${path}${joiner}role=${encodeURIComponent(roleId)}${hash === undefined ? '' : `#${hash}`}`;
 }
 
 /** " (in 3 days)", " (today)", or "" when there is no date or it has passed. */
@@ -1228,7 +1376,7 @@ function findLeftOff(
           ? `Interview prep for ${role.jobTitle}${role.company ? ` at ${role.company}` : ''}`
           : activity.action,
       next: null,
-      href: activity.url,
+      href: withRole(activity.url, role?.id),
       roleId: role?.id ?? null,
       date: activity.date,
       at,

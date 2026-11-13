@@ -11,6 +11,11 @@ const clock = (ms: number) => {
 
 type Props = {
   tool: RecordingTool;
+  /**
+   * Only the recordings kept for this tracked application. Leave it out to
+   * list every recording the tool kept.
+   */
+  applicationId?: string;
   /** Change this to read the list again, after a recording is kept. */
   refresh?: unknown;
 };
@@ -20,16 +25,16 @@ type Props = {
  * deleted one at a time. The list holds no audio; a recording is read from
  * the device only when Play is pressed, and only one is loaded at a time.
  */
-export default function SavedRecordings({ tool, refresh }: Props) {
+export default function SavedRecordings({ tool, applicationId, refresh }: Props) {
   const [items, setItems] = React.useState<RecordingMeta[]>([]);
   const [playing, setPlaying] = React.useState<{ id: string; url: string } | null>(null);
   const [notice, setNotice] = React.useState('');
 
   const read = React.useCallback(async () => {
     const { listRecordings } = await loadFeature(import('../../lib/local-db'));
-    const list = await listRecordings({ tool });
+    const list = await listRecordings(applicationId ? { tool, applicationId } : { tool });
     setItems([...list].sort((a, b) => b.createdAt - a.createdAt));
-  }, [tool]);
+  }, [tool, applicationId]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: `refresh` is the signal to read again
   React.useEffect(() => {

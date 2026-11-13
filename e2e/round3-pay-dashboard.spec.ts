@@ -277,7 +277,7 @@ test('a recommendation opens the rehearsal for the application it names', async 
   await page
     .getByRole('link', { name: /"Library role at Library" was sent .* Practice for the interview/ })
     .click();
-  await page.waitForURL('**/interview-glow-up/rehearse/');
+  await page.waitForURL('**/interview-glow-up/rehearse/?role=r-a');
   await waitForHydration(page);
   const glow = JSON.parse((await readStorage(page, 'interview-glow-up-data')) ?? '{}');
   expect(glow.currentRoleId).toBe('r-a');

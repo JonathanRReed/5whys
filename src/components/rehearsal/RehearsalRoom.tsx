@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { loadApplications } from '../../lib/applications';
 import {
   type Audience,
   audienceFor,
@@ -15,9 +16,10 @@ import {
   tidyQuestionText,
 } from '../../lib/glowup-banks';
 import { chosenQuestion } from '../../lib/glowup-banks/rehearsal';
-import type { DecodedRole, KeptAnswer, Story } from '../../lib/glowup-store';
+import type { DecodedRole, GlowUpData, KeptAnswer, Story } from '../../lib/glowup-store';
 import {
   loadData,
+  openRole,
   removeStoredAnswer,
   requirementBullets,
   storeKeptAnswer,
@@ -74,6 +76,30 @@ export function packetQuestions(roleId: string | null): string[] {
     seen.add(key);
     return true;
   });
+}
+
+/**
+ * The role and application a link asked for: "?role=r1" names a saved role,
+ * "?application=a1" a tracked application (and, through it, its role). An id
+ * that matches nothing is ignored. Without either, the current role and the
+ * application tracking it.
+ */
+export function roomTarget(
+  data: GlowUpData,
+  applications: readonly { id: string; roleId: string | null }[],
+  search: string
+): { role: DecodedRole | null; applicationId: string | null; asked: boolean } {
+  const params = new URLSearchParams(search);
+  const app = applications.find((a) => a.id === params.get('application'));
+  const named =
+    data.roles.find((r) => r.id === params.get('role')) ??
+    (app?.roleId ? data.roles.find((r) => r.id === app.roleId) : undefined);
+  const role =
+    named ?? data.roles.find((r) => r.id === data.currentRoleId) ?? data.roles[0] ?? null;
+  const applicationId =
+    (app && (!app.roleId || app.roleId === role?.id) ? app.id : null) ??
+    (role ? (applications.find((a) => a.roleId === role.id)?.id ?? null) : null);
+  return { role, applicationId, asked: Boolean(named) };
 }
 
 const clock = (seconds: number) =>
@@ -156,25 +182,23 @@ export default function RehearsalRoom() {
   const whisperReady = models.some((m) => m.id === 'whisper-tiny-en' && m.state === 'ready');
   const kokoroReady = models.some((m) => m.id === 'kokoro' && m.state === 'ready');
 
-  // Read the role being prepared for and build its questions. Reading only:
-  // nothing here writes to storage.
+  // Read the role being prepared for and build its questions. Reading only,
+  // except that a role named in the address becomes the current one.
   // biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount
   React.useEffect(() => {
     let cancelled = false;
     const data = loadData();
-    const current = data.roles.find((r) => r.id === data.currentRoleId) ?? data.roles[0] ?? null;
+    const target = roomTarget(data, loadApplications().applications, window.location.search);
+    const current = target.role;
+    // A link that names a role (from the dashboard, opened in a new tab, say)
+    // makes it current, as choosing it would; the workspace then opens on the
+    // same job. With no role named, nothing is written.
+    if (target.asked && current) openRole(current.id);
     setRole(current);
     setStories(data.stories);
     setPacketLines(packetQuestions(current?.id ?? null));
     setKeptAnswers((data.answers ?? []).filter((a) => a.roleId === (current?.id ?? null)));
-    void loadFeature(import('../../lib/applications'))
-      .then(({ loadApplications }) => {
-        if (cancelled || !current) return;
-        setApplicationId(
-          loadApplications().applications.find((a) => a.roleId === current.id)?.id ?? null
-        );
-      })
-      .catch(reportFeatureFailure);
+    setApplicationId(target.applicationId);
     void (async () => {
       const [{ likelyQuestions }, { readProfile }, { readResumeText }] = await Promise.all([
         loadFeature(import('../../lib/local-ai')),
@@ -893,7 +917,8 @@ export default function RehearsalRoom() {
             </ul>
           </section>
         )}
-        <SavedRecordings tool="interview-glow-up" />
+        {/* With a tracked application in view, only its own recordings. */}
+        <SavedRecordings tool="interview-glow-up" applicationId={applicationId ?? undefined} />
         <Announcer message={announcement} />
       </div>
     );
