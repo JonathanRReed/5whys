@@ -157,17 +157,56 @@ export async function extractDocx(bytes: Uint8Array, name = 'resume.docx'): Prom
   let expanded = 0;
   let textLength = 0;
   let table = 0;
+  const attr = (element: Element | undefined, key: string) =>
+    element
+      ? Array.from(element.attributes).find(
+          (attribute) =>
+            attribute.localName === key && WORD_NAMESPACES.has(attribute.namespaceURI ?? '')
+        )?.value
+      : undefined;
+  // List styles ("List Bullet") carry their numbering in styles.xml, not in
+  // the paragraph. Collect the styles that are lists, following "based on".
+  // Numbered headings are left out: an outline level makes a style a heading.
+  const listStyles = new Set<string>();
+  const stylesEntry = zip.file('word/styles.xml');
+  if (stylesEntry) {
+    try {
+      const data = await readBounded(stylesEntry, MAX_EXPANDED - expanded);
+      expanded += data.length;
+      const styles = descendants(parseXml(new TextDecoder().decode(data)).documentElement, 'style');
+      const own = new Map<string, { list: boolean; heading: boolean; basedOn?: string }>();
+      for (const style of styles) {
+        const id = attr(style, 'styleId');
+        if (!id) continue;
+        own.set(id, {
+          list: descendants(style, 'numPr').length > 0,
+          heading: descendants(style, 'outlineLvl').length > 0,
+          basedOn: attr(descendants(style, 'basedOn')[0], 'val'),
+        });
+      }
+      for (const id of own.keys()) {
+        let current: string | undefined = id;
+        let list = false;
+        let heading = false;
+        for (let depth = 0; current && depth < 20; depth++) {
+          const style = own.get(current);
+          if (!style) break;
+          list ||= style.list;
+          heading ||= style.heading;
+          current = style.basedOn;
+        }
+        if (list && !heading) listStyles.add(id);
+      }
+    } catch {
+      // Unreadable styles: paragraphs with their own numbering are still found.
+    }
+  }
   const append = (paragraph: Element, origin: LineOrigin, index: number) => {
-    const bullet = descendants(paragraph, 'numPr').length > 0;
+    const styleId = attr(descendants(paragraph, 'pStyle')[0], 'val');
+    const bullet =
+      descendants(paragraph, 'numPr').length > 0 || (!!styleId && listStyles.has(styleId));
     const font = descendants(paragraph, 'rFonts')[0];
     const size = descendants(paragraph, 'sz')[0];
-    const attr = (element: Element | undefined, key: string) =>
-      element
-        ? Array.from(element.attributes).find(
-            (attribute) =>
-              attribute.localName === key && WORD_NAMESPACES.has(attribute.namespaceURI ?? '')
-          )?.value
-        : undefined;
     const fontSize = Number(attr(size, 'val')) / 2;
     // Shift+Enter inside a list item is still one bullet: later segments
     // continue the first instead of becoming bullets of their own.

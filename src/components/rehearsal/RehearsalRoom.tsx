@@ -142,7 +142,10 @@ export default function RehearsalRoom() {
       if (cancelled) return;
       setCanRecord(capabilities.mediaRecorder.supported);
       // Best voices first, joke voices left out. The visitor's saved choice wins.
-      const ranked = rankVoices(capabilities.localVoices, navigator.language).slice(0, 8);
+      // The questions are in English, so the voice must be. The browser's
+      // language only picks the accent, and only when it is English too.
+      const accent = /^en\b/i.test(navigator.language) ? navigator.language : 'en-US';
+      const ranked = rankVoices(capabilities.localVoices, accent).slice(0, 8);
       setVoices(ranked);
       const savedVoice = loadVoiceChoice();
       setVoiceURI(

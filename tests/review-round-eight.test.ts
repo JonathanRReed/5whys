@@ -137,3 +137,17 @@ describe('tenth review round', () => {
     expect((result as { value: string }).value).toBe('clean');
   });
 });
+
+describe('eleventh review round', () => {
+  it('does not accept a number scaled up from the one the visitor wrote', async () => {
+    const { findInventedClaims } = await import('../src/lib/local-ai');
+    const source = 'Reached 400 readers with the student newsletter.';
+    expect(
+      findInventedClaims(source, 'Reached 400k readers with the student newsletter.')
+    ).not.toEqual([]);
+    expect(findInventedClaims(source, 'Reached 400 readers with the newsletter.')).toEqual([]);
+    expect(findInventedClaims('Reached 400k readers.', 'Reached 400 thousand readers.')).toEqual(
+      []
+    );
+  });
+});

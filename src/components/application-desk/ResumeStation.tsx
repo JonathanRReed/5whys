@@ -69,18 +69,18 @@ export function withAchievementLines(doc: ResumeDoc, achievements: readonly stri
 }
 
 /**
- * Whether a saved document is the resume in the text: most of its bullets
- * still appear there. Edits to a few lines keep the document; a different
- * resume does not.
+ * Whether a saved document still says what the resume text says: every line
+ * of it is in the text. A correction typed into the Resume Game (an email
+ * address, a date, a bullet) is not in the document, so once the two differ
+ * the text is the resume and the copy for a role is built from it.
  */
 export function sameResume(doc: ResumeDoc, resumeText: string): boolean {
-  const text = resumeText.replace(/\s+/g, ' ').toLowerCase();
-  const bullets = bulletsOf(doc)
-    .map((bullet) => wordsOf(bullet.text).slice(0, 40))
-    .filter((start) => start.length >= 12);
-  if (bullets.length === 0) return true;
-  const found = bullets.filter((start) => text.includes(start)).length;
-  return found * 2 >= bullets.length;
+  const text = wordsOf(resumeText);
+  return doc.lines.every((line) => {
+    const words = wordsOf(line.text);
+    // A line that wraps after a hyphen is joined without a space in the text.
+    return words.length < 4 || /-$/.test(words) || text.includes(words);
+  });
 }
 
 /**

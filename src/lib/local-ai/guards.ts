@@ -385,6 +385,14 @@ export function findInventedClaims(
   for (const match of generated.matchAll(RELATIVE_DATE_PATTERN)) {
     consider(spanOf('date', match), !lowerSource.includes(match[0].toLowerCase()));
   }
+  // "400k" is four hundred thousand. The digits alone being in the source
+  // does not support it.
+  for (const match of generated.matchAll(
+    /\b(\d[\d,]*(?:\.\d+)?)\s?(k|m|thousand|million|billion)\b/gi
+  )) {
+    const value = parseDigits(match[1]) * MULTIPLIERS[match[2].toLowerCase()];
+    consider(spanOf('number', match), !values.has(value));
+  }
   for (const match of generated.matchAll(DIGITS_PATTERN)) {
     consider(spanOf('number', match), !values.has(parseDigits(match[0])));
   }

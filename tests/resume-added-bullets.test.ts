@@ -99,11 +99,15 @@ describe('rewritten lines in the clean copy', () => {
 });
 
 describe('a saved resume document and the text beside it', () => {
-  it('is the same resume after a small edit, and a different one after a paste', async () => {
+  it('is the same resume only while the text still says what it says', async () => {
     const { sameResume } = await import('../src/components/application-desk/ResumeStation');
     const doc = fromText(RESUME);
     expect(sameResume(doc, RESUME)).toBe(true);
-    expect(sameResume(doc, RESUME.replace('2,100 followers', '2,400 followers'))).toBe(true);
+    // Line breaks and bullet marks may differ; the words may not.
+    expect(sameResume(doc, RESUME.replace(/\n- /g, '\n• '))).toBe(true);
+    // A correction typed into the text is not in the saved document.
+    expect(sameResume(doc, RESUME.replace('maya@example.edu', 'maya.t@example.edu'))).toBe(false);
+    expect(sameResume(doc, RESUME.replace('2,100 followers', '2,400 followers'))).toBe(false);
     expect(
       sameResume(
         doc,
