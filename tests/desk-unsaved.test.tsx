@@ -1,7 +1,29 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useDesk } from '../src/components/application-desk/useDesk';
 import { APPLICATION_DESK_KEY, getDesk, updateLetter } from '../src/lib/application-desk';
+
+// The desk saves work only for an application that exists.
+beforeEach(() => {
+  localStorage.setItem(
+    'career-applications',
+    JSON.stringify({
+      version: 1,
+      activeId: 'a',
+      applications: [
+        {
+          id: 'a',
+          title: 'Intern',
+          company: '',
+          deadline: null,
+          roleId: null,
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      ],
+    })
+  );
+});
 
 afterEach(() => {
   cleanup();

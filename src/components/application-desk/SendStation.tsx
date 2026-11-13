@@ -13,8 +13,11 @@ const MANUAL = [
 
 export default function SendStation({ desk }: { desk: DeskState }) {
   const { application, role, changeDesks } = desk;
-  const [copied, setCopied] = React.useState(false);
-  const [thanksCopied, setThanksCopied] = React.useState(false);
+  // What was last copied, so the button says "copied" only while that is
+  // still the text it would copy. The station also starts over for each
+  // application (it is keyed by the application's id).
+  const [copiedText, setCopiedText] = React.useState<string | null>(null);
+  const [copiedThanks, setCopiedThanks] = React.useState<string | null>(null);
   const requirements = React.useMemo(
     () => requirementsFromBullets(role?.bullets ?? []),
     [role?.bullets]
@@ -35,6 +38,8 @@ export default function SendStation({ desk }: { desk: DeskState }) {
     'I am glad to send anything else that would help.',
     letter.sender.trim() || '[Your name]',
   ].join('\n\n');
+  const copied = Boolean(text) && copiedText === text;
+  const thanksCopied = copiedThanks === thanks;
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -103,9 +108,9 @@ export default function SendStation({ desk }: { desk: DeskState }) {
           onClick={async () => {
             try {
               await navigator.clipboard.writeText(text);
-              setCopied(true);
+              setCopiedText(text);
             } catch {
-              setCopied(false);
+              setCopiedText(null);
             }
           }}
         >
@@ -134,9 +139,9 @@ export default function SendStation({ desk }: { desk: DeskState }) {
           onClick={async () => {
             try {
               await navigator.clipboard.writeText(thanks);
-              setThanksCopied(true);
+              setCopiedThanks(thanks);
             } catch {
-              setThanksCopied(false);
+              setCopiedThanks(null);
             }
           }}
         >
