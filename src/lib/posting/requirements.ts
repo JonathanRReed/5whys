@@ -311,3 +311,33 @@ export function decodePostingToBullets(
   const parsed = parsePosting(rawText, options);
   return { parsed, bullets: bulletsFromRequirements(parsed.requirements) };
 }
+
+export interface Redecoded {
+  /** The requirements after decoding again, with every decision carried over. */
+  requirements: PostingRequirement[];
+  /** Old parsed id to new parsed id, for whatever is keyed by requirement. */
+  moved: Map<string, string>;
+  /** The ids that were parsed before, which are the ones `moved` speaks for. */
+  parsedIds: Set<string>;
+}
+
+/**
+ * Decodes a posting again without losing what the visitor decided: each
+ * confirmation, dismissal, section and edit follows its sentence even when
+ * text above it changed, and requirements the visitor added stay. Every
+ * place that re-decodes a saved posting (the Application Desk, the interview
+ * workspace's "Parse again") goes through this, then remaps anything keyed
+ * by requirement id (qualification rows on every linked desk) with `moved`.
+ */
+export function redecodeRequirements(
+  current: PostingRequirement[],
+  previousText: string,
+  reparsed: PostingRequirement[],
+  nextText: string
+): Redecoded {
+  return {
+    requirements: carryOverDecisions(current, reparsed, previousText, nextText),
+    moved: requirementIdMap(current, reparsed, previousText, nextText),
+    parsedIds: new Set(current.filter((r) => r.origin === 'parsed').map((r) => r.id)),
+  };
+}

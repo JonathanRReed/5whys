@@ -1,13 +1,101 @@
 import * as React from 'react';
-import { setChecklistTick } from '../../lib/application-desk';
-import { markSent } from '../../lib/applications';
-import { countWord, runSendChecks, wornPhrases } from '../../lib/desk-checks';
-import { requirementsFromBullets } from '../../lib/posting';
+import {
+  type LetterDraft,
+  type QualificationRow,
+  setChecklistTick,
+} from '../../lib/application-desk';
+import { localDate, markSent } from '../../lib/applications';
+import {
+  conditionWarnings,
+  countWord,
+  endSentence,
+  findPlaceholders,
+  letterText,
+  runSendChecks,
+  type SendCheck,
+  wornPhrases,
+} from '../../lib/desk-checks';
+import {
+  type PostingRequirement,
+  requirementsFromBullets,
+  splitConditions,
+} from '../../lib/posting';
 import { cn } from '../../lib/utils';
+import ConfirmButton from '../shared/ConfirmButton';
 import { Button } from '../ui/button';
 import LetterPreview from './LetterPreview';
 import SentControl from './SentControl';
 import type { DeskState } from './useDesk';
+
+/**
+ * What still stands between this application and sending it, as the words
+ * "Mark as sent" arms with, or null when nothing does. Only checks that
+ * failed count: a letter not written at all is the visitor's choice.
+ */
+export function sendBlocker(
+  letter: LetterDraft,
+  checks: readonly SendCheck[],
+  warnings: readonly string[]
+): string | null {
+  const placeholders = findPlaceholders(
+    [letter.recipient, letterText(letter), letter.sender].join('\n')
+  );
+  if (placeholders.length > 0) return `The letter still has ${placeholders[0]}.`;
+  if (warnings.length > 0) return warnings[0];
+  const failed = checks.filter((check) => check.passed === false);
+  if (failed.length === 1) return `"${failed[0].label}" is not done yet.`;
+  if (failed.length > 1) return `${countWord(failed.length)} checks are not done yet.`;
+  return null;
+}
+
+/** The checks and condition warnings for one application, as Before you send shows them. */
+export function sendState(
+  letter: LetterDraft,
+  title: string,
+  company: string,
+  requirements: PostingRequirement[],
+  rows: readonly QualificationRow[]
+) {
+  const checks = runSendChecks({ letter, title, company, requirements });
+  const { conditions } = splitConditions(requirements.filter((r) => r.status === 'confirmed'));
+  const warnings = conditionWarnings(conditions, rows);
+  return { checks, warnings, blocker: sendBlocker(letter, checks, warnings) };
+}
+
+/**
+ * "Mark as sent", which asks in place first when something is still open:
+ * the first press names it ("The letter still has [your proof]"), the second
+ * marks it. Once sent, or with nothing open, it is the plain control.
+ */
+export function MarkSent({
+  sentOn,
+  title,
+  blocker,
+  onChange,
+  className,
+}: {
+  sentOn: string | null | undefined;
+  title: string;
+  blocker: string | null;
+  onChange: (sentOn: string | null) => void;
+  className?: string;
+}) {
+  if (sentOn || !blocker) {
+    return <SentControl className={className} sentOn={sentOn} title={title} onChange={onChange} />;
+  }
+  return (
+    <div className={cn('flex flex-wrap items-center gap-2', className)}>
+      <ConfirmButton
+        tone="neutral"
+        confirmLabel={`${blocker} Mark as sent anyway`}
+        onConfirm={() => onChange(localDate())}
+        className="min-h-10 font-normal"
+      >
+        Mark as sent<span className="sr-only">: {title}</span>
+      </ConfirmButton>
+    </div>
+  );
+}
 
 const MANUAL = [
   { id: 'sounds-like-me', label: 'It sounds like me when I read it out loud' },
@@ -33,17 +121,20 @@ export default function SendStation({ desk }: { desk: DeskState }) {
   );
   if (!application) return null;
   const letter = desk.desk.letter;
-  const checks = runSendChecks({
+  const { checks, warnings, blocker } = sendState(
     letter,
-    title: application.title,
-    company: application.company,
+    application.title,
+    application.company,
     requirements,
-  });
+    desk.desk.qualifications
+  );
   const worn = wornPhrases(letter);
   const at = application.company.trim() ? ` at ${application.company.trim()}` : '';
   const thanks = [
     'Hi [name],',
-    `Thank you for talking with me today about the ${application.title.trim()} role${at}. [One thing you talked about] stayed with me because [why it matters to you].`,
+    `Thank you for talking with me today about the ${application.title.trim()} role${
+      at ? endSentence(at) : '.'
+    } [One thing you talked about] stayed with me because [why it matters to you].`,
     'I am glad to send anything else that would help.',
     letter.sender.trim() || '[Your name]',
   ].join('\n\n');
@@ -58,6 +149,17 @@ export default function SendStation({ desk }: { desk: DeskState }) {
           last {countWord(MANUAL.length).toLowerCase()} only you can answer.
         </p>
       </div>
+
+      {warnings.length > 0 && (
+        <div className="space-y-1 rounded-xl bg-gold/12 p-4" data-testid="condition-warnings">
+          <p className="font-medium text-foreground">Before you apply</p>
+          {warnings.map((warning) => (
+            <p key={warning} className="text-sm leading-relaxed text-foreground">
+              {warning}
+            </p>
+          ))}
+        </div>
+      )}
 
       <ul className="space-y-2" data-guide="send-checks">
         {checks.map((check) => (
@@ -140,9 +242,10 @@ export default function SendStation({ desk }: { desk: DeskState }) {
           Mark it once it has gone, so the dashboard stops counting down to the deadline and points
           you to the interview instead.
         </p>
-        <SentControl
+        <MarkSent
           sentOn={application.sentOn}
           title={application.title}
+          blocker={blocker}
           onChange={(sentOn) =>
             changeApplications((data) => markSent(data, application.id, sentOn))
           }

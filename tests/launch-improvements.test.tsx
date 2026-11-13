@@ -227,7 +227,7 @@ describe('1. one condition filter on the desk (S F2)', () => {
       plan: '',
       updatedAt: 1,
     }));
-    expect(whyYouDraft(requirements, rows)).toEqual([`${EXCEL}: [your proof]`]);
+    expect(whyYouDraft(requirements, rows)).toEqual(['Excel or Google Sheets: [your proof]']);
   });
 });
 
@@ -288,9 +288,10 @@ describe('3. the letter uses what the visitor wrote (S F8, C 12)', () => {
       plan: plan.get(r.text) ?? '',
       updatedAt: 1,
     }));
+    // Each line names the skill, then the proof.
     expect(whyYouDraft(requirements, rows)).toEqual([
-      'Cashier at FreshWay Market since 2025, I help customers every shift.',
-      `${EXCEL}: [your proof]`,
+      'Customer service: Cashier at FreshWay Market since 2025, I help customers every shift.',
+      'Excel or Google Sheets: [your proof]',
     ]);
   });
 

@@ -533,6 +533,22 @@ export function remapQualifications(
   });
 }
 
+/**
+ * `remapQualifications` for every application linked to one decoded role: a
+ * posting re-decoded from any page moves the rows of each desk that uses it.
+ */
+export function remapLinkedDesks(
+  data: ApplicationDeskData,
+  applicationIds: readonly string[],
+  map: ReadonlyMap<string, string>,
+  parsedIds: ReadonlySet<string>
+): ApplicationDeskData {
+  return applicationIds.reduce(
+    (next, id) => (next.desks[id] ? remapQualifications(next, id, map, parsedIds) : next),
+    data
+  );
+}
+
 export function setQualification(
   data: ApplicationDeskData,
   applicationId: string,
@@ -1119,4 +1135,37 @@ export function periodPhrase(offer: Pick<OfferWorksheet, 'payPeriod' | 'weeksPer
     return 'a year';
   }
   return `over ${weeks} ${weeks === 1 ? 'week' : 'weeks'}`;
+}
+
+/**
+ * A deadline in words, so a date typed day-first and read month-first shows
+ * at a glance: "2027-12-01" is "Wednesday, December 1, 2027". Empty for a
+ * value that is not a whole date.
+ */
+export function deadlineInWords(isoDate: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return '';
+  const [year, month, day] = isoDate.split('-').map(Number);
+  const date = new Date(year, month - 1, day, 12);
+  if (date.getMonth() !== month - 1 || date.getDate() !== day) return '';
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+/**
+ * A role title to start an application with, from a pasted posting: its
+ * first line when that line is short enough to be a title. Empty otherwise,
+ * so the visitor types it.
+ */
+export function titleFromPosting(posting: string): string {
+  const first =
+    posting
+      .split('\n')
+      .map((line) => line.trim())
+      .find(Boolean) ?? '';
+  const title = first.replace(/[.:;,]+$/, '').trim();
+  return title.length > 0 && title.length <= 80 && title.split(/\s+/).length <= 10 ? title : '';
 }

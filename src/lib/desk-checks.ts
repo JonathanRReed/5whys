@@ -5,6 +5,7 @@
 import type { LetterDraft, QualificationRow } from './application-desk';
 import type { PostingRequirement } from './posting';
 import {
+  analyzeRequirement,
   extractRequirementTerms,
   findTermMatches,
   hiringCondition,
@@ -71,13 +72,34 @@ export function asks(closing: string): boolean {
     .split(/(?<=[.!?])\s+/)
     .map((sentence) => sentence.trim())
     .filter(Boolean);
-  return sentences.some(
-    (sentence) =>
-      NEXT_STEP.test(sentence) &&
+  return sentences.some((whole) => {
+    // "Thank you, I would welcome an interview": the thanks opens the
+    // sentence; what follows it can still ask.
+    const sentence = whole.replace(THANKS_CLAUSE, '').trim() || whole;
+    return (
       REQUEST.test(sentence) &&
-      !THANKS_ONLY.test(sentence) &&
+      requestsNextStep(sentence) &&
+      !(sentence === whole && THANKS_ONLY.test(sentence)) &&
       !/\blike to thank\b/i.test(sentence)
-  );
+    );
+  });
+}
+
+/** "Thank you,", "Thanks again for your time;": a thanks that introduces the rest of the sentence. */
+const THANKS_CLAUSE =
+  /^(?:thank you|thanks)(?:\s+(?:so much|again|very much))?(?:\s+for\s+[^,;:]{1,80})?\s*[,;:]\s*(?=\S)/i;
+
+/** "do not contact me", "no need to reply", "never call": a next step turned down. */
+const TURNED_DOWN = /\b(?:not|n't|never|no\s+need\s+to|without)\s+(?:\w+\s+){0,2}$/i;
+
+/** True when a next step is named and not turned down: "Please contact me", not "Please do not contact me". */
+function requestsNextStep(sentence: string): boolean {
+  const steps = new RegExp(NEXT_STEP.source, 'gi');
+  for (const found of sentence.matchAll(steps)) {
+    const before = sentence.slice(Math.max(0, (found.index ?? 0) - 40), found.index ?? 0);
+    if (!TURNED_DOWN.test(before)) return true;
+  }
+  return false;
 }
 
 /**
@@ -127,39 +149,88 @@ type LetterBodyPart = 'hook' | 'whyYou' | 'whyThem' | 'closingAsk';
  * on the qualifications list but are not offered as letter material.
  */
 const NOT_A_SELLING_POINT =
-  /\b(?:currently enrolled|enrolled (?:in|at)|pursuing (?:a|an) (?:degree|diploma)|high school diploma|ged\b|available to work|availability to work|able to work (?:weekends|evenings|nights|the hours)|must be available|reliable transportation)\b/i;
+  /\b(?:currently enrolled|enrolled (?:in|at)|pursuing (?:a|an) (?:degree|diploma)|high school diploma|ged\b|available to work|availability to work|able to work (?:weekends|evenings|nights|the hours|on[- ]site|in[- ]person|in (?:the )?office|from)|work (?:on[- ]site|in[- ]person) (?:in|at)|must be available|reliable transportation|commut\w*|relocat\w*|monday (?:through|to|-) friday)\b/i;
+
+/** Openers that say how much of a skill, not which: "Working knowledge of", "Strong". */
+const SKILL_LEAD =
+  /^(?:(?:strong|excellent|solid|basic|good|proven|demonstrated|reliable|advanced|working|some|prior|previous|hands-on|general|great)\s+)*(?:(?:knowledge|understanding|command)\s+of|(?:experience|proficiency|skills?|fluency)\s+(?:in|with|using)|familiarity\s+with|comfort(?:able)?\s+with|ability\s+to|able\s+to)\s+/i;
 
 /**
- * The "why you" draft from what the visitor marked "have it": each line from
- * the posting, followed by the proof they typed for it on the qualifications
- * station, or "[your proof]" when they wrote none. Conditions of hiring and
- * lines that do not sell anyone (enrolment, availability) are skipped. Only
- * the visitor's words and the posting's are used.
+ * The skill a posting line asks for, short enough to start a sentence: "Working
+ * knowledge of Microsoft Excel, including sorting" is "Microsoft Excel".
+ */
+export function skillName(requirementText: string): string {
+  const text = requirementText.trim().replace(/[.;:]+$/, '');
+  const analysis = analyzeRequirement(text);
+  let name =
+    analysis.kind === 'tool' && analysis.asks.length > 0
+      ? analysis.asks.map((ask) => ask.label).join(' and ')
+      : text
+          .replace(SKILL_LEAD, '')
+          .split(/,\s*(?:including|such as|especially|ideally|preferably|e\.g\.?)\b|\s+\(/i)[0]
+          .replace(/\s+(?:experience|skills?)$/i, '')
+          .replace(/^(?:strong|excellent|reliable|solid|good|proven|demonstrated|great)\s+/i, '')
+          .trim();
+  if (!name) name = text;
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+/** Marks a resume line copied into the letter until the visitor has read it in place. */
+export const CHECK_RESUME_LINE = '[check this line from your resume]';
+
+/**
+ * The "why you" draft from what the visitor marked "have it". Each line names
+ * the skill the posting asks for, then the proof: what the visitor typed for
+ * it on the qualifications station, or else the resume line that shows it
+ * (`evidence`), marked to check, or else "[your proof]". The send check
+ * catches anything still in brackets. Conditions of hiring and lines that
+ * sell no one (being enrolled, the location, the hours) are skipped. Only the
+ * visitor's words and the posting's are used.
  */
 export function whyYouDraft(
   requirements: readonly PostingRequirement[],
   rows: readonly QualificationRow[],
-  limit = 3
+  limit = 3,
+  evidence: ReadonlyMap<string, string> = new Map()
 ): string[] {
   const byId = new Map(rows.map((row) => [row.requirementId, row]));
   return (
     requirements
       .filter((r) => r.status === 'confirmed' && byId.get(r.id)?.status === 'have')
       .filter((r) => !hiringCondition(r.text) && !NOT_A_SELLING_POINT.test(r.text))
-      .map((r) => ({
-        skill: r.text.trim().replace(/[.;:]+$/, ''),
-        proof: (byId.get(r.id)?.plan ?? '').trim().replace(/\s+/g, ' '),
-      }))
-      // Lines the visitor already wrote proof for come first, in posting order;
-      // a line with nothing behind it yet only fills a place that is left.
-      .sort((a, b) => Number(Boolean(b.proof)) - Number(Boolean(a.proof)))
+      .map((r) => {
+        const plan = (byId.get(r.id)?.plan ?? '').trim().replace(/\s+/g, ' ');
+        const line = (evidence.get(r.id) ?? '')
+          .trim()
+          .replace(/^[\s•\-*◦–—·]+/, '')
+          .replace(/\s+/g, ' ');
+        return { skill: skillName(r.text), plan, line };
+      })
+      // Lines with the visitor's own proof come first, then lines the resume
+      // shows, in posting order; a line with nothing behind it yet only fills
+      // a place that is left.
+      .sort((a, b) => rank(b) - rank(a))
       .slice(0, limit)
-      .map(({ skill, proof }) =>
-        // The visitor's proof is the sentence, as they wrote it. A line with no
-        // proof yet is a bracket to fill in, which the send check will catch.
-        proof ? (/[.?]$/.test(proof) ? proof : `${proof}.`) : `${skill}: [your proof]`
-      )
+      .map(({ skill, plan, line }) => {
+        if (plan) return `${skill}: ${sentence(plan)}`;
+        if (line) return `${skill}: ${sentence(line)} ${CHECK_RESUME_LINE}`;
+        return `${skill}: [your proof]`;
+      })
   );
+}
+
+const rank = (item: { plan: string; line: string }) => (item.plan ? 2 : item.line ? 1 : 0);
+
+/** The visitor's words as a sentence: a full stop added when there is none. */
+const sentence = (text: string) => (/[.?]$/.test(text) ? text : `${text}.`);
+
+/**
+ * A name inside a sentence that ends right after it: "at Coastline Supply
+ * Co." takes no second full stop.
+ */
+export function endSentence(text: string): string {
+  const trimmed = text.trim();
+  return /[.?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
 }
 
 /** The four parts joined the way they would be sent. */
@@ -353,22 +424,14 @@ export function runSendChecks({
         : !written
           ? 'Nothing written yet.'
           : hasRole && hasCompany
-            ? `Mentions ${coreTitle(title) || title.trim()} and ${company.trim()}.`
-            : `Does not mention ${[
-                !hasRole && (coreTitle(title) || title.trim()),
-                !hasCompany && company.trim(),
-              ]
-                .filter(Boolean)
-                .join(' or ')}.`,
+            ? `Mentions ${coreTitle(title) || title.trim()} and ${endSentence(company)}`
+            : `Does not mention ${endSentence(
+                [!hasRole && (coreTitle(title) || title.trim()), !hasCompany && company.trim()]
+                  .filter(Boolean)
+                  .join(' or ')
+              )}`,
     },
-    {
-      id: 'one-page',
-      label: 'Fits on one page',
-      passed: written ? words <= ONE_PAGE_WORDS : null,
-      detail: written
-        ? `${words} ${words === 1 ? 'word' : 'words'}. Aim for ${LETTER_TARGET_WORDS.min} to ${LETTER_TARGET_WORDS.max}. Past ${ONE_PAGE_WORDS} it will not fit on one page.`
-        : 'Nothing written yet.',
-    },
+    lengthCheck(written, words),
     {
       id: 'posting-words',
       label: 'Uses words from the posting',
@@ -397,6 +460,27 @@ export function runSendChecks({
   ];
 }
 
+/**
+ * Long enough to read as a letter, short enough for about a page. A word
+ * count, so it says so: the page itself is not measured.
+ */
+function lengthCheck(written: boolean, words: number): SendCheck {
+  const count = `${words} ${words === 1 ? 'word' : 'words'}`;
+  const aim = `Aim for ${LETTER_TARGET_WORDS.min} to ${LETTER_TARGET_WORDS.max}`;
+  return {
+    id: 'one-page',
+    label: 'Length',
+    passed: written ? words >= LETTER_TARGET_WORDS.min && words <= ONE_PAGE_WORDS : null,
+    detail: !written
+      ? 'Nothing written yet.'
+      : words < LETTER_TARGET_WORDS.min
+        ? `${count}. A letter this short reads as a note. ${aim}.`
+        : words > ONE_PAGE_WORDS
+          ? `${count}. Past ${ONE_PAGE_WORDS} words a letter usually runs over one page. ${aim}.`
+          : `${count}. About a page, counted in words, not measured on the page.`,
+  };
+}
+
 export interface Standing {
   have: number;
   maybe: number;
@@ -408,6 +492,8 @@ export interface Standing {
   shown: number | null;
   /** Of the ones marked "have it", how many the resume already shows. Null with no resume. */
   haveShown: number | null;
+  /** The marks on the lines the posting lists as required. All zero when it lists none. */
+  required: { total: number; have: number; maybe: number; notYet: number };
 }
 
 /**
@@ -423,6 +509,7 @@ export function standing(
 ): Standing {
   const marks = new Map(rows.map((row) => [row.requirementId, row.status]));
   const tally = { have: 0, maybe: 0, notYet: 0, unset: 0 };
+  const required = { total: 0, have: 0, maybe: 0, notYet: 0 };
   let shown = 0;
   let haveShown = 0;
   for (const requirement of requirements) {
@@ -431,6 +518,12 @@ export function standing(
     else if (mark === 'maybe') tally.maybe += 1;
     else if (mark === 'not-yet') tally.notYet += 1;
     else tally.unset += 1;
+    if (requirement.section === 'required') {
+      required.total += 1;
+      if (mark === 'have') required.have += 1;
+      else if (mark === 'maybe') required.maybe += 1;
+      else if (mark === 'not-yet') required.notYet += 1;
+    }
     if (evidence?.get(requirement.id) === 'evidence') {
       shown += 1;
       if (mark === 'have') haveShown += 1;
@@ -441,7 +534,19 @@ export function standing(
     total: requirements.length,
     shown: evidence ? shown : null,
     haveShown: evidence ? haveShown : null,
+    required,
   };
+}
+
+/** "Put the other 2", "Put it", "Put them": the ones marked "have it" that the resume does not show yet. */
+function stillToShow(have: number, haveShown: number): string {
+  const rest = have - haveShown;
+  if (rest <= 0) return '';
+  if (rest === 1 && have === 1)
+    return " Put it into a bullet or the letter, in the posting's words where it is true.";
+  if (rest === have)
+    return " Put them into a bullet or the letter, in the posting's words where they are true.";
+  return ` Put the other ${rest} into a bullet or the letter, in the posting's words where they are true.`;
 }
 
 /** The standing as the sentence the qualifications station shows. */
@@ -451,23 +556,141 @@ export function describeStanding(s: Standing): string {
     s.shown === null
       ? ''
       : s.have > 0 && s.haveShown !== null
-        ? ` Your resume already shows ${s.haveShown} of the ${s.have} you have.${
-            s.have - s.haveShown > 0
-              ? ` Put the other ${s.have - s.haveShown} into a bullet or the letter, in the posting's words where they are true.`
-              : ''
-          }`
+        ? `${
+            s.have === 1
+              ? s.haveShown === 1
+                ? ' Your resume already shows the one you have.'
+                : ' Your resume does not show the one you have yet.'
+              : ` Your resume already shows ${s.haveShown} of the ${s.have} you have.`
+          }${stillToShow(s.have, s.haveShown)}`
         : ` Your resume already shows ${s.shown} of the ${s.total}.`;
   if (s.unset === s.total) return `${s.total} to mark.${resume}`;
   const marks = `${s.have} have it, ${s.maybe} maybe, ${s.notYet} not yet${
     s.unset ? `, ${s.unset} still to mark` : ''
   }.`;
+  const r = s.required;
+  // What the posting itself requires decides the verdict. Lines it lists as
+  // preferred, "a plus", or duties are not a reason to hold back.
+  const onlyOptionalMissing = r.total > 0 && r.total < s.total && r.notYet === 0;
   const verdict =
     s.unset > 0
       ? ''
       : s.notYet + s.maybe === 0
         ? ' You can show every one of these. Apply.'
-        : s.have >= s.notYet
-          ? ' You have more than you are missing. That is enough to apply; plan for the gaps below.'
-          : ' You are missing more than you have. You can still apply, and the plan below is where to start.';
+        : onlyOptionalMissing
+          ? ` Of the ${r.total} required, you have ${r.have}${
+              r.maybe ? ` and maybe ${r.maybe}` : ''
+            }. What you are missing is not listed as required. That is enough to apply.`
+          : (r.total > 0 && r.total < s.total ? r.have >= r.notYet : s.have >= s.notYet)
+            ? ' You have more than you are missing. That is enough to apply; plan for the gaps below.'
+            : ' You are missing more than you have. You can still apply, and the plan below is where to start.';
   return `${marks}${verdict}${resume}`;
+}
+
+/**
+ * What the visitor said about the posting's conditions that matters before
+ * sending: "I will need sponsorship" against a posting that will not sponsor,
+ * or "I do not" meet a condition. One plain line each, from their own marks.
+ */
+export function conditionWarnings(
+  conditions: readonly PostingRequirement[],
+  rows: readonly QualificationRow[]
+): string[] {
+  const marks = new Map(rows.map((row) => [row.requirementId, row.status]));
+  const out: string[] = [];
+  for (const condition of conditions) {
+    const kind = hiringCondition(condition.text);
+    const mark = marks.get(condition.id);
+    if (!kind) continue;
+    if (kind.noSponsorship && mark === 'not-yet') {
+      out.push(
+        'You said you will need sponsorship, and this posting says it does not sponsor. Ask the recruiter before you apply.'
+      );
+    } else if (kind.noSponsorship && mark === 'maybe') {
+      out.push(
+        'You were not sure whether you will need sponsorship, and this posting says it does not sponsor. Ask the recruiter or your international student office before you apply.'
+      );
+    } else if (!kind.noSponsorship && mark === 'not-yet') {
+      out.push(`You said you do not meet this: "${condition.text.trim()}". Ask before you apply.`);
+    }
+  }
+  return [...new Set(out)];
+}
+
+/**
+ * For a row the resume does not show: the words that were looked for, so the
+ * verdict can be checked. "We looked for "retail", "food service" or
+ * "warehouse" and did not find them." Null when there is nothing to name.
+ */
+export function searchedFor(row: {
+  kind: string;
+  parts: readonly {
+    shown: boolean;
+    alternatives?: boolean;
+    terms: readonly { label: string }[];
+  }[];
+}): string | null {
+  if (row.kind === 'years') return null;
+  const groups = row.parts
+    .filter((part) => !part.shown && part.terms.length > 0)
+    .map((part) => {
+      const labels = [...new Set(part.terms.map((t) => `"${t.label.toLowerCase()}"`))];
+      if (labels.length === 1) return labels[0];
+      const last = labels[labels.length - 1];
+      const rest = labels.slice(0, -1).join(', ');
+      return part.alternatives ? `${rest} or ${last}` : `${rest} and ${last} on one line`;
+    });
+  if (groups.length === 0) return null;
+  const many = groups.length > 1 || groups[0].includes(' or ') || groups[0].includes(' and ');
+  return `We looked for ${groups.join('; and for ')} and did not find ${
+    many ? 'them' : 'it'
+  }. If your work counts, say it in a bullet in those words.`;
+}
+
+/**
+ * The visitor's name, when the resume starts with one: a first line of two to
+ * four words, letters only, such as "Marcus Bell" or "RENEE ALVARADO". Null
+ * for anything else, so a heading or an address is never offered as a name.
+ */
+export function nameFromResume(resumeText: string): string | null {
+  const first = resumeText
+    .split('\n')
+    .map((line) => line.trim())
+    .find(Boolean);
+  if (!first || first.length > 60) return null;
+  const words = first.split(/\s+/);
+  if (words.length < 2 || words.length > 4) return null;
+  if (!words.every((w) => /^[\p{L}][\p{L}'’.-]*$/u.test(w))) return null;
+  if (
+    /^(?:resume|curriculum|vitae|cv|summary|profile|experience|education|skills)$/i.test(words[0])
+  )
+    return null;
+  // "RENEE ALVARADO" reads as Renee Alvarado.
+  return first === first.toUpperCase()
+    ? words.map((w) => w.charAt(0) + w.slice(1).toLowerCase()).join(' ')
+    : first;
+}
+
+/**
+ * Text written from a template that put a full stop after a name that
+ * already ended in one ("Coastline Supply Co.."). An ellipsis is left alone.
+ */
+export function tidyDoubledStop(text: string): string {
+  return text.replace(/(?<!\.)\.\.(?!\.)/g, '.');
+}
+
+/**
+ * True when a message built from the hook does not contain it: the note had
+ * no room for the visitor's opening line. Compared on the hook's first words.
+ */
+export function leavesOutHook(message: string, hook: string): boolean {
+  const words = (text: string) =>
+    text
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+      .split(/\s+/)
+      .filter(Boolean);
+  const start = words(hook).slice(0, 6).join(' ');
+  if (!start || !message.trim()) return false;
+  return !words(message).join(' ').includes(start);
 }
