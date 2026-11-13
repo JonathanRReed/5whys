@@ -58,6 +58,9 @@ const GROUPS: { section: PostingSection; label: string }[] = [
   { section: 'unclassified', label: 'Not sorted yet' },
 ];
 
+/** A resume line as quoted on the page: without its bullet marker. */
+const plainLine = (text: string) => text.trim().replace(/^[•\-*◦–—·]+\s*/, '');
+
 /** What the resume shows for one row, in plain text. */
 function Evidence({ row }: { row: CoverageRow }) {
   const excerpt = row.excerpts[0];
@@ -66,14 +69,14 @@ function Evidence({ row }: { row: CoverageRow }) {
     <div className="space-y-1 text-xs leading-relaxed text-muted-foreground">
       {row.state === 'evidence' && excerpt && (
         <p>
-          <span className="text-foam">In your resume: </span>"{excerpt.text.trim()}"
+          <span className="text-foam">In your resume: </span>"{plainLine(excerpt.text)}"
           {excerpt.listedOnly && ' (listed as a skill, not shown in use)'}
         </p>
       )}
       {row.state === 'partial' && (
         <>
           <p>Shown: {parts.shown.join('; ')}.</p>
-          {excerpt && <p>In your resume: "{excerpt.text.trim()}"</p>}
+          {excerpt && <p>In your resume: "{plainLine(excerpt.text)}"</p>}
           <p>Not shown yet: {parts.notShown.join('; ')}.</p>
         </>
       )}
@@ -83,7 +86,7 @@ function Evidence({ row }: { row: CoverageRow }) {
       {row.note && <p>{row.note}</p>}
       {row.nearMisses.map((miss) => (
         <div key={miss.start} className="space-y-0.5">
-          <p>This line may already say it, in other words: "{miss.text.trim()}"</p>
+          <p>This line may already say it, in other words: "{plainLine(miss.text)}"</p>
           <p>
             If it is the same work, say it with the posting's words: {miss.postingTerms.join(', ')}.
           </p>

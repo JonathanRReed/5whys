@@ -286,7 +286,7 @@ export default function ApplicationDesk() {
       <form
         onSubmit={create}
         data-guide="desk-new"
-        className="grid gap-3 @xl:grid-cols-2 @3xl:grid-cols-[2fr_2fr_auto_auto] @3xl:items-end"
+        className="grid gap-3 @xl:grid-cols-2 @xl:items-end @3xl:grid-cols-[2fr_2fr_auto_auto]"
       >
         <label className="min-w-0 space-y-1">
           <span className="block text-sm text-muted-foreground">Role</span>

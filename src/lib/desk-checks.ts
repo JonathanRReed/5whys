@@ -627,14 +627,23 @@ export function searchedFor(row: {
   parts: readonly {
     shown: boolean;
     alternatives?: boolean;
-    terms: readonly { label: string }[];
+    terms: readonly { label: string; span?: { start: number } }[];
   }[];
 }): string | null {
   if (row.kind === 'years') return null;
   const groups = row.parts
     .filter((part) => !part.shown && part.terms.length > 0)
     .map((part) => {
-      const labels = [...new Set(part.terms.map((t) => `"${t.label.toLowerCase()}"`))];
+      // As the posting wrote them, so "Spanish" and "Excel" keep their capitals;
+      // only a word capitalized because it opened the line reads in lower case.
+      const labels = [
+        ...new Set(
+          part.terms.map((t) => {
+            const opener = t.span?.start === 0 && /^[A-Z][a-z]/.test(t.label);
+            return `"${opener ? t.label.charAt(0).toLowerCase() + t.label.slice(1) : t.label}"`;
+          })
+        ),
+      ];
       if (labels.length === 1) return labels[0];
       const last = labels[labels.length - 1];
       const rest = labels.slice(0, -1).join(', ');
@@ -642,7 +651,11 @@ export function searchedFor(row: {
     });
   if (groups.length === 0) return null;
   const many = groups.length > 1 || groups[0].includes(' or ') || groups[0].includes(' and ');
-  return `We looked for ${groups.join('; and for ')} and did not find ${
+  const joined =
+    groups.length === 1
+      ? groups[0]
+      : `${groups.slice(0, -1).join(', ')} and ${groups[groups.length - 1]}`;
+  return `We looked for ${joined} and did not find ${
     many ? 'them' : 'it'
   }. If your work counts, say it in a bullet in those words.`;
 }
