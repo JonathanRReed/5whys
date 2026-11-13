@@ -43,6 +43,8 @@ const SEASONED: readonly Audience[] = ['experienced', 'career-changer'];
  */
 export const WORK_AUTHORIZATION_QUESTION_ID = 'q-work-authorization';
 export const SALARY_QUESTION_ID = 'q-salary-expectations';
+/** When the visitor can work. A term of the job, like pay, so it carries no skill. */
+export const AVAILABILITY_QUESTION_ID = 'q-availability';
 export const TERMS_QUESTION_IDS = [WORK_AUTHORIZATION_QUESTION_ID, SALARY_QUESTION_ID] as const;
 /**
  * Questions any visitor can add to a rehearsal, whatever the career review
@@ -53,6 +55,18 @@ export const OPTIONAL_QUESTION_IDS = [
   'q-chg-gap',
   ...TERMS_QUESTION_IDS,
 ] as const;
+
+/**
+ * The extra questions offered in the rehearsal room, for who is preparing.
+ * A first job or a student hears about hours, why this place, and an upset
+ * customer before a change of field; everyone can still add the terms.
+ */
+export function optionalQuestionIds(audience: Audience): readonly string[] {
+  if (audience === 'student') {
+    return [AVAILABILITY_QUESTION_ID, 'q-why-company', 'q-upset-customer', ...TERMS_QUESTION_IDS];
+  }
+  return OPTIONAL_QUESTION_IDS;
+}
 
 export const QUESTION_BANK: QuestionPrompt[] = [
   // General Questions
@@ -91,6 +105,26 @@ export const QUESTION_BANK: QuestionPrompt[] = [
       'A range you looked up for this kind of role in this place, said plainly, and openness to talking about the whole offer.',
     commonMistake:
       'Naming a number you have not looked up, or saying any amount is fine before you know what the job pays.',
+  },
+  {
+    id: AVAILABILITY_QUESTION_ID,
+    text: 'What days and hours can you work?',
+    skillIds: [],
+    category: 'general',
+    audiences: ALL,
+    strongAnswer:
+      'The days and hours you can count on, said plainly, including around school, and when that changes.',
+    commonMistake: 'Saying "any time" and then missing shifts you could not have made.',
+  },
+  {
+    id: 'q-upset-customer',
+    text: 'How would you handle an upset customer?',
+    skillIds: ['customer-service', 'communication'],
+    category: 'situational',
+    audiences: ALL,
+    strongAnswer:
+      'You listen first, say what you can do, do it, and get help when it is beyond you.',
+    commonMistake: 'Promising whatever the customer asks for.',
   },
   {
     id: 'q-why-company',
@@ -528,6 +562,119 @@ export const QUESTION_BANK: QuestionPrompt[] = [
     audiences: ALL,
     strongAnswer: 'The actual steps you take, and one time they caught something.',
     commonMistake: 'Saying "I double-check" with nothing more.',
+  },
+
+  // Fields a student often applies to
+  {
+    id: 'q-lab-technique',
+    text: 'Walk me through a lab procedure you have done many times. Where can it go wrong?',
+    skillIds: ['lab-technique', 'attention-to-detail'],
+    category: 'behavioral',
+    audiences: ALL,
+    strongAnswer:
+      'The steps in order, the one that needs the most care, and how you check the result.',
+    commonMistake: 'Listing techniques without saying what you did with them.',
+  },
+  {
+    id: 'q-lab-failed',
+    text: 'Tell me about an experiment or run that did not work. What did you do next?',
+    skillIds: ['lab-technique', 'problem-solving'],
+    category: 'behavioral',
+    audiences: ALL,
+    strongAnswer: 'How you found the cause, what you changed, and what you wrote down.',
+    commonMistake: 'Blaming the kit or the equipment and stopping there.',
+  },
+  {
+    id: 'q-research-project',
+    text: 'Tell me about a research project you worked on. What was your part?',
+    skillIds: ['research'],
+    category: 'behavioral',
+    audiences: ALL,
+    strongAnswer: 'The question, the part you did yourself, and what you found or learned.',
+    commonMistake: "Describing the lab's project without your own part in it.",
+  },
+  {
+    id: 'q-procedure-followed',
+    text: 'Tell me about a time you had to follow a procedure exactly. How did you make sure you did?',
+    skillIds: ['procedures-safety', 'attention-to-detail'],
+    category: 'behavioral',
+    audiences: ALL,
+    strongAnswer:
+      'What the procedure protected, how you checked each step, and what you did when unsure.',
+    commonMistake: 'Saying "I always follow the rules" with no example.',
+  },
+  {
+    id: 'q-procedure-unclear',
+    text: 'What do you do when a written procedure is unclear or does not fit what is in front of you?',
+    skillIds: ['procedures-safety', 'communication'],
+    category: 'situational',
+    audiences: ALL,
+    strongAnswer: 'You stop, ask the right person, and note what changed, rather than guessing.',
+    commonMistake: 'Saying you would work it out yourself without telling anyone.',
+  },
+  {
+    id: 'q-food-rush',
+    text: 'Tell me about a busy rush. How did you keep orders right and moving?',
+    skillIds: ['food-service', 'time-management'],
+    category: 'behavioral',
+    audiences: ALL,
+    strongAnswer: 'What you did first, how you kept orders straight, and how the rush ended.',
+    commonMistake: 'Saying it was busy without saying what you did.',
+  },
+  {
+    id: 'q-child-difficult',
+    text: 'Tell me about a time a child in your care was upset or would not listen. What did you do?',
+    skillIds: ['childcare', 'communication'],
+    category: 'behavioral',
+    audiences: ALL,
+    strongAnswer: 'How you stayed calm, what you tried, and how you kept the other children safe.',
+    commonMistake: 'Describing the child as the problem.',
+  },
+  {
+    id: 'q-teach-explain',
+    text: 'Tell me about a time you explained something to someone who was stuck. How did you know it worked?',
+    skillIds: ['teaching', 'communication'],
+    category: 'behavioral',
+    audiences: ALL,
+    strongAnswer:
+      'How you found where they were stuck, what you changed, and what they could do after.',
+    commonMistake: 'Explaining the subject instead of how you taught it.',
+  },
+  {
+    id: 'q-patient-care',
+    text: 'Tell me about a time you helped a patient or someone in your care who was frightened or uncomfortable.',
+    skillIds: ['patient-care', 'communication'],
+    category: 'behavioral',
+    audiences: ALL,
+    strongAnswer: 'What you noticed, what you said and did, and how you kept to the rules of care.',
+    commonMistake: 'Sharing private details about the person.',
+  },
+  {
+    id: 'q-trades-fix',
+    text: 'Tell me about something you repaired or built. How did you work out what was wrong?',
+    skillIds: ['trades', 'problem-solving'],
+    category: 'behavioral',
+    audiences: ALL,
+    strongAnswer: 'How you found the cause, the tools you used, and how you checked it was safe.',
+    commonMistake: 'Skipping the safety check.',
+  },
+  {
+    id: 'q-cash-count',
+    text: 'Tell me about a time your drawer or a count did not match. What did you do?',
+    skillIds: ['cash-handling', 'attention-to-detail'],
+    category: 'behavioral',
+    audiences: ALL,
+    strongAnswer: 'How you checked, who you told, and what you do now so it does not happen again.',
+    commonMistake: 'Hiding the mistake or guessing at the cause.',
+  },
+  {
+    id: 'q-sales-recommend',
+    text: 'Tell me about a time you helped someone choose what to buy.',
+    skillIds: ['sales', 'customer-service'],
+    category: 'behavioral',
+    audiences: ALL,
+    strongAnswer: 'What you asked them, what you suggested and why, and how it turned out.',
+    commonMistake: 'Pushing the most expensive option.',
   },
 
   // Python
@@ -1162,3 +1309,19 @@ export const SUGGESTED_QUESTIONS_TO_ASK = [
   'What do you like most about working here?',
   'What happens next, and when should I expect to hear back?',
 ];
+
+/** Questions to ask for someone with years of work behind them. */
+const SEASONED_QUESTIONS_TO_ASK = [
+  'What does this role need to deliver in the first year?',
+  'Where does the budget for this team sit, and who decides it?',
+  'What has the last person in this role left unfinished?',
+  'Who would I work with most, and where is that working well or not?',
+  'What is the hardest part of this job?',
+  'How will you judge whether this hire worked out?',
+  'What happens next, and when should I expect to hear back?',
+];
+
+/** Suggested questions to ask the employer, in the visitor's register. */
+export function questionsToAsk(audience: Audience): readonly string[] {
+  return audience === 'experienced' ? SEASONED_QUESTIONS_TO_ASK : SUGGESTED_QUESTIONS_TO_ASK;
+}
