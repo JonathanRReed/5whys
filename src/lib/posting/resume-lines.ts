@@ -65,7 +65,15 @@ export interface ReadOptions {
   today?: Date;
 }
 
-type Section = 'summary' | 'education' | 'skills' | 'certification' | 'experience' | 'other' | null;
+/** The kind of section a heading opens. */
+export type ResumeSectionKind =
+  | 'summary'
+  | 'education'
+  | 'skills'
+  | 'certification'
+  | 'experience'
+  | 'other';
+type Section = ResumeSectionKind | null;
 
 const GLYPH = /^[•\-*◦○●‣⁃▪■–—·]\s*/;
 const EMAIL = /\S+@\S+\.\S+/;
@@ -128,7 +136,8 @@ const ANY_DATE = new RegExp(
   'i'
 );
 
-function sectionOf(heading: string): Section {
+/** What a heading line opens: "CORE SKILLS" opens a skills list. */
+export function sectionOf(heading: string): ResumeSectionKind {
   const key = heading
     .toLowerCase()
     .replace(/[:\s]+$/, '')
@@ -144,7 +153,8 @@ function sectionOf(heading: string): Section {
   if (
     /^(?:(?:technical|computer|core|key|relevant|additional)\s+)?(?:skills|competencies|tools|technologies|software|languages|proficiencies|strengths)(?:\s*(?:and|&|,)\s*[a-z]+){0,2}$/.test(
       key
-    )
+    ) ||
+    /^(?:(?:areas?|fields?)\s+of\s+)?expertise$|^skill\s*set$/.test(key)
   )
     return 'skills';
   if (
@@ -154,7 +164,7 @@ function sectionOf(heading: string): Section {
   )
     return 'certification';
   if (
-    /(?:experience|employment|work history|history|projects?|volunteer(?:ing)?|leadership|activities|involvement|research|internships?)$/.test(
+    /(?:experience|employment|work history|history|projects?|volunteer(?:ing)?|leadership|activities|involvement|research|internships?|accomplishments|achievements|service)$/.test(
       key
     )
   )
@@ -162,7 +172,8 @@ function sectionOf(heading: string): Section {
   return 'other';
 }
 
-function looksLikeHeading(line: string): boolean {
+/** True for a short line that opens a section: "EXPERIENCE", "Skills:", "Core Skills". */
+export function looksLikeHeading(line: string): boolean {
   const words = wordCount(line);
   if (words === 0 || words > 4 || GLYPH.test(line)) return false;
   if (/:\s*$/.test(line)) return true;

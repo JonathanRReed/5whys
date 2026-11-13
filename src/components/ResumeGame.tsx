@@ -2,7 +2,13 @@ import * as React from 'react';
 import { loadFeature, reportFeatureFailure } from '../lib/lazy-feature';
 import { readProfile } from '../lib/profile';
 import type { ResumeDoc } from '../lib/resume-doc';
-import { bulletRewrites, isResumeLimitError, rewriteText } from '../lib/resume-doc';
+import {
+  bulletRewrites,
+  docMatchesText,
+  isResumeLimitError,
+  listedLineTexts,
+  rewriteText,
+} from '../lib/resume-doc';
 import type { BulletFields, BulletRecord, Register, StoredResumeSession } from '../lib/resume-game';
 import {
   analyzeResumeText,
@@ -163,11 +169,20 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     []
   );
 
+  // The structured copy of an uploaded file, for the machine view. Pasted
+  // text has no layout to inspect, so it stays null until a file is loaded.
+  const [resumeDoc, setResumeDoc] = React.useState<ResumeDoc | null>(null);
+
   const analyzeResume = React.useCallback(() => {
-    const analysis = analyzeResumeText(resumeText);
+    // The file's own sections say which lines are a skills list, wherever
+    // the text puts them, while the text is still the file's.
+    const analysis = analyzeResumeText(resumeText, {
+      listedLines:
+        resumeDoc && docMatchesText(resumeDoc, resumeText) ? listedLineTexts(resumeDoc) : [],
+    });
     setSessionState((previous) => ({ ...previous, ...analysis }));
     setStatus(scoredStatus(analysis.bullets.length));
-  }, [resumeText, setSessionState]);
+  }, [resumeDoc, resumeText, setSessionState]);
 
   const handleScan = () => {
     if (!resumeText.trim() || isScanning) return;
@@ -191,9 +206,6 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
   const [isLoadingFile, setIsLoadingFile] = React.useState(false);
   const [fileError, setFileError] = React.useState<string | null>(null);
   const uploadSequence = React.useRef(0);
-  // The structured copy of an uploaded file, for the machine view. Pasted
-  // text has no layout to inspect, so it stays null until a file is loaded.
-  const [resumeDoc, setResumeDoc] = React.useState<ResumeDoc | null>(null);
 
   // Restore the structured copy saved on this device. Reading never writes:
   // it is only saved again after an upload or a repair the visitor made.

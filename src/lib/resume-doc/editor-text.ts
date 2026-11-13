@@ -88,3 +88,27 @@ export function toEditorText(doc: ResumeDoc): string {
     .map((paragraph) => (paragraph.bullet ? `- ${paragraph.text}` : paragraph.text))
     .join('\n');
 }
+
+/**
+ * The ids of every line the structured copy places in a skills or
+ * certifications section. Their Word list marks make them list items, but
+ * they name skills; a tool that offers achievement bullets leaves them out.
+ */
+export function listedLineIds(doc: ResumeDoc): Set<string> {
+  return new Set(
+    doc.sections
+      .filter((section) => section.kind === 'skills' || section.kind === 'certifications')
+      .flatMap((section) => section.lineIds)
+  );
+}
+
+/**
+ * The text of every line the structured copy places in a skills or
+ * certifications section. The Resume Game leaves these out of scoring
+ * wherever the editor text puts them, so a sidebar read between experience
+ * lines is still a list of skills, not a set of weak achievements.
+ */
+export function listedLineTexts(doc: ResumeDoc): string[] {
+  const byId = new Map(doc.lines.map((line) => [line.id, line]));
+  return [...listedLineIds(doc)].map((id) => byId.get(id)?.text.trim() ?? '').filter(Boolean);
+}

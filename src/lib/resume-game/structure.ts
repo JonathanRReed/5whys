@@ -1,3 +1,4 @@
+import { looksLikeHeading, type ResumeSectionKind, sectionOf } from '../posting/resume-lines';
 import { normalizeLine } from './text';
 import { startsWithVerb } from './verbs';
 
@@ -9,6 +10,11 @@ import { startsWithVerb } from './verbs';
  * name, a phone number, and "B.A. Communications, 2026" as weak achievements.
  * This module sorts lines into bullets and everything else, and explains
  * what it skipped so the student can see the reasoning.
+ *
+ * Lines are read inside their sections, found from heading lines. Nothing
+ * under a skills or certifications heading is scored, bulleted or not: "-
+ * Inventory Control" in a Core Skills sidebar names a skill, it does not
+ * describe work, and grading it as a weak achievement would be unearned.
  */
 
 export type SkippedKind = 'contact' | 'heading' | 'education' | 'dates' | 'skills' | 'other';
@@ -89,7 +95,25 @@ function classify(line: string, index: number, wordsInLine: number): SkippedKind
   return 'bullet';
 }
 
-export function detectResumeStructure(text: string): ResumeStructure {
+export interface StructureOptions {
+  /**
+   * Lines a structured copy of the file placed in a skills or certifications
+   * section. They are left out wherever the text puts them, for a layout
+   * whose sidebar is read between experience lines.
+   */
+  listedLines?: Iterable<string>;
+}
+
+/** Sections whose lines list things rather than describe work. */
+const LIST_SECTIONS: ReadonlySet<ResumeSectionKind> = new Set(['skills', 'certification']);
+
+const listKey = (line: string) => line.replace(GLYPH, '').replace(/\s+/g, ' ').trim().toLowerCase();
+
+export function detectResumeStructure(
+  text: string,
+  options: StructureOptions = {}
+): ResumeStructure {
+  const listed = new Set(Array.from(options.listedLines ?? [], listKey));
   const sourceLines: number[] = [];
   const rawLines: string[] = [];
   text.split('\n').forEach((source, position) => {
@@ -113,7 +137,25 @@ export function detectResumeStructure(text: string): ResumeStructure {
 
   const bullets: string[] = [];
   let continuingBullet = false;
+  let section: ResumeSectionKind | null = null;
   rawLines.forEach((line, index) => {
+    const glyph = GLYPH.test(line);
+    // A short first line in capitals is the name, unless it names a section.
+    const heading =
+      !glyph && looksLikeHeading(line) && !(index === 0 && sectionOf(line) === 'other');
+    if (heading) {
+      section = sectionOf(line);
+      skipped.heading += 1;
+      continuingBullet = false;
+      return;
+    }
+    // A job title with dates ends a list that ran on without a heading.
+    if (!glyph && section && LIST_SECTIONS.has(section) && DATE_RANGE.test(line)) section = null;
+    else if ((section && LIST_SECTIONS.has(section)) || listed.has(listKey(line))) {
+      skipped[section === 'certification' ? 'education' : 'skills'] += 1;
+      continuingBullet = false;
+      return;
+    }
     if (usedGlyphs) {
       if (GLYPH.test(line)) {
         const normalized = normalizeLine(line);

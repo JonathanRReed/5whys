@@ -18,9 +18,13 @@
  *    or reached ("kept payroll within 2% of plan", "kept the store on
  *    plan"), an achievement ("passed", "won", "promoted 9 associates"), a
  *    before and after ("from 240 to 610"), a link ("so families could",
- *    "which meant", "so customers waited less"), a purpose that says how
- *    much ("to save the lab 6 hours a week"), or a result phrase ("zero
- *    incidents", "with no shortages", "used by the other 11 stores"). A
+ *    "which meant", "so customers waited less", "so new pickers hit full
+ *    rate"), a target reached ("met quota", "hit full rate"), a purpose
+ *    that says how much ("to save the lab 6 hours a week"), or a result
+ *    phrase ("zero incidents", "with no shortages", "went 600 days without
+ *    a lost-time injury", "no orders missed", "used by the other 11
+ *    stores"). A "so" clause in the present ("so the office runs") says
+ *    what the work was for, not what happened. A
  *    purpose alone ("to raise funds") is an aim, not a result, and earns
  *    15. A line that says the attempt failed earns nothing here.
  * 4. Measure (15). A number that says what it counts: "40 boxes", "twenty
@@ -60,6 +64,11 @@ const ORDINAL = /^\d+(?:st|nd|rd|th)$/i;
 // "GPA 3.6", "GPA: 3.6/4.0", "3.6 GPA", "3.8 cumulative GPA".
 const GPA =
   /\bGPA\b\s*(?::\s*|of\s+)?\d\.\d{1,2}(?:\s*\/\s*\d(?:\.\d{1,2})?)?|\b\d\.\d{1,2}(?:\s*\/\s*\d(?:\.\d{1,2})?)?\s+(?:[a-z]+\s+)?GPA\b/gi;
+// A reference code is a name, not an amount: a regulation or form number
+// ("AR 710-2", "CTA 50-900", "FM 3-21.8") or a code with a letter fixed to
+// its digits ("92Y", "92Ys", "3D"). "4K" and "10x" are amounts, and stay.
+const REFERENCE_CODE = /\b[A-Z]{1,6}(?:\s+Form)?\s+\d+(?:[-.]\d+)+[A-Za-z]?\b/g;
+const LETTER_CODE = /\b\d+(?![kKmMxX]\b)(?![kKmM]\s)[A-Z][A-Za-z]*\b/g;
 const BARE_NUMBER_CLEAN_PATTERN = /[$€£₹₦¥,%kKmMxX]/g;
 const SYMBOL = /[$€£₹₦¥%]|\d[kKmMxX]$/;
 const MONEY_OR_PERCENT = /[$€£₹₦¥%]/;
@@ -85,7 +94,10 @@ const COUNT_ADJECTIVE =
   /^(?:new|more|other|additional|extra|returning|first-time|unique|active|total|regular|repeat|weekly|daily|monthly)$/i;
 
 const PEOPLE =
-  /^(?:person|people|persons|members?|associates?|employees?|staff|workers?|volunteers?|cashiers?|servers?|reports|teammates?|tutors?|interns?|managers?|leads?|crew|students?|engineers?|designers?|agents?|nurses?|aides?|drivers?|clerks?)$/i;
+  /^(?:person|people|persons|members?|associates?|employees?|staff|workers?|volunteers?|cashiers?|servers?|reports|teammates?|tutors?|interns?|managers?|leads?|crew|students?|engineers?|designers?|agents?|nurses?|aides?|drivers?|clerks?|soldiers?|children|kids|sons?|daughters?|grandchildren|siblings)$/i;
+// One's own family is who the work was for, never a measure of it.
+const FAMILY = /^(?:children|kids|sons?|daughters?|grandchildren|siblings)$/i;
+const OWN_FAMILY_BEFORE = /\b(?:raised|raising|my|our|his|her|their)\s+$/i;
 const GROUP_OF = /\b(?:team|staff|crew|group|department|class|unit|shift) of\s*$/i;
 const WITH_BEFORE = /\bwith\s+(?:a |an |the |about |around |over )?$/i;
 const SUPERVISING_BEFORE =
@@ -104,7 +116,12 @@ const blank = (match: string) => ' '.repeat(match.length);
  * are positions in the original line.
  */
 function stripNonMeasures(text: string): string {
-  return text.replace(DATE_RANGE, blank).replace(PHONE, blank).replace(GPA, blank);
+  return text
+    .replace(DATE_RANGE, blank)
+    .replace(PHONE, blank)
+    .replace(GPA, blank)
+    .replace(REFERENCE_CODE, blank)
+    .replace(LETTER_CODE, blank);
 }
 
 type Candidate = { token: string; index: number; word: boolean };
@@ -176,6 +193,7 @@ export function findNumberSpans(text: string): NumberSpan[] {
     const span = { token, start: index, end: index + token.length };
     const symbol = SYMBOL.test(token) || /^\s*(?:percent|per cent)\b/i.test(after);
     const isScope =
+      (!!unit && FAMILY.test(unit) && OWN_FAMILY_BEFORE.test(before)) ||
       (hyphenUnit !== undefined && unitIsPeople) ||
       (unitIsPeople && (GROUP_OF.test(before) || WITH_BEFORE.test(before))) ||
       (unitIsPeople && SUPERVISING_BEFORE.test(before)) ||
@@ -245,17 +263,34 @@ export function hasQualitativeOutcome(text: string): boolean {
 const CHANGE_VERBS =
   'cut|reduced|decreased|lowered|shortened|halved|increased|grew|raised|doubled|tripled|saved|boosted|lifted|eliminated|prevented|ended|improved|stopped|recovered|freed up|sped up|attracted';
 
+// Past forms that say something happened: "so new pickers hit full rate".
+const IRREGULAR_PAST =
+  'hit|met|kept|made|got|went|ran|grew|fell|rose|came|took|won|became|saw|spent|left|sold|beat|knew|found|felt|held|stood|brought|caught|paid|cut';
+// Words that cannot be the subject of a "so" clause: "so that", "so as to".
+const NOT_SUBJECT =
+  '(?:and|or|to|for|with|in|on|at|of|that|as|far|much|many|long|well|are|is|am|be|will|can|may|might|must|should|would)\\b';
+// A target reached: "hit full rate", "met quota", "exceeded the sales goal".
+const TARGET_REACHED =
+  /(?<!\b(?:to|will|would|could|should|might|can)\s)\b(?:hit|met|reached|beat|exceeded|surpassed|made)\s+(?:(?:full|their|our|the|its|every|each|all|daily|weekly|monthly|quarterly|annual|sales|production|pick|productivity|store|team)\s+){0,3}(?:rate|quotas?|goals?|targets?|plan|standards?|pace|deadlines?|numbers|budget|kpis?)\b/i;
+
 const RESULT_PATTERNS: RegExp[] = [
   // Links that lead into what happened.
   /\b(?:resulting in|leading to|which meant|so that|because of (?:this|it|which)|in turn)\b/i,
   /\bwhich (?:led|let|helped|cut|saved|kept|got|made|gave|won|grew|raised|reduced|increased|improved|doubled|freed|ended|stopped|meant)\b/i,
   /\bso (?:[\w'-]+[\s,]+){0,4}?(?:could|can|would|were|was|had|got|stopped|started|no longer|never|did|came|left|finished|always|now)\b/i,
-  // "so customers waited less", "so the line moved faster".
-  /\bso (?:the |our |more |fewer |every |each )?[a-z'-]+(?:\s+[a-z'-]+)?\s+(?!(?:and|or|to|for|with|in|on|at|of)\b)[a-z]{3,}ed\b/i,
+  // "so customers waited less", "so both locations stayed profitable", "so no
+  // client order missed a truck", "so new pickers hit full rate": a subject,
+  // then a verb that says what happened. "So they are easy to find" says
+  // what the work was for, not what happened.
+  new RegExp(
+    `\\bso\\s+(?:(?:the|our|their|its|my|more|fewer|every|each|no|both|all|new|most|every)\\s+)?(?:(?!${NOT_SUBJECT})[a-z'-]+\\s+){1,3}?(?:never\\s+|no longer\\s+)?(?!(?:and|or|to|for|with|in|on|at|of)\\b)(?:[a-z]{3,}ed|${IRREGULAR_PAST})\\b`,
+    'i'
+  ),
+  TARGET_REACHED,
   // A change, with an object: "cut shrink", "grew followers". "To cut" is an
   // aim, read below.
   new RegExp(
-    `(?<!\\b(?:to|will|would|could|should|might|can)\\s)\\b(?:${CHANGE_VERBS})\\s+(?!(?:to|for|with|in|on|at|and|or)\\b)[\\w$€£₹₦¥]`,
+    `(?<!\\b(?:to|will|would|could|should|might|can)\\s)\\b(?:${CHANGE_VERBS})\\s+(?!(?:to|for|with|in|on|at|and|or)\\b)(?!(?:(?:my|our|his|her|their|a|two|three|four|five|\\d+)\\s+)?(?:children|kids|sons?|daughters?|family|grandchildren|siblings)\\b)[\\w$€£₹₦¥]`,
     'i'
   ),
   /,\s*(?:cutting|reducing|decreasing|lowering|shortening|halving|increasing|growing|raising|doubling|tripling|saving|boosting|lifting|eliminating|preventing|ending|improving|stopping|recovering|freeing up|speeding up|delivering|earning|winning|bringing|keeping|getting)\b/i,
@@ -268,7 +303,11 @@ const RESULT_PATTERNS: RegExp[] = [
   // Result phrases.
   /\bzero [a-z]/i,
   /\bno (?:missed|lost|late|errors?|mistakes?|complaints?|incidents?|accidents?|injuries|injury|write-ups?|overtime|returns?|shortages?|overages?|discrepanc(?:y|ies)|variances?|spills?|breakage|no-shows?)\b/i,
-  /\bwithout (?:a |any )?(?:missed|missing|closing|losing|late|errors?|mistakes?|complaints?|incidents?|accidents?|downtime|overtime|shortages?|overages?|discrepanc(?:y|ies)|injur\w*)\b/i,
+  /\bwithout (?:a |an |any |one |a single )?(?:[a-z]+-[a-z-]+ |(?:inventory|safety|reportable|recordable|lost-time|single|customer|client|order|shipping) )?(?:missed|missing|closing|losing|late|errors?|mistakes?|complaints?|incidents?|accidents?|downtime|overtime|shortages?|overages?|discrepanc(?:y|ies)|injur\w*|recordables?|stockouts?|write-ups?)\b/i,
+  // "went 600 days without", "412 straight days with no".
+  /\b\d[\d,]*\+?\s+(?:straight\s+|consecutive\s+|days?\s+in\s+a\s+row\s+)?(?:days|weeks|months|years|shifts|quarters|audits|inspections)\s+(?:in a row\s+)?(?:without|with no|with zero)\b/i,
+  // "no orders missed", "with no deliveries missed".
+  /\bno (?:[a-z'-]+\s+){1,3}?(?:missed|lost|dropped|damaged|late|left behind|went unanswered|went unfilled|fell through)\b/i,
   /\b(?:best|highest|lowest|fastest|top|first)\b[^.;]{0,40}\bin (?:the |our |my |its )?(?:district|region|company|store|class|school|state|chain|division|county|league|department)\b/i,
   /\b(?:ahead of schedule|under budget|on budget|on plan)\b/i,
   /\bfrom [$€£₹₦¥]?\d[\d,.]*%?(?:\s+[a-z]+)?\s+to [$€£₹₦¥]?\d/i,

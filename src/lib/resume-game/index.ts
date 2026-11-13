@@ -13,6 +13,7 @@ export {
   summarySentences,
 } from './analysis';
 export { ACTION_VERBS, WEAK_WORDS } from './constants';
+export { readDatesNote } from './dates-note';
 export { downloadTextFile, exportDocx } from './exporters';
 export type { HighlightToken } from './highlight';
 export { highlightResume, parseHighlightedResume } from './highlight';
@@ -24,6 +25,7 @@ export {
   FIRST_JOB_SAMPLE_RESUME,
   PROFESSIONAL_PLACEHOLDER,
   PROFESSIONAL_SAMPLE_RESUME,
+  RESULT_HINT_EXAMPLE,
   registerForStage,
   STUDENT_PLACEHOLDER,
   STUDENT_SAMPLE_RESUME,

@@ -172,8 +172,8 @@ export default function PostingMatch({ resumeText }: Props) {
         <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
           Shown means a line of your resume names what the requirement asks for. A low count is
           common when your experience is real but worded differently
-          {maybe > 0 ? ': look for "You may already have this" below' : ''}. Use the posting's words
-          only where they are true of what you did.
+          {maybe > 0 ? ': look for "This might be the same work" below' : ''}. Use the posting's
+          words only where they are true of what you did.
         </p>
       </div>
 
@@ -248,14 +248,14 @@ export default function PostingMatch({ resumeText }: Props) {
                       className="space-y-2 rounded-lg bg-gold/10 p-3 leading-relaxed"
                       data-testid="near-miss"
                     >
-                      <p className="font-medium text-foreground">You may already have this.</p>
+                      <p className="font-medium text-foreground">This might be the same work.</p>
                       <p className="text-muted-foreground">
                         <span className="text-foreground">Your line: </span>"
                         {miss.text.trim().replace(/^[-•*]\s*/, '')}"
                       </p>
                       {miss.postingTerms.length > 0 && (
                         <p className="text-muted-foreground">
-                          If that is the same work, the posting calls it{' '}
+                          If it is, say it in the posting's words:{' '}
                           {miss.postingTerms.map((term, index) => (
                             <React.Fragment key={term}>
                               {index > 0 &&

@@ -3,6 +3,7 @@ import type { BulletRecord, HighlightToken, SignalReport } from '../../lib/resum
 import {
   generateBulletSuggestions,
   parseHighlightedResume,
+  readDatesNote,
   summarizeLines,
   summarySentences,
 } from '../../lib/resume-game';
@@ -64,6 +65,7 @@ export default function ScanResults({
   const deepAnalysisId = React.useId();
 
   const tokens = React.useMemo(() => parseHighlightedResume(resumeText), [resumeText]);
+  const datesNote = React.useMemo(() => readDatesNote(resumeText), [resumeText]);
 
   const hasDeepData =
     (signalReport.weakWordCount ?? 0) > 0 ||
@@ -168,6 +170,30 @@ export default function ScanResults({
                 {signalReport.lengthRecommendation}
               </p>
             </div>
+          )}
+
+          {/* Dates: facts about gaps and older roles, never a score. */}
+          {datesNote && (
+            <section
+              aria-labelledby="resume-dates-heading"
+              className="rounded-2xl border border-border/35 bg-overlay/30 p-4"
+              data-testid="dates-note"
+            >
+              <h3
+                id="resume-dates-heading"
+                className="text-xs uppercase tracking-[0.3em] text-muted-foreground"
+              >
+                Dates
+              </h3>
+              <ul className="mt-2 space-y-1.5 text-sm leading-relaxed text-muted-foreground">
+                {datesNote.sentences.map((sentence) => (
+                  <li key={sentence}>{sentence}</li>
+                ))}
+              </ul>
+              <p className="mt-2 text-xs text-muted-foreground">
+                For your information only. It does not change any score.
+              </p>
+            </section>
           )}
 
           {/* Sections detected */}

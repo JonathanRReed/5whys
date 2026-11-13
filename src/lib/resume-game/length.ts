@@ -1,22 +1,47 @@
+import { looksLikeHeading, readDocument } from '../posting/resume-lines';
+
+/** Patterns tested against heading lines only, so "Helped with projects" is not a Projects section. */
 const SECTION_PATTERNS: Record<string, RegExp> = {
-  summary: /\b(summary|objective|profile|about me)\b/i,
-  experience: /\b(experience|employment|work history|professional experience|career history)\b/i,
-  education: /\b(education|academic|degree|university|college|school)\b/i,
-  skills: /\b(skills|technical skills|proficiencies|competencies|tools|technologies)\b/i,
-  projects: /\b(projects|portfolio|side projects|open source)\b/i,
-  certifications: /\b(certifications|licenses|credentials|certificates)\b/i,
+  summary: /\b(summary|objective|profile|about me|highlights)\b/i,
+  experience: /\b(experience|employment|work history|career history|internships?)\b/i,
+  education: /\b(education|academic|degrees?|coursework)\b/i,
+  skills: /\b(skills|proficiencies|competencies|expertise|tools|technologies)\b/i,
+  projects: /\b(projects|portfolio)\b/i,
+  certifications: /\b(certifications?|licenses?|credentials|certificates)\b/i,
   awards: /\b(awards|honors|achievements|recognition)\b/i,
   publications: /\b(publications|papers|research|patents)\b/i,
-  languages: /\b(languages|fluent in|bilingual|multilingual)\b/i,
-  interests: /\b(interests|hobbies|activities|volunteer)\b/i,
+  languages: /^\s*languages\b/i,
+  volunteering: /\b(volunteer(ing)?|community service)\b/i,
+  activities: /\b(activities|leadership|involvement|extracurriculars?)\b/i,
+  interests: /\b(interests|hobbies)\b/i,
 };
 
+const GLYPH_LINE = /^\s*[-•*◦○●▪–—]\s/;
+
+/** The sections a resume names in its own heading lines. */
 export function detectSections(text: string): string[] {
+  const headings = text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line && !GLYPH_LINE.test(line) && looksLikeHeading(line));
   const found: string[] = [];
   for (const [section, pattern] of Object.entries(SECTION_PATTERNS)) {
-    if (pattern.test(text)) found.push(section);
+    if (headings.some((heading) => pattern.test(heading))) found.push(section);
   }
   return found;
+}
+
+/** Dated roles spanning this many years or more read as a long career. */
+const LONG_CAREER_YEARS = 10;
+
+/** True when the dated roles run from first start to last end over many years. */
+function isLongCareer(text: string): boolean {
+  const roles = readDocument(text).roles;
+  if (roles.length === 0) return false;
+  const months = (stamp: { year: number; month: number }) => stamp.year * 12 + stamp.month;
+  const first = Math.min(...roles.map((role) => months(role.from)));
+  const last = Math.max(...roles.map((role) => months(role.to)));
+  return last - first >= LONG_CAREER_YEARS * 12;
 }
 
 /** Words on one full page of resume text. */
@@ -38,17 +63,22 @@ export function analyzeResumeLength(text: string, extractedBulletCount = 0) {
 
   const sections = detectSections(text);
 
+  const longCareer = isLongCareer(text);
   let recommendation: string;
   if (estimatedPages > 2) {
     recommendation = 'Longer than two pages. Keep your strongest lines and cut the rest.';
   } else if (words < 200) {
-    recommendation =
-      'Short resume. Projects, coursework, campus jobs, and volunteering all count as experience worth listing.';
+    recommendation = longCareer
+      ? 'Short resume. There is room to say what you did in each role and what came of it.'
+      : 'Short resume. Projects, coursework, campus jobs, and volunteering all count as experience worth listing.';
   } else if (estimatedPages === 2) {
-    recommendation =
-      'About two pages. One page is the norm for a student or a first job. Two is common once you have many years of work to show.';
+    recommendation = longCareer
+      ? 'About two pages, common once you have many years of work to show.'
+      : 'About two pages. One page is the norm for a student or a first job. Two is common once you have many years of work to show.';
   } else {
-    recommendation = 'About one page, the usual length when you are starting out.';
+    recommendation = longCareer
+      ? 'About one page. One or two pages both work once you have many years of work to show.'
+      : 'About one page, the usual length when you are starting out.';
   }
 
   const isOptimalLength = estimatedPages <= 2 && words >= 200;

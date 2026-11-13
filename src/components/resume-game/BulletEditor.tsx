@@ -5,6 +5,7 @@ import {
   generateBulletSuggestions,
   measureHasWords,
   PART_LABELS,
+  RESULT_HINT_EXAMPLE,
   scoreParts,
 } from '../../lib/resume-game';
 import Announcer, { useSettledAnnouncement } from '../shared/Announcer';
@@ -81,7 +82,9 @@ export default function BulletEditor({
                     <span className="font-medium text-foreground">{PART_LABELS[key]}</span>
                     <span
                       className={
-                        parts[key].points === parts[key].max ? 'text-love' : 'text-muted-foreground'
+                        parts[key].points === parts[key].max
+                          ? 'font-semibold text-foam'
+                          : 'text-muted-foreground'
                       }
                     >
                       {parts[key].points} of {parts[key].max}
@@ -193,7 +196,7 @@ export default function BulletEditor({
                   placeholder={placeholders.impact}
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Write it the way you would say it. &quot;So customers waited less&quot; works.
+                  Write it the way you would say it. &quot;{RESULT_HINT_EXAMPLE}&quot; works.
                 </p>
               </div>
             </div>

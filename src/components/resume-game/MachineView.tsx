@@ -44,7 +44,7 @@ const REPAIRS: Partial<
   },
   'move-contact': {
     label: 'Move contact details into the body',
-    done: 'Contact details moved under your name.',
+    done: 'Contact details moved under your name, each one once.',
     run: moveContactToTop,
   },
   'normalize-dates': {

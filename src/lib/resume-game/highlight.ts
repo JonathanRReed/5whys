@@ -2,6 +2,7 @@ import { POWER_VERB_GLOBAL_PATTERN } from './constants';
 import { findNumberSpans } from './scoring';
 import { detectResumeStructure } from './structure';
 import { decodeEntities, escapeHtml } from './text';
+import { leadingAction } from './verbs';
 
 /**
  * The resume as the visitor pasted it, marked with what the scorer reads.
@@ -10,7 +11,9 @@ import { decodeEntities, escapeHtml } from './text';
  * name, a phone number, a heading, or "B.A. Communications, 2027" stays plain.
  * Inside those lines a number is marked only when the scorer's own number
  * finder counts it: years, date ranges, phone numbers, GPAs, and ordinals are
- * never marked.
+ * never marked. The verb a line opens with is marked whenever the scorer
+ * credits it ("Ran", "Hired", "Opened"), not only when it is on the list of
+ * action verbs.
  */
 
 export type HighlightToken =
@@ -27,6 +30,15 @@ function lineSpans(line: string): Span[] {
     start,
     end,
   }));
+  const opening = leadingAction(line);
+  if (opening && !opening.involvement) {
+    const start = line.search(/[A-Za-z]/);
+    if (start >= 0 && line.startsWith(opening.text, start)) {
+      const end = start + opening.text.length;
+      if (!spans.some((span) => start < span.end && end > span.start))
+        spans.push({ type: 'verb', start, end });
+    }
+  }
   for (const match of line.matchAll(POWER_VERB_GLOBAL_PATTERN)) {
     const start = match.index ?? 0;
     const end = start + match[0].length;

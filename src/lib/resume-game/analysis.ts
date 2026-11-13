@@ -425,12 +425,13 @@ export function applyFieldChange(
  * and build the report. What "Analyze resume" stores in the session.
  */
 export function analyzeResumeText(
-  text: string
+  text: string,
+  options: Parameters<typeof detectResumeStructure>[1] = {}
 ): Pick<
   StoredResumeSession,
   'bullets' | 'selectedBulletId' | 'signalReport' | 'lastAnalyzedAt' | 'needsRescan'
 > {
-  const structure = detectResumeStructure(text);
+  const structure = detectResumeStructure(text, options);
   const records = structure.bullets.map((line, index) => createBulletRecord(line, index));
   const skipped = Object.values(structure.skipped).reduce((sum, n) => sum + n, 0);
   return {

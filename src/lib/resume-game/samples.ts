@@ -84,6 +84,9 @@ export function registerForStage(stage: CareerStage | null | undefined): Registe
 }
 
 /** Placeholders for the four rewrite fields, in the visitor's register. */
+/** The example under the result field. Any example shown there must score as a result. */
+export const RESULT_HINT_EXAMPLE = 'So customers waited less';
+
 export const FIELD_PLACEHOLDERS: Record<
   Register,
   { verb: string; task: string; impact: string; quantifier: string }
