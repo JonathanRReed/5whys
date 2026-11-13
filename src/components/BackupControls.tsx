@@ -1,5 +1,6 @@
 import { Check } from 'lucide-react';
 import * as React from 'react';
+import { localDate } from '../lib/applications';
 import {
   BACKUP_SIZE_MESSAGE,
   type BackupSummary,
@@ -79,6 +80,9 @@ export default function BackupControls({ onRestored, className }: Props) {
   const [status, setStatus] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [exported, setExported] = React.useState(false);
+  // Shown after an export until the page closes: the file is now in this
+  // computer's Downloads folder, which clearing the site does not reach.
+  const [carryHome, setCarryHome] = React.useState(false);
   const [exclusions, setExclusions] = React.useState<string | null>(null);
   const [importing, setImporting] = React.useState(false);
   const importBusy = React.useRef(false);
@@ -116,6 +120,7 @@ export default function BackupControls({ onRestored, className }: Props) {
       `Exported ${describe(summarizeBackup(backup), backup.stores)}. Check your downloads.`
     );
     setExported(true);
+    setCarryHome(true);
     if (exportTimer.current) clearTimeout(exportTimer.current);
     exportTimer.current = setTimeout(() => {
       setExported(false);
@@ -213,13 +218,21 @@ export default function BackupControls({ onRestored, className }: Props) {
         </div>
       </div>
       {exclusions && <p className="mt-2 text-sm text-muted-foreground">{exclusions}</p>}
+      {carryHome && (
+        <p className="mt-2 text-sm text-foreground" data-testid="export-carry-home">
+          Send this file to yourself, then delete it from this computer's Downloads folder. It is
+          plain text with your writing in it.
+        </p>
+      )}
 
       {pending && (
         <div className="mt-4 rounded-xl border border-gold/40 bg-gold/8 p-4 text-sm">
           <p className="text-foreground">
             This file holds {describe(summarizeBackup(pending), pending.stores)}
-            {pending.exportedAt ? `, exported ${pending.exportedAt.slice(0, 10)}` : ''}. How should
-            it come in?
+            {pending.exportedAt && !Number.isNaN(Date.parse(pending.exportedAt))
+              ? `, exported ${localDate(new Date(pending.exportedAt))}`
+              : ''}
+            . How should it come in?
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button

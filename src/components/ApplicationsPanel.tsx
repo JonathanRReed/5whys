@@ -4,13 +4,16 @@ import {
   addApplication,
   deadlineLabel,
   loadApplications,
+  markSent,
   saveApplications,
   setActiveApplication,
+  shortDate,
   updateApplication,
 } from '../lib/applications';
 import type { ApplicationSummary } from '../lib/career-bridge';
 import { loadData, openRole, saveData, updateRole } from '../lib/glowup-store';
 import { cn } from '../lib/utils';
+import SentControl from './application-desk/SentControl';
 import Announcer, { useAnnouncer } from './shared/Announcer';
 import ConfirmButton from './shared/ConfirmButton';
 
@@ -252,9 +255,18 @@ export default function ApplicationsPanel({ applications, readiness, onChanged }
     announce(`Saved ${title}.`);
     focusFirstOf([`app-edit-${app.id}`]);
   };
-  const focus = (id: string) => {
-    saveApplications(setActiveApplication(loadApplications(), id));
+  // The application in focus here is the one the desk, Pay and the interview
+  // tools open on: its decoded role becomes the current one too.
+  const focus = (app: ApplicationSummary) => {
+    saveApplications(setActiveApplication(loadApplications(), app.id));
+    openRole(app.roleId);
     onChanged();
+    announce(`${app.title} is in focus.`);
+  };
+  const sent = (app: ApplicationSummary, sentOn: string | null) => {
+    if (!saveApplications(markSent(loadApplications(), app.id, sentOn))) return;
+    onChanged();
+    announce(sentOn ? `Marked ${app.title} as sent.` : `${app.title} is not sent yet.`);
   };
 
   return (
@@ -307,14 +319,18 @@ export default function ApplicationsPanel({ applications, readiness, onChanged }
                       <span className="text-muted-foreground"> at {app.company}</span>
                     )}
                     {app.isActive && (
-                      <span className="ml-2 rounded-full bg-gold/15 px-2 py-0.5 align-middle text-xs font-medium text-gold">
+                      <span className="ml-2 rounded-full bg-gold/15 px-2 py-0.5 align-middle text-xs font-medium text-foreground">
                         In focus
                       </span>
                     )}
                   </p>
-                  <span className={cn('text-sm', deadlineTone(app.daysUntil))}>
-                    {app.daysUntil === null ? 'No deadline set' : deadlineLabel(app.daysUntil)}
-                  </span>
+                  {app.sentOn ? (
+                    <span className="text-sm text-foam">Sent {shortDate(app.sentOn)}</span>
+                  ) : (
+                    <span className={cn('text-sm', deadlineTone(app.daysUntil))}>
+                      {app.daysUntil === null ? 'No deadline set' : deadlineLabel(app.daysUntil)}
+                    </span>
+                  )}
                 </div>
 
                 <div className="mt-2 flex flex-wrap gap-1.5">
@@ -342,6 +358,29 @@ export default function ApplicationsPanel({ applications, readiness, onChanged }
                 </div>
 
                 {(() => {
+                  if (app.sentOn) {
+                    // Sent: the useful next things are the interview and the thank-you.
+                    return (
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Sent on {shortDate(app.sentOn)}. Next:{' '}
+                        <a
+                          className="text-foreground underline underline-offset-4 hover:text-foam"
+                          href="/interview-glow-up/rehearse/"
+                          onClick={() => openRole(app.roleId)}
+                        >
+                          Rehearse the interview
+                        </a>
+                        , then{' '}
+                        <a
+                          className="text-foreground underline underline-offset-4 hover:text-foam"
+                          href={`/application/?id=${encodeURIComponent(app.id)}&station=send#after-interview`}
+                        >
+                          the thank-you note
+                        </a>{' '}
+                        after it.
+                      </p>
+                    );
+                  }
                   // The next station on this application's desk that is still empty.
                   const next = !app.decoded
                     ? { station: 'posting', text: 'Paste the posting on the desk' }
@@ -392,12 +431,18 @@ export default function ApplicationsPanel({ applications, readiness, onChanged }
                   {!app.isActive && (
                     <button
                       type="button"
-                      onClick={() => focus(app.id)}
+                      onClick={() => focus(app)}
                       className="rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-overlay/40 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
                     >
                       Make active
                     </button>
                   )}
+                  <SentControl
+                    showDate={false}
+                    sentOn={app.sentOn}
+                    title={app.title}
+                    onChange={(sentOn) => sent(app, sentOn)}
+                  />
                   <label className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
                     Deadline
                     <input

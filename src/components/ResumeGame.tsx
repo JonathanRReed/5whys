@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { loadFeature, reportFeatureFailure } from '../lib/lazy-feature';
+import { localDate } from '../lib/local-date';
 import { readProfile } from '../lib/profile';
 import type { ResumeDoc } from '../lib/resume-doc';
 import {
@@ -390,10 +391,7 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     [session.lastAnalyzedAt]
   );
 
-  const reviewText = React.useCallback(
-    () => buildReviewReport(bullets, new Date().toISOString().slice(0, 10)),
-    [bullets]
-  );
+  const reviewText = React.useCallback(() => buildReviewReport(bullets, localDate()), [bullets]);
 
   const handleExportMarkdown = React.useCallback(() => {
     downloadTextFile(`${reviewName()}.md`, reviewText());

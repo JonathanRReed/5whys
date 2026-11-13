@@ -62,11 +62,17 @@ export interface ActionStep {
 export interface BulletSlot {
   /**
    * Id of the resume line this bullet follows in the copy tailored for this
-   * role, or null while it is not in that copy. The resume itself is never
-   * edited from the desk.
+   * role, or null for the default place (after the last bullet of the most
+   * recent job). The resume itself is never edited from the desk.
    */
   bulletId: string | null;
   text: string;
+  /**
+   * Whether the bullet goes into the copy tailored for this role. True for a
+   * new desk. Absent in desks saved before it was recorded: there a bullet
+   * was in the copy only when it had a place, so that is what it still means.
+   */
+  included: boolean;
 }
 
 /** The guided bullets flow: one experience, its impact, two bullets, a reflection. */
@@ -155,7 +161,18 @@ export interface OfferWorksheet {
    * reload as well. Absent in worksheets saved before it was recorded.
    */
   percentOfBase?: Partial<Record<PercentField, number>>;
+  /**
+   * The currency symbol typed with the base pay, such as "€". Absent means
+   * dollars, as in worksheets saved before other currencies were read.
+   */
+  currency?: string;
 }
+
+/** Currency symbols the worksheet reads and shows results in. */
+export const CURRENCY_SYMBOLS = ['$', '€', '£', '₹', '₦', '¥'] as const;
+export type CurrencySymbol = (typeof CURRENCY_SYMBOLS)[number];
+export const isCurrencySymbol = (value: unknown): value is CurrencySymbol =>
+  typeof value === 'string' && (CURRENCY_SYMBOLS as readonly string[]).includes(value);
 
 /** Which master-resume bullets to include when exporting for this role. */
 export interface ResumeSelection {
@@ -195,7 +212,7 @@ export function createDefaultDeskData(): ApplicationDeskData {
   return { version: CURRENT_VERSION, desks: {} };
 }
 
-const emptySlot = (): BulletSlot => ({ bulletId: null, text: '' });
+const emptySlot = (): BulletSlot => ({ bulletId: null, text: '', included: true });
 
 export function createEmptyDesk(now = 0): ApplicationDesk {
   return {
@@ -280,9 +297,19 @@ function normalizeStep(value: unknown, now: number): ActionStep | null {
 }
 
 function normalizeSlot(value: unknown): BulletSlot {
-  if (typeof value === 'string') return { bulletId: null, text: value };
+  // Saved before a bullet could be included without a place: written text
+  // with no place was left out of the copy, and stays out until the visitor
+  // ticks it. An empty slot takes the new default.
+  if (typeof value === 'string') return { bulletId: null, text: value, included: !value.trim() };
   if (!isRecord(value)) return emptySlot();
-  return { bulletId: text(value.bulletId) || null, text: text(value.text) };
+  const bulletId = text(value.bulletId) || null;
+  const slotText = text(value.text);
+  return {
+    bulletId,
+    text: slotText,
+    included:
+      typeof value.included === 'boolean' ? value.included : bulletId !== null || !slotText.trim(),
+  };
 }
 
 function normalizeVariant(value: unknown, now: number): MessageVariant | null {
@@ -388,6 +415,7 @@ export function normalizeDesk(value: unknown, now = Date.now()): ApplicationDesk
     };
     const percents = normalizePercents(o.percentOfBase);
     if (percents) desk.offer.percentOfBase = percents;
+    if (isCurrencySymbol(o.currency) && o.currency !== '$') desk.offer.currency = o.currency;
   }
   if (isRecord(value.resumeSelection) && Array.isArray(value.resumeSelection.bulletIds)) {
     desk.resumeSelection = {
@@ -619,10 +647,11 @@ export function updateBulletsFlow(
     const bullets: [BulletSlot, BulletSlot] = [desk.bullets.bullets[0], desk.bullets.bullets[1]];
     if (changes.bullet && (changes.bullet.index === 0 || changes.bullet.index === 1)) {
       const current = bullets[changes.bullet.index];
-      const { bulletId, text: slotText } = changes.bullet.slot;
+      const { bulletId, text: slotText, included } = changes.bullet.slot;
       bullets[changes.bullet.index] = {
         bulletId: bulletId === undefined ? current.bulletId : bulletId || null,
         text: typeof slotText === 'string' ? slotText : current.text,
+        included: typeof included === 'boolean' ? included : current.included,
       };
     }
     return {
@@ -695,7 +724,9 @@ export function setChecklistTick(
   }));
 }
 
-export type OfferChanges = Partial<Omit<OfferWorksheet, 'percentOfBase'>> & {
+export type OfferChanges = Partial<Omit<OfferWorksheet, 'percentOfBase' | 'currency'>> & {
+  /** A symbol records the currency typed with the base pay; null or "$" returns to dollars. */
+  currency?: string | null;
   /** A number records the field as typed as that percentage; null clears it. */
   percentOfBase?: Partial<Record<PercentField, number | null>>;
 };
@@ -723,6 +754,11 @@ export function applyOfferChanges(current: OfferWorksheet, changes: OfferChanges
   if (typeof changes.notes === 'string') offer.notes = changes.notes;
   if (typeof changes.wageSource === 'string') offer.wageSource = changes.wageSource;
   if ('wageSourceDate' in changes) offer.wageSourceDate = date(changes.wageSourceDate);
+  if ('currency' in changes) {
+    if (isCurrencySymbol(changes.currency) && changes.currency !== '$') {
+      offer.currency = changes.currency;
+    } else delete offer.currency;
+  }
   if (changes.percentOfBase) {
     const percents = { ...offer.percentOfBase };
     for (const field of PERCENT_FIELDS) {
@@ -836,7 +872,7 @@ export function stationsWithContent(desk: ApplicationDesk): Record<DeskStationId
       filled(bullets.experience) ||
       filled(bullets.impact) ||
       filled(bullets.reflection) ||
-      bullets.bullets.some((slot) => slot.bulletId !== null || filled(slot.text)),
+      bullets.bullets.some((slot) => filled(slot.text)),
     resume: desk.resumeSelection !== null,
     letter:
       filled(letter.hook) ||
@@ -998,13 +1034,21 @@ export const OVERTIME_MULTIPLIER = 1.5;
 export interface OfferEquivalents {
   /** Base pay per hour, or null. */
   hourly: number | null;
-  /** Base pay per year including any overtime entered, or null. */
+  /** Base pay for one week, without overtime, or null. */
+  weekly: number | null;
+  /** Base pay over the weeks entered (a year for a salary), without overtime, or null. */
   annualBase: number | null;
-  /** The part of the yearly figure that is overtime. Zero when none applies. */
+  /**
+   * Overtime over the same weeks, at time and a half. Zero when none applies.
+   * Overtime depends on the hours given, so it is never part of the base.
+   */
   overtimeAnnual: number;
   /** Base plus the guaranteed bonus. Null when the base is unknown. */
   annualGuaranteed: number | null;
-  /** Guaranteed pay plus variable pay if all of it were paid. Null when the base is unknown. */
+  /**
+   * Guaranteed pay plus the pay that is not promised: variable pay if all of
+   * it were paid, and any overtime. Null when the base is unknown.
+   */
   annualWithVariable: number | null;
   /** Inputs the student still needs to enter for the missing figures. */
   missing: Array<'basePay' | 'payPeriod' | 'hoursPerWeek' | 'weeksPerYear'>;
@@ -1037,11 +1081,14 @@ export function offerEquivalents(offer: OfferWorksheet): OfferEquivalents {
     if (typeof share === 'number' && regular !== null) return (share / 100) * regular;
     return offer[field] ?? 0;
   };
-  const annualBase = regular === null ? null : finite(regular + overtimeAnnual);
+  const annualBase = regular;
   const annualGuaranteed =
     annualBase === null ? null : finite(annualBase + extra('guaranteedBonus'));
   const annualWithVariable =
-    annualGuaranteed === null ? null : finite(annualGuaranteed + extra('variablePay'));
+    annualGuaranteed === null
+      ? null
+      : finite(annualGuaranteed + extra('variablePay') + overtimeAnnual);
+  const weekly = finite(weeklyPay(basePay, payPeriod, hoursPerWeek, weeksPerYear));
 
   // Whatever the period, one of the two figures needs hours and one needs
   // weeks, so a complete worksheet always has both.
@@ -1050,5 +1097,26 @@ export function offerEquivalents(offer: OfferWorksheet): OfferEquivalents {
   if (payPeriod === null) missing.push('payPeriod');
   if (!positive(hoursPerWeek)) missing.push('hoursPerWeek');
   if (!positive(weeksPerYear)) missing.push('weeksPerYear');
-  return { hourly, annualBase, overtimeAnnual, annualGuaranteed, annualWithVariable, missing };
+  return {
+    hourly,
+    weekly,
+    annualBase,
+    overtimeAnnual,
+    annualGuaranteed,
+    annualWithVariable,
+    missing,
+  };
+}
+
+/**
+ * How the total over the weeks entered is named: "a year" for a salary or a
+ * full year of weeks, otherwise the number of weeks typed ("over 10 weeks"),
+ * so a summer job is never called a year.
+ */
+export function periodPhrase(offer: Pick<OfferWorksheet, 'payPeriod' | 'weeksPerYear'>): string {
+  const weeks = offer.weeksPerYear;
+  if (offer.payPeriod === 'year' || weeks === null || weeks >= WEEKS_PER_CALENDAR_YEAR) {
+    return 'a year';
+  }
+  return `over ${weeks} ${weeks === 1 ? 'week' : 'weeks'}`;
 }

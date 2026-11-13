@@ -170,7 +170,9 @@ describe('messageVariants rules', () => {
 
   it('greets without a name when there is no contact', async () => {
     const { value } = await messageVariants({ ...input, contactName: undefined }, rules);
-    expect(value.linkedInMessage.startsWith('Hi there,')).toBe(true);
+    // No person to greet: "Hello,", never "Hi there" or "Hi Hiring Team".
+    expect(value.linkedInMessage.startsWith('Hello,')).toBe(true);
+    expect(value.followUpEmail.body.startsWith('Hello,')).toBe(true);
   });
 
   it('drops the opener from the LinkedIn note when it would run long', async () => {

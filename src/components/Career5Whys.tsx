@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { loadFeature, reportFeatureFailure } from '../lib/lazy-feature';
+import { localDate } from '../lib/local-date';
 import { readProfile } from '../lib/profile';
 import { cn } from '../lib/utils';
 import CareerHeader from './career-5whys/CareerHeader';
@@ -210,10 +211,7 @@ export default function Career5Whys({
       createdAt: new Date().toISOString(),
     };
     const topicSlug = toSlug(session.topic || TRACKS[session.track].label) || session.track;
-    downloadJson(
-      `career-why-${topicSlug}-${new Date().toISOString().slice(0, 10)}.json`,
-      exportPayload
-    );
+    downloadJson(`career-why-${topicSlug}-${localDate()}.json`, exportPayload);
     setStatus('Export ready. Check your downloads.');
   };
 
@@ -230,7 +228,7 @@ export default function Career5Whys({
       setStatus('No snapshots to export yet.');
       return;
     }
-    downloadJson(`career-why-history-${new Date().toISOString().slice(0, 10)}.json`, history);
+    downloadJson(`career-why-history-${localDate()}.json`, history);
     setStatus('History exported.');
   };
 

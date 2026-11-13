@@ -1,9 +1,12 @@
 import * as React from 'react';
 import { setChecklistTick } from '../../lib/application-desk';
-import { fullLetter, runSendChecks } from '../../lib/desk-checks';
+import { markSent } from '../../lib/applications';
+import { countWord, runSendChecks, wornPhrases } from '../../lib/desk-checks';
 import { requirementsFromBullets } from '../../lib/posting';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
+import LetterPreview from './LetterPreview';
+import SentControl from './SentControl';
 import type { DeskState } from './useDesk';
 
 const MANUAL = [
@@ -12,12 +15,18 @@ const MANUAL = [
 ];
 
 export default function SendStation({ desk }: { desk: DeskState }) {
-  const { application, role, changeDesks } = desk;
+  const { application, role, changeDesks, changeApplications } = desk;
   // What was last copied, so the button says "copied" only while that is
   // still the text it would copy. The station also starts over for each
   // application (it is keyed by the application's id).
-  const [copiedText, setCopiedText] = React.useState<string | null>(null);
   const [copiedThanks, setCopiedThanks] = React.useState<string | null>(null);
+  // Arriving from the dashboard's "the thank-you note" link.
+  React.useEffect(() => {
+    if (window.location.hash !== '#after-interview') return;
+    window.requestAnimationFrame(() =>
+      document.getElementById('after-interview')?.scrollIntoView({ block: 'start' })
+    );
+  }, []);
   const requirements = React.useMemo(
     () => requirementsFromBullets(role?.bullets ?? []),
     [role?.bullets]
@@ -30,7 +39,7 @@ export default function SendStation({ desk }: { desk: DeskState }) {
     company: application.company,
     requirements,
   });
-  const text = fullLetter(letter);
+  const worn = wornPhrases(letter);
   const at = application.company.trim() ? ` at ${application.company.trim()}` : '';
   const thanks = [
     'Hi [name],',
@@ -38,7 +47,6 @@ export default function SendStation({ desk }: { desk: DeskState }) {
     'I am glad to send anything else that would help.',
     letter.sender.trim() || '[Your name]',
   ].join('\n\n');
-  const copied = Boolean(text) && copiedText === text;
   const thanksCopied = copiedThanks === thanks;
 
   return (
@@ -46,7 +54,8 @@ export default function SendStation({ desk }: { desk: DeskState }) {
       <div className="space-y-2">
         <h2 className="text-2xl font-semibold">Before you send</h2>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          The first five are checked against what you wrote. The last two only you can answer.
+          The first {countWord(checks.length).toLowerCase()} are checked against what you wrote. The
+          last {countWord(MANUAL.length).toLowerCase()} only you can answer.
         </p>
       </div>
 
@@ -101,27 +110,49 @@ export default function SendStation({ desk }: { desk: DeskState }) {
         ))}
       </ul>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          type="button"
-          disabled={!text}
-          onClick={async () => {
-            try {
-              await navigator.clipboard.writeText(text);
-              setCopiedText(text);
-            } catch {
-              setCopiedText(null);
-            }
-          }}
+      {worn.length > 0 && (
+        <div
+          className="space-y-1 rounded-xl border border-border/40 p-4"
+          data-testid="worn-phrases"
         >
-          {copied ? 'Letter copied' : 'Copy the letter'}
-        </Button>
-        {!text && <span className="text-sm text-muted-foreground">Nothing written yet.</span>}
-      </div>
+          <p className="font-medium text-foreground">Worn phrases</p>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            {worn.map((phrase) => `"${phrase}"`).join(', ')}{' '}
+            {worn.length === 1 ? 'appears' : 'appear'} in many letters, so readers skip{' '}
+            {worn.length === 1 ? 'it' : 'them'}. Something you did that shows the same thing says
+            more. This is not a check: keep {worn.length === 1 ? 'it' : 'them'} if you want.
+          </p>
+        </div>
+      )}
+
+      <LetterPreview
+        letter={letter}
+        title={application.title}
+        company={application.company}
+        headingId="send-letter-heading"
+      />
+
+      <section aria-labelledby="sent-heading" className="space-y-2 border-t border-border/40 pt-6">
+        <h3 id="sent-heading" className="text-lg font-semibold">
+          Sent it?
+        </h3>
+        <p className="max-w-[62ch] text-sm leading-relaxed text-muted-foreground">
+          Mark it once it has gone, so the dashboard stops counting down to the deadline and points
+          you to the interview instead.
+        </p>
+        <SentControl
+          sentOn={application.sentOn}
+          title={application.title}
+          onChange={(sentOn) =>
+            changeApplications((data) => markSent(data, application.id, sentOn))
+          }
+        />
+      </section>
 
       <section
+        id="after-interview"
         aria-labelledby="after-interview-heading"
-        className="space-y-3 border-t border-border/40 pt-6"
+        className="scroll-mt-24 space-y-3 border-t border-border/40 pt-6"
       >
         <h3 id="after-interview-heading" className="text-lg font-semibold">
           After an interview

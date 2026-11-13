@@ -1,13 +1,11 @@
 import * as React from 'react';
 import { setResumeSelection, updateBulletsFlow } from '../../lib/application-desk';
 import { readResumeRewrites, readResumeText } from '../../lib/career-bridge';
+import { deskRequirements } from '../../lib/desk-checks';
 import { loadFeature, reportFeatureFailure } from '../../lib/lazy-feature';
-import {
-  extractRequirementTerms,
-  findTermMatches,
-  requirementsFromBullets,
-} from '../../lib/posting';
+import { extractRequirementTerms, findTermMatches } from '../../lib/posting';
 import type { ResumeDoc, ResumeLine } from '../../lib/resume-doc';
+import { listedLineIds } from '../../lib/resume-doc/editor-text';
 import { joinParts } from '../../lib/resume-doc/layout';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
@@ -29,9 +27,14 @@ function bulletsOf(doc: ResumeDoc): { id: string; text: string }[] {
     if (!line.continuationOf) continue;
     tails.set(line.continuationOf, [...(tails.get(line.continuationOf) ?? []), line]);
   }
+  // A skills or certifications list is made of list items too, but its lines
+  // are not things done: they are never offered as bullets to include.
+  const listed = listedLineIds(doc);
   return doc.extractionOrder
     .map((id) => byId.get(id))
-    .filter((line): line is ResumeLine => Boolean(line?.bullet && !line.continuationOf))
+    .filter((line): line is ResumeLine =>
+      Boolean(line?.bullet && !line.continuationOf && !listed.has(line.id))
+    )
     .map((line) => ({
       id: line.id,
       // A pasted resume keeps its typed dash or dot; the list draws its own.
@@ -147,6 +150,52 @@ export function matchSelection(
   return { ids: all.filter((id) => chosen.has(id)), reset: false };
 }
 
+/** A role's header line: it carries a year, or says it is current. */
+const DATED = /\b(?:19|20)\d{2}\b|\b(?:present|current|now)\b/i;
+
+/**
+ * Where a bullet written on the desk goes by default: after the last bullet
+ * of the most recent job, which is the first dated role under an experience
+ * section. Never under skills, education or a summary. With no experience
+ * section, after the last bullet outside those sections; null when there is
+ * no such bullet.
+ *
+ * `bulletIds` are the bullets that can be chosen, by their first line.
+ */
+export function defaultPlacement(doc: ResumeDoc, bulletIds: readonly string[]): string | null {
+  const choosable = new Set(bulletIds);
+  const byId = new Map(doc.lines.map((line) => [line.id, line]));
+  for (const section of doc.sections.filter((s) => s.kind === 'experience')) {
+    let inRole = false;
+    let last: string | null = null;
+    let anyBullet: string | null = null;
+    for (const id of section.lineIds) {
+      const line = byId.get(id);
+      if (!line || line.continuationOf) continue;
+      if (choosable.has(id)) {
+        anyBullet ??= id;
+        if (inRole || !last) last = id;
+        continue;
+      }
+      if (!line.bullet && DATED.test(line.text)) {
+        // The next dated role starts: the first one is finished.
+        if (inRole && last) return last;
+        inRole = true;
+        last = null;
+      }
+    }
+    if (last) return last;
+    if (anyBullet) return anyBullet;
+  }
+  const excluded = new Set(
+    doc.sections
+      .filter((s) => s.kind === 'skills' || s.kind === 'education' || s.kind === 'summary')
+      .flatMap((s) => s.lineIds)
+  );
+  const outside = bulletIds.filter((id) => !excluded.has(id));
+  return outside.at(-1) ?? null;
+}
+
 /** The bullet ids a saved choice covers now. See `matchSelection`. */
 export function selectedIds(
   bullets: readonly { id: string; key: string }[],
@@ -167,6 +216,8 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
   const { application, role, resumeText, rewrites, changeDesks } = desk;
   const [doc, setDoc] = React.useState<ResumeDoc | null | undefined>(undefined);
   const [notice, setNotice] = React.useState<string | null>(null);
+  // "Only the ones that match" would leave this few bullets: asked about in place.
+  const [narrowing, setNarrowing] = React.useState(false);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -202,8 +253,10 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
     };
   }, [resumeText]);
 
+  // Conditions of hiring (an age, a licence, work authorization) are never
+  // shown as something a bullet answers.
   const confirmed = React.useMemo(
-    () => requirementsFromBullets(role?.bullets ?? []).filter((r) => r.status === 'confirmed'),
+    () => deskRequirements(role?.bullets ?? []).requirements,
     [role?.bullets]
   );
   const bullets: Bullet[] = React.useMemo(() => {
@@ -275,21 +328,28 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
     choose(bullets.filter((b) => next.has(b.id)).map((b) => b.id));
   };
 
-  // Bullets written on the Bullets station. They join this copy only.
+  // Bullets written on the Bullets station. They join this copy only, and
+  // are in it unless the visitor took one out.
   const written = desk.desk.bullets.bullets
-    .map((slot, index) => ({ index: index as 0 | 1, text: slot.text.trim(), after: slot.bulletId }))
+    .map((slot, index) => ({
+      index: index as 0 | 1,
+      text: slot.text.trim(),
+      after: slot.bulletId,
+      included: slot.included,
+    }))
     .filter((slot) => slot.text);
-  const defaultAfter = (bullets.find((b) => selected.has(b.id)) ?? bullets[0]).id;
-  const place = (index: 0 | 1, after: string | null) =>
-    changeDesks((data) =>
-      updateBulletsFlow(data, appId, { bullet: { index, slot: { bulletId: after ?? '' } } })
-    );
+  const defaultAfter =
+    defaultPlacement(
+      doc,
+      bullets.map((b) => b.id)
+    ) ?? bullets[bullets.length - 1].id;
+  const placeOf = (after: string | null) => (after && known.has(after) ? after : defaultAfter);
+  const place = (index: 0 | 1, slot: { bulletId?: string; included?: boolean }) =>
+    changeDesks((data) => updateBulletsFlow(data, appId, { bullet: { index, slot } }));
   const addedBullets = written
-    .filter((slot) => slot.after !== null)
-    .map((slot) => ({
-      afterLineId: slot.after && known.has(slot.after) ? slot.after : defaultAfter,
-      text: slot.text,
-    }));
+    .filter((slot) => slot.included)
+    .map((slot) => ({ afterLineId: placeOf(slot.after), text: slot.text }));
+  const shortAfterNarrowing = matching.length < 3;
 
   const download = async () => {
     // Another tab may have corrected the resume since this list was drawn.
@@ -345,8 +405,9 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
           bullet marked with a requirement mentions something this posting asks for.
         </p>
         <p className="text-sm text-foreground" data-testid="resume-selection-count">
-          {selected.size} of {bullets.length} bullets included. {matching.length} mention a
-          confirmed requirement.
+          {selected.size} of {bullets.length} bullets included
+          {addedBullets.length > 0 ? `, plus ${addedBullets.length} written on this desk` : ''}.{' '}
+          {matching.length} mention a confirmed requirement.
         </p>
         {match.reset && (
           <p className="rounded-lg bg-gold/12 px-3 py-2 text-sm text-foreground" role="status">
@@ -360,14 +421,53 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
             size="sm"
             variant="outline"
             disabled={matching.length === 0}
-            onClick={() => choose(matching.map((b) => b.id))}
+            aria-expanded={shortAfterNarrowing ? narrowing : undefined}
+            onClick={() => {
+              if (shortAfterNarrowing) setNarrowing(true);
+              else choose(matching.map((b) => b.id));
+            }}
           >
-            Only the ones that match
+            Only the ones that match ({matching.length})
           </Button>
-          <Button type="button" size="sm" variant="outline" onClick={() => choose(null)}>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setNarrowing(false);
+              choose(null);
+            }}
+          >
             Include everything
           </Button>
         </div>
+        {narrowing && (
+          <div
+            className="max-w-[68ch] space-y-2 rounded-lg bg-gold/12 px-3 py-2 text-sm text-foreground"
+            role="status"
+          >
+            <p>
+              That would leave {matching.length} {matching.length === 1 ? 'bullet' : 'bullets'} in
+              the copy for this role. A resume that short can look empty, and a bullet that does not
+              use the posting's words can still show the same work.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  setNarrowing(false);
+                  choose(matching.map((b) => b.id));
+                }}
+              >
+                Keep only {matching.length === 1 ? 'that one' : `those ${matching.length}`}
+              </Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => setNarrowing(false)}>
+                Keep what is included now
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       <ul className="space-y-2">
@@ -412,27 +512,29 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
             Written on this desk
           </h3>
           <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
-            These go into the copy for this role only. To keep one for every application, add it to
-            your resume in the Resume Game.
+            {written.every((slot) => slot.included)
+              ? `${written.length === 1 ? 'This bullet is' : 'Both are'} in the copy for this role, after the last bullet of your most recent job. Untick one to leave it out, or choose where it goes.`
+              : 'A ticked bullet is in the copy for this role. Tick one to put it back.'}{' '}
+            To keep one for every application, add it to your resume in the Resume Game.
           </p>
           <ul className="space-y-2">
             {written.map((slot) => {
-              const on = slot.after !== null;
-              const after = slot.after && known.has(slot.after) ? slot.after : defaultAfter;
+              const on = slot.included;
+              const after = placeOf(slot.after);
               return (
                 <li
                   key={slot.index}
                   className={cn(
-                    'space-y-2 rounded-xl border p-3 transition-colors',
+                    'space-y-2 rounded-xl border transition-colors',
                     on ? 'border-lichen/50 bg-lichen/6' : 'border-border/40'
                   )}
                 >
-                  <label className="flex cursor-pointer items-start gap-3">
+                  <label className="flex min-h-12 cursor-pointer items-start gap-3 p-3">
                     <input
                       type="checkbox"
                       checked={on}
-                      onChange={(event) => place(slot.index, event.target.checked ? after : null)}
-                      className="mt-1 h-4 w-4 accent-[hsl(var(--lichen))]"
+                      onChange={(event) => place(slot.index, { included: event.target.checked })}
+                      className="mt-0.5 h-6 w-6 shrink-0 accent-[hsl(var(--lichen))]"
                     />
                     <span
                       className={cn(
@@ -441,18 +543,21 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
                       )}
                     >
                       {slot.text}
+                      <span className="sr-only">
+                        {on ? ' (in the copy for this role)' : ' (left out)'}
+                      </span>
                     </span>
                   </label>
                   {on && (
-                    <label className="flex flex-wrap items-center gap-2 pl-7 text-xs text-muted-foreground">
+                    <label className="flex flex-wrap items-center gap-2 px-3 pb-3 text-xs text-muted-foreground sm:pl-12">
                       <span>
                         Place it after
                         <span className="sr-only"> (for: {slot.text.slice(0, 60)})</span>
                       </span>
                       <select
                         value={after}
-                        onChange={(event) => place(slot.index, event.target.value)}
-                        className="h-9 max-w-full min-w-0 flex-1 rounded-md border border-border/50 bg-transparent px-1.5 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                        onChange={(event) => place(slot.index, { bulletId: event.target.value })}
+                        className="h-10 max-w-full min-w-0 flex-1 rounded-md border border-border/50 bg-transparent px-1.5 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         {bullets.map((bullet) => (
                           <option key={bullet.id} value={bullet.id}>

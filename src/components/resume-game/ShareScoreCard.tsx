@@ -1,5 +1,6 @@
 import { toPng } from 'html-to-image';
 import * as React from 'react';
+import { localDate } from '../../lib/local-date';
 import type { BulletRecord } from '../../lib/resume-game';
 import { STRONG_SCORE } from '../../lib/resume-game';
 import { Button } from '../ui/button';
@@ -72,7 +73,7 @@ export default function ShareScoreCard({ bullets }: Props) {
       const dataUrl = await toPng(cardRef.current, { pixelRatio: 2 });
       if (!cardRef.current) return;
       const link = document.createElement('a');
-      link.download = `resume-game-lines-${new Date().toISOString().slice(0, 10)}.png`;
+      link.download = `resume-game-lines-${localDate()}.png`;
       link.href = dataUrl;
       link.click();
       finishOperation(id, 'Image download started.');

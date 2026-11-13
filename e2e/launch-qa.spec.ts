@@ -75,7 +75,7 @@ test('finding 1: clearing everything in one tab empties the desk in another', as
   const dashboard = await open(context, '/dashboard/');
   const clear = dashboard.getByRole('button', { name: 'Clear everything on this device' });
   await clear.click();
-  await dashboard.getByRole('button', { name: /Delete everything you wrote/ }).click();
+  await dashboard.getByRole('button', { name: 'Delete everything now' }).click();
   await expect.poll(() => readStorage(desk, 'career-applications')).toBeNull();
 
   await desk.bringToFront();
@@ -97,10 +97,15 @@ test('clearing everything in one tab also empties a tool open in another', async
 
   const dashboard = await open(context, '/dashboard/');
   await dashboard.getByRole('button', { name: 'Clear everything on this device' }).click();
-  await dashboard.getByRole('button', { name: /Delete everything you wrote/ }).click();
-  await expect.poll(() => readStorage(career, 'career-why-session-v2')).toBeNull();
+  await dashboard.getByRole('button', { name: 'Delete everything now' }).click();
+  // The other tab loads again when it hears of the clear; a read that lands
+  // in the middle of that is tried again.
+  await expect
+    .poll(() => readStorage(career, 'career-why-session-v2').catch(() => 'reloading'))
+    .toBeNull();
 
   await career.bringToFront();
+  await waitForHydration(career);
   await expect(career.locator('#career-topic')).toHaveValue('');
   // And nothing typed afterwards can bring the cleared words back.
   expect(await readStorage(career, 'career-why-session-v2')).toBeNull();

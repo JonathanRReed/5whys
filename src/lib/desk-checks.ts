@@ -2,9 +2,32 @@
  * Rule-based checks for the application desk. Every result here is computed
  * from what the student wrote; nothing is estimated.
  */
-import type { LetterDraft } from './application-desk';
+import type { LetterDraft, QualificationRow } from './application-desk';
 import type { PostingRequirement } from './posting';
-import { extractRequirementTerms, findTermMatches } from './posting';
+import {
+  extractRequirementTerms,
+  findTermMatches,
+  hiringCondition,
+  requirementsFromBullets,
+  splitConditions,
+} from './posting';
+import { countWord, SEND_CHECK_IDS, type SendCheckId } from './send-check-ids';
+
+export { countWord, SEND_CHECK_IDS, type SendCheckId };
+
+/**
+ * The confirmed lines of a posting, split into the ones a resume or a letter
+ * can show and the conditions of hiring (an age, a licence, citizenship, work
+ * authorization, a background check, a physical duty). Every count on the
+ * desk is taken from `requirements`, so a condition is never one of the
+ * "N of M" and never offered as something to write about.
+ */
+export function deskRequirements(bullets: Parameters<typeof requirementsFromBullets>[0]): {
+  requirements: PostingRequirement[];
+  conditions: PostingRequirement[];
+} {
+  return splitConditions(requirementsFromBullets(bullets).filter((r) => r.status === 'confirmed'));
+}
 
 const GENERIC_OPENERS = [
   /^i('m| am) writing (to|because|in (regard|response))/i,
@@ -32,7 +55,7 @@ const NEXT_STEP =
 
 /** The sentence asks for it, rather than only mentioning the word. */
 const REQUEST =
-  /\?|\b(would|could|can|may|might|please|let me know|i('d| would) (love|like|welcome|appreciate)|i hope|look forward|looking forward|happy to|glad to|available|welcome the|eager)\b/i;
+  /\?|\b(would|could|can|may|might|please|let me know|let's|let us|feel free|i('d| would) (love|like|welcome|appreciate|value)|i hope|look forward|looking forward|happy to|glad to|available|welcome|keen|eager|open to|invite|at your convenience|when you are free)\b/i;
 
 /** Thanks alone is polite, but it does not ask for anything. */
 const THANKS_ONLY = /^(thank you|thanks)[^?]*$/i;
@@ -57,8 +80,81 @@ export function asks(closing: string): boolean {
   );
 }
 
+/**
+ * Phrases so common in letters that a reader skips them. Shown as
+ * information, quoted from the letter, never as a pass or a fail.
+ */
+const WORN_PHRASES: readonly { phrase: string; pattern: RegExp }[] = [
+  { phrase: 'passionate about', pattern: /\bpassionate about\b/i },
+  { phrase: 'hard worker', pattern: /\bhard[- ]?worker\b/i },
+  { phrase: 'hard-working', pattern: /\bhard[- ]working\b/i },
+  { phrase: 'team player', pattern: /\bteam[- ]player\b/i },
+  { phrase: 'detail-oriented', pattern: /\bdetail[- ]oriented\b/i },
+  { phrase: 'fast learner', pattern: /\b(?:fast|quick) learner\b/i },
+  {
+    phrase: 'think outside the box',
+    pattern: /\b(?:think(?:ing)?|thinker) outside (?:of )?the box\b/i,
+  },
+  { phrase: 'self-starter', pattern: /\bself[- ]starter\b/i },
+  { phrase: 'go-getter', pattern: /\bgo[- ]getter\b/i },
+  { phrase: 'results-driven', pattern: /\bresults?[- ]driven\b/i },
+  { phrase: 'people person', pattern: /\bpeople person\b/i },
+  { phrase: 'go above and beyond', pattern: /\bgo(?:es|ing)? above and beyond\b/i },
+  { phrase: 'perfect fit', pattern: /\bperfect fit\b/i },
+  { phrase: 'dream job', pattern: /\bdream job\b/i },
+  { phrase: 'wear many hats', pattern: /\bwear(?:ing)? many hats\b/i },
+];
+
+/**
+ * Worn phrases in the body of the letter, each quoted as the visitor wrote
+ * it, in the order they appear. Information only: nothing is scored.
+ */
+export function wornPhrases(letter: Pick<LetterDraft, LetterBodyPart>): string[] {
+  const text = letterText(letter);
+  return WORN_PHRASES.flatMap(({ pattern }) => {
+    const found = text.match(pattern);
+    return found ? [{ quote: found[0], at: found.index ?? 0 }] : [];
+  })
+    .sort((a, b) => a.at - b.at)
+    .map((entry) => entry.quote);
+}
+
+type LetterBodyPart = 'hook' | 'whyYou' | 'whyThem' | 'closingAsk';
+
+/**
+ * Lines on a posting that are true of nearly every applicant and do not sell
+ * anyone: being enrolled, a diploma, being able to work the hours. They stay
+ * on the qualifications list but are not offered as letter material.
+ */
+const NOT_A_SELLING_POINT =
+  /\b(?:currently enrolled|enrolled (?:in|at)|pursuing (?:a|an) (?:degree|diploma)|high school diploma|ged\b|available to work|availability to work|able to work (?:weekends|evenings|nights|the hours)|must be available|reliable transportation)\b/i;
+
+/**
+ * The "why you" draft from what the visitor marked "have it": each line from
+ * the posting, followed by the proof they typed for it on the qualifications
+ * station, or "[your proof]" when they wrote none. Conditions of hiring and
+ * lines that do not sell anyone (enrolment, availability) are skipped. Only
+ * the visitor's words and the posting's are used.
+ */
+export function whyYouDraft(
+  requirements: readonly PostingRequirement[],
+  rows: readonly QualificationRow[],
+  limit = 3
+): string[] {
+  const byId = new Map(rows.map((row) => [row.requirementId, row]));
+  return requirements
+    .filter((r) => r.status === 'confirmed' && byId.get(r.id)?.status === 'have')
+    .filter((r) => !hiringCondition(r.text) && !NOT_A_SELLING_POINT.test(r.text))
+    .slice(0, limit)
+    .map((r) => {
+      const skill = r.text.trim().replace(/[.;:]+$/, '');
+      const proof = (byId.get(r.id)?.plan ?? '').trim().replace(/\s+/g, ' ');
+      return `${skill}: ${proof ? (/[.?]$/.test(proof) ? proof : `${proof}.`) : '[your proof]'}`;
+    });
+}
+
 /** The four parts joined the way they would be sent. */
-export function letterText(letter: LetterDraft): string {
+export function letterText(letter: Pick<LetterDraft, LetterBodyPart>): string {
   return [letter.hook, letter.whyYou, letter.whyThem, letter.closingAsk]
     .map((part) => part.trim())
     .filter(Boolean)
@@ -95,13 +191,6 @@ export const ONE_PAGE_WORDS = 400;
 export const LINKEDIN_NOTE_LIMIT = 200;
 /** What to aim for: three or four short paragraphs that get read. */
 export const LETTER_TARGET_WORDS = { min: 250, max: 350 } as const;
-
-export type SendCheckId =
-  | 'names'
-  | 'one-page'
-  | 'posting-words'
-  | 'ends-with-ask'
-  | 'no-placeholders';
 
 export interface SendCheck {
   id: SendCheckId;
@@ -147,7 +236,7 @@ function hasPhrase(text: string, phrase: string): boolean {
 }
 
 /** The role is named when its title, or the title's core words, appear whole. */
-const namesRole = (text: string, title: string) => {
+export const namesRole = (text: string, title: string) => {
   if (!title.trim()) return false;
   if (hasPhrase(text, title)) return true;
   const core = coreTitle(title);
@@ -158,7 +247,7 @@ const namesRole = (text: string, title: string) => {
  * The employer is named when its name appears whole, or its distinctive
  * first word does: "Northgate" for "Northgate Logistics Partners".
  */
-const namesCompany = (text: string, company: string) => {
+export const namesCompany = (text: string, company: string) => {
   if (!company.trim()) return false;
   if (hasPhrase(text, company)) return true;
   const first =
@@ -224,7 +313,10 @@ export function runSendChecks({
   const hasCompany = namesCompany(text, company);
   const namesKnown = Boolean(title.trim() && company.trim());
 
-  const confirmed = requirements.filter((r) => r.status === 'confirmed');
+  // Conditions of hiring are not something a letter shows, so they are not counted.
+  const confirmed = splitConditions(
+    requirements.filter((r) => r.status === 'confirmed')
+  ).requirements;
   const used = confirmed.filter(
     (r) => findTermMatches(extractRequirementTerms(r.text), text).length > 0
   ).length;
@@ -294,4 +386,79 @@ export function runSendChecks({
         : 'No closing written yet.',
     },
   ];
+}
+
+export interface Standing {
+  have: number;
+  maybe: number;
+  notYet: number;
+  unset: number;
+  /** Requirements counted: the confirmed ones that are not conditions of hiring. */
+  total: number;
+  /** Of those, how many the resume shows, or null with no resume to read. */
+  shown: number | null;
+  /** Of the ones marked "have it", how many the resume already shows. Null with no resume. */
+  haveShown: number | null;
+}
+
+/**
+ * Where the visitor stands, as one count: their own marks, and how many of
+ * those the resume already shows. Both come from the same list of
+ * requirements (conditions of hiring left out), so the two can never
+ * disagree about what is being counted.
+ */
+export function standing(
+  requirements: readonly PostingRequirement[],
+  rows: readonly QualificationRow[],
+  evidence: ReadonlyMap<string, 'evidence' | 'partial' | 'none' | 'not-checkable'> | null
+): Standing {
+  const marks = new Map(rows.map((row) => [row.requirementId, row.status]));
+  const tally = { have: 0, maybe: 0, notYet: 0, unset: 0 };
+  let shown = 0;
+  let haveShown = 0;
+  for (const requirement of requirements) {
+    const mark = marks.get(requirement.id) ?? 'unset';
+    if (mark === 'have') tally.have += 1;
+    else if (mark === 'maybe') tally.maybe += 1;
+    else if (mark === 'not-yet') tally.notYet += 1;
+    else tally.unset += 1;
+    if (evidence?.get(requirement.id) === 'evidence') {
+      shown += 1;
+      if (mark === 'have') haveShown += 1;
+    }
+  }
+  return {
+    ...tally,
+    total: requirements.length,
+    shown: evidence ? shown : null,
+    haveShown: evidence ? haveShown : null,
+  };
+}
+
+/** The standing as the sentence the qualifications station shows. */
+export function describeStanding(s: Standing): string {
+  if (s.total === 0) return 'Every confirmed line is a condition of the job, listed below.';
+  const resume =
+    s.shown === null
+      ? ''
+      : s.have > 0 && s.haveShown !== null
+        ? ` Your resume already shows ${s.haveShown} of the ${s.have} you have.${
+            s.have - s.haveShown > 0
+              ? ` Put the other ${s.have - s.haveShown} into a bullet or the letter, in the posting's words where they are true.`
+              : ''
+          }`
+        : ` Your resume already shows ${s.shown} of the ${s.total}.`;
+  if (s.unset === s.total) return `${s.total} to mark.${resume}`;
+  const marks = `${s.have} have it, ${s.maybe} maybe, ${s.notYet} not yet${
+    s.unset ? `, ${s.unset} still to mark` : ''
+  }.`;
+  const verdict =
+    s.unset > 0
+      ? ''
+      : s.notYet + s.maybe === 0
+        ? ' You can show every one of these. Apply.'
+        : s.have >= s.notYet
+          ? ' You have more than you are missing. That is enough to apply; plan for the gaps below.'
+          : ' You are missing more than you have. You can still apply, and the plan below is where to start.';
+  return `${marks}${verdict}${resume}`;
 }

@@ -13,6 +13,7 @@
  */
 
 import { generateId } from './glowup-store';
+import { localDate } from './local-date';
 
 export const APPLICATIONS_KEY = 'career-applications';
 const CURRENT_VERSION = 1;
@@ -26,6 +27,11 @@ export interface TrackedApplication {
   deadline: string | null;
   /** The DecodedRole in interview-glow-up-data this application tracks. */
   roleId: string | null;
+  /**
+   * 'YYYY-MM-DD' the visitor said they sent it, or null while it is not sent.
+   * Absent in applications saved before it was recorded.
+   */
+  sentOn?: string | null;
   createdAt: number;
   updatedAt: number;
 }
@@ -73,6 +79,7 @@ function normalizeApplication(value: unknown): TrackedApplication | null {
     company,
     deadline: isDeadline(raw.deadline) ? raw.deadline : null,
     roleId: typeof raw.roleId === 'string' ? raw.roleId : null,
+    sentOn: isDeadline(raw.sentOn) ? raw.sentOn : null,
     createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : now,
     updatedAt: typeof raw.updatedAt === 'number' ? raw.updatedAt : now,
   };
@@ -125,6 +132,7 @@ export function addApplication(
     company: (fields.company ?? '').trim(),
     deadline: isDeadline(fields.deadline) ? fields.deadline : null,
     roleId: fields.roleId ?? null,
+    sentOn: null,
     createdAt: now,
     updatedAt: now,
   };
@@ -175,12 +183,73 @@ export function removeApplication(data: ApplicationsData, id: string): Applicati
 
 export function setActiveApplication(data: ApplicationsData, id: string | null): ApplicationsData {
   if (id !== null && !data.applications.some((a) => a.id === id)) return data;
+  if (data.activeId === id) return data;
   return { ...data, activeId: id };
+}
+
+/**
+ * The one application in focus, read the same way by the desk, the
+ * dashboard, Pay and the bridge: the one the visitor made active, or, when
+ * only one is tracked, that one. Null when there are several and none was
+ * chosen. Reading never writes.
+ */
+export function activeApplicationId(data: ApplicationsData): string | null {
+  if (data.activeId && data.applications.some((a) => a.id === data.activeId)) {
+    return data.activeId;
+  }
+  return data.applications.length === 1 ? data.applications[0].id : null;
+}
+
+/** Mark an application sent on a date ('YYYY-MM-DD'), or not sent with null. */
+export function markSent(
+  data: ApplicationsData,
+  id: string,
+  sentOn: string | null
+): ApplicationsData {
+  const date = isDeadline(sentOn) ? sentOn : null;
+  if (!data.applications.some((a) => a.id === id && (a.sentOn ?? null) !== date)) return data;
+  return {
+    ...data,
+    applications: data.applications.map((a) =>
+      a.id === id ? { ...a, sentOn: date, updatedAt: Date.now() } : a
+    ),
+  };
+}
+
+export type ApplicationStatus = 'not-started' | 'in-progress' | 'sent';
+
+/**
+ * Where an application stands. "Sent" is what the visitor said; the other two
+ * are derived from whether any work for it is saved.
+ */
+export function applicationStatus(
+  app: Pick<TrackedApplication, 'sentOn'>,
+  hasWork: boolean
+): ApplicationStatus {
+  if (app.sentOn) return 'sent';
+  return hasWork ? 'in-progress' : 'not-started';
 }
 
 // ============================================================================
 // Dates
 // ============================================================================
+
+/**
+ * A day as 'YYYY-MM-DD' on this device's calendar, not in UTC: an export at
+ * 23:30 in the evening is named for that evening, not for tomorrow.
+ */
+export { localDate };
+
+/** 'YYYY-MM-DD' as it reads in a sentence: "Nov 15", with the year when it is not this one. */
+export function shortDate(iso: string, now: Date = new Date()): string {
+  const date = parseDeadline(iso);
+  if (!date) return iso;
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    ...(date.getFullYear() === now.getFullYear() ? {} : { year: 'numeric' }),
+  });
+}
 
 /**
  * Whole days from today until the deadline, negative once it has passed.

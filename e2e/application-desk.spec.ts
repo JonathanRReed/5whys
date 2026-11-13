@@ -66,7 +66,9 @@ test('a posting is pasted once and worked through the desk, and it survives a re
 
   await page.reload();
   await waitForHydration(page);
-  await expect(page.getByText('Data Analytics Intern at Larkspur Transit Authority')).toBeVisible();
+  await expect(
+    page.getByText('Data Analytics Intern at Larkspur Transit Authority', { exact: true })
+  ).toBeVisible();
   await page.getByRole('tab', { name: /Qualifications/ }).click();
   await expect(page.getByRole('radio', { name: 'Have it' }).first()).toBeChecked();
 

@@ -1,5 +1,6 @@
 import * as React from 'react';
 import scenarioData from '../../data/networking-scenarios.json';
+import { localDate } from '../../lib/local-date';
 import {
   completeRatings,
   joinLabels,
@@ -520,7 +521,7 @@ export function useNetworkingPractice() {
       setStorageNotice('No sessions to export yet. Record a practice round first.');
       return;
     }
-    const filename = `networking-practice-sessions-${new Date().toISOString().slice(0, 10)}.json`;
+    const filename = `networking-practice-sessions-${localDate()}.json`;
     const blob = new Blob([JSON.stringify(sessions, null, 2)], {
       type: 'application/json;charset=utf-8',
     });

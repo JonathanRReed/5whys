@@ -1,10 +1,13 @@
 import * as React from 'react';
 import { updateBulletsFlow } from '../../lib/application-desk';
-import { requirementsFromBullets } from '../../lib/posting';
+import { type DraftFields, draftBullet, draftFields } from '../../lib/bullet-draft';
+import { deskRequirements } from '../../lib/desk-checks';
+import { hiringCondition, requirementsFromBullets } from '../../lib/posting';
 import { scoreBullet } from '../../lib/resume-game';
 import RewriteHelp from '../resume-game/RewriteHelp';
 import PrintSheet from '../shared/PrintSheet';
 import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { useDeskExamples } from './examples';
 import type { DeskState } from './useDesk';
@@ -33,15 +36,28 @@ export default function BulletsStation({ desk }: { desk: DeskState }) {
   React.useEffect(() => {
     setWantedId(new URLSearchParams(window.location.search).get('requirement'));
   }, []);
+  // A first draft built only from the two answers above, in fields the
+  // visitor edits before using it. Null until they ask for one.
+  const [draft, setDraft] = React.useState<DraftFields | null>(null);
+  const [used, setUsed] = React.useState<0 | 1 | null>(null);
   if (!application) return null;
   const flow = desk.desk.bullets;
   const appId = application.id;
-  const confirmed = requirementsFromBullets(role?.bullets ?? []).filter(
-    (r) => r.status === 'confirmed'
-  );
-  const wanted = wantedId
+  // Conditions of hiring are never a bullet's target or on the worksheet.
+  const confirmed = deskRequirements(role?.bullets ?? []).requirements;
+  const asked = wantedId
     ? (requirementsFromBullets(role?.bullets ?? []).find((r) => r.id === wantedId) ?? null)
     : null;
+  const wantedCondition = asked ? hiringCondition(asked.text) : null;
+  const wanted = asked && !wantedCondition ? asked : null;
+  const drafted = draft ? draftBullet(draft) : '';
+  const putDraft = (slot: 0 | 1) => {
+    if (!drafted) return;
+    changeDesks((data) =>
+      updateBulletsFlow(data, appId, { bullet: { index: slot, slot: { text: drafted } } })
+    );
+    setUsed(slot);
+  };
   const hasWork = Boolean(
     flow.experience.trim() || flow.impact.trim() || flow.bullets.some((b) => b.text.trim())
   );
@@ -65,6 +81,16 @@ export default function BulletsStation({ desk }: { desk: DeskState }) {
             true of what you did.
           </p>
         </div>
+      )}
+
+      {asked && wantedCondition && (
+        <p className="rounded-xl border border-border/40 p-4 text-sm leading-relaxed" role="note">
+          <span className="text-foreground">"{asked.text}"</span>{' '}
+          <span className="text-muted-foreground">
+            is a condition of the job ({wantedCondition.label.toLowerCase()}), not something to
+            write a bullet about. It is listed under Qualifications, with what it means.
+          </span>
+        </p>
       )}
 
       <ol className="space-y-8">
@@ -99,6 +125,91 @@ export default function BulletsStation({ desk }: { desk: DeskState }) {
         ))}
 
         <li className="space-y-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!flow.experience.trim()}
+              aria-describedby="bullet-draft-note"
+              onClick={() => {
+                setDraft(draftFields(flow.experience, flow.impact));
+                setUsed(null);
+              }}
+            >
+              {draft ? 'Draft it again from what I wrote' : 'Draft a bullet from what I wrote'}
+            </Button>
+            <p id="bullet-draft-note" className="text-xs text-muted-foreground">
+              {flow.experience.trim()
+                ? 'Uses only your words from the two steps above.'
+                : 'Write step 1 first.'}
+            </p>
+          </div>
+          {draft && (
+            <fieldset className="m-0 min-w-0 space-y-3 border-0 p-0">
+              <legend className="mb-2 text-sm font-medium text-foreground">
+                A first draft, in your words. Edit any part.
+              </legend>
+              <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+                <label className="block space-y-1">
+                  <span className="block text-sm text-muted-foreground">Verb</span>
+                  <Input
+                    value={draft.verb}
+                    placeholder={examples.draft.verb}
+                    onChange={(event) => setDraft({ ...draft, verb: event.target.value })}
+                    className="text-base"
+                  />
+                </label>
+                <label className="block space-y-1">
+                  <span className="block text-sm text-muted-foreground">What you did</span>
+                  <Input
+                    value={draft.task}
+                    placeholder={examples.draft.task}
+                    onChange={(event) => setDraft({ ...draft, task: event.target.value })}
+                    className="text-base"
+                  />
+                </label>
+                <label className="block space-y-1 sm:col-span-2">
+                  <span className="block text-sm text-muted-foreground">What happened</span>
+                  <Input
+                    value={draft.result}
+                    placeholder={examples.draft.result}
+                    onChange={(event) => setDraft({ ...draft, result: event.target.value })}
+                    className="text-base"
+                  />
+                </label>
+              </div>
+              <p className="text-sm leading-relaxed text-foreground" data-testid="bullet-draft">
+                {drafted || 'Fill a field to see the draft.'}
+              </p>
+              {!draft.verb.trim() && drafted && (
+                <p className="text-xs text-muted-foreground">
+                  No verb was found in what you wrote. Add the one word for what you did, such as "
+                  {examples.draft.verb}".
+                </p>
+              )}
+              <div className="flex flex-wrap gap-2">
+                {([0, 1] as const).map((slot) => (
+                  <Button
+                    key={slot}
+                    type="button"
+                    size="sm"
+                    disabled={!drafted}
+                    onClick={() => putDraft(slot)}
+                  >
+                    {flow.bullets[slot]?.text.trim()
+                      ? `Replace bullet ${slot + 1} with it`
+                      : `Use it as bullet ${slot + 1}`}
+                  </Button>
+                ))}
+              </div>
+              <p role="status" className="min-h-5 text-xs text-muted-foreground">
+                {used !== null ? `Bullet ${used + 1} now holds the draft. Edit it below.` : ''}
+              </p>
+            </fieldset>
+          )}
+        </li>
+
+        <li className="space-y-3">
           <h3 className="text-lg font-semibold">
             <span className="num-index mr-2 text-lichen">3</span>
             Write the two bullets
@@ -120,7 +231,7 @@ export default function BulletsStation({ desk }: { desk: DeskState }) {
                     rows={2}
                     data-guide={`bullet-slot-${slot}`}
                     value={text}
-                    placeholder={examples.bulletPlaceholder}
+                    placeholder={examples.bulletPlaceholders[slot]}
                     onChange={(event) =>
                       changeDesks((data) =>
                         updateBulletsFlow(data, appId, {

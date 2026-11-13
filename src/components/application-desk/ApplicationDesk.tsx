@@ -4,6 +4,7 @@ import {
   addApplication,
   daysUntilDeadline,
   deadlineLabel,
+  markSent,
   setActiveApplication,
   updateApplication,
 } from '../../lib/applications';
@@ -19,6 +20,7 @@ import PostingStation from './PostingStation';
 import QualificationsStation from './QualificationsStation';
 import ResumeStation from './ResumeStation';
 import SendStation from './SendStation';
+import SentControl from './SentControl';
 import { type DeskLoss, useDesk } from './useDesk';
 
 type Station = 'posting' | 'qualifications' | 'bullets' | 'resume' | 'letter' | 'send';
@@ -146,6 +148,23 @@ export default function ApplicationDesk() {
   const openOnThisRole = () => {
     if (!role) return;
     changeGlow((data) => (data.currentRoleId === role.id ? data : switchRole(data, role.id)));
+  };
+  /**
+   * Open another application and make it the one in focus everywhere: the
+   * dashboard's "In focus", Pay's default, and the role the interview tools
+   * open on all follow it. Written only because the visitor chose it.
+   */
+  const focusOn = (id: string) => {
+    select(id);
+    changeApplications((data) => setActiveApplication(data, id));
+    const roleId = applications.applications.find((a) => a.id === id)?.roleId;
+    if (roleId) {
+      changeGlow((data) =>
+        data.currentRoleId === roleId || !data.roles.some((r) => r.id === roleId)
+          ? data
+          : switchRole(data, roleId)
+      );
+    }
   };
   const [station, setStation] = React.useState<Station>('posting');
   const [adding, setAdding] = React.useState(false);
@@ -286,7 +305,7 @@ export default function ApplicationDesk() {
             <span>Open one you are working on</span>
             <select
               value=""
-              onChange={(event) => event.target.value && select(event.target.value)}
+              onChange={(event) => event.target.value && focusOn(event.target.value)}
               className="h-9 max-w-[14rem] rounded-md border border-border/50 bg-transparent px-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
             >
               <option value="">Choose</option>
@@ -345,11 +364,19 @@ export default function ApplicationDesk() {
               <span className="text-muted-foreground"> at {application.company}</span>
             )}
           </p>
-          {days !== null && (
+          {!application.sentOn && days !== null && (
             <p className="text-sm text-muted-foreground">
               {days < 0 ? 'The deadline has passed' : deadlineLabel(days)}
             </p>
           )}
+          <SentControl
+            className="pt-1"
+            sentOn={application.sentOn}
+            title={application.title}
+            onChange={(sentOn) =>
+              changeApplications((data) => markSent(data, application.id, sentOn))
+            }
+          />
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {applications.applications.length > 1 && (
@@ -357,7 +384,7 @@ export default function ApplicationDesk() {
               <span>Switch</span>
               <select
                 value={application.id}
-                onChange={(event) => select(event.target.value)}
+                onChange={(event) => focusOn(event.target.value)}
                 className="h-9 max-w-[14rem] rounded-md border border-border/50 bg-transparent px-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {applications.applications.map((item) => (

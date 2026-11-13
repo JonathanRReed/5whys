@@ -9,6 +9,7 @@
  * The data structure is already JSON-serializable for easy migration.
  */
 
+import { localDate } from './local-date';
 import { isRealAnswer } from './non-answer';
 import { hiringCondition } from './posting/conditions';
 import {
@@ -260,7 +261,7 @@ export function exportJSON(current?: GlowUpData): void {
 
   const a = document.createElement('a');
   a.href = url;
-  a.download = `interview-glow-up-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `interview-glow-up-backup-${localDate()}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

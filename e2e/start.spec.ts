@@ -1,5 +1,12 @@
-import { expect, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 import { readStorage, waitForHydration, watchConsoleErrors } from './helpers';
+
+/**
+ * A click this soon after the question changed is read as the second tap of
+ * a double tap and ignored, so a test that answers twice waits as a person
+ * would between two questions.
+ */
+const nextQuestion = (page: Page) => page.waitForTimeout(450);
 
 test('the career review recommends a tool and saves the profile', async ({ page }) => {
   await page.goto('/start/');
@@ -9,6 +16,7 @@ test('the career review recommends a tool and saves the profile', async ({ page 
   await expect(page.getByRole('heading', { name: 'Where are you in your career?' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Student' }).click();
+  await nextQuestion(page);
   await page.getByRole('button', { name: 'Unclear direction' }).click();
 
   await expect(page.getByRole('heading', { name: 'Here is your starting point' })).toBeVisible();
@@ -60,6 +68,7 @@ for (const theme of ['night', 'dawn']) {
     await expect(
       page.getByRole('heading', { name: 'Where are you in your career?' })
     ).toBeFocused();
+    await nextQuestion(page);
     await page.getByRole('button', { name: 'Student', exact: true }).click();
     await page.getByRole('button', { name: 'Unclear direction', exact: true }).focus();
     await page.keyboard.press('Enter');
@@ -75,15 +84,20 @@ for (const theme of ['night', 'dawn']) {
     });
     await page.getByRole('button', { name: 'Change the last answer' }).click();
     await expect(question).toBeFocused();
+    await nextQuestion(page);
     await page.getByRole('button', { name: 'Unclear direction', exact: true }).click();
+    // "Start over" asks in place before it clears the answers.
     await page.getByRole('button', { name: 'Start over', exact: true }).click();
+    await page.getByRole('button', { name: 'Clear both answers', exact: true }).click();
     await expect(
       page.getByRole('heading', { name: 'Where are you in your career?' })
     ).toBeFocused();
     expect(
       await status.evaluate((node) => node === document.querySelector('[role="status"]'))
     ).toBe(true);
+    await nextQuestion(page);
     await page.getByRole('button', { name: 'Student', exact: true }).click();
+    await nextQuestion(page);
     await page.getByRole('button', { name: 'Unclear direction', exact: true }).click();
     await page.reload();
     await waitForHydration(page);
@@ -94,3 +108,27 @@ for (const theme of ['night', 'dawn']) {
     expect(errors).toEqual([]);
   });
 }
+
+test('a double tap on an answer does not skip the next question', async ({ page }) => {
+  await page.goto('/start/');
+  await waitForHydration(page);
+  await page.getByRole('button', { name: 'Student', exact: true }).dblclick();
+  await expect(
+    page.getByRole('heading', { name: 'What is your biggest challenge right now?' })
+  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: /starting point/ })).toHaveCount(0);
+});
+
+test('someone with little to show is sent to start a resume from nothing', async ({ page }) => {
+  await page.goto('/start/');
+  await waitForHydration(page);
+  await page.getByRole('button', { name: 'High school or first job' }).click();
+  await nextQuestion(page);
+  await page.getByRole('button', { name: 'I do not have much to show yet' }).click();
+  await expect(page.getByRole('link', { name: /Start now/ })).toHaveAttribute(
+    'href',
+    '/resume-game/?start=blank'
+  );
+  const profile = JSON.parse((await readStorage(page, 'career-tools-profile')) ?? 'null');
+  expect(profile).toMatchObject({ stage: 'student', focus: 'starting', firstJob: true });
+});

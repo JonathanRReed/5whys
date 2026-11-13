@@ -268,20 +268,14 @@ test('guided mode walks a first-timer through the interview workspace, tab by ta
   );
 });
 
-test('guided mode walks a first-timer through a title search and the offer worksheet', async ({
-  page,
-}) => {
+// With no wage data built in, the guide starts at the worksheet; the title
+// search steps return once wages ship.
+test('guided mode walks a first-timer through the offer worksheet', async ({ page }) => {
   await useStudentProfile(page);
   await page.goto('/pay/');
   await waitForHydration(page);
 
   await walkGuide(page, 'pay', {
-    title: async () => {
-      await page.getByLabel('Job title').fill('marketing assistant');
-    },
-    occupation: async () => {
-      await page.locator('[data-guide="pay-candidates"] button').first().click();
-    },
     base: async () => {
       await page.getByLabel('Base pay').fill('18');
     },

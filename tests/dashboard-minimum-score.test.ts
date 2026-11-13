@@ -27,7 +27,7 @@ const save = (lines: string[], storedScores: unknown[]) => {
 
 const rewriteLinks = () =>
   readCareerDashboard()
-    .recommendations.filter((item) => item.cta === 'Rewrite it')
+    .recommendations.filter((item) => item.cta === 'Work on this line')
     .map((item) => item.href);
 
 it('points at the line that scores lowest as written, whatever score was stored with it', () => {
