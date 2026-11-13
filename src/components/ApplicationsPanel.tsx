@@ -9,7 +9,7 @@ import {
   updateApplication,
 } from '../lib/applications';
 import type { ApplicationSummary } from '../lib/career-bridge';
-import { openRole } from '../lib/glowup-store';
+import { loadData, openRole, saveData, updateRole } from '../lib/glowup-store';
 import { cn } from '../lib/utils';
 import Announcer, { useAnnouncer } from './shared/Announcer';
 import ConfirmButton from './shared/ConfirmButton';
@@ -52,6 +52,27 @@ function Chip({ on, children }: { on: boolean; children: React.ReactNode }) {
   );
 }
 
+/**
+ * Focus the first of `ids` on the page once the change has rendered, so a
+ * removed row hands focus to its neighbor instead of dropping it.
+ */
+function focusFirstOf(ids: string[], frames = 30) {
+  if (typeof window === 'undefined') return;
+  window.requestAnimationFrame(() => {
+    for (const id of ids) {
+      const target = document.getElementById(id);
+      if (target) {
+        target.focus();
+        return;
+      }
+    }
+    if (frames > 0) focusFirstOf(ids, frames - 1);
+  });
+}
+
+const SAVE_FAILED =
+  'This browser would not save it. What you typed is still here. Free some space in the storage panel below, then try again.';
+
 /** The next piece of tool work this application is missing. */
 function workLink(app: ApplicationSummary, storyCount: number): { href: string; label: string } {
   if (!app.decoded) {
@@ -76,6 +97,7 @@ export function NewApplicationForm({
   const [title, setTitle] = React.useState('');
   const [company, setCompany] = React.useState('');
   const [deadline, setDeadline] = React.useState('');
+  const [failed, setFailed] = React.useState(false);
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -85,7 +107,12 @@ export function NewApplicationForm({
       company,
       deadline: deadline || null,
     });
-    saveApplications(data);
+    // Storage full or blocked: keep the form as typed and say so.
+    if (!saveApplications(data)) {
+      setFailed(true);
+      return;
+    }
+    setFailed(false);
     setTitle('');
     setCompany('');
     setDeadline('');
@@ -157,6 +184,11 @@ export function NewApplicationForm({
           Type the role to track it.
         </p>
       )}
+      {failed && (
+        <p role="alert" className="rounded-lg bg-gold/12 px-3 py-2 text-sm text-foreground">
+          {SAVE_FAILED}
+        </p>
+      )}
     </form>
   );
 }
@@ -170,16 +202,55 @@ export default function ApplicationsPanel({ applications, readiness, onChanged }
   const [formOpen, setFormOpen] = React.useState(false);
   const [message, announce] = useAnnouncer();
   const showForm = formOpen || applications.length === 0;
+  // The row whose role and company are being edited, with the text so far.
+  const [editing, setEditing] = React.useState<{
+    id: string;
+    title: string;
+    company: string;
+    failed: boolean;
+  } | null>(null);
 
   const patch = (id: string, updates: Parameters<typeof updateApplication>[2]) => {
-    saveApplications(updateApplication(loadApplications(), id, updates));
+    const saved = saveApplications(updateApplication(loadApplications(), id, updates));
     onChanged();
+    return saved;
   };
   const remove = (id: string) => {
-    const gone = applications.find((app) => app.id === id);
+    const index = applications.findIndex((app) => app.id === id);
+    const gone = applications[index];
+    // Focus goes to the row that takes its place, the one above, or the list.
+    const neighbor = applications[index + 1] ?? applications[index - 1];
     deleteApplication(id);
     onChanged();
     announce(gone ? `Removed ${gone.title}.` : 'Removed.');
+    focusFirstOf([
+      ...(neighbor ? [`app-row-${neighbor.id}`] : []),
+      'applications-heading',
+      'dashboard-empty-heading',
+    ]);
+  };
+  const saveDetails = (event: React.FormEvent, app: ApplicationSummary) => {
+    event.preventDefault();
+    if (!editing?.title.trim()) return;
+    const title = editing.title.trim();
+    const company = editing.company.trim();
+    if (!patch(app.id, { title, company })) {
+      setEditing({ ...editing, failed: true });
+      return;
+    }
+    // The decoded role carries the names to the interview tools and to this
+    // list. Its posting, and everything on the desk, stay as they are.
+    if (app.roleId) {
+      const glow = loadData();
+      const role = glow.roles.find((r) => r.id === app.roleId);
+      if (role && (role.jobTitle !== title || role.company !== company)) {
+        saveData(updateRole(glow, role.id, { jobTitle: title, company }));
+        onChanged();
+      }
+    }
+    setEditing(null);
+    announce(`Saved ${title}.`);
+    focusFirstOf([`app-edit-${app.id}`]);
   };
   const focus = (id: string) => {
     saveApplications(setActiveApplication(loadApplications(), id));
@@ -191,7 +262,11 @@ export default function ApplicationsPanel({ applications, readiness, onChanged }
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <p className="eyebrow text-muted-foreground">Applications</p>
-          <h2 id="applications-heading" className="mt-1 text-lg font-semibold text-foreground">
+          <h2
+            id="applications-heading"
+            tabIndex={-1}
+            className="mt-1 text-lg font-semibold text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam"
+          >
             {applications.length === 0
               ? 'Track what you are applying to'
               : `${applications.length === 1 ? 'One application' : `${applications.length} applications`} in motion`}
@@ -219,7 +294,12 @@ export default function ApplicationsPanel({ applications, readiness, onChanged }
           {applications.map((app) => {
             const link = workLink(app, readiness.storyCount);
             return (
-              <li key={app.id} className="rounded-2xl border border-border/35 bg-overlay/20 p-4">
+              <li
+                key={app.id}
+                id={`app-row-${app.id}`}
+                tabIndex={-1}
+                className="rounded-2xl border border-border/35 bg-overlay/20 p-4 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam"
+              >
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                   <p className="font-medium text-foreground">
                     {app.title}
@@ -334,6 +414,28 @@ export default function ApplicationsPanel({ applications, readiness, onChanged }
                   >
                     Open the desk
                   </a>
+                  <button
+                    id={`app-edit-${app.id}`}
+                    type="button"
+                    aria-expanded={editing?.id === app.id}
+                    onClick={() => {
+                      if (editing?.id === app.id) {
+                        setEditing(null);
+                        return;
+                      }
+                      setEditing({
+                        id: app.id,
+                        title: app.title,
+                        company: app.company,
+                        failed: false,
+                      });
+                      focusFirstOf([`app-edit-title-${app.id}`]);
+                    }}
+                    className="rounded-lg border border-border/50 px-3 py-1.5 text-xs text-foreground transition-colors hover:bg-overlay/40 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam"
+                  >
+                    {editing?.id === app.id ? 'Cancel editing' : 'Edit'}
+                    <span className="sr-only">: role and company of {app.title}</span>
+                  </button>
                   <ConfirmButton
                     confirmLabel="Remove it? Its desk work is deleted. The role and stories stay saved."
                     onConfirm={() => remove(app.id)}
@@ -342,6 +444,68 @@ export default function ApplicationsPanel({ applications, readiness, onChanged }
                     Remove
                   </ConfirmButton>
                 </div>
+
+                {editing?.id === app.id && (
+                  <form
+                    onSubmit={(event) => saveDetails(event, app)}
+                    aria-label={`Role and company for ${app.title}`}
+                    className="mt-3 space-y-3 border-t border-border/30 pt-3"
+                  >
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label
+                          htmlFor={`app-edit-title-${app.id}`}
+                          className="mb-1 block text-sm font-medium text-foreground"
+                        >
+                          Role
+                        </label>
+                        <input
+                          id={`app-edit-title-${app.id}`}
+                          type="text"
+                          value={editing.title}
+                          onChange={(e) => setEditing({ ...editing, title: e.target.value })}
+                          required
+                          className={inputClass}
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor={`app-edit-company-${app.id}`}
+                          className="mb-1 block text-sm font-medium text-foreground"
+                        >
+                          Company (optional)
+                        </label>
+                        <input
+                          id={`app-edit-company-${app.id}`}
+                          type="text"
+                          value={editing.company}
+                          onChange={(e) => setEditing({ ...editing, company: e.target.value })}
+                          className={inputClass}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        type="submit"
+                        disabled={!editing.title.trim()}
+                        className="rounded-lg bg-foam px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-foam/90 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+                      >
+                        Save
+                      </button>
+                      <p className="text-xs text-muted-foreground">
+                        Its posting and desk work stay as they are.
+                      </p>
+                    </div>
+                    {editing.failed && (
+                      <p
+                        role="alert"
+                        className="rounded-lg bg-gold/12 px-3 py-2 text-sm text-foreground"
+                      >
+                        {SAVE_FAILED}
+                      </p>
+                    )}
+                  </form>
+                )}
               </li>
             );
           })}

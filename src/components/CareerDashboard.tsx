@@ -6,6 +6,7 @@ import { cn } from '../lib/utils';
 import ApplicationsPanel, { NewApplicationForm } from './ApplicationsPanel';
 import BackupControls from './BackupControls';
 import StoragePanel from './StoragePanel';
+import ErrorBoundary from './shared/ErrorBoundary';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
 const TOOL_LINKS = [
@@ -122,14 +123,52 @@ function ledgerSentence(data: CareerDashboardData): string {
   return `You have ${parts.slice(0, -1).join(', ')}, and ${parts[parts.length - 1]}.`;
 }
 
+/** The dashboard's data, or null when even the summary could not be read. */
+function readSafely(): CareerDashboardData | null {
+  try {
+    return readCareerDashboard();
+  } catch (error) {
+    console.error('[dashboard] The summary could not be read:', error);
+    return null;
+  }
+}
+
+/** Shown in place of the summary when it cannot be drawn. The controls below it still work. */
+function SummaryUnavailable() {
+  return (
+    <div role="alert" className="rounded-2xl border border-gold/40 bg-gold/8 p-5 text-sm">
+      <p className="font-medium text-foreground">This summary could not be read.</p>
+      <p className="mt-1 text-muted-foreground">
+        Something saved on this device is not in the shape the dashboard expects. Your saved work
+        has not been changed. You can still export it, import a backup, or clear this device below.
+      </p>
+    </div>
+  );
+}
+
 export default function CareerDashboard() {
-  const [data, setData] = React.useState<CareerDashboardData | null>(null);
+  // undefined while loading; null when the summary could not be read.
+  const [data, setData] = React.useState<CareerDashboardData | null | undefined>(undefined);
+  // Counts every re-read, so the storage panel measures again.
+  const [revision, setRevision] = React.useState(0);
+  const refresh = React.useCallback(() => {
+    setData(readSafely());
+    setRevision((n) => n + 1);
+  }, []);
+  // An import replaces saved work, so a summary that failed to draw gets
+  // another try with the new data. Other changes keep it mounted, with its
+  // forms and focus.
+  const [imports, setImports] = React.useState(0);
+  const restored = React.useCallback(() => {
+    refresh();
+    setImports((n) => n + 1);
+  }, [refresh]);
 
   React.useEffect(() => {
-    setData(readCareerDashboard());
+    setData(readSafely());
   }, []);
 
-  if (!data) {
+  if (data === undefined) {
     return (
       // As tall as the page it becomes, so the footer does not jump when it loads.
       <div className="mx-auto min-h-[100svh] w-full max-w-6xl space-y-8">
@@ -146,12 +185,60 @@ export default function CareerDashboard() {
     );
   }
 
-  if (!data.hasData) {
-    return <EmptyState onRestored={() => setData(readCareerDashboard())} />;
+  if (data && !data.hasData) {
+    return <EmptyState onRestored={restored} revision={revision} />;
   }
 
+  // Export, import and clear sit outside the summary's error boundary: if a
+  // saved store cannot be summarized, they are how the visitor recovers.
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8">
+      <ErrorBoundary key={imports} fallback={<SummaryUnavailable />}>
+        {data ? <Summary data={data} onChanged={refresh} /> : <SummaryUnavailable />}
+      </ErrorBoundary>
+
+      <BackupControls onRestored={restored} />
+
+      <StoragePanel revision={revision} />
+
+      {/* Quick links */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {TOOL_LINKS.map((tool) => (
+          <a
+            key={tool.name}
+            href={tool.url}
+            className={cn(
+              'group flex flex-col gap-3 rounded-2xl border border-border/35 bg-overlay/25 p-5',
+              'transition-all duration-300 hover:-translate-y-0.5 hover:border-border/60 hover:bg-overlay/40 hover:shadow-[0_20px_50px_-24px_hsl(var(--background)/0.8)]'
+            )}
+          >
+            <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl', tool.bg)}>
+              <svg
+                aria-hidden="true"
+                className={cn('h-5 w-5', tool.color)}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.8}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d={tool.icon} />
+              </svg>
+            </div>
+            <div>
+              <p className="font-medium text-foreground">{tool.name}</p>
+              <p className="text-xs text-muted-foreground">{tool.desc}</p>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Everything the dashboard summarizes from saved work. */
+function Summary({ data, onChanged }: { data: CareerDashboardData; onChanged: () => void }) {
+  return (
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-2">
@@ -184,7 +271,7 @@ export default function CareerDashboard() {
           practiceRounds: data.networking?.sessionCount ?? 0,
           storyCount: data.glowup?.storyCount ?? 0,
         }}
-        onChanged={() => setData(readCareerDashboard())}
+        onChanged={onChanged}
       />
 
       {/* Next actions: the steps the tools themselves produced */}
@@ -387,46 +474,11 @@ export default function CareerDashboard() {
           </CardContent>
         </Card>
       )}
-
-      <BackupControls onRestored={() => setData(readCareerDashboard())} />
-
-      <StoragePanel />
-
-      {/* Quick links */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {TOOL_LINKS.map((tool) => (
-          <a
-            key={tool.name}
-            href={tool.url}
-            className={cn(
-              'group flex flex-col gap-3 rounded-2xl border border-border/35 bg-overlay/25 p-5',
-              'transition-all duration-300 hover:-translate-y-0.5 hover:border-border/60 hover:bg-overlay/40 hover:shadow-[0_20px_50px_-24px_hsl(var(--background)/0.8)]'
-            )}
-          >
-            <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl', tool.bg)}>
-              <svg
-                aria-hidden="true"
-                className={cn('h-5 w-5', tool.color)}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.8}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d={tool.icon} />
-              </svg>
-            </div>
-            <div>
-              <p className="font-medium text-foreground">{tool.name}</p>
-              <p className="text-xs text-muted-foreground">{tool.desc}</p>
-            </div>
-          </a>
-        ))}
-      </div>
     </div>
   );
 }
 
-function EmptyState({ onRestored }: { onRestored: () => void }) {
+function EmptyState({ onRestored, revision }: { onRestored: () => void; revision: number }) {
   return (
     <div className="mx-auto w-full max-w-2xl space-y-8 text-center">
       {/* Large themed icon */}
@@ -449,7 +501,13 @@ function EmptyState({ onRestored }: { onRestored: () => void }) {
         </div>
       </div>
       <div className="space-y-3">
-        <h2 className="text-2xl font-semibold tracking-tight">Nothing saved yet</h2>
+        <h2
+          id="dashboard-empty-heading"
+          tabIndex={-1}
+          className="text-2xl font-semibold tracking-tight focus:outline-hidden"
+        >
+          Nothing saved yet
+        </h2>
         <p className="text-muted-foreground">
           This page summarizes work you save in the tools, and it all stays in this browser. Take
           the short career review to pick a starting point.
@@ -488,7 +546,7 @@ function EmptyState({ onRestored }: { onRestored: () => void }) {
       {/* Recordings and models can exist with no written work; they must
           always be measurable and deletable from here. */}
       <div className="text-left">
-        <StoragePanel />
+        <StoragePanel revision={revision} />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
