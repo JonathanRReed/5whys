@@ -18,9 +18,15 @@ type Props = {
   onTextChange: (value: string) => void;
   onFileUpload: (file: File) => Promise<void>;
   onScan: () => void;
-  onLoadSample: () => void;
+  onLoadSample: (id?: string) => void;
   onClear: () => void;
   placeholder: string;
+  /** Open the "start from nothing" form. */
+  onStartBlank?: () => void;
+  /** Hidden while the start-from-nothing form takes its place. */
+  hidden?: boolean;
+  /** When there is more than one sample, the choice between them. */
+  samples?: readonly { id: string; label: string }[];
 };
 
 export default function ResumeInput({
@@ -38,6 +44,9 @@ export default function ResumeInput({
   onLoadSample,
   onClear,
   placeholder,
+  onStartBlank,
+  samples,
+  hidden,
 }: Props) {
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const input = event.currentTarget;
@@ -47,7 +56,7 @@ export default function ResumeInput({
   };
 
   return (
-    <Card>
+    <Card hidden={hidden}>
       <CardHeader className="space-y-4">
         <CardTitle className="text-2xl">Upload or paste resume</CardTitle>
         <p className="text-sm text-muted-foreground">
@@ -55,6 +64,20 @@ export default function ResumeInput({
           you analyze it. A scanned PDF is a picture of text, so there is nothing to read; export it
           from the program you wrote it in. Everything stays in your browser.
         </p>
+        {onStartBlank && (
+          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-4">
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11 w-full sm:w-auto"
+              data-guide="resume-blank"
+              onClick={onStartBlank}
+            >
+              I do not have a resume yet
+            </Button>
+            <p className="text-sm text-muted-foreground">Build one from a few short questions.</p>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -83,15 +106,36 @@ export default function ResumeInput({
             >
               Clear
             </ConfirmButton>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full md:w-auto rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
-              data-guide="resume-sample"
-              onClick={onLoadSample}
-            >
-              Try sample
-            </Button>
+            {samples && samples.length > 1 ? (
+              <fieldset className="flex flex-wrap items-center gap-2">
+                <legend className="sr-only">Try a sample</legend>
+                <span aria-hidden="true" className="text-sm text-muted-foreground">
+                  Try a sample:
+                </span>
+                {samples.map((sample, index) => (
+                  <Button
+                    key={sample.id}
+                    type="button"
+                    variant="outline"
+                    className="min-h-11 flex-1 rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2 md:flex-none"
+                    data-guide={index === samples.length - 1 ? 'resume-sample' : undefined}
+                    onClick={() => onLoadSample(sample.id)}
+                  >
+                    {sample.label}
+                  </Button>
+                ))}
+              </fieldset>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full md:w-auto rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/50 focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
+                data-guide="resume-sample"
+                onClick={() => onLoadSample()}
+              >
+                Try sample
+              </Button>
+            )}
           </div>
         </div>
         <Textarea
@@ -122,7 +166,9 @@ export default function ResumeInput({
                 ? 'Analysis complete'
                 : resumeText.trim()
                   ? 'Ready when you are'
-                  : 'Paste a resume, upload one, or try the sample to analyze it.'}
+                  : onStartBlank
+                    ? 'Paste a resume, upload one, build one, or try a sample to analyze it.'
+                    : 'Paste a resume, upload one, or try the sample to analyze it.'}
             {needsRescan && scanComplete && (
               <span className="ml-2 text-xs text-gold">
                 Resume changed. Tap &quot;Analyze resume&quot; to update scores.
