@@ -118,23 +118,26 @@ export default function Career5Whys({
     }
   }, []);
 
-  React.useEffect(() => {
-    if (!isBrowser()) return;
-    try {
-      window.localStorage.setItem(HISTORY_LIMIT_KEY, String(historyLimit));
-    } catch (err) {
-      console.warn('Unable to persist snapshot limit preference', err);
-    }
-  }, [historyLimit]);
-
-  React.useEffect(() => {
-    setHistory((previous) => {
-      if (previous.length <= historyLimit) return previous;
-      const trimmed = previous.slice(0, historyLimit);
-      persistHistory(trimmed);
-      return trimmed;
-    });
-  }, [historyLimit, persistHistory]);
+  // The limit is written, and the history trimmed to it, only when the
+  // visitor picks a limit. Doing either on load would write to a fresh
+  // profile, and could trim a longer saved history before its limit loaded.
+  const handleLimitChange = React.useCallback(
+    (limit: number) => {
+      setHistoryLimit(limit);
+      if (isBrowser()) {
+        try {
+          window.localStorage.setItem(HISTORY_LIMIT_KEY, String(limit));
+        } catch (err) {
+          console.warn('Unable to persist snapshot limit preference', err);
+        }
+      }
+      if (history.length > limit) {
+        const trimmed = history.slice(0, limit);
+        if (persistHistory(trimmed)) setHistory(trimmed);
+      }
+    },
+    [history, persistHistory]
+  );
 
   React.useEffect(() => {
     if (!status) return;
@@ -313,7 +316,7 @@ export default function Career5Whys({
               history={history}
               historyLimit={historyLimit}
               historyIsFull={historyIsFull}
-              onLimitChange={setHistoryLimit}
+              onLimitChange={handleLimitChange}
               onExportHistory={handleExportHistory}
               onClearHistory={handleClearHistory}
               onRestoreSnapshot={handleRestoreSnapshot}

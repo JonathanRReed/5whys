@@ -12,6 +12,7 @@ import { STUDIO_STORAGE_KEYS } from '../studio-backup';
 import {
   DB_STORES,
   jsonBytes,
+  localDbExists,
   openLocalDb,
   readSoft,
   requestResult,
@@ -85,6 +86,16 @@ const EMPTY: StoreSize = { count: 0, bytes: 0 };
 
 /** Bytes and record counts per IndexedDB store. Empty when IndexedDB is unavailable. */
 export async function localDbSizes(): Promise<StorageReport['indexedDb']> {
+  // Measuring never creates the database. When nothing has been saved yet
+  // there is nothing to measure, and IndexedDB counts as available when the
+  // browser offers it.
+  if (!(await localDbExists())) {
+    return {
+      available: typeof indexedDB !== 'undefined',
+      bytes: 0,
+      stores: { recordings: EMPTY, resumeFile: EMPTY, resumeDocument: EMPTY },
+    };
+  }
   const available = (await openLocalDb()) !== null;
   if (!available) {
     return {

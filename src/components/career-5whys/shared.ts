@@ -537,8 +537,16 @@ export function useSynthesis(
 }
 
 export function useStoredSession() {
-  const [session, setSession] = React.useState<Session>(() => createEmptySession());
+  const [session, setLoaded] = React.useState<Session>(() => createEmptySession());
   const [mounted, setMounted] = React.useState(false);
+  // True once the visitor has changed something. Opening the page only reads:
+  // another tab, or an import on the dashboard, may have saved newer work, and
+  // writing back the snapshot this tab loaded would destroy it.
+  const changed = React.useRef(false);
+  const setSession = React.useCallback<React.Dispatch<React.SetStateAction<Session>>>((next) => {
+    changed.current = true;
+    setLoaded(next);
+  }, []);
   const [storageNotice, setStorageNotice] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -549,14 +557,14 @@ export function useStoredSession() {
       if (!stored) {
         // First visit: students and early-career people usually have an
         // interest before they have a target role, so start them there.
-        if (isStudentLike(readProfile())) setSession(createEmptySession('interest'));
+        if (isStudentLike(readProfile())) setLoaded(createEmptySession('interest'));
         return;
       }
       if (stored) {
         const fallback = createEmptySession();
         const parsed = JSON.parse(stored) as Partial<Session> | null;
         const data = parsed && typeof parsed === 'object' ? parsed : {};
-        setSession({
+        setLoaded({
           ...fallback,
           id: typeof data.id === 'string' ? data.id : fallback.id,
           track: data.track === 'interest' ? 'interest' : 'career',
@@ -573,7 +581,7 @@ export function useStoredSession() {
   }, []);
 
   React.useEffect(() => {
-    if (!mounted || !isBrowser()) return;
+    if (!mounted || !changed.current || !isBrowser()) return;
     try {
       localStorage.setItem(SESSION_KEY, JSON.stringify(session));
     } catch (err) {
