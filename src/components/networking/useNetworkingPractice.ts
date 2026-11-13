@@ -1,5 +1,6 @@
 import * as React from 'react';
 import scenarioData from '../../data/networking-scenarios.json';
+import { activeApplicationId, loadApplications } from '../../lib/applications';
 import { localDate } from '../../lib/local-date';
 import {
   completeRatings,
@@ -8,6 +9,7 @@ import {
   type PartialRatings,
   RATING_FIELDS,
 } from '../../lib/networking-advice';
+import { isStudentLike, readProfile } from '../../lib/profile';
 import type {
   NetworkingPracticeSession,
   NetworkingPracticeVersion,
@@ -24,6 +26,15 @@ import {
   saveSession,
   saveVersion,
 } from '../../utils/storage';
+import {
+  applicationPrompts,
+  customizeScenario,
+  type FocusedApplication,
+  MORE_SCENARIOS,
+  repSeconds,
+  repStep,
+  repTitle,
+} from './practice-model';
 import { useClipboard } from './useClipboard';
 import { DEFAULT_TIMER_SECONDS, SCENARIO_TIMER_SECONDS, useTimer } from './useTimer';
 
@@ -188,16 +199,54 @@ const FALLBACK_SCENARIO: Scenario = {
   questionTemplates: [],
 };
 
+const SCENARIOS: Scenario[] = [...(scenarioData as Scenario[]), ...MORE_SCENARIOS];
+
+/**
+ * The first situation for a visitor with no saved intro. Students start at
+ * the career fair; a saved profile past school starts somewhere that fits.
+ */
+function firstScenarioFor(stage: string | undefined): Scenario | undefined {
+  if (stage === 'transition') return SCENARIOS.find((s) => s.id === 'career-changer');
+  if (stage === 'mid' || stage === 'senior') {
+    return SCENARIOS.find((s) => s.id === 'reconnect-colleague');
+  }
+  return undefined;
+}
+
+/** The application in focus on the dashboard, or null. Only reads. */
+function readFocusedApplication(): FocusedApplication | null {
+  try {
+    const data = loadApplications();
+    const id = activeApplicationId(data);
+    const app = data.applications.find((item) => item.id === id);
+    return app ? { title: app.title, company: app.company } : null;
+  } catch {
+    return null;
+  }
+}
+
 export function useNetworkingPractice() {
-  const scenarios = scenarioData as Scenario[];
+  const scenarios = SCENARIOS;
   const fallbackVersion = React.useMemo(
     () => scenarioToVersion(scenarios[0] ?? FALLBACK_SCENARIO),
     []
   );
+  // Read once on load: a visitor past school sees work-register guidance.
+  const [studentLike, setStudentLike] = React.useState(true);
+  const [focusedApplication, setFocusedApplication] = React.useState<FocusedApplication | null>(
+    null
+  );
+  React.useEffect(() => {
+    setStudentLike(isStudentLike(readProfile()));
+    setFocusedApplication(readFocusedApplication());
+  }, []);
 
   const loadVersionsFromStorage = React.useCallback(() => {
     const existing = loadVersions();
-    return existing.length ? existing : [fallbackVersion];
+    if (existing.length) return existing;
+    const first = firstScenarioFor(readProfile()?.stage);
+    // Not saved until the visitor changes something.
+    return [first ? { ...scenarioToVersion(first), id: fallbackVersion.id } : fallbackVersion];
   }, [fallbackVersion]);
 
   const [versions, setVersions] = useHydratedState<NetworkingPracticeVersion[]>(
@@ -211,6 +260,9 @@ export function useNetworkingPractice() {
   const [reflection, setReflection] = React.useState<PracticeReflection>(emptyReflection);
   const [draft, setDraftState] = React.useState('');
   const [draftHydrated, setDraftHydrated] = React.useState(false);
+  // Seconds of the take recorded for this rep, so a rep recorded without the
+  // timer still saves how long it ran.
+  const [recordedSeconds, setRecordedSeconds] = React.useState(0);
 
   // The draft is written only after the visitor changes something. Opening the
   // page and reading the stored draft must not write a fresh one, or another
@@ -270,36 +322,19 @@ export function useNetworkingPractice() {
     () => scenarios.find((s) => s.id === currentVersion?.scenarioId),
     [currentVersion?.scenarioId]
   );
+  const fromApplication = React.useMemo(
+    () => applicationPrompts(focusedApplication),
+    [focusedApplication]
+  );
   const currentScenario = React.useMemo(() => {
-    if (!presetScenario || !currentVersion) return presetScenario;
-    const who = currentVersion.who.trim() || presetScenario.who;
-    const where = currentVersion.where.trim() || presetScenario.where;
-    const customSteps = currentVersion.what
-      .split('\n')
-      .map((step) => step.trim())
-      .filter(Boolean);
-    const what = customSteps.length ? customSteps : presetScenario.what;
-    const changedAudience = who !== presetScenario.who;
-    const changedGoal = what.join('\n') !== presetScenario.what.join('\n');
+    if (!presetScenario || !currentVersion) return undefined;
+    const customized = customizeScenario(presetScenario, currentVersion);
+    if (!fromApplication) return customized;
     return {
-      ...presetScenario,
-      who,
-      where,
-      what,
-      rapportSamples: changedAudience
-        ? [
-            `Prepare for: ${who}. Choose one real detail about their work that connects to your reason for speaking with them.`,
-            ...presetScenario.rapportSamples,
-          ]
-        : presetScenario.rapportSamples,
-      questionTemplates: changedGoal
-        ? [
-            { id: 'custom-goal', label: 'Your planned ask', prompt: what.join('\n') },
-            ...presetScenario.questionTemplates,
-          ]
-        : presetScenario.questionTemplates,
+      ...customized,
+      questionTemplates: [...fromApplication.questions, ...customized.questionTemplates],
     };
-  }, [presetScenario, currentVersion]);
+  }, [presetScenario, currentVersion, fromApplication]);
   // Each scenario rehearses at its own length until the visitor picks one.
   const lengthPinnedRef = React.useRef(false);
   const pinTimerLength = React.useCallback(
@@ -459,13 +494,15 @@ export function useNetworkingPractice() {
       id: generateId(),
       versionId: currentVersion.id,
       scenarioId: currentVersion.scenarioId,
-      scenarioTitle: scenario?.title ?? currentVersion.title,
+      scenarioTitle: scenario
+        ? repTitle(scenario, currentVersion.title, currentVersion.who)
+        : currentVersion.title,
       attempts: [
         {
           id: generateId(),
           label: 'Rep',
           script: trimmedDraft,
-          durationSeconds: Math.min(timer.elapsed, 600),
+          durationSeconds: repSeconds(timer.elapsed, recordedSeconds),
           createdAt: new Date().toISOString(),
         },
       ],
@@ -490,11 +527,15 @@ export function useNetworkingPractice() {
     setReflection(emptyReflection);
     setRatings(unrated);
     resetTimer();
-    setStorageNotice('Rep saved to your local history. Your draft stays for the next one.');
+    setRecordedSeconds(0);
+    setStorageNotice(
+      'Rep saved to your local history. Its next step is under "Last rep", above your draft.'
+    );
   }, [
     currentVersion,
     draft,
     timer.elapsed,
+    recordedSeconds,
     ratings,
     reflection,
     resetTimer,
@@ -558,19 +599,44 @@ export function useNetworkingPractice() {
     []
   );
 
+  // Recording is a way of saying the rep out loud, so it runs the clock too.
+  const handleRecordingStart = React.useCallback(() => {
+    if (!timer.isRunning) startTimer();
+  }, [timer.isRunning, startTimer]);
+  const handleRecordingStop = React.useCallback(
+    (durationMs: number) => {
+      pauseTimer();
+      setRecordedSeconds(durationMs / 1000);
+    },
+    [pauseTimer]
+  );
+
   const handleResetReview = React.useCallback(() => {
     draftChangedRef.current = true;
+    setRecordedSeconds(0);
     resetTimer();
     setRatings(unrated);
     setReflection(emptyReflection);
   }, [resetTimer]);
 
   const missingRatings = React.useMemo(() => missingRatingLabels(ratings), [ratings]);
+  const activeRepStep = repStep({
+    hasDraft: draft.trim().length > 0,
+    practiced: timer.elapsed > 0 || recordedSeconds > 0,
+    rated: missingRatings.length === 0,
+  });
 
   const sessionsAtCapacity = sessions.length >= SESSION_LIMIT;
 
   return {
     scenarios,
+    studentLike,
+    fromApplication,
+    focusedApplication,
+    activeRepStep,
+    recordedSeconds,
+    handleRecordingStart,
+    handleRecordingStop,
     versions,
     sessions,
     storageNotice,

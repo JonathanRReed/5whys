@@ -109,7 +109,8 @@ export default function WhyForm({
                   {MIN_ANSWER_WORDS} words or more counts as an answer
                   {index < WHY_COUNT - 1
                     ? ` and opens depth ${index + 2}.`
-                    : ' and finishes the chain.'}
+                    : ' and finishes the chain.'}{' '}
+                  Any language works.
                 </p>
               )}
               {nudge && (

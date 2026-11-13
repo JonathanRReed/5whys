@@ -2,7 +2,7 @@ import ConfirmButton from '../shared/ConfirmButton';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { HISTORY_LIMIT_OPTIONS, TRACKS, type WhySnapshot } from './shared';
+import { HISTORY_LIMIT_OPTIONS, lensConfig, lensOf, type WhySnapshot } from './shared';
 
 function formatSnapshotTime(value: string) {
   try {
@@ -124,7 +124,7 @@ export default function HistoryPanel({
                   <div>
                     <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                       Snapshot {index + 1} of {history.length} ·{' '}
-                      {formatSnapshotTime(entry.timestamp)} · {TRACKS[entry.track].label}
+                      {formatSnapshotTime(entry.timestamp)} · {lensConfig(lensOf(entry)).label}
                     </p>
                     <p className="mt-1 text-sm font-semibold text-foreground">
                       {entry.topic || 'Untitled session'}

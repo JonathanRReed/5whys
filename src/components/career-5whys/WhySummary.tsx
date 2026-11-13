@@ -1,6 +1,7 @@
 import type * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { WHY_COUNT } from './shared';
+import { type WhyOutcome as Outcome, WHY_COUNT } from './shared';
+import WhyOutcome from './WhyOutcome';
 
 type WhySummaryProps = {
   whyStatement: string;
@@ -12,6 +13,11 @@ type WhySummaryProps = {
   answers?: string[];
   rootIndex?: number;
   onRootChange?: (index: number) => void;
+  /** The root reason in the visitor's words, for the outcome section. */
+  root?: string;
+  outcome?: Outcome;
+  fromExperience?: boolean;
+  onOutcomeChange?: (field: keyof Outcome, value: string) => void;
   children?: React.ReactNode;
 };
 
@@ -24,6 +30,10 @@ export default function WhySummary({
   answers,
   rootIndex,
   onRootChange,
+  root = '',
+  outcome,
+  fromExperience = false,
+  onOutcomeChange,
   children,
 }: WhySummaryProps) {
   const chosen = rootIndex ?? WHY_COUNT - 1;
@@ -122,6 +132,16 @@ export default function WhySummary({
             </p>
           )}
         </div>
+
+        {isComplete && answers && outcome && onOutcomeChange && (
+          <WhyOutcome
+            answers={answers}
+            root={root}
+            outcome={outcome}
+            fromExperience={fromExperience}
+            onChange={onOutcomeChange}
+          />
+        )}
 
         {children}
       </CardContent>

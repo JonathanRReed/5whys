@@ -3,15 +3,15 @@ import QuickStartTiles from '../QuickStartTiles';
 import { Card, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { normalizeTopic, TRACKS, type Track } from './shared';
+import { LENSES, type Lens, lensConfig, normalizeTopic } from './shared';
 
 type CareerHeaderProps = {
   showHeader: boolean;
-  track: Track;
+  track: Lens;
   topic: string;
   sequentialCount: number;
   progressPercent: number;
-  onTrackChange: (track: Track) => void;
+  onTrackChange: (track: Lens) => void;
   onTopicChange: (topic: string) => void;
   /** The placeholder in the visitor's register. Students by default. */
   topicPlaceholder?: string;
@@ -27,7 +27,7 @@ export default function CareerHeader({
   onTopicChange,
   topicPlaceholder,
 }: CareerHeaderProps) {
-  const activeTrack = TRACKS[track];
+  const activeTrack = lensConfig(track);
   // Show what a sentence-shaped topic will be called in the prompts.
   const normalized = normalizeTopic(topic);
   const readsAs = normalized && normalized !== topic.trim() ? normalized : '';
@@ -48,7 +48,7 @@ export default function CareerHeader({
             items={[
               {
                 title: 'Pick your lens',
-                body: 'Select "Career" when you have a target role to pressure-test, or "Interest" when all you have is "I like biology."',
+                body: 'Select "Career" when you have a target role to pressure-test, "Interest" when all you have is "I like biology," or start from something you did.',
               },
               {
                 title: 'Answer in order',
@@ -69,19 +69,20 @@ export default function CareerHeader({
       >
         <CardHeader className="space-y-6">
           <div>
-            <CardTitle className="text-2xl font-semibold">Select your track</CardTitle>
+            <CardTitle className="text-2xl font-semibold">Choose where to start</CardTitle>
             <p className="text-sm text-muted-foreground">
-              The prompts adapt to how defined your path currently is.
+              The questions follow what you have now: a role, an interest, or one thing you did.
             </p>
           </div>
           <div className="flex flex-col gap-3 md:flex-row">
-            {Object.entries(TRACKS).map(([key, config]) => {
+            {LENSES.map((key) => {
+              const config = lensConfig(key);
               const isActive = track === key;
               return (
                 <button
                   key={key}
                   type="button"
-                  onClick={() => onTrackChange(key as Track)}
+                  onClick={() => onTrackChange(key)}
                   aria-pressed={isActive}
                   className={cn(
                     'flex-1 rounded-2xl border px-4 py-5 text-left transition-all',

@@ -1,28 +1,11 @@
 import { ClipboardIcon } from '../interview-glow-up/icons';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import type { Scenario } from './useNetworkingPractice';
-import type { TimerState } from './useTimer';
 
 type Props = {
   currentScenario: Scenario | undefined;
   scenarioSteps: string[];
-  timer?: TimerState;
 };
-
-const FLOW_STEPS = [
-  { label: 'Read blueprint', description: 'Review your scenario' },
-  { label: 'Draft your intro', description: 'Your words, not the samples' },
-  { label: 'Run the timer', description: 'Say it out loud' },
-  { label: 'Rate the rep', description: 'Score it honestly' },
-  { label: 'Save the rep', description: 'Track the reps' },
-] as const;
-
-function getActiveStep(timer: TimerState | undefined): number {
-  if (!timer || timer.startedAt === null) return 0;
-  if (timer.isRunning) return 2;
-  if (timer.remaining === 0) return 3;
-  return 0;
-}
 
 function EmptyState() {
   return (
@@ -38,9 +21,7 @@ function EmptyState() {
   );
 }
 
-export default function ScenarioBlueprint({ currentScenario, scenarioSteps, timer }: Props) {
-  const activeStep = getActiveStep(timer);
-
+export default function ScenarioBlueprint({ currentScenario, scenarioSteps }: Props) {
   return (
     <Card className="border-border/60 bg-overlay/28">
       <CardHeader className="space-y-2">
@@ -50,43 +31,6 @@ export default function ScenarioBlueprint({ currentScenario, scenarioSteps, time
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Practice flow progress */}
-        <div className="rounded-2xl border border-border/35 bg-background/60 p-4">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Practice flow</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {FLOW_STEPS.map((step, index) => {
-              const isActive = index === activeStep;
-              const isPast = index < activeStep;
-              return (
-                <div
-                  key={step.label}
-                  className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                    isActive
-                      ? 'bg-foam/15 text-foam ring-1 ring-foam/40'
-                      : isPast
-                        ? 'bg-overlay/30 text-muted-foreground'
-                        : 'bg-overlay/20 text-muted-foreground'
-                  }`}
-                  aria-current={isActive ? 'step' : undefined}
-                >
-                  <span
-                    className={`flex h-5 w-5 items-center justify-center rounded-full text-[0.72rem] font-bold ${
-                      isActive
-                        ? 'bg-foam text-background'
-                        : isPast
-                          ? 'bg-foam/30 text-foam'
-                          : 'bg-border/40 text-muted-foreground'
-                    }`}
-                  >
-                    {index + 1}
-                  </span>
-                  <span>{step.label}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
         {currentScenario ? (
           <>
             <div className="grid gap-3 sm:grid-cols-2">

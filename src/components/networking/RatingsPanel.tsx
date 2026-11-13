@@ -11,6 +11,9 @@ import {
 type Props = {
   ratings: PartialRatings;
   onRatingChange: (key: keyof Ratings, value: number) => void;
+  /** A written message gets a next step from the message, not from delivery. */
+  written?: boolean;
+  draft?: string;
 };
 
 const SCALE = [1, 2, 3, 4, 5] as const;
@@ -26,7 +29,12 @@ function computeFeedbackColor(value: number) {
  * picks. A range input always shows a value, which is how an unearned 3/5
  * used to appear before anyone had rated anything.
  */
-export default function RatingsPanel({ ratings, onRatingChange }: Props) {
+export default function RatingsPanel({
+  ratings,
+  onRatingChange,
+  written = false,
+  draft = '',
+}: Props) {
   const complete = React.useMemo(() => completeRatings(ratings), [ratings]);
   const ratedCount = RATING_FIELDS.filter(({ key }) => typeof ratings[key] === 'number').length;
 
@@ -98,7 +106,9 @@ export default function RatingsPanel({ ratings, onRatingChange }: Props) {
             </div>
             <div className="mt-3 rounded-lg border border-border/40 bg-background/50 p-3">
               <p className="text-xs uppercase tracking-[0.3em] text-foam">Next step</p>
-              <p className="mt-1.5 text-sm text-foreground">{computeNextStep(complete)}</p>
+              <p className="mt-1.5 text-sm text-foreground">
+                {computeNextStep(complete, { written, draft })}
+              </p>
             </div>
           </>
         ) : (

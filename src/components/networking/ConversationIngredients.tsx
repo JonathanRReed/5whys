@@ -5,9 +5,13 @@ import type { Scenario } from './useNetworkingPractice';
 const ACCENTS = ['text-foam', 'text-gold', 'text-love', 'text-iris'] as const;
 
 type Props = {
-  currentScenario: Scenario | undefined;
+  currentScenario: (Scenario & { customized?: boolean; presetTitle?: string }) | undefined;
   onCopy: (value: string, key: string) => void;
   copiedKey: string | null;
+  /** False when a saved profile says the visitor is past school. */
+  studentLike?: boolean;
+  /** A line naming the application in focus, in the visitor's own words. */
+  applicationLine?: string | null;
 };
 
 function EmptyState() {
@@ -37,8 +41,19 @@ function EmptyState() {
   );
 }
 
-export default function ConversationIngredients({ currentScenario, onCopy, copiedKey }: Props) {
-  const ingredients = currentScenario?.ingredients ?? [];
+export default function ConversationIngredients({
+  currentScenario,
+  onCopy,
+  copiedKey,
+  studentLike = true,
+  applicationLine,
+}: Props) {
+  const ingredients = [
+    ...(applicationLine
+      ? [{ id: 'from-application', label: 'From your application', line: applicationLine }]
+      : []),
+    ...(currentScenario?.ingredients ?? []),
+  ];
 
   return (
     <Card className="border-border/60 bg-overlay/28">
@@ -54,6 +69,12 @@ export default function ConversationIngredients({ currentScenario, onCopy, copie
           <EmptyState />
         ) : ingredients.length ? (
           <>
+            {currentScenario.customized && currentScenario.presetTitle && (
+              <p className="text-xs text-muted-foreground">
+                Written for "{currentScenario.presetTitle}". Your who and your ask are in the
+                opening flow and the questions.
+              </p>
+            )}
             {ingredients.map((ingredient, index) => {
               const key = `ingredient-${ingredient.id}-${currentScenario.id}`;
               const isCopied = copiedKey === key;
@@ -88,10 +109,12 @@ export default function ConversationIngredients({ currentScenario, onCopy, copie
                 </div>
               );
             })}
-            <p className="text-xs text-muted-foreground">
-              No achievements to cite? Look for the honest lines: preparation, curiosity, and
-              specific interest in the other person's work all count as value.
-            </p>
+            {studentLike && (
+              <p className="text-xs text-muted-foreground">
+                No achievements to cite? Look for the honest lines: preparation, curiosity, and
+                specific interest in the other person's work all count as value.
+              </p>
+            )}
           </>
         ) : (
           <p className="text-sm text-muted-foreground">

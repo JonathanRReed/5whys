@@ -51,11 +51,71 @@ export const NEXT_STEPS: Record<keyof Ratings, string> = {
 export const STRONG_ROUND_STEP =
   'Strong round across the board. Save it, then raise the difficulty: pick a harder scenario or add a sharper ask.';
 
+/** What a written message looks like, counted the same way every time. */
+export type DraftShape = { sentences: number; questions: number; words: number };
+
+/**
+ * Sentences, questions and words in a draft. A sentence ends at . ! ? or the
+ * same marks in Chinese and Japanese; a line with no mark at the end still
+ * counts as one. Questions are the sentences that end with a question mark.
+ */
+export function draftShape(text: string): DraftShape {
+  const trimmed = text.trim();
+  if (!trimmed) return { sentences: 0, questions: 0, words: 0 };
+  const pieces = trimmed.match(/[^.!?。！？\n]+(?:[.!?。！？]+|\n|$)/g) ?? [];
+  const sentences = pieces.filter((piece) => /[\p{L}\p{N}]/u.test(piece));
+  return {
+    sentences: sentences.length,
+    questions: sentences.filter((piece) => /[?？]/.test(piece)).length,
+    words: trimmed.split(/\s+/).length,
+  };
+}
+
+/** "4 sentences, 1 question". */
+export function describeShape(shape: DraftShape): string {
+  const sentences = `${shape.sentences} ${shape.sentences === 1 ? 'sentence' : 'sentences'}`;
+  const questions = `${shape.questions} ${shape.questions === 1 ? 'question' : 'questions'}`;
+  return `${sentences}, ${questions}`;
+}
+
+/** A written message has more sentences than this before clarity asks for a cut. */
+export const WRITTEN_SENTENCE_LIMIT = 5;
+
+/**
+ * For a written message the fix comes from the message itself: how many
+ * sentences and questions it has. Delivery advice such as "pause before
+ * your opening line" does not apply to something read on a screen.
+ */
+function writtenStep(key: keyof Ratings, draft: string): string {
+  const shape = draftShape(draft);
+  switch (key) {
+    case 'confidence':
+      return 'Read the message out loud once before you send it. Rewrite the line you hesitate on.';
+    case 'clarity':
+      if (shape.sentences > WRITTEN_SENTENCE_LIMIT) {
+        return `It has ${shape.sentences} sentences. Cut it to the ${WRITTEN_SENTENCE_LIMIT - 1} that lead to your ask.`;
+      }
+      if (shape.questions === 0) return 'End with one question they can answer in a line or two.';
+      if (shape.questions > 1) {
+        return `It asks ${shape.questions} questions. Keep the one you most need answered and cut the rest.`;
+      }
+      return 'Cut every sentence that does not lead to your one ask.';
+    case 'rapport':
+      return 'Add one specific detail about their work, something you actually read or heard, in the first two sentences.';
+    default:
+      return NEXT_STEPS[key];
+  }
+}
+
 /** The single fix for a round: whichever rating is lowest, unless all are strong. */
-export function computeNextStep(ratings: Ratings): string {
+export function computeNextStep(
+  ratings: Ratings,
+  context?: { written?: boolean; draft?: string }
+): string {
   const entries = RATING_FIELDS.map(({ key }) => ({ key, value: ratings[key] }));
   const lowest = entries.reduce((min, entry) => (entry.value < min.value ? entry : min));
   if (lowest.value >= 4) return STRONG_ROUND_STEP;
+  if (context?.written) return writtenStep(lowest.key, context.draft ?? '');
   return NEXT_STEPS[lowest.key];
 }
 

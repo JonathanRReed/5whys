@@ -15,6 +15,8 @@ type Props = {
   scenarios: Scenario[];
   currentScenario: Scenario | undefined;
   onScenarioChange: (scenarioId: string) => void;
+  /** False when a saved profile says the visitor is past school. */
+  studentFirst?: boolean;
 };
 
 const GROUPS = [
@@ -23,17 +25,26 @@ const GROUPS = [
 ] as const;
 
 /**
- * One native select for the twelve scenarios, grouped by audience, plus a
- * short summary of the chosen one. On a phone this replaces a wall of twelve
- * buttons that used to sit above the practice box.
+ * One select for the scenarios, grouped by audience, plus a short summary of
+ * the chosen one. On a phone this replaces a wall of buttons that used to sit
+ * above the practice box.
  */
-export default function ScenarioPicker({ scenarios, currentScenario, onScenarioChange }: Props) {
+export default function ScenarioPicker({
+  scenarios,
+  currentScenario,
+  onScenarioChange,
+  studentFirst = true,
+}: Props) {
   // For the guide: true once the visitor has used the picker.
   const [picked, setPicked] = React.useState(false);
-  const groups = GROUPS.map((group) => ({
-    ...group,
-    scenarios: scenarios.filter((scenario) => scenario.audience === group.audience),
-  })).filter((group) => group.scenarios.length > 0);
+  const ordered = studentFirst ? GROUPS : [...GROUPS].reverse();
+  const studentCount = scenarios.filter((scenario) => scenario.audience === 'student').length;
+  const groups = ordered
+    .map((group) => ({
+      ...group,
+      scenarios: scenarios.filter((scenario) => scenario.audience === group.audience),
+    }))
+    .filter((group) => group.scenarios.length > 0);
   const ungrouped = scenarios.filter(
     (scenario) => !GROUPS.some((group) => group.audience === scenario.audience)
   );
@@ -88,8 +99,8 @@ export default function ScenarioPicker({ scenarios, currentScenario, onScenarioC
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground">
-          Twelve situations, nine of them for students. Pick the one closest to your next
-          conversation.
+          {scenarios.length} situations, {studentCount} of them for students. Pick the one closest
+          to your next conversation.
         </p>
       </div>
 
