@@ -2,6 +2,7 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "entry": [
     "src/scripts/reveal.ts",
+    "src/scripts/device-cleared.ts",
     "src/scripts/theme-init.js",
     "e2e/**/*.spec.ts",
     "src/lib/pay/index.ts",

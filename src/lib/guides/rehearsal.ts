@@ -12,6 +12,12 @@ export const rehearsalGuide: Guide = {
       why: 'Out loud records on this device so you can listen back. Nothing is sent anywhere.',
       target: '[data-guide="rehearsal-setup"]',
       done: { kind: 'exists', selector: '[data-testid="rehearsal-question"]' },
+      // A quick visitor can be past the question before the coach next looks:
+      // being anywhere beyond the setup screen means this step is done.
+      passed: {
+        kind: 'exists',
+        selector: '[data-testid="rehearsal-question"], #facts-title, #rehearsal-done-heading',
+      },
     },
     {
       id: 'answer',
@@ -20,6 +26,7 @@ export const rehearsalGuide: Guide = {
       why: 'Answer the way you would in the room. A structured answer commonly runs one to two minutes.',
       target: '[data-testid="rehearsal-question"]',
       done: { kind: 'exists', selector: '[data-testid="take-words"]' },
+      passed: { kind: 'exists', selector: '[data-testid="take-words"]' },
       // After a reload the room is back at the start: so is the guide.
       needs: { kind: 'exists', selector: '[data-testid="rehearsal-question"], #facts-title' },
     },

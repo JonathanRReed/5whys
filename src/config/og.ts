@@ -53,7 +53,7 @@ export const OG_PAGES: Record<string, OgPage> = {
     eyebrow: 'Plate III · Rehearse',
     plate: 'III',
     title: 'Practice the conversation before it matters.',
-    description: 'Real scenarios, a two-minute timer, and honest self-ratings after every rep.',
+    description: 'Real scenarios, a timer, and honest self-ratings after every rep.',
     accent: 'iris',
   },
   'interview-glow-up': {

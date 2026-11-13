@@ -86,6 +86,26 @@ test('finding 1: clearing everything in one tab empties the desk in another', as
   expect(await readStorage(desk, 'career-applications')).toBeNull();
 });
 
+test('clearing everything in one tab also empties a tool open in another', async ({
+  page,
+  context,
+}) => {
+  await useStudentProfile(page);
+  const career = await open(context, '/career/');
+  await career.locator('#career-topic').fill('Something private about my family');
+  await expect.poll(() => readStorage(career, 'career-why-session-v2')).toContain('private');
+
+  const dashboard = await open(context, '/dashboard/');
+  await dashboard.getByRole('button', { name: 'Clear everything on this device' }).click();
+  await dashboard.getByRole('button', { name: /Delete everything you wrote/ }).click();
+  await expect.poll(() => readStorage(career, 'career-why-session-v2')).toBeNull();
+
+  await career.bringToFront();
+  await expect(career.locator('#career-topic')).toHaveValue('');
+  // And nothing typed afterwards can bring the cleared words back.
+  expect(await readStorage(career, 'career-why-session-v2')).toBeNull();
+});
+
 test('finding 2: confirmations made in two tabs are both kept', async ({ page, context }) => {
   await useStudentProfile(page);
   await page.goto('/application/');

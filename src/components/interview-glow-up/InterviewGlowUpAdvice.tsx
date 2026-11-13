@@ -40,7 +40,7 @@ export default function InterviewGlowUpAdvice() {
       {/* v1.3 Positioning Banner */}
       <div className="flex items-center gap-3 rounded-2xl border border-gold/35 bg-gold/8 px-5 py-4">
         <ClockIcon className="h-6 w-6 shrink-0 text-gold" />
-        <p className="text-sm font-medium text-foreground sm:text-base">
+        <p className="min-w-0 text-sm font-medium text-foreground sm:text-base">
           <strong>Got an interview tomorrow?</strong> Build your cheat sheet tonight.
         </p>
       </div>
@@ -70,8 +70,8 @@ export default function InterviewGlowUpAdvice() {
       {/* Intro */}
       <Section title="It's normal to feel nervous">
         <p className="leading-relaxed">
-          If interviews make you anxious, you're not alone. Most people treat interviews like an
-          exam, triggering fight, flight, or freeze mode.
+          If interviews make you anxious, you are not alone. An interview can feel like an exam, and
+          that is when people freeze.
         </p>
         <p className="mt-3 leading-relaxed">
           It is also fixable. With the right preparation, you can walk in calm and ready to have a
@@ -115,7 +115,7 @@ export default function InterviewGlowUpAdvice() {
               <strong>Will you do the job?</strong> (Motivation and effort)
             </li>
             <li>
-              <strong>Will you fit in?</strong> (How you work with people)
+              <strong>How do you work with people?</strong> (Day to day, and when things go wrong)
             </li>
           </ol>
         </Callout>

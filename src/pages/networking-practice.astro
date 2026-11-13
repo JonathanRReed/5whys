@@ -15,7 +15,7 @@ const networkingSchemas = [
         name: 'How long should I practice each scenario?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Each scenario includes a 2-minute timer. Most people find that 2-3 reps per scenario builds confidence without fatigue.',
+          text: 'Each scenario sets its own timer, from thirty seconds to two minutes. Most people find that 2-3 reps per scenario builds confidence without fatigue.',
         },
       },
       {
@@ -48,7 +48,7 @@ const networkingSchemas = [
 
 const networkingNoScriptContext = [
   'Networking Practice Studio is the rehearsal tool in 5 Whys Career Studio. It helps turn vague career background into short, usable conversation reps for career fairs, alumni chats, cold outreach, referrals, conferences, recruiter screens, and informal coffee chats. The aim is a first minute clear enough that the other person understands your direction and can ask a better follow-up question. Sounding polished is beside the point.',
-  'The interactive version includes 12 scenarios, a two-minute timer, a draft box for your own intro, self-review ratings, saved practice sessions, and export controls. Every saved session stores the exact draft you practiced, so the history shows how your intro changes between reps. Without JavaScript, you can run the same exercise manually. Pick one audience, write the situation in one sentence, draft a thirty-second introduction, say it out loud, write one thing that felt unclear, and revise the next rep around that weak point. Two or three honest reps are usually more useful than ten vague ones.',
+  'The interactive version includes 12 scenarios, a timer set to the situation, a draft box for your own intro, self-review ratings, saved practice sessions, and export controls. Every saved session stores the exact draft you practiced, so the history shows how your intro changes between reps. Without JavaScript, you can run the same exercise manually. Pick one audience, write the situation in one sentence, draft a thirty-second introduction, say it out loud, write one thing that felt unclear, and revise the next rep around that weak point. Two or three honest reps are usually more useful than ten vague ones.',
   'A strong networking introduction has a clear role, a current focus, a concrete proof point, and a lightweight ask. For example: “I am a second-year biology student, I spent this year running the sign-up and schedule for our campus food pantry, and I am looking for a summer role where I can do that kind of organizing for a public health team.” The exact words should sound like the person using them, but the structure should make the conversation easier to continue.',
   'The practice log is meant to stay practical. Capture the scenario, the version you tried, the question you received, the detail that landed, and the next follow-up to send. Avoid storing private details about other people unless you are comfortable keeping that note on your own device. The useful output is a repeatable intro, a better question, and a follow-up note that does not sound copied from a template.',
 ];
@@ -56,7 +56,7 @@ const networkingNoScriptContext = [
 
 <Base
   title="Networking Practice"
-  description="Rehearse your intro against a two-minute timer across 12 real networking scenarios, rate each rep honestly, and keep the notes that make the follow-up easier."
+  description="Rehearse your intro against a timer across 12 real networking scenarios, rate each rep honestly, and keep the notes that make the follow-up easier."
   breadcrumbs={[
     { label: 'Home', href: '/' },
     { label: 'Networking Practice', href: '/networking-practice/' },
@@ -155,7 +155,7 @@ const networkingNoScriptContext = [
           </div>
           <h3 class="text-xl font-semibold text-foreground">Draft, then time your rep</h3>
           <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Write the intro in your own words, then run it against the two-minute timer. The draft
+            Write the intro in your own words, then run it against the timer. The draft
             box estimates how long your intro takes to say out loud. Two or three reps per scenario
             builds confidence without fatigue.
           </p>

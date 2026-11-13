@@ -10,6 +10,7 @@
  */
 
 import { isRealAnswer } from './non-answer';
+import { hiringCondition } from './posting/conditions';
 import {
   isPostingSection,
   isSourceSpan,
@@ -489,7 +490,9 @@ const REQUIREMENT_SECTIONS: readonly PostingSection[] = ['required', 'responsibi
  * posting order within each.
  */
 export function requirementBullets(bullets: readonly DecodedBullet[]): DecodedBullet[] {
-  const live = bullets.filter((b) => b.status !== 'ignored');
+  // A condition of hiring (age, licence, work authorization) is not a skill
+  // to tell a story about or be asked to prove.
+  const live = bullets.filter((b) => b.status !== 'ignored' && !hiringCondition(b.text));
   const confirmed = live.filter((b) => b.confirmed === true);
   const pool = confirmed.length > 0 ? confirmed : live;
   const rank = (b: DecodedBullet) => {

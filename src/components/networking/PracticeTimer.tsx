@@ -27,7 +27,7 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset, onLeng
   const progress = timer.total > 0 ? (timer.total - timer.remaining) / timer.total : 0;
   const isComplete = timer.remaining === 0 && !timer.isRunning && timer.startedAt !== null;
   const statusAnnouncement = isComplete
-    ? "Time's up! Rep finished."
+    ? 'Time is up. Rep finished.'
     : timer.isRunning
       ? 'Timer started'
       : timer.startedAt !== null
@@ -68,7 +68,7 @@ export default function PracticeTimer({ timer, onStart, onPause, onReset, onLeng
           >
             {formatTime(timer.remaining)}
             <span className="mt-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              {isComplete ? "Time's up!" : 'seconds left'}
+              {isComplete ? 'Time is up' : 'seconds left'}
             </span>
           </div>
         </div>

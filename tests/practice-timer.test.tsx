@@ -78,7 +78,7 @@ it('keeps per-second updates outside the live region and announces completion on
   expect(mutations).toHaveLength(0);
 
   await act(async () => vi.advanceTimersByTime(1000));
-  expect(status).toHaveTextContent("Time's up! Rep finished.");
+  expect(status).toHaveTextContent('Time is up. Rep finished.');
   expect(screen.getByRole('timer')).toHaveTextContent('00:00');
   expect(screen.getByRole('button', { name: 'Restart' })).toBeEnabled();
   expect(screen.getByRole('button', { name: 'Pause' })).toHaveAttribute('aria-disabled', 'true');
@@ -107,7 +107,7 @@ it('clears the announcement on reset or length change and can announce a fresh r
   expect(screen.getByRole('timer')).toHaveTextContent('01:00');
   fireEvent.click(screen.getByRole('button', { name: 'Start' }));
   act(() => vi.advanceTimersByTime(60000));
-  expect(status).toHaveTextContent("Time's up! Rep finished.");
+  expect(status).toHaveTextContent('Time is up. Rep finished.');
   fireEvent.click(screen.getByRole('button', { name: 'Reset timer' }));
   expect(status).toBeEmptyDOMElement();
   expect(screen.getByRole('timer')).toHaveTextContent('01:00');
@@ -135,7 +135,7 @@ it('restarts completed reps from zero without accumulating displayed practice ti
     expect(screen.getByRole('timer')).toHaveTextContent('00:29');
     expect(screen.getByText('00:01 practiced this rep')).toBeInTheDocument();
     act(() => vi.advanceTimersByTime(29000));
-    expect(screen.getByRole('status')).toHaveTextContent("Time's up! Rep finished.");
+    expect(screen.getByRole('status')).toHaveTextContent('Time is up. Rep finished.');
   }
   expect(screen.getByText('00:30 practiced this rep')).toBeInTheDocument();
 });

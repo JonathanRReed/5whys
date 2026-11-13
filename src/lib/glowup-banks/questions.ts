@@ -1142,14 +1142,14 @@ export function questionsFor(skillId: string, filter: QuestionFilter = {}): Ques
 // ============================================================================
 
 export const SUGGESTED_QUESTIONS_TO_ASK = [
-  'What does success look like in this role after 90 days?',
-  'How does the team prioritize when requirements change?',
-  "What's the biggest challenge the team is facing right now?",
-  'How would you describe the team culture?',
-  'What opportunities are there for growth and learning?',
-  'Can you walk me through a typical project lifecycle here?',
-  'What is something the team would change about how it works today?',
-  "What's the onboarding process like?",
-  'How do you measure performance?',
-  'What do you enjoy most about working here?',
+  'What would a good first month in this role look like?',
+  'What would I be doing on a normal day?',
+  'Who would I work with most?',
+  'How will I learn the job in the first weeks?',
+  'What do people who do well in this role have in common?',
+  'What is the hardest part of this job?',
+  'When things get busy, how does the team decide what comes first?',
+  'How will I know how I am doing?',
+  'What do you like most about working here?',
+  'What happens next, and when should I expect to hear back?',
 ];
