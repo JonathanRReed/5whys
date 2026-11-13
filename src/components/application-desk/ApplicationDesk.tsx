@@ -465,7 +465,7 @@ export default function ApplicationDesk() {
               key={item.id}
               value={item.id}
               data-guide={`station-${item.id}`}
-              className="h-10 flex-none rounded-lg border border-transparent px-3 text-muted-foreground data-[state=active]:border-lichen/60 data-[state=active]:bg-lichen/12 data-[state=active]:text-foreground"
+              className="h-auto min-h-10 max-w-full flex-none rounded-lg border border-transparent px-3 py-1.5 text-left text-muted-foreground data-[state=active]:border-lichen/60 data-[state=active]:bg-lichen/12 data-[state=active]:text-foreground"
             >
               <span className="num-index mr-1.5 text-xs text-muted-foreground">{index + 1}</span>
               {item.label}
