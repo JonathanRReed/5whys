@@ -333,6 +333,12 @@ const ON_TIME = /\bon time\b/i;
 const ATTENDANCE_ON_TIME =
   /\b(?:be|being|been|am|is|are|was|were|arrive[sd]?|arriving|show(?:ed|s|ing)? up|came in|come in|coming in|clock(?:ed|s|ing)? in|report(?:ed|s|ing)? (?:to work|in))\b[^.;]{0,15}\bon time\b/i;
 
+// A line that opens by saying the thing did not happen: "Never increased
+// sales", "Did not meet the target". Opening with a bad thing that did not
+// happen is the opposite, and is a result: "Never missed a shift".
+const DENIED_OPENING =
+  /^\s*(?:[-–•*]\s*)?(?:never|did not|didn't|could not|couldn't|failed to|was unable to|unable to)\s+(?!miss|missed|lose|lost|drop|dropped|fail|failed|break|broke|had\b|have\b|need|needed|skip|skipped|call(?:ed)? (?:in|out)|arrive[d]? late|was late|been late)/i;
+
 export type ResultKind = 'result' | 'aim' | 'failed' | 'none';
 
 function onTimeResult(text: string): boolean {
@@ -356,7 +362,7 @@ function purposeKind(text: string): 'result' | 'aim' | null {
  * an attempt that failed, or nothing.
  */
 export function resultKind(text: string): ResultKind {
-  if (FAILED_PATTERN.test(text)) return 'failed';
+  if (FAILED_PATTERN.test(text) || DENIED_OPENING.test(text)) return 'failed';
   if (
     RESULT_PATTERNS.some((pattern) => pattern.test(text)) ||
     hasQualitativeOutcome(text) ||

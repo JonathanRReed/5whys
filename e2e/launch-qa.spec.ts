@@ -111,6 +111,56 @@ test('clearing everything in one tab also empties a tool open in another', async
   expect(await readStorage(career, 'career-why-session-v2')).toBeNull();
 });
 
+test('a cleared device is not written back by an interview workspace open in another tab', async ({
+  page,
+  context,
+}) => {
+  await useStudentProfile(page);
+  const workspace = await open(context, '/interview-glow-up/workspace/');
+  await workspace
+    .getByLabel(/Job title/)
+    .first()
+    .fill('Private role title');
+  await expect
+    .poll(() => readStorage(workspace, 'interview-glow-up-data'))
+    .toContain('Private role title');
+
+  const dashboard = await open(context, '/dashboard/');
+  await dashboard.getByRole('button', { name: 'Clear everything on this device' }).click();
+  await dashboard.getByRole('button', { name: 'Delete everything now' }).click();
+  // The dashboard goes home after a clear; a read during that is tried again.
+  await expect
+    .poll(() => readStorage(dashboard, 'interview-glow-up-data').catch(() => 'reloading'))
+    .toBeNull();
+
+  // The workspace tab reloads empty; leaving it must not save the old role back.
+  await workspace.bringToFront();
+  await expect
+    .poll(() =>
+      workspace
+        .getByLabel(/Job title/)
+        .first()
+        .inputValue()
+        .catch(() => 'reloading')
+    )
+    .toBe('');
+  await workspace.goto('/about/');
+  await expect
+    .poll(() => readStorage(workspace, 'interview-glow-up-data').catch(() => 'reloading'))
+    .toBeNull();
+});
+
+test('a cleared device empties a pay worksheet that was never saved', async ({ page, context }) => {
+  await useStudentProfile(page);
+  const pay = await open(context, '/pay/');
+  await pay.getByLabel('Base pay').fill('87654');
+  const dashboard = await open(context, '/dashboard/');
+  await dashboard.getByRole('button', { name: 'Clear everything on this device' }).click();
+  await dashboard.getByRole('button', { name: 'Delete everything now' }).click();
+  await pay.bringToFront();
+  await expect(pay.getByLabel('Base pay')).toHaveValue('');
+});
+
 test('finding 2: confirmations made in two tabs are both kept', async ({ page, context }) => {
   await useStudentProfile(page);
   await page.goto('/application/');

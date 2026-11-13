@@ -187,6 +187,27 @@ test.describe('guide after a reload', () => {
     await expect(coach).toContainText('Step 1 of 6');
   });
 
+  test('skipping every rehearsal question ends the guide instead of sending it back', async ({
+    page,
+  }) => {
+    await page.goto('/interview-glow-up/rehearse/?guide=1');
+    await waitForHydration(page);
+    const coach = page.locator('aside[aria-label="Guide"]');
+    await page.getByRole('radio', { name: /In writing/ }).check();
+    await page.getByRole('button', { name: 'Start with the first question' }).click();
+    for (let i = 0; i < 30; i += 1) {
+      const finish = page.getByRole('button', { name: 'Skip and finish' });
+      if (await finish.isVisible()) {
+        await finish.click();
+        break;
+      }
+      await page.getByRole('button', { name: 'Skip to the next question' }).click();
+    }
+    await expect(page.locator('#rehearsal-done-heading')).toBeVisible();
+    await expect(coach).toContainText('That is one full rep');
+    await expect(coach).not.toContainText('Choose how to answer and start');
+  });
+
   test('a decoded posting and a saved story start the workspace guide past them', async ({
     page,
   }) => {

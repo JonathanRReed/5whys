@@ -233,7 +233,12 @@ export default function PayTool() {
     window.addEventListener('storage', onStorage);
     window.addEventListener('focus', reread);
     document.addEventListener('visibilitychange', onVisible);
-    const stop = onDeviceCleared(reread);
+    const stop = onDeviceCleared(() => {
+      // An unsaved worksheet is only on this screen: a clear empties that too.
+      heldDesks.current = null;
+      setScratch(createEmptyDesk().offer);
+      reread();
+    });
     return () => {
       window.removeEventListener('storage', onStorage);
       window.removeEventListener('focus', reread);

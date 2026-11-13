@@ -151,3 +151,26 @@ describe('eleventh review round', () => {
     );
   });
 });
+
+describe('second-round findings', () => {
+  it('does not take a reporting phrase as showing a named tool', () => {
+    const requirement = 'Prepare weekly sales reports using Excel.';
+    const resume = (tool: string) =>
+      `Sam Lee\nsam@example.edu\n\nEXPERIENCE\nShop Assistant | Jan 2024 - Dec 2024\n- Prepared weekly sales reports using ${tool}.`;
+    expect(findRequirementEvidence(requirement, resume('spreadsheets')).state).not.toBe('evidence');
+    expect(findRequirementEvidence(requirement, resume('Google Sheets')).state).not.toBe(
+      'evidence'
+    );
+    expect(findRequirementEvidence(requirement, resume('Excel')).state).toBe('evidence');
+  });
+
+  it('gives no result credit to a line that opens by saying it did not happen', async () => {
+    const { resultKind } = await import('../src/lib/resume-game/scoring');
+    expect(resultKind('Never increased sales in 10 stores despite the new campaign.')).toBe(
+      'failed'
+    );
+    expect(resultKind('Did not meet the quarterly target.')).toBe('failed');
+    expect(resultKind('Never missed a shift in two years.')).not.toBe('failed');
+    expect(resultKind('Increased sales in 10 stores by 12%.')).toBe('result');
+  });
+});

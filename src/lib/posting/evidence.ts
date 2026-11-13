@@ -548,6 +548,12 @@ function lineShows(ask: RequirementAsk, excerpt: EvidenceExcerpt): boolean {
   const hits = [...new Set(excerpt.matches.map((m) => m.termKey))]
     .map((key) => byKey.get(key))
     .filter((t): t is RequirementTerm => Boolean(t));
+  // An ask that names a tool is not shown by the rest of its words: "Prepared
+  // weekly sales reports using spreadsheets" does the reporting, but it does
+  // not show Excel. Unless the ask offers its tools as alternatives, one of
+  // the named ones has to be in the line.
+  const namesTool = ask.terms.some((t) => t.shape === 'named');
+  if (namesTool && !ask.alternatives && !hits.some((t) => t.shape === 'named')) return false;
   if (hits.some((t) => t.shape !== 'word')) return true;
   if (excerpt.kind === 'title' || hits.length === 0) return false;
   const words = ask.terms.filter((t) => t.shape === 'word').length;

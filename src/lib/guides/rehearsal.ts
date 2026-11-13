@@ -26,9 +26,16 @@ export const rehearsalGuide: Guide = {
       why: 'Answer the way you would in the room. A structured answer commonly runs one to two minutes.',
       target: '[data-testid="rehearsal-question"]',
       done: { kind: 'exists', selector: '[data-testid="take-words"]' },
-      passed: { kind: 'exists', selector: '[data-testid="take-words"]' },
       // After a reload the room is back at the start: so is the guide.
-      needs: { kind: 'exists', selector: '[data-testid="rehearsal-question"], #facts-title' },
+      needs: {
+        kind: 'exists',
+        selector: '[data-testid="rehearsal-question"], #facts-title, #rehearsal-done-heading',
+      },
+      // Skipping every question still reaches the end of the run.
+      passed: {
+        kind: 'exists',
+        selector: '[data-testid="take-words"], #rehearsal-done-heading',
+      },
     },
     {
       id: 'counts',
@@ -37,7 +44,9 @@ export const rehearsalGuide: Guide = {
       why: 'These are counts, not grades. There is no proven right pace.',
       target: '#facts-title',
       done: { kind: 'manual' },
-      needs: { kind: 'exists', selector: '#facts-title' },
+      needs: { kind: 'exists', selector: '#facts-title, #rehearsal-done-heading' },
+      // The end of the run finishes the guide, however the visitor got there.
+      passed: { kind: 'exists', selector: '#rehearsal-done-heading' },
     },
     {
       id: 'self-check',
@@ -45,7 +54,9 @@ export const rehearsalGuide: Guide = {
       body: 'Tick what is true of this answer. Did you answer the question, say what you did, and say what happened because of it?',
       target: '[data-guide="self-check"]',
       done: { kind: 'exists', selector: '[data-guide="self-check"] input:checked' },
-      needs: { kind: 'exists', selector: '[data-guide="self-check"]' },
+      needs: { kind: 'exists', selector: '[data-guide="self-check"], #rehearsal-done-heading' },
+      // The end of the run finishes the guide, however the visitor got there.
+      passed: { kind: 'exists', selector: '#rehearsal-done-heading' },
     },
     {
       id: 'follow-up',
@@ -53,7 +64,9 @@ export const rehearsalGuide: Guide = {
       body: 'Press "What might they ask next?". Interviewers often dig into the part you skipped past.',
       target: '[data-guide="self-check"]',
       done: { kind: 'exists', selector: '[data-guide="follow-up"]' },
-      needs: { kind: 'exists', selector: '[data-guide="self-check"]' },
+      needs: { kind: 'exists', selector: '[data-guide="self-check"], #rehearsal-done-heading' },
+      // The end of the run finishes the guide, however the visitor got there.
+      passed: { kind: 'exists', selector: '#rehearsal-done-heading' },
     },
     {
       id: 'again',
@@ -61,6 +74,8 @@ export const rehearsalGuide: Guide = {
       body: 'Press "Try this one again" to improve the same answer, or "Next question" to keep going.',
       why: 'The second attempt at the same question is usually where it gets better.',
       done: { kind: 'exists', selector: '[data-testid="rehearsal-question"]' },
+      // The end of the run finishes the guide, however the visitor got there.
+      passed: { kind: 'exists', selector: '#rehearsal-done-heading' },
       needs: {
         kind: 'exists',
         selector: '#facts-title, [data-testid="rehearsal-question"], #rehearsal-done-heading',

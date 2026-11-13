@@ -30,7 +30,11 @@ export default function Navigation({ currentPath = '/' }: NavigationProps) {
 
   React.useEffect(() => {
     const onScroll = () => {
-      setIsScrolled(window.scrollY > 24);
+      // The header is a little shorter once the page has scrolled, which moves
+      // the page by a few pixels. With one threshold, a page resting right at
+      // it flipped back and forth for ever, and nothing on it held still. It
+      // now shrinks past 48px and only grows back near the very top.
+      setIsScrolled((was) => (was ? window.scrollY > 8 : window.scrollY > 48));
       setShowScrollTop(window.scrollY > 400);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
