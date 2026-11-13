@@ -289,7 +289,7 @@ describe('3. the letter uses what the visitor wrote (S F8, C 12)', () => {
       updatedAt: 1,
     }));
     expect(whyYouDraft(requirements, rows)).toEqual([
-      `${SERVICE}: Cashier at FreshWay Market since 2025, I help customers every shift.`,
+      'Cashier at FreshWay Market since 2025, I help customers every shift.',
       `${EXCEL}: [your proof]`,
     ]);
   });

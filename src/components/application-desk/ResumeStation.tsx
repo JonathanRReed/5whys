@@ -227,7 +227,18 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
         if (cancelled) return;
         // An uploaded file is kept until it is replaced. If the visitor has
         // since pasted a different resume, the pasted one is the resume.
-        if (saved && (!resumeText.trim() || sameResume(saved.doc, resumeText))) {
+        const { docMatchesText } = await loadFeature(import('../../lib/resume-doc'));
+        if (cancelled) return;
+        // The saved copy keeps the repairs made in the Resume Game (one
+        // column, contact details, headings). It is used while the text is
+        // still what the file was read as; once the visitor edits the text,
+        // the text is the resume.
+        if (
+          saved &&
+          (!resumeText.trim() ||
+            docMatchesText(saved.doc, resumeText) ||
+            sameResume(saved.doc, resumeText))
+        ) {
           setDoc(saved.doc);
           return;
         }
@@ -370,7 +381,10 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
     }
     try {
       const { toDocx, checkExport } = await loadFeature(import('../../lib/resume-doc'));
-      const bytes = await toDocx(doc, { bulletLineIds: selected, addedBullets, rewrites });
+      // Only the bullets the visitor can choose are filtered. A skills or
+      // certifications list is made of list lines too, and it stays whole.
+      const keep = new Set([...selected, ...listedLineIds(doc)]);
+      const bytes = await toDocx(doc, { bulletLineIds: keep, addedBullets, rewrites });
       const url = URL.createObjectURL(
         new Blob([bytes as BlobPart], {
           type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

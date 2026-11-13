@@ -142,15 +142,24 @@ export function whyYouDraft(
   limit = 3
 ): string[] {
   const byId = new Map(rows.map((row) => [row.requirementId, row]));
-  return requirements
-    .filter((r) => r.status === 'confirmed' && byId.get(r.id)?.status === 'have')
-    .filter((r) => !hiringCondition(r.text) && !NOT_A_SELLING_POINT.test(r.text))
-    .slice(0, limit)
-    .map((r) => {
-      const skill = r.text.trim().replace(/[.;:]+$/, '');
-      const proof = (byId.get(r.id)?.plan ?? '').trim().replace(/\s+/g, ' ');
-      return `${skill}: ${proof ? (/[.?]$/.test(proof) ? proof : `${proof}.`) : '[your proof]'}`;
-    });
+  return (
+    requirements
+      .filter((r) => r.status === 'confirmed' && byId.get(r.id)?.status === 'have')
+      .filter((r) => !hiringCondition(r.text) && !NOT_A_SELLING_POINT.test(r.text))
+      .map((r) => ({
+        skill: r.text.trim().replace(/[.;:]+$/, ''),
+        proof: (byId.get(r.id)?.plan ?? '').trim().replace(/\s+/g, ' '),
+      }))
+      // Lines the visitor already wrote proof for come first, in posting order;
+      // a line with nothing behind it yet only fills a place that is left.
+      .sort((a, b) => Number(Boolean(b.proof)) - Number(Boolean(a.proof)))
+      .slice(0, limit)
+      .map(({ skill, proof }) =>
+        // The visitor's proof is the sentence, as they wrote it. A line with no
+        // proof yet is a bracket to fill in, which the send check will catch.
+        proof ? (/[.?]$/.test(proof) ? proof : `${proof}.`) : `${skill}: [your proof]`
+      )
+  );
 }
 
 /** The four parts joined the way they would be sent. */

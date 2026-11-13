@@ -13,6 +13,7 @@ export { getRepeatedTerms, type RepeatedTerm } from '../posting/terms';
 export {
   AUDIENCES,
   type Audience,
+  audienceFor,
   audienceForProfile,
   audienceForStage,
   usesStudentExamples,
@@ -23,6 +24,7 @@ export {
   getGeneralQuestions,
   getQuestionById,
   getQuestionsForSkill,
+  OPTIONAL_QUESTION_IDS,
   QUESTION_BANK,
   QUESTION_MAP,
   type QuestionFilter,

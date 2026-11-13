@@ -7,10 +7,10 @@
 import type { Audience } from './audience';
 import {
   getQuestionById,
+  OPTIONAL_QUESTION_IDS,
   type QuestionPrompt,
   questionFits,
   questionsFor,
-  TERMS_QUESTION_IDS,
   WORK_AUTHORIZATION_QUESTION_ID,
 } from './questions';
 import { SKILL_MAP } from './skills';
@@ -164,7 +164,7 @@ export function planRehearsal(input: RehearsalPlanInput): RehearsalQuestion[] {
     if (question) add(fromBank(question, input.workAuthorizationLine));
     terms.delete(WORK_AUTHORIZATION_QUESTION_ID);
   }
-  for (const id of TERMS_QUESTION_IDS) if (terms.has(id)) add(bank(id));
+  for (const id of OPTIONAL_QUESTION_IDS) if (terms.has(id)) add(bank(id));
 
   if (closing) plan.push(closing);
   return plan;

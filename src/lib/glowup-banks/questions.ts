@@ -44,6 +44,15 @@ const SEASONED: readonly Audience[] = ['experienced', 'career-changer'];
 export const WORK_AUTHORIZATION_QUESTION_ID = 'q-work-authorization';
 export const SALARY_QUESTION_ID = 'q-salary-expectations';
 export const TERMS_QUESTION_IDS = [WORK_AUTHORIZATION_QUESTION_ID, SALARY_QUESTION_ID] as const;
+/**
+ * Questions any visitor can add to a rehearsal, whatever the career review
+ * said: the terms of the job, why they are changing fields, and a gap.
+ */
+export const OPTIONAL_QUESTION_IDS = [
+  'q-chg-why-change',
+  'q-chg-gap',
+  ...TERMS_QUESTION_IDS,
+] as const;
 
 export const QUESTION_BANK: QuestionPrompt[] = [
   // General Questions

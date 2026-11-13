@@ -174,3 +174,45 @@ describe('second-round findings', () => {
     expect(resultKind('Increased sales in 10 stores by 12%.')).toBe('result');
   });
 });
+
+describe('second story round', () => {
+  it('gives no result credit to a shrug after the joining words', async () => {
+    const { resultKind } = await import('../src/lib/resume-game/scoring');
+    expect(resultKind('Idk nothing, leading to none really.')).toBe('none');
+    expect(resultKind('Helped with stuff, so idk')).toBe('none');
+    expect(resultKind('Counted my drawer at close, so my drawer balanced every shift.')).toBe(
+      'result'
+    );
+  });
+
+  it('joins a drafted result without a stray capital', async () => {
+    const { draftBullet } = await import('../src/lib/bullet-draft');
+    const line = draftBullet({
+      verb: 'Counted',
+      task: 'my cash drawer at close',
+      result: 'My drawer balanced every shift',
+    });
+    expect(line).toContain('so my drawer balanced every shift');
+    expect(
+      draftBullet({ verb: 'Ran', task: 'the count', result: 'I found the missing stock' })
+    ).toContain('so I found');
+    expect(draftBullet({ verb: 'Ran', task: 'the count', result: 'WMS variance fell' })).toContain(
+      'so WMS variance fell'
+    );
+  });
+
+  it('reads a long work history as experienced when no career review was taken', async () => {
+    const { audienceFor } = await import('../src/lib/glowup-banks');
+    const today = new Date('2026-11-13');
+    const long =
+      'Dana K\n\nEXPERIENCE\nOperations Manager, Midwest Freight | Mar 2017 - Aug 2026\n- Ran two shifts\nGeneral Manager, Brickhouse Grill | 2008 - 2015\n- Ran the floor';
+    const short =
+      'Maya T\n\nEXPERIENCE\nCashier, FreshWay Market | Jun 2025 - Present\n- Counted my drawer';
+    expect(audienceFor(null, long, today)).toBe('experienced');
+    expect(audienceFor(null, short, today)).toBe('student');
+    expect(audienceFor(null, '', today)).toBe('student');
+    expect(
+      audienceFor({ stage: 'student', focus: 'resume', updatedAt: '' } as never, long, today)
+    ).toBe('student');
+  });
+});

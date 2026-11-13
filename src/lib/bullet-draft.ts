@@ -47,7 +47,13 @@ const JOINED = /^(?:so|which|leading|resulting|to|by|and|because|while|for|with|
 
 /** The draft as one bullet, or an empty string when there is nothing to join. */
 export function draftBullet(fields: DraftFields): string {
-  const result = fields.result.trim();
+  const typed = fields.result.trim();
+  // The result follows "so", in the middle of a sentence: its first word
+  // loses a sentence capital ("My drawer" becomes "my drawer"). "I", an
+  // acronym, and a word capitalised inside ("iPhone", "McKay") are left.
+  const opening = typed.match(/^[A-Za-z'-]+/)?.[0] ?? '';
+  const sentenceCapital = /^[A-Z][a-z'-]*$/.test(opening) && opening !== 'I';
+  const result = sentenceCapital ? typed[0].toLowerCase() + typed.slice(1) : typed;
   const first = result.match(/^[A-Za-z'-]+/)?.[0] ?? '';
   // "they ran their own registers" is a clause: it joins with "so", never
   // with "leading to".

@@ -1,14 +1,14 @@
 import * as React from 'react';
 import {
   type Audience,
-  audienceForProfile,
+  audienceFor,
   detectSkillsFromText,
   getQuestionById,
+  OPTIONAL_QUESTION_IDS,
   planRehearsal,
   type RehearsalPlanInput,
   type RehearsalQuestion,
   storiesForQuestion,
-  TERMS_QUESTION_IDS,
 } from '../../lib/glowup-banks';
 import type { DecodedRole, Story } from '../../lib/glowup-store';
 import { loadData, requirementBullets } from '../../lib/glowup-store';
@@ -112,11 +112,14 @@ export default function RehearsalRoom() {
     setRole(current);
     setStories(data.stories);
     void (async () => {
-      const [{ likelyQuestions }, { readProfile }] = await Promise.all([
+      const [{ likelyQuestions }, { readProfile }, { readResumeText }] = await Promise.all([
         loadFeature(import('../../lib/local-ai')),
         loadFeature(import('../../lib/profile')),
+        loadFeature(import('../../lib/career-bridge')),
       ]);
-      const who = audienceForProfile(readProfile());
+      // The career review decides; without one, years of dated work on the
+      // resume keep a long-time worker from being asked about coursework.
+      const who = audienceFor(readProfile(), readResumeText());
       // Only real requirements: confirmed lines, or lines sorted as required,
       // preferred, or a duty. Never the header, the address, or the pitch.
       const requirements = requirementBullets(current?.bullets ?? []).map((b) => b.text);
@@ -510,12 +513,12 @@ export default function RehearsalRoom() {
 
         <fieldset className="mx-0 min-w-0 space-y-2 border-0 p-0" data-guide="rehearsal-extras">
           <legend className="font-display text-lg font-semibold">
-            Questions about the job itself
+            Other questions that often come up
           </legend>
           <p className="text-xs leading-relaxed text-muted-foreground">
-            Not about a story, but often asked. Add them if they could come up for you.
+            Add any that could be asked of you: a change of field, a gap, the terms of the job.
           </p>
-          {TERMS_QUESTION_IDS.map((id) => {
+          {OPTIONAL_QUESTION_IDS.map((id) => {
             const question = getQuestionById(id);
             if (!question) return null;
             const fromPosting = id === 'q-work-authorization' && planBase?.workAuthorizationLine;

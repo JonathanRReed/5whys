@@ -17,7 +17,12 @@ import {
   switchRole,
   updateRole,
 } from '../../lib/glowup-store';
-import { decodePostingToBullets, type PostingSection, SAMPLE_POSTING } from '../../lib/posting';
+import {
+  decodePostingToBullets,
+  hiringCondition,
+  type PostingSection,
+  SAMPLE_POSTING,
+} from '../../lib/posting';
 import { cn } from '../../lib/utils';
 import Announcer, { useAnnouncer } from '../shared/Announcer';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -479,6 +484,15 @@ export default function DecodeSection({
                       </span>
                     )}
                   </p>
+                  {hiringCondition(bullet.text) && bullet.status !== 'ignored' && (
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      <span className="font-medium text-foreground">
+                        {hiringCondition(bullet.text)?.label}.
+                      </span>{' '}
+                      A condition of the job, not a skill. It needs no story, and the Rehearsal Room
+                      will not ask you to prove it.
+                    </p>
+                  )}
                   <div className="flex flex-wrap items-center gap-2">
                     <SkillSelect
                       value={bullet.primarySkillId}

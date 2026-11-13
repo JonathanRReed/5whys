@@ -117,6 +117,9 @@ test('bullets written on the desk are in the tailored resume, under the job', as
   const drawer = lines.indexOf('Balanced my register drawer at the end of every shift');
   expect(drawer).toBeGreaterThan(lines.indexOf('Tracked weekly inventory counts in Excel'));
   expect(drawer).toBeLessThan(lines.indexOf('Education'));
+  // The skills list is not a set of bullets to choose from, and it is not
+  // dropped from the copy either: it stays under its heading.
+  expect(lines.indexOf('Excel')).toBe(lines.indexOf('Skills') + 1);
 });
 
 test('the letter uses the proof already written and shows whole', async ({ page }) => {
@@ -133,7 +136,7 @@ test('the letter uses the proof already written and shows whole', async ({ page 
   await page.getByRole('tab', { name: /Letter/ }).click();
   await page.getByRole('button', { name: 'Start from what you marked "have it"' }).click();
   await expect(page.getByLabel(/Why you/)).toHaveValue(
-    'Customer service experience: Cashier at FreshWay Market since 2025, I help customers every shift.'
+    'Cashier at FreshWay Market since 2025, I help customers every shift.'
   );
   await page.getByLabel(/Name the role with a hook/).fill('I kept the weekly counts at FreshWay.');
   const preview = page.getByTestId('letter-preview').first();

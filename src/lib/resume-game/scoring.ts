@@ -339,6 +339,10 @@ const ATTENDANCE_ON_TIME =
 const DENIED_OPENING =
   /^\s*(?:[-–•*]\s*)?(?:never|did not|didn't|could not|couldn't|failed to|was unable to|unable to)\s+(?!miss|missed|lose|lost|drop|dropped|fail|failed|break|broke|had\b|have\b|need|needed|skip|skipped|call(?:ed)? (?:in|out)|arrive[d]? late|was late|been late)/i;
 
+// A result clause filled with a shrug is not a result.
+const NON_ANSWER_RESULT =
+  /\b(?:leading to|resulting in|which led to|so(?: that)?|because)\s+(?:idk|i (?:do not|don'?t) know|nothing(?: really)?|none(?: really)?|n\/?a|not sure|no idea|dunno|whatever|stuff|things)\s*[.!]?\s*$/i;
+
 export type ResultKind = 'result' | 'aim' | 'failed' | 'none';
 
 function onTimeResult(text: string): boolean {
@@ -363,6 +367,8 @@ function purposeKind(text: string): 'result' | 'aim' | null {
  */
 export function resultKind(text: string): ResultKind {
   if (FAILED_PATTERN.test(text) || DENIED_OPENING.test(text)) return 'failed';
+  // "…, leading to none really": the joining words are there, the result is not.
+  if (NON_ANSWER_RESULT.test(text)) return 'none';
   if (
     RESULT_PATTERNS.some((pattern) => pattern.test(text)) ||
     hasQualitativeOutcome(text) ||
