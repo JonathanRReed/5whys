@@ -13,6 +13,8 @@ export {
 } from './analysis';
 export { ACTION_VERBS, WEAK_WORDS } from './constants';
 export { downloadTextFile, exportDocx } from './exporters';
+export type { HighlightToken } from './highlight';
+export { highlightResume, parseHighlightedResume } from './highlight';
 export { analyzeResumeLength } from './length';
 export { buildReviewReport, REVIEW_FILE_BASE } from './review';
 export type { Register } from './samples';
@@ -49,13 +51,6 @@ export { extractSkills } from './skills';
 export { detectResumeStructure } from './structure';
 export type { BulletSuggestion } from './suggestions';
 export { generateBulletSuggestions } from './suggestions';
-export type { HighlightToken } from './text';
-export {
-  countPowerVerbs,
-  decodeEntities,
-  escapeHtml,
-  highlightResume,
-  parseHighlightedResume,
-} from './text';
+export { countPowerVerbs, decodeEntities, escapeHtml } from './text';
 export type { BulletFields, BulletRecord, SignalReport, StoredResumeSession } from './types';
 export { honestVerbQuestion, isVerbWord, leadingAction, startsWithVerb } from './verbs';

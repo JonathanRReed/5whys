@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { highlightResume } from '../src/lib/resume-game/highlight';
 import {
   capitalizeWord,
   countPowerVerbs,
   decodeEntities,
   escapeHtml,
   escapeRegExp,
-  highlightResume,
   normalizeLine,
   uniqueId,
 } from '../src/lib/resume-game/text';
@@ -143,7 +143,7 @@ describe('highlightResume', () => {
   });
 
   it('decodes HTML entities and escapes HTML tags before highlighting', () => {
-    const text = '&lt;script&gt;alert(1)&lt;/script&gt; Led 100%';
+    const text = 'Led &lt;script&gt;alert(1)&lt;/script&gt; training for 100% of new hires';
     const highlighted = highlightResume(text);
     expect(highlighted).toContain('&lt;script&gt;');
     expect(highlighted).not.toContain('<script>');

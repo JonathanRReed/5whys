@@ -396,13 +396,13 @@ describe('parseHighlightedResume', () => {
 
   it('safely handles untrusted HTML input as text tokens', async () => {
     const { parseHighlightedResume } = await import('../src/lib/resume-game');
-    const malicious = '<script>alert("xss")</script> Led 100%';
+    const malicious = 'Led <script>alert("xss")</script> training for 100% of new hires';
     const tokens = parseHighlightedResume(malicious);
     expect(tokens).toEqual([
-      { type: 'text', text: '<script>alert("xss")</script> ' },
       { type: 'verb', text: 'Led' },
-      { type: 'text', text: ' ' },
+      { type: 'text', text: ' <script>alert("xss")</script> training for ' },
       { type: 'number', text: '100%' },
+      { type: 'text', text: ' of new hires' },
     ]);
   });
 });
