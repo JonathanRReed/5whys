@@ -173,7 +173,9 @@ export default function InterviewGlowUpWorkspace() {
     saveTimeoutRef.current = setTimeout(() => {
       saveTimeoutRef.current = null;
       const written = commit(data);
-      latestRef.current = null;
+      // A refused save stays pending: it is tried again when the tab is
+      // hidden or shown, and another tab's save cannot replace it meanwhile.
+      if (written) latestRef.current = null;
       // "Saved" only when the browser kept it.
       setSaveState(written ? 'saved' : 'failed');
       // Another tab's newer work was merged in: show it.

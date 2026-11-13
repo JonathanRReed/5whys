@@ -5,6 +5,7 @@ import {
   saveApplicationDesks,
 } from '../../lib/application-desk';
 import { loadApplications } from '../../lib/applications';
+import { rolesForApplications } from '../../lib/career-bridge';
 import {
   type Audience,
   getSkillName,
@@ -124,12 +125,15 @@ const EMPTY_FIELDS: RoleFields = { jobTitle: '', company: '', jdUrl: '', rawJdTe
  */
 function remapDesksFor(
   roleId: string,
+  roles: Parameters<typeof rolesForApplications>[1],
   moved: ReadonlyMap<string, string>,
   parsedIds: ReadonlySet<string>
 ): void {
-  const linked = loadApplications()
-    .applications.filter((a) => a.roleId === roleId)
-    .map((a) => a.id);
+  // The applications the desk shows this posting for: a saved link, or the
+  // same title match the desk and the dashboard use.
+  const applications = loadApplications().applications;
+  const links = rolesForApplications(applications, roles);
+  const linked = applications.filter((a) => links.get(a.id)?.roleId === roleId).map((a) => a.id);
   if (linked.length === 0) return;
   const desks = loadApplicationDesks();
   const next = remapLinkedDesks(desks, linked, moved, parsedIds);
@@ -216,7 +220,7 @@ export default function DecodeSection({
         parsed.text
       );
       parsedBullets = bulletsFromRequirements(redecoded.requirements, bullets);
-      remapDesksFor(currentRole.id, redecoded.moved, redecoded.parsedIds);
+      remapDesksFor(currentRole.id, data.roles, redecoded.moved, redecoded.parsedIds);
     }
     const setAside = parsed.setAside.filter((line) => line.reason !== 'heading').length;
     announce(

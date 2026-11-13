@@ -31,58 +31,69 @@ async function startApplication(page: Page) {
   await page.getByRole('button', { name: /^Confirm the required and preferred ones/ }).click();
 }
 
-test('item 4: "Parse again" in the workspace keeps what was decided on the desk', async ({
-  page,
-}) => {
-  const errors = watchConsoleErrors(page);
-  await useStudentProfile(page);
-  await startApplication(page);
+for (const link of ['a saved link', 'a title match only'] as const) {
+  test(`item 4: "Parse again" keeps what was decided on the desk (${link})`, async ({ page }) => {
+    const errors = watchConsoleErrors(page);
+    await useStudentProfile(page);
+    await startApplication(page);
 
-  await page.getByRole('tab', { name: /Qualifications/ }).click();
-  const row = (text: string) => page.locator('li', { hasText: text }).last();
-  await row('Working knowledge of Microsoft Excel').getByRole('radio', { name: 'Have it' }).check();
-  await row('Working knowledge of Microsoft Excel')
-    .getByRole('textbox')
-    .fill('I keep the club budget in Excel');
-  await row('Experience in retail').getByRole('radio', { name: 'Not yet' }).check();
-  await expect
-    .poll(async () => {
-      const saved = await desks(page);
-      const appId = Object.keys(saved?.desks ?? {})[0];
-      return (saved?.desks?.[appId]?.qualifications ?? []).filter(
-        (q: { status: string }) => q.status !== 'unset'
-      ).length;
-    })
-    .toBe(2);
-  const appId = new URL(page.url()).searchParams.get('id') as string;
-  const glow = JSON.parse((await readStorage(page, 'interview-glow-up-data')) ?? '{}');
-  const roleId = glow.currentRoleId as string;
+    await page.getByRole('tab', { name: /Qualifications/ }).click();
+    const row = (text: string) => page.locator('li', { hasText: text }).last();
+    await row('Working knowledge of Microsoft Excel')
+      .getByRole('radio', { name: 'Have it' })
+      .check();
+    await row('Working knowledge of Microsoft Excel')
+      .getByRole('textbox')
+      .fill('I keep the club budget in Excel');
+    await row('Experience in retail').getByRole('radio', { name: 'Not yet' }).check();
+    await expect
+      .poll(async () => {
+        const saved = await desks(page);
+        const appId = Object.keys(saved?.desks ?? {})[0];
+        return (saved?.desks?.[appId]?.qualifications ?? []).filter(
+          (q: { status: string }) => q.status !== 'unset'
+        ).length;
+      })
+      .toBe(2);
+    const appId = new URL(page.url()).searchParams.get('id') as string;
+    const glow = JSON.parse((await readStorage(page, 'interview-glow-up-data')) ?? '{}');
+    const roleId = glow.currentRoleId as string;
+    if (link === 'a title match only') {
+      // An application added in Pay has no saved link: the desk and the
+      // dashboard find its posting by title, and so must the remapping.
+      await page.evaluate((id) => {
+        const data = JSON.parse(localStorage.getItem('career-applications') ?? '{}');
+        for (const app of data.applications ?? []) if (app.id === id) app.roleId = null;
+        localStorage.setItem('career-applications', JSON.stringify(data));
+      }, appId);
+    }
 
-  // The posting gains a line at the top, so every line moves, then is parsed again.
-  await page.goto(`/interview-glow-up/workspace/?tab=decode&role=${roleId}`);
-  await waitForHydration(page);
-  await page.locator('#jd-text').fill(`Hiring now for summer.\n${POSTING}`);
-  await page.getByRole('button', { name: 'Parse again' }).click();
-  await expect
-    .poll(async () => {
-      const saved = JSON.parse((await readStorage(page, 'interview-glow-up-data')) ?? '{}');
-      return saved.roles?.find((r: { id: string }) => r.id === roleId)?.parsedJdText ?? '';
-    })
-    .toContain('Hiring now for summer.');
+    // The posting gains a line at the top, so every line moves, then is parsed again.
+    await page.goto(`/interview-glow-up/workspace/?tab=decode&role=${roleId}`);
+    await waitForHydration(page);
+    await page.locator('#jd-text').fill(`Hiring now for summer.\n${POSTING}`);
+    await page.getByRole('button', { name: 'Parse again' }).click();
+    await expect
+      .poll(async () => {
+        const saved = JSON.parse((await readStorage(page, 'interview-glow-up-data')) ?? '{}');
+        return saved.roles?.find((r: { id: string }) => r.id === roleId)?.parsedJdText ?? '';
+      })
+      .toContain('Hiring now for summer.');
 
-  await page.goto(`/application/?id=${appId}&station=qualifications`);
-  await waitForHydration(page);
-  await page.reload();
-  await waitForHydration(page);
-  await expect(
-    row('Working knowledge of Microsoft Excel').getByRole('radio', { name: 'Have it' })
-  ).toBeChecked();
-  await expect(row('Working knowledge of Microsoft Excel').getByRole('textbox')).toHaveValue(
-    'I keep the club budget in Excel'
-  );
-  await expect(row('Experience in retail').getByRole('radio', { name: 'Not yet' })).toBeChecked();
-  expect(errors).toEqual([]);
-});
+    await page.goto(`/application/?id=${appId}&station=qualifications`);
+    await waitForHydration(page);
+    await page.reload();
+    await waitForHydration(page);
+    await expect(
+      row('Working knowledge of Microsoft Excel').getByRole('radio', { name: 'Have it' })
+    ).toBeChecked();
+    await expect(row('Working knowledge of Microsoft Excel').getByRole('textbox')).toHaveValue(
+      'I keep the club budget in Excel'
+    );
+    await expect(row('Experience in retail').getByRole('radio', { name: 'Not yet' })).toBeChecked();
+    expect(errors).toEqual([]);
+  });
+}
 
 /** One application on a decoded posting, with nothing yet on its desk. */
 async function seedOne(page: Page, extra: Record<string, string> = {}) {
