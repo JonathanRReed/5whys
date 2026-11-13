@@ -5,7 +5,13 @@
  */
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { extractDocx, fromText, listedLineTexts, toEditorText } from '../src/lib/resume-doc';
+import {
+  extractDocx,
+  fromText,
+  listedLineIds,
+  listedLineTexts,
+  toEditorText,
+} from '../src/lib/resume-doc';
 import {
   analyzeResumeLength,
   buildDeepSignalReport,
@@ -203,5 +209,15 @@ describe('structured copy helpers', () => {
       'SKILLS\nExcel\nCERTIFICATIONS\nServSafe Manager\nEXPERIENCE\n- Ran a shift'
     );
     expect(listedLineTexts(doc)).toEqual(['Excel', 'ServSafe Manager']);
+  });
+});
+
+describe('the Desk can leave the sidebar out of its bullets', () => {
+  it('names the Word list items that sit under Core Skills', async () => {
+    const { doc } = await readFixture();
+    const listed = listedLineIds(doc);
+    const offered = doc.lines.filter((line) => line.bullet && !listed.has(line.id));
+    expect(offered).toHaveLength(15);
+    for (const skill of SKILLS) expect(offered.map((line) => line.text)).not.toContain(skill);
   });
 });
