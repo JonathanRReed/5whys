@@ -127,8 +127,10 @@ export const PATHS: Record<PathId, CareerPath> = {
 
 export const PATH_STORAGE_KEY = 'career-tools-path';
 
+// An own entry only: "__proto__" and "constructor" are in every object and
+// are not paths.
 export const isPathId = (value: unknown): value is PathId =>
-  typeof value === 'string' && value in PATHS;
+  typeof value === 'string' && Object.hasOwn(PATHS, value);
 
 /** The path the visitor is on, or null. */
 export function loadPath(): CareerPath | null {

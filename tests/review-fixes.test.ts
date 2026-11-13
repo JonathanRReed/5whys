@@ -145,3 +145,44 @@ describe('a front desk is not hospitality on its own', () => {
     );
   });
 });
+
+describe("a bonus is not a posting's base pay", () => {
+  it('passes over a bonus or an allowance to the base salary', async () => {
+    const { readPostingPay } = await import('../src/lib/pay/posting-pay');
+    for (const text of [
+      'Annual bonus: $5,000 per year\nBase salary: $44,000 per year',
+      'Annual bonus: $5,000 per year, base salary $44,000 per year',
+      '$5,000 yearly bonus\nSalary: $44,000 per year',
+      'Housing allowance of $500 per month.\nPay rate: $44,000 per year',
+    ]) {
+      expect(readPostingPay(text)?.basePay, text).toBe(44000);
+    }
+  });
+
+  it('still reads base pay written before a bonus, an hourly wage, and a stipend', async () => {
+    const { readPostingPay } = await import('../src/lib/pay/posting-pay');
+    expect(readPostingPay('Base salary $44,000 per year plus $5,000 annual bonus')?.basePay).toBe(
+      44000
+    );
+    expect(readPostingPay('$15.00/hr | 15-25 hrs/week')?.basePay).toBe(15);
+    expect(readPostingPay('Stipend: $600 per week')?.basePay).toBe(600);
+  });
+
+  it('reads no base pay when only a bonus is stated', async () => {
+    const { readPostingPay } = await import('../src/lib/pay/posting-pay');
+    expect(readPostingPay('Signing bonus: $2,000 per year of service')?.basePay ?? null).toBeNull();
+  });
+});
+
+describe('a path id is an own entry', () => {
+  it('rejects names every object inherits', async () => {
+    const { isPathId, PATH_STORAGE_KEY, loadPath } = await import('../src/lib/path');
+    for (const name of ['__proto__', 'constructor', 'toString', 'hasOwnProperty']) {
+      expect(isPathId(name), name).toBe(false);
+    }
+    expect(isPathId('offer')).toBe(true);
+    localStorage.setItem(PATH_STORAGE_KEY, JSON.stringify({ id: 'constructor' }));
+    expect(loadPath()).toBeNull();
+    localStorage.clear();
+  });
+});

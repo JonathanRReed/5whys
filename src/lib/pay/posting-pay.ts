@@ -47,6 +47,37 @@ const amount = (text: string | undefined): number | null => {
 const periodOf = (unit: string): PayPeriod | null =>
   UNIT.find(([pattern]) => pattern.test(unit))?.[1] ?? null;
 
+/** Pay on top of base pay: read into no field, since it is not the base. */
+const EXTRA_PAY =
+  /\b(?:bonus(?:es)?|allowances?|commissions?|tips|overtime|per\s+diem|relocation|reimburse\w*|sign(?:ing|[- ]?on)|incentives?|match(?:ing)?|profit[- ]sharing)\b/gi;
+/** Words that make a figure the base pay itself. */
+const BASE_PAY =
+  /\b(?:salary|salaries|wages?|base|hourly|pay\s+(?:rate|range|band|scale)|starting\s+pay|stipends?|compensation|pays)\b/gi;
+
+const lastIndexOf = (pattern: RegExp, text: string): number => {
+  let last = -1;
+  for (const found of text.matchAll(pattern)) last = found.index ?? last;
+  return last;
+};
+
+/**
+ * True when a rate is a bonus or an allowance, not base pay: "Annual bonus:
+ * $5,000 per year". The nearest word before the figure on its line decides;
+ * with none, the words straight after it do ("$5,000 annual bonus").
+ */
+function isExtraPay(text: string, index: number, length: number): boolean {
+  const lineStart = text.lastIndexOf('\n', index) + 1;
+  const before = text.slice(lineStart, index);
+  const extra = lastIndexOf(EXTRA_PAY, before);
+  const base = lastIndexOf(BASE_PAY, before);
+  if (extra !== -1 || base !== -1) return extra > base;
+  const lineEnd = text.indexOf('\n', index);
+  const after = text
+    .slice(index + length, lineEnd === -1 ? undefined : lineEnd)
+    .split(/[,;$]|\bplus\b|\band\b/i)[0];
+  return lastIndexOf(EXTRA_PAY, after) !== -1 && lastIndexOf(BASE_PAY, after) === -1;
+}
+
 /** The whole line a match was found on. */
 function lineAt(text: string, index: number): string {
   const start = text.lastIndexOf('\n', index) + 1;
@@ -71,7 +102,10 @@ export function readPostingPay(text: string): PostingPay | null {
   // marketing spend" is money the job handles: the same rule that keeps such
   // a line as a duty in the decoded posting passes over it here.
   const pay = [...text.matchAll(new RegExp(PAY.source, 'gi'))].find(
-    (match) => match.index !== undefined && mentionsPay(lineAt(text, match.index))
+    (match) =>
+      match.index !== undefined &&
+      mentionsPay(lineAt(text, match.index)) &&
+      !isExtraPay(text, match.index, match[0].length)
   );
   if (pay && pay.index !== undefined) {
     const low = amount(pay[1]);
