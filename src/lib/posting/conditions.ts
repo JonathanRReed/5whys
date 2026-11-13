@@ -11,6 +11,7 @@
 
 export type ConditionKind =
   | 'work-authorization'
+  | 'citizenship'
   | 'security-clearance'
   | 'native-speaker'
   | 'minimum-age'
@@ -26,7 +27,12 @@ export interface HiringCondition {
   note: string;
 }
 
-const CONDITIONS: readonly (HiringCondition & { pattern: RegExp; unless?: RegExp })[] = [
+const CONDITIONS: readonly (HiringCondition & {
+  pattern: RegExp;
+  /** A case-sensitive pattern tried as well, for acronyms. */
+  exact?: RegExp;
+  unless?: RegExp;
+})[] = [
   {
     kind: 'security-clearance',
     label: 'Security clearance',
@@ -34,11 +40,21 @@ const CONDITIONS: readonly (HiringCondition & { pattern: RegExp; unless?: RegExp
     note: 'A clearance is granted through an employer or a government agency. You cannot apply for one yourself. If the posting says "ability to obtain", you do not need to hold one yet.',
   },
   {
+    kind: 'citizenship',
+    label: 'Citizenship',
+    pattern:
+      /\b(?:u\.?s\.?|united states|american|canadian|british|uk|eu)\s+citizen(?:s|ship)?\b|\bcitizenship\s+(?:is\s+)?required\b|\bmust\s+(?:be|hold)\s+(?:an?\s+)?(?:\w+\s+)?citizen(?:ship)?\b|\brequires?\s+(?:\w+\s+)?citizenship\b/i,
+    note: "This job is open only to citizens, often because of a government contract or a security rule. It is about citizenship, not a visa, so sponsorship does not apply to it. It is not a skill and does not go on a resume. Answer truthfully when the application asks. If you study on a visa, your school's international student office can tell you what work you may do.",
+  },
+  {
     kind: 'work-authorization',
     label: 'Work authorization',
     pattern:
-      /\bsponsor(?:ship|ed|s|ing)?\b[^.]*\b(?:visa|employment|work|authori[sz]ation)|\bvisas?\b|\bwork authori[sz]ation\b|\b(?:legally\s+)?(?:authori[sz]ed|eligible|permitted|entitled)\s+to\s+work\b|\bright to work\b|\b(?:u\.?s\.?|united states)\s+citizen(?:s|ship)?\b|\bgreen card\b|\bpermanent residen(?:t|ts|cy)\b/i,
-    note: "This asks whether you may legally work in the country, and whether the employer would need to sponsor a visa. It is not a skill and does not go on a resume. Answer truthfully when the application asks. If you study on a visa, your school's international student office can tell you what work you are allowed to do.",
+      /\bsponsor(?:ship|ed|s|ing)?\b[^.]*\b(?:visa|employment|work|authori[sz]ation)|\b(?:require|requires|need|needs)\s+(?:visa\s+|employment\s+|immigration\s+)?sponsorship\b|\bsponsorship\b[^.]*\bnow or in the future\b|\bvisas?\b|\bwork authori[sz]ation\b|\b(?:legally\s+)?(?:authori[sz]ed|eligible|permitted|entitled)\s+to\s+work\b|\bright to work\b|\bgreen card\b|\bpermanent residen(?:t|ts|cy)\b|\bh-?1b\b|\bsocial security (?:number|card)\b|\bstem opt\b/i,
+    // Case matters for these: "OPT" is a student work permission, "opt in" is not.
+    exact:
+      /\bOPT\b|\b[FJ]-1\b|\bSSN\b|\bI-9\b|\bEAD\b|\bCPT\b(?=[^.]*\b(?:OPT|F-1|J-1|visas?|students?|authori[sz]ation)\b)|\b(?:OPT|F-1|J-1|visas?|students?)\b[^.]*\bCPT\b/,
+    note: "This asks whether you may legally work in the country, and whether the employer would need to sponsor a visa now or later. F-1, J-1, and H-1B are visa types; CPT and OPT are kinds of work permission for students on an F-1 visa. An I-9 is the form US employers use to check work eligibility at hiring, and a Social Security number is used for pay and tax records. None of this is a skill or goes on a resume. Answer truthfully when the application asks. If you study on a visa, your school's international student office can tell you what work you may do.",
   },
   {
     kind: 'native-speaker',
@@ -84,8 +100,23 @@ const CONDITIONS: readonly (HiringCondition & { pattern: RegExp; unless?: RegExp
 
 /** The condition a posting line states, or null when it is an ordinary qualification. */
 export function hiringCondition(text: string): HiringCondition | null {
-  for (const { pattern, unless, kind, label, note } of CONDITIONS) {
-    if (pattern.test(text) && !unless?.test(text)) return { kind, label, note };
+  for (const { pattern, exact, unless, kind, label, note } of CONDITIONS) {
+    if ((pattern.test(text) || exact?.test(text)) && !unless?.test(text))
+      return { kind, label, note };
   }
   return null;
+}
+
+/**
+ * Splits items into the ones a resume can show and the conditions of hiring.
+ * Every place that counts confirmed requirements uses this, so a minimum age
+ * or a visa line is never one of the "N of M".
+ */
+export function splitConditions<T extends { text: string }>(
+  items: readonly T[]
+): { requirements: T[]; conditions: T[] } {
+  const requirements: T[] = [];
+  const conditions: T[] = [];
+  for (const item of items) (hiringCondition(item.text) ? conditions : requirements).push(item);
+  return { requirements, conditions };
 }

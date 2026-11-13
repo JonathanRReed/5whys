@@ -61,12 +61,23 @@ const COMBINED_BOILERPLATE_PATTERN = new RegExp(
   'i'
 );
 
-export function isSectionHeader(line: string): boolean {
+/**
+ * True when a line reads as a heading. `capitals: false` stops a short line
+ * in capitals from counting: inside a marked requirements list, "SQL" and
+ * "C++" are skills, not headings.
+ */
+export function isSectionHeader(line: string, { capitals = true } = {}): boolean {
   const words = wordCount(line);
   // Short line ending in a colon reads as a heading.
   if (words <= 6 && /:\s*$/.test(line)) return true;
   // ALL CAPS short lines are headings.
-  if (words <= 6 && line.length >= 3 && line === line.toUpperCase() && /[A-Z]/.test(line)) {
+  if (
+    capitals &&
+    words <= 6 &&
+    line.length >= 3 &&
+    line === line.toUpperCase() &&
+    /[A-Z]/.test(line)
+  ) {
     return true;
   }
   if (words <= 10 && COMBINED_SECTION_HEADER_PATTERN.test(line)) return true;

@@ -3,6 +3,7 @@
  * weights, no percentage, no score.
  */
 
+import { splitConditions } from './conditions';
 import {
   type EvidenceOptions,
   type EvidenceState,
@@ -49,7 +50,12 @@ export interface CoverageRow {
 
 export interface CoverageSummary {
   rows: CoverageRow[];
-  /** Confirmed requirements considered. Every row is one of them. */
+  /**
+   * Confirmed lines that are conditions of hiring (age, licence, citizenship,
+   * work authorization). Listed apart: not rows and not in any count.
+   */
+  conditions: PostingRequirement[];
+  /** Confirmed requirements considered, conditions left out. Every row is one of them. */
   confirmedCount: number;
   withEvidenceCount: number;
   /** Rows that are `none` or `partial`: not fully shown. */
@@ -62,29 +68,30 @@ export interface CoverageSummary {
 /**
  * For each confirmed requirement, the lines of `documentText` that show it,
  * how fully, and (when it is not fully shown) lines that may say it in other
- * words. Suggested and dismissed requirements are left out.
+ * words. Suggested and dismissed requirements are left out, and conditions
+ * of hiring are set apart in `conditions`.
  */
 export function summarizeCoverage(
   requirements: PostingRequirement[],
   documentText: string,
   options: EvidenceOptions = {}
 ): CoverageSummary {
-  const rows: CoverageRow[] = requirements
-    .filter((r) => r.status === 'confirmed')
-    .map((requirement) => {
-      const evidence = findRequirementEvidence(requirement.text, documentText, options);
-      const nearMisses =
-        evidence.state === 'none' || evidence.state === 'partial'
-          ? findNearMisses(requirement.text, documentText, {
-              ...options,
-              exclude: evidence.excerpts,
-            })
-          : [];
-      return { requirement, ...evidence, nearMisses };
-    });
+  const split = splitConditions(requirements.filter((r) => r.status === 'confirmed'));
+  const rows: CoverageRow[] = split.requirements.map((requirement) => {
+    const evidence = findRequirementEvidence(requirement.text, documentText, options);
+    const nearMisses =
+      evidence.state === 'none' || evidence.state === 'partial'
+        ? findNearMisses(requirement.text, documentText, {
+            ...options,
+            exclude: evidence.excerpts,
+          })
+        : [];
+    return { requirement, ...evidence, nearMisses };
+  });
   const count = (state: CoverageState) => rows.filter((r) => r.state === state).length;
   return {
     rows,
+    conditions: split.conditions,
     confirmedCount: rows.length,
     withEvidenceCount: count('evidence'),
     withoutEvidenceCount: count('none') + count('partial'),

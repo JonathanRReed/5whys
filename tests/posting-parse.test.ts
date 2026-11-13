@@ -422,3 +422,65 @@ describe('occupation lookup hook', () => {
     expect(parsePosting(raw).titles).toEqual([]);
   });
 });
+
+describe('launch review: short requirements', () => {
+  const texts = (raw: string) => parsePosting(raw).requirements.map((r) => r.text);
+
+  it('keeps one-word acronyms in a marked requirements list (finding 18)', () => {
+    expect(texts('Requirements\n• Python\n• SQL\n• Excel')).toEqual(['Python', 'SQL', 'Excel']);
+    expect(texts('Required qualifications:\n• CPR\n• R\n• C\n• C++')).toEqual([
+      'CPR',
+      'R',
+      'C',
+      'C++',
+    ]);
+    for (const r of parsePosting('Requirements\n• Python\n• SQL\n• Excel').requirements) {
+      expect(r.section).toBe('required');
+    }
+  });
+
+  it('still reads a capitalized bullet heading with a colon as a heading', () => {
+    const parsed = parsePosting('Requirements\n• TOOLS:\n• Excel spreadsheets and pivot tables');
+    expect(parsed.headings.map((h) => h.text)).toContain('TOOLS');
+    expect(parsed.requirements.map((r) => r.text)).not.toContain('TOOLS:');
+  });
+
+  it('keeps short cue-bearing lines under a heading without bullet glyphs (finding 19)', () => {
+    const parsed = parsePosting('Requirements\nMust know SQL.\nMust know Excel.');
+    expect(parsed.requirements.map((r) => r.text)).toEqual(['Must know SQL.', 'Must know Excel.']);
+    expect(parsed.requirements.every((r) => r.section === 'required')).toBe(true);
+  });
+
+  it('still sets aside short unmarked lines with no cue', () => {
+    expect(texts('Requirements\nRemote\nPart time')).toEqual([]);
+    expect(texts('Must know SQL.')).toEqual([]);
+  });
+});
+
+describe('launch review: short lines that are requirements (advisor A7)', () => {
+  it.each([
+    'Spanish language skills',
+    'Clear written communication',
+    'CPR certified',
+    'Python',
+    "Driver's license",
+    'Bilingual',
+    'Food handler card',
+  ])('does not flag "%s" as noise', async (text) => {
+    const { looksLikeNoise } = await import('../src/lib/posting');
+    expect(looksLikeNoise(text)).toBe(false);
+  });
+
+  it.each(['Remote', 'Benefits', 'Apply today', 'Hybrid', 'Full time'])(
+    'still flags "%s"',
+    async (text) => {
+      const { looksLikeNoise } = await import('../src/lib/posting');
+      expect(looksLikeNoise(text)).toBe(true);
+    }
+  );
+
+  it('never flags a line of four or more words', async () => {
+    const { looksLikeNoise } = await import('../src/lib/posting');
+    expect(looksLikeNoise('Benefits include free lunch daily')).toBe(false);
+  });
+});

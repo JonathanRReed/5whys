@@ -216,6 +216,34 @@ export function descriptionReason(text: string): SetAsideReason | null {
   return 'description';
 }
 
+/** Words that make even a two-word line a qualification: "Spanish language skills", "CPR certified". */
+const SHORT_QUALIFICATION =
+  /\b(?:skills?|communication|certifi\w*|licen[cs]e[ds]?|card|fluen\w*|bilingual|languages?|proficien\w*|degree|diploma|ged|experience|knowledge|english|spanish|french|german|italian|portuguese|mandarin|chinese|cantonese|arabic|japanese|korean|vietnamese|tagalog|russian|hindi|polish|somali|haitian creole|asl|sign language)\b/i;
+
+/**
+ * True when a short line (under MIN_REQUIREMENT_WORDS) still names something
+ * a person can have: a tool, a credential, a language, or a skill. "Python",
+ * "CPR certified", and "Spanish language skills" are; "Remote", "Benefits",
+ * and "Apply today" are not.
+ */
+export function isShortRequirement(text: string): boolean {
+  const trimmed = cleanText(text);
+  if (!trimmed) return false;
+  if (
+    isBoilerplate(trimmed) ||
+    JOB_DETAIL_LINE.test(trimmed) ||
+    APPLICATION_LOGISTICS.test(trimmed)
+  )
+    return false;
+  if (SHORT_QUALIFICATION.test(trimmed)) return true;
+  return descriptionReason(trimmed) === null;
+}
+
+/** A line to flag as possible noise: short, and naming nothing a person can have. */
+export function looksLikeNoise(text: string): boolean {
+  return wordCount(text) < MIN_REQUIREMENT_WORDS && !isShortRequirement(text);
+}
+
 /** "Location: Austin, TX", "$17 to $19 per hour", "Apply by October 1": facts about the job, not requirements. */
 function isJobDetail(text: string): boolean {
   if (JOB_DETAIL_LINE.test(text)) return true;
@@ -291,8 +319,10 @@ class PostingParser {
     const meaning = headingMeaning(line.text);
     const cues = findCues(line.text);
     // "MUST BE 18 OR OLDER" is short and in capitals, but it is a requirement.
+    // So is "• SQL" in a requirements list: an acronym, not a heading.
+    const capitals = !(line.marker !== null && isClassifiedContext(this.context));
     const legacyHeading =
-      isSectionHeader(line.text) &&
+      isSectionHeader(line.text, { capitals }) &&
       !inlineHeading(line.text) &&
       !(cues.required || cues.preferred || cues.responsibility);
     if (meaning === null && !legacyHeading) return false;
@@ -317,14 +347,18 @@ class PostingParser {
   /**
    * Processes a stretch of the raw text (one line, or a bullet plus its
    * wrapped lines). A short bullet under a requirement heading ("Excel") is
-   * kept; a short unmarked line ("Remote") never is.
+   * kept, and so is a short line that says it is required ("Must know SQL.")
+   * when the paste lost its bullets. A short unmarked line with no such cue
+   * ("Remote") never is.
    */
   private span(span: SourceSpan, firstLine: string, marked: boolean): void {
     if (this.context?.meaning === 'set-aside' && !inlineHeading(firstLine)) {
       this.skip(span, 'outside-requirements');
       return;
     }
-    const shortAllowed = marked && isClassifiedContext(this.context);
+    const cues = findCues(this.raw.slice(span.start, span.end));
+    const shortAllowed =
+      isClassifiedContext(this.context) && (marked || !!cues.required || !!cues.preferred);
     if (!shortAllowed && !inlineHeading(firstLine)) {
       const verdict = classifyLegacyLine(cleanText(this.raw.slice(span.start, span.end)));
       if (verdict === 'too-short' || verdict === 'header-line') {

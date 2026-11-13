@@ -12,6 +12,7 @@ import {
   type CoverageState,
   describeCoverage,
   describeParts,
+  hiringCondition,
   requirementsFromBullets,
   summarizeCoverage,
 } from '../../lib/posting';
@@ -104,13 +105,22 @@ export default function PostingMatch({ resumeText }: Props) {
     (desks.desks[appId]?.qualifications ?? []).map((row) => [row.requirementId, row.status])
   );
 
+  // One tap only fills an empty row. A mark made on the desk ("Have it",
+  // "Maybe") is the visitor's own and is never replaced from here.
   const markNotYet = (requirementId: string) => {
-    const next = setQualification(loadApplicationDesks(), appId, requirementId, {
-      status: 'not-yet',
-    });
+    const current = loadApplicationDesks();
+    const existing = current.desks[appId]?.qualifications.find(
+      (row) => row.requirementId === requirementId
+    );
+    if (existing && existing.status !== 'unset') {
+      setDesks(current);
+      return;
+    }
+    const next = setQualification(current, appId, requirementId, { status: 'not-yet' });
     saveApplicationDesks(next);
     setDesks(next);
   };
+  const deskLink = `/application/?id=${encodeURIComponent(appId)}&station=qualifications`;
 
   return (
     <section aria-labelledby="posting-match-title" className="space-y-5">
@@ -143,7 +153,9 @@ export default function PostingMatch({ resumeText }: Props) {
           )}
         </div>
         <p className="text-base font-medium text-foreground" data-testid="match-summary">
-          {describeCoverage(coverage)}
+          {coverage.confirmedCount === 0 && coverage.conditions.length > 0
+            ? 'Every confirmed line is a condition of the job, listed below.'
+            : describeCoverage(coverage)}
         </p>
         <p className="text-sm text-foreground" data-testid="match-breakdown">
           {[
@@ -159,8 +171,9 @@ export default function PostingMatch({ resumeText }: Props) {
         </p>
         <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
           Shown means a line of your resume names what the requirement asks for. A low count is
-          common when your experience is real but worded differently: look for "You may already have
-          this" below. Use the posting's words only where they are true of what you did.
+          common when your experience is real but worded differently
+          {maybe > 0 ? ': look for "You may already have this" below' : ''}. Use the posting's words
+          only where they are true of what you did.
         </p>
       </div>
 
@@ -266,11 +279,12 @@ export default function PostingMatch({ resumeText }: Props) {
                       </a>
                     </Button>
                     {status === 'not-yet' ? (
-                      <a
-                        className="text-xs underline underline-offset-2"
-                        href={`/application/?id=${encodeURIComponent(appId)}&station=qualifications`}
-                      >
+                      <a className="text-xs underline underline-offset-2" href={deskLink}>
                         Marked not yet. Plan for it on the desk.
+                      </a>
+                    ) : status === 'have' || status === 'maybe' ? (
+                      <a className="text-xs underline underline-offset-2" href={deskLink}>
+                        {status === 'have' ? 'Marked have it' : 'Marked maybe'} on the desk.
                       </a>
                     ) : (
                       <Button
@@ -289,6 +303,43 @@ export default function PostingMatch({ resumeText }: Props) {
           );
         })}
       </ul>
+
+      {coverage.conditions.length > 0 && (
+        <div className="space-y-3" data-testid="match-conditions">
+          <div className="space-y-1">
+            <h3 className="text-lg font-semibold">Conditions of the job</h3>
+            <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
+              These are about who may be hired, not what you can do. They are not counted above, and
+              they do not belong on a resume.
+            </p>
+          </div>
+          <ul className="space-y-2">
+            {coverage.conditions.map((requirement) => {
+              const condition = hiringCondition(requirement.text);
+              return (
+                <li
+                  key={requirement.id}
+                  className="grid gap-3 rounded-xl border border-border/40 p-4 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-6"
+                >
+                  <div className="min-w-0 space-y-1.5">
+                    {condition && (
+                      <p className="text-xs font-semibold text-muted-foreground">
+                        {condition.label}
+                      </p>
+                    )}
+                    <p className="text-sm leading-relaxed text-foreground">{requirement.text}</p>
+                  </div>
+                  {condition && (
+                    <p className="min-w-0 text-sm leading-relaxed text-muted-foreground">
+                      {condition.note}
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </section>
   );
 }
