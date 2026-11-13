@@ -342,7 +342,7 @@ describe('scoreLabel', () => {
     expect(scoreLabel(90).label).toBe('Strong');
     expect(scoreLabel(80).label).toBe('Strong');
     expect(scoreLabel(60).label).toBe('Getting there');
-    expect(scoreLabel(20).label).toBe('Needs more');
+    expect(scoreLabel(20).label).toBe('Starting point');
   });
 });
 

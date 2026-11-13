@@ -45,7 +45,10 @@ const wordCount = (line: string) => line.split(/\s+/).filter(Boolean).length;
 const isAllCaps = (line: string) => /[A-Z]/.test(line) && line === line.toUpperCase();
 
 function classify(line: string, index: number, wordsInLine: number): SkippedKind | 'bullet' {
-  if (EMAIL.test(line) || PHONE.test(line) || URL.test(line)) return 'contact';
+  if (EMAIL.test(line) || PHONE.test(line)) return 'contact';
+  // A project address inside a sentence about the work ("Built example.com
+  // for a campus club") is part of an achievement; a bare link row is contact.
+  if (URL.test(line) && !(startsWithVerb(line) && wordsInLine >= 5)) return 'contact';
   // A short first line without digits or a verb is almost always the name.
   if (
     index === 0 &&
@@ -169,7 +172,7 @@ export function detectResumeStructure(text: string): ResumeStructure {
   } else if (usedGlyphs) {
     note = `Scored the ${bullets.length === 1 ? '1 bulleted line' : `${bullets.length} bulleted lines`}.${skippedText}`;
   } else {
-    note = `No bullet markers found, so the ${bullets.length === 1 ? '1 line' : `${bullets.length} lines`} that read as achievements were scored.${skippedText}`;
+    note = `No bullet markers found, so the ${bullets.length === 1 ? '1 line that reads as an achievement was' : `${bullets.length} lines that read as achievements were`} scored.${skippedText}`;
   }
 
   return { bullets, skipped, usedGlyphs, note };
