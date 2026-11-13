@@ -135,14 +135,20 @@ export default function StoragePanel({ revision = 0 }: { revision?: number }) {
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/40 px-4 py-3">
-        <p className="min-w-0 flex-1 text-sm leading-relaxed text-muted-foreground">
-          On a shared or lab computer, the next person can see what you wrote. Clear everything
-          before you leave, or use a private window.
-        </p>
+        <div className="min-w-0 flex-1 space-y-1 text-sm leading-relaxed text-muted-foreground">
+          <p>
+            On a shared or lab computer, the next person can see what you wrote. Clear everything
+            before you leave, or use a private window.
+          </p>
+          <p>
+            Clearing deletes everything you wrote, uploaded and recorded here, and it cannot be
+            undone. Export first if you want a copy. Your theme and typeface choices are kept.
+          </p>
+        </div>
         <ConfirmButton
-          confirmLabel="Delete everything you wrote, uploaded and recorded here? Export first if you want a copy."
+          confirmLabel="Delete everything now"
           onConfirm={() => runFeature(clearAll)}
-          className="px-3 py-1.5 text-sm"
+          className="min-h-10 px-3 py-1.5 text-sm"
         >
           Clear everything on this device
         </ConfirmButton>
