@@ -1,6 +1,6 @@
 import * as React from 'react';
 import scenarioData from '../../data/networking-scenarios.json';
-import { activeApplicationId, loadApplications } from '../../lib/applications';
+import { readFocusedApplication } from '../../lib/career-bridge';
 import { localDate } from '../../lib/local-date';
 import {
   completeRatings,
@@ -211,18 +211,6 @@ function firstScenarioFor(stage: string | undefined): Scenario | undefined {
     return SCENARIOS.find((s) => s.id === 'reconnect-colleague');
   }
   return undefined;
-}
-
-/** The application in focus on the dashboard, or null. Only reads. */
-function readFocusedApplication(): FocusedApplication | null {
-  try {
-    const data = loadApplications();
-    const id = activeApplicationId(data);
-    const app = data.applications.find((item) => item.id === id);
-    return app ? { title: app.title, company: app.company } : null;
-  } catch {
-    return null;
-  }
 }
 
 export function useNetworkingPractice() {

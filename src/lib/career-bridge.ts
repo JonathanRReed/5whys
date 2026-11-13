@@ -521,6 +521,21 @@ const sameName = (a: string | undefined, b: string | undefined): boolean => {
 
 type RawRole = NonNullable<GlowUpRaw['roles']>[number];
 
+/**
+ * The application in focus on the dashboard, for a tool that offers its role
+ * and company back to the visitor (networking prompts). Only reads.
+ */
+export function readFocusedApplication(): { title: string; company: string } | null {
+  try {
+    const data = loadApplications();
+    const id = activeApplicationId(data);
+    const app = data.applications.find((item) => item.id === id);
+    return app ? { title: app.title, company: app.company } : null;
+  } catch {
+    return null;
+  }
+}
+
 /** The posting behind a role was actually parsed into requirements. */
 const isDecoded = (role: RawRole | undefined): boolean =>
   !!role?.bullets?.some((b) => b.status !== 'ignored');

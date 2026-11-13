@@ -930,6 +930,14 @@ export function findRequirementEvidence(
       for (const line of titleLines) {
         const sign = fieldSignIn(line.text, field);
         if (!sign) continue;
+        // The same guard the years check uses: "retail management" is shown
+        // by a title that says they managed, not by any job in a store.
+        if (
+          ASKS_FOR_MANAGING.test(`${term.key} ${term.label}`) &&
+          !MANAGING_TITLE.test(line.text)
+        ) {
+          continue;
+        }
         readAs.push(
           `Read as ${term.label.toLowerCase()} from the word "${sign.word}" in "${line.text.replace(/^[\s•\-*]+/, '').trim()}".`
         );

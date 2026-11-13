@@ -80,6 +80,17 @@ describe('years of management need a title that says so', () => {
     expect(findRequirementEvidence(requirement, resume, { today }).state).not.toBe('evidence');
   });
 
+  it('does not read management from a cashier title when no years are asked', () => {
+    const resume = `Sam Rivera\n\nEXPERIENCE\n\nCashier, Valley Fresh Market | Jan 2021 - Jan 2024\n- Ran a register on weekends`;
+    expect(
+      findRequirementEvidence('Retail management experience', resume, { today }).state
+    ).not.toBe('evidence');
+    // The field alone is still read from the title.
+    expect(findRequirementEvidence('Experience in retail', resume, { today }).state).toBe(
+      'evidence'
+    );
+  });
+
   it('counts a store manager job', () => {
     const resume = `Renee Park\n\nEXPERIENCE\n\nStore Manager, Brightline Home Goods | March 2018 - February 2026\n- Managed a team of 22 associates`;
     expect(findRequirementEvidence(requirement, resume, { today }).state).toBe('evidence');
