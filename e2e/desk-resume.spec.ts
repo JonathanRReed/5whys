@@ -43,5 +43,7 @@ test('an application keeps its own selection of bullets from the one resume', as
   expect(download.suggestedFilename()).toBe(
     'resume-program-assistant-harbor-street-food-bank.docx'
   );
-  await expect(page.getByRole('status').last()).toContainText('We read the new file back');
+  await expect(page.getByRole('status').last()).toContainText(
+    'Open it and read it once before you send it.'
+  );
 });

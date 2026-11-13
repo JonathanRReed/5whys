@@ -17,7 +17,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ApplicationsPanel from '../src/components/ApplicationsPanel';
 import ApplicationDesk from '../src/components/application-desk/ApplicationDesk';
 import { useDeskExamples } from '../src/components/application-desk/examples';
-import { defaultPlacement } from '../src/components/application-desk/ResumeStation';
 import BackupControls from '../src/components/BackupControls';
 import CareerDashboard from '../src/components/CareerDashboard';
 import OnboardingWizard from '../src/components/OnboardingWizard';
@@ -67,6 +66,7 @@ import {
 } from '../src/lib/posting';
 import { PROFILE_STORAGE_KEY, readProfile, writeProfile } from '../src/lib/profile';
 import { fromText } from '../src/lib/resume-doc';
+import { placeBullet, resumeRoles } from '../src/lib/resume-doc/tailor';
 import { parseBackup } from '../src/lib/studio-backup';
 
 const CONDITION = "Must be at least 18 and have a valid driver's license";
@@ -232,12 +232,19 @@ describe('1. one condition filter on the desk (S F2)', () => {
 });
 
 describe('2. desk bullets go into the tailored resume (S F5, C 2)', () => {
-  it('places them after the last bullet of the most recent job, never under skills', () => {
+  it('places one under the job it names, never under skills', () => {
     const doc = fromText(RESUME);
-    const bullets = doc.lines.filter((line) => line.bullet).map((line) => line.id);
-    const after = defaultPlacement(doc, bullets);
-    const line = doc.lines.find((l) => l.id === after);
+    const roles = resumeRoles(doc);
+    expect(roles.map((role) => role.label)).toEqual([
+      'FreshWay Market, Cashier, 2025 to present',
+      'Lakeshore Library, Shelving Assistant, 2024',
+    ]);
+    const where = placeBullet('Restocked the FreshWay produce wall before opening', null, roles);
+    expect(where.kind).toBe('guessed');
+    const line = doc.lines.find((l) => where.kind === 'guessed' && l.id === where.afterLineId);
     expect(line?.text).toContain('Tracked weekly inventory counts in Excel');
+    // A bullet that names no job waits for the visitor to choose.
+    expect(placeBullet('Balanced my drawer every shift', null, roles).kind).toBe('unplaced');
   });
 
   it('includes a bullet written on a new desk by default and says so', async () => {
@@ -252,12 +259,20 @@ describe('2. desk bullets go into the tailored resume (S F5, C 2)', () => {
       name: /Balanced my register drawer/,
     });
     expect(checkbox).toBeChecked();
-    expect(screen.getByText(/This bullet is in the copy for this role/)).toBeInTheDocument();
+    // Two jobs and a line that names neither: it waits for a place.
+    expect(screen.getByTestId('desk-bullet-place-note-0')).toHaveTextContent(
+      'Not in the file until you choose where it goes.'
+    );
+    const place = screen.getByRole('combobox', {
+      name: /Which part of your resume is this from/,
+    }) as HTMLSelectElement;
+    fireEvent.change(place, { target: { value: place.options[1].value } });
+    expect(screen.getByTestId('desk-bullet-place-note-0')).toHaveTextContent(
+      'Under FreshWay Market, Cashier'
+    );
     expect(screen.getByTestId('resume-selection-count')).toHaveTextContent(
       'plus 1 written on this desk'
     );
-    const place = screen.getByRole('combobox', { name: /Place it after/ }) as HTMLSelectElement;
-    expect(place.selectedOptions[0].textContent).toContain('Tracked weekly inventory');
     // Unticking is kept.
     fireEvent.click(checkbox);
     expect(loadApplicationDesks().desks.a.bullets.bullets[0].included).toBe(false);
@@ -848,18 +863,17 @@ describe('10. dashboard tone and polish (A A4, S F18, C 14, X A11)', () => {
 });
 
 describe('11. smaller desk items (C 12, C 13)', () => {
-  it('asks before "Only the ones that match" leaves fewer than three bullets', async () => {
+  it('does not offer "Only the ones that match" when fewer than three bullets match', async () => {
     seed([{ id: 'a', title: 'Intern', lines: [EXCEL] }]);
     saveResume(RESUME);
     openAt('/application/?id=a&station=resume');
     render(<ApplicationDesk />);
     // The skills list is not offered as bullets, so three lines remain and one matches.
-    const narrow = await screen.findByRole('button', { name: 'Only the ones that match (1)' });
-    fireEvent.click(narrow);
-    expect(screen.getByText(/That would leave 1 bullet in/)).toBeVisible();
+    expect(
+      await screen.findByText(/Only 1 line names something this posting asks for/)
+    ).toBeVisible();
+    expect(screen.queryByRole('button', { name: /Only the ones that match/ })).toBeNull();
     expect(screen.getByTestId('resume-selection-count')).toHaveTextContent('3 of 3');
-    fireEvent.click(screen.getByRole('button', { name: 'Keep only that one' }));
-    expect(screen.getByTestId('resume-selection-count')).toHaveTextContent('1 of 3');
   });
 
   it('counts where the visitor stands once, from one list', () => {
