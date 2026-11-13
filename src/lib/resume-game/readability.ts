@@ -72,9 +72,11 @@ export function findPassivePhrases(text: string, opensWithAction = false): strin
     // "Coached 5 supervisors, 3 of whom were promoted": the subject is other
     // people, and what happened to them is the result, not hidden agency.
     const before = text.slice(0, match.index ?? 0);
+    // "…, so every shift was covered": a result clause names its own subject.
     if (
       opensWithAction &&
-      /\b(?:whom|who|of them|which|they|all|both|each|several|most|many)\s+$/i.test(before)
+      (/\b(?:whom|who|of them|which|they|all|both|each|several|most|many)\s+$/i.test(before) ||
+        /\bso\s+(?:that\s+)?(?:[a-z'-]+\s+){1,3}$/i.test(before))
     ) {
       continue;
     }

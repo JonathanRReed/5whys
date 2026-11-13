@@ -201,7 +201,7 @@ export function summarySentences(summary: LineSummary): string[] {
   const { total } = summary;
   if (total === 0) return [];
   const of = (count: number, one: string, many: string) =>
-    `${count} of ${total} ${total === 1 ? 'line' : 'lines'} ${count === 1 ? one : many}`;
+    `${count} of ${total} ${total === 1 ? 'line' : 'lines'} ${count === 1 || total === 1 ? one : many}`;
   return [
     `${of(summary.action, 'starts', 'start')} with what you did.`,
     `${of(summary.work, 'says', 'say')} what the work was.`,

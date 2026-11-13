@@ -742,6 +742,15 @@ function LineFields({
     if (split.rest) {
       setMoved(split.rest);
       announce(`Moved "${split.rest}" to What you did.`);
+      // Tabbing on selects the moved words, so the next key would erase
+      // them. Put the caret after them instead.
+      const taskId = fieldId.task(index, lineIndex);
+      window.requestAnimationFrame(() => {
+        const task = document.getElementById(taskId);
+        if (task instanceof HTMLInputElement && document.activeElement === task) {
+          task.setSelectionRange(task.value.length, task.value.length);
+        }
+      });
     }
   };
   return (

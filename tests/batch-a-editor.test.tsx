@@ -209,3 +209,18 @@ describe('a line picked from the dashboard link', () => {
     ).toBe('second');
   });
 });
+
+describe('small wording', () => {
+  it('reads "0 of 1 line has", and does not flag a result clause as passive', async () => {
+    const { summarySentences } = await import('../src/lib/resume-game');
+    expect(
+      summarySentences({ total: 1, action: 0, work: 1, result: 1, measure: 0, strong: 1 })[0]
+    ).toBe('0 of 1 line starts with what you did.');
+    expect(
+      findPassivePhrases(
+        'Rebuilt the weekly schedule, so every shift was covered without overtime.',
+        true
+      )
+    ).toEqual([]);
+  });
+});
