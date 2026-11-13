@@ -165,7 +165,7 @@ export default function ScanResults({
                 </div>
               </div>
               <p
-                className={`mt-2 text-xs ${signalReport.isOptimalLength ? 'text-love' : 'text-gold'}`}
+                className={`mt-2 text-xs ${signalReport.isOptimalLength ? 'text-foam' : 'text-gold'}`}
               >
                 {signalReport.lengthRecommendation}
               </p>

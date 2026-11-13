@@ -54,7 +54,7 @@ export {
 export { extractSkills } from './skills';
 export { detectResumeStructure } from './structure';
 export type { BulletSuggestion } from './suggestions';
-export { generateBulletSuggestions } from './suggestions';
+export { exampleFor, generateBulletSuggestions } from './suggestions';
 export { countPowerVerbs, decodeEntities, escapeHtml } from './text';
 export type { BulletFields, BulletRecord, SignalReport, StoredResumeSession } from './types';
 export { honestVerbQuestion, isVerbWord, leadingAction, startsWithVerb } from './verbs';

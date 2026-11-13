@@ -31,6 +31,16 @@ const sameWording = (a: string, b: string) => {
 };
 
 /**
+ * A wording no reader should be offered: a space before a comma ("Scheduled
+ * , payroll entry"), a word written twice in a row, or an opening comma. A
+ * rule that produced it is not shown; the visitor hears that no safer
+ * wording was found instead.
+ */
+export function brokenWording(text: string): boolean {
+  return /\s[,;:.]/.test(text) || /^[\s,;:.]/.test(text) || /\b([A-Za-z]{2,})\s+\1\b/i.test(text);
+}
+
+/**
  * One suggested rewrite of a bullet, asked for with a click. The suggestion
  * is shown beside the visitor's own line and is never applied for them: the
  * score only moves when they change a field themselves.
@@ -53,6 +63,7 @@ export default function RewriteHelp({ line, noneFollowUp = DEFAULT_NONE_FOLLOW_U
   React.useEffect(() => () => request.current?.abort(), []);
 
   const suggest = async () => {
+    if (busy) return;
     request.current?.abort();
     const controller = new AbortController();
     request.current = controller;
@@ -76,7 +87,11 @@ export default function RewriteHelp({ line, noneFollowUp = DEFAULT_NONE_FOLLOW_U
   };
 
   const invented = result?.inventedClaims ?? [];
-  const changed = !!result && result.value.changed && !sameWording(result.value.rewrite, line);
+  const changed =
+    !!result &&
+    result.value.changed &&
+    !sameWording(result.value.rewrite, line) &&
+    !brokenWording(result.value.rewrite);
 
   return (
     <div className="space-y-3 rounded-2xl border border-border/40 p-4">
@@ -89,7 +104,9 @@ export default function RewriteHelp({ line, noneFollowUp = DEFAULT_NONE_FOLLOW_U
           size="sm"
           variant="outline"
           onClick={() => void runFeature(suggest, () => setBusy(false))}
-          disabled={busy}
+          // Busy, not disabled, while it writes: a disabled button drops the
+          // keyboard focus to the top of the page.
+          aria-disabled={busy || undefined}
         >
           {busy ? 'Writing' : result ? 'Suggest another' : 'Suggest a rewrite'}
         </Button>

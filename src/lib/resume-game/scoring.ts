@@ -553,7 +553,8 @@ export function scoreBullet(bullet: string): number {
 
 /** A plain label for a line's score. */
 export function scoreLabel(score: number) {
-  if (score >= STRONG_SCORE) return { label: 'Strong', color: 'text-love' };
+  // Evergreen, the palette's color for done. Terracotta reads as a warning.
+  if (score >= STRONG_SCORE) return { label: 'Strong', color: 'text-foam' };
   if (score >= 50) return { label: 'Getting there', color: 'text-gold' };
   return { label: 'Starting point', color: 'text-iris' };
 }

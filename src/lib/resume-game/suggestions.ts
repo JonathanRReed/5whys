@@ -1,9 +1,15 @@
 import { BUZZWORDS, matchesTerm } from './constants';
 import { analyzeReadability, findPassivePhrases } from './readability';
-import { findNumbers, resultKind, scoreParts } from './scoring';
+import { doubledOpening, findNumbers, resultKind, scoreParts } from './scoring';
 import { normalizeLine } from './text';
 import type { BulletRecord } from './types';
-import { honestVerbQuestion, leadingAction } from './verbs';
+import {
+  honestVerbQuestion,
+  isVerbWord,
+  type LeadingAction,
+  leadingAction,
+  pastTenseOf,
+} from './verbs';
 
 export type BulletSuggestion = {
   type:
@@ -14,7 +20,10 @@ export type BulletSuggestion = {
     | 'missing-number'
     | 'buzzword'
     | 'too-long'
-    | 'passive-voice';
+    | 'passive-voice'
+    | 'double-verb'
+    | 'old-wording'
+    | 'grammar';
   message: string;
   /** A question about the visitor's own work. Never a word to paste in. */
   fix?: string;
@@ -22,7 +31,19 @@ export type BulletSuggestion = {
   studentExample?: string;
   /** Worked example from store, shift, warehouse, office, care, or customer work. */
   workExample?: string;
+  /** Worked example for senior and lead work: teams, programs, budgets. */
+  leadExample?: string;
 };
+
+/** The example a visitor in this register sees, falling back to the work one. */
+export function exampleFor(
+  suggestion: BulletSuggestion,
+  register: 'student' | 'work' | 'lead'
+): string | undefined {
+  if (register === 'student') return suggestion.studentExample;
+  if (register === 'lead') return suggestion.leadExample ?? suggestion.workExample;
+  return suggestion.workExample;
+}
 
 /**
  * A question that reads the line and asks for the count most likely to
@@ -84,6 +105,11 @@ const NUMBER_EXAMPLES = {
     'Answered 60 to 80 customer calls a shift and logged each one before closing it.',
     'Checked in 25 patients each morning at the front desk and confirmed their insurance.',
   ],
+  lead: [
+    'Ran a $4.2M operating budget across two sites and closed each quarter within 2% of plan.',
+    'Hired and onboarded 14 supervisors in one year as the network grew from two sites to three.',
+    'Negotiated freight contracts with 6 carriers, saving $310,000 in the first year.',
+  ],
 };
 
 const IMPACT_EXAMPLES = {
@@ -95,7 +121,50 @@ const IMPACT_EXAMPLES = {
     'Rebuilt the weekly schedule so every shift was covered without overtime for three months.',
     'Set up a returns shelf by the register, so customers stopped waiting for a manager.',
   ],
+  lead: [
+    'Ran the safety program across two sites; recordable incidents fell 38% over two years.',
+    'Rebuilt the S&OP meeting around one shared forecast, so stockouts on top items stopped.',
+  ],
 };
+
+// A bare verb straight after a comma: ", reduce the report time".
+const BARE_AFTER_COMMA = /,\s+([a-z]+)\s+(?:the|a|an|our|my|their|its|his|her)\b/;
+
+/**
+ * Grammar only, no new facts: a form a reader trips on. "Present the result"
+ * reads as an instruction; "Was cleaned and merged" mixes two forms; ",
+ * reduce the report time" needs "reducing". The note never changes a score.
+ */
+function grammarNote(text: string, opening: LeadingAction | null): BulletSuggestion | null {
+  const was = text.match(/^(?:was|were)\s+([a-z]+ed)\b/i);
+  if (was && isVerbWord(was[1])) {
+    const verb = was[1].slice(0, 1).toUpperCase() + was[1].slice(1).toLowerCase();
+    return {
+      type: 'grammar',
+      message: `Grammar only: "${was[0]}" mixes two forms. If you did it, start with "${verb}".`,
+    };
+  }
+  if (opening && !opening.involvement && !/\s/.test(opening.text)) {
+    const past = pastTenseOf(opening.text);
+    if (past && past.toLowerCase() !== opening.text.toLowerCase()) {
+      return {
+        type: 'grammar',
+        message: `Grammar only: "${opening.text}" reads like an instruction. For work that is finished, resumes use "${past}". For something you still do, "${opening.text}" is fine.`,
+      };
+    }
+  }
+  const bare = text.match(BARE_AFTER_COMMA);
+  if (bare && isVerbWord(bare[1]) && pastTenseOf(bare[1])) {
+    const word = bare[1];
+    const ing =
+      word.endsWith('e') && !word.endsWith('ee') ? `${word.slice(0, -1)}ing` : `${word}ing`;
+    return {
+      type: 'grammar',
+      message: `Grammar only: "${word}" after the comma reads like an instruction. "${ing}" or "which ${pastTenseOf(word)?.toLowerCase()}" fits.`,
+    };
+  }
+  return null;
+}
 
 const pick = <T>(list: T[], seed: string): T => {
   let hash = 0;
@@ -123,6 +192,30 @@ export function generateBulletSuggestions(
   const opening = leadingAction(current);
   const readability = analyzeReadability(current);
 
+  const doubled = doubledOpening(current);
+  if (doubled) {
+    suggestions.push({
+      type: 'double-verb',
+      message: `The line starts with two action words: "${doubled}". Keep one.`,
+      fix: 'Take the extra one out of "What the work was".',
+    });
+  }
+
+  // Typing into a field that still held the old line joins the two. The old
+  // wording, still whole inside the new line, is named so it can come out.
+  const old = normalizeLine(bullet.original).replace(/[.!?]+$/, '');
+  if (bullet.edited && old.split(' ').length >= 3 && current !== normalizeLine(bullet.original)) {
+    const lower = current.toLowerCase();
+    const at = lower.indexOf(old.toLowerCase());
+    if (at > 0) {
+      suggestions.push({
+        type: 'old-wording',
+        message: `Your old line is still inside the new one: "${old}".`,
+        fix: 'If the new words replace it, take the old ones out of "What the work was".',
+      });
+    }
+  }
+
   if (!opening) {
     suggestions.push({
       type: 'missing-verb',
@@ -132,6 +225,8 @@ export function generateBulletSuggestions(
         '"Social media for the radio station" becomes "Wrote and scheduled posts for the campus radio Instagram."',
       workExample:
         '"Opening and closing duties" becomes "Opened and closed the store four days a week, counting both registers."',
+      leadExample:
+        '"Operations oversight for the region" becomes "Ran operations for 4 distribution sites and 180 staff."',
     });
   } else if (opening.involvement) {
     suggestions.push({
@@ -142,6 +237,8 @@ export function generateBulletSuggestions(
         '"Helped with events" becomes "Set up chairs and ran the sign-in table at three welcome week events."',
       workExample:
         '"Helped with inventory" becomes "Counted and logged the back room every Sunday for the monthly inventory."',
+      leadExample:
+        '"Responsible for the safety program" becomes "Ran the safety program across two sites; recordable incidents fell 38%."',
     });
   }
 
@@ -154,6 +251,8 @@ export function generateBulletSuggestions(
         '"Worked the register" becomes "Worked the register at the campus cafe during the lunch rush."',
       workExample:
         '"Stocked shelves" becomes "Stocked the dairy and frozen aisles on the overnight shift."',
+      leadExample:
+        '"Managed vendors" becomes "Managed 6 freight carriers and the contracts with each of them."',
     });
   }
 
@@ -173,6 +272,7 @@ export function generateBulletSuggestions(
       fix: resultQuestionFor(current),
       studentExample: pick(IMPACT_EXAMPLES.student, exampleSeed),
       workExample: pick(IMPACT_EXAMPLES.work, exampleSeed),
+      leadExample: pick(IMPACT_EXAMPLES.lead, exampleSeed),
     });
   }
 
@@ -195,6 +295,7 @@ export function generateBulletSuggestions(
           : metricPromptFor(current),
       studentExample: pick(NUMBER_EXAMPLES.student, exampleSeed),
       workExample: pick(NUMBER_EXAMPLES.work, exampleSeed),
+      leadExample: pick(NUMBER_EXAMPLES.lead, exampleSeed),
     });
   }
 
@@ -207,6 +308,8 @@ export function generateBulletSuggestions(
         '"Detail-oriented team player" becomes "Caught and fixed 3 gradebook errors before final grades posted."',
       workExample:
         '"Hard-working team player" becomes "Covered 14 open shifts in one month after two coworkers left."',
+      leadExample:
+        '"Results-driven leader" becomes "Turned around the lowest-rated site in the region within a year."',
     });
   }
 
@@ -217,6 +320,7 @@ export function generateBulletSuggestions(
       studentExample:
         'Analyzed housing survey data in R for a sociology capstone and presented 3 findings to the department.',
       workExample: 'Ran the weekly vendor returns and cut the backlog from 12 boxes to 2.',
+      leadExample: 'Consolidated three warehouses into one and cut lead time from 5 days to 2.',
     });
   }
 
@@ -232,8 +336,13 @@ export function generateBulletSuggestions(
         '"Was given responsibility for the club budget" becomes "Managed the club budget of $2,000 across two semesters."',
       workExample:
         '"Shipments were checked by me" becomes "Checked every inbound shipment against the packing list."',
+      leadExample:
+        '"Budget was owned for the region" becomes "Owned the regional budget and cut overtime 18% in a year."',
     });
   }
+
+  const grammar = grammarNote(current, opening);
+  if (grammar) suggestions.push(grammar);
 
   return suggestions;
 }
