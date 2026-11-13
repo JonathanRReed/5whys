@@ -11,6 +11,7 @@ import {
 import {
   APPLICATIONS_KEY,
   type ApplicationsData,
+  activeApplicationId,
   createDefaultApplications,
   loadApplications,
   saveApplications,
@@ -196,11 +197,7 @@ export function useDesk(options: { snapshot?: () => string } = {}): DeskState {
     const wanted = new URLSearchParams(window.location.search).get('id');
     const known = (id: string | null) => apps.applications.some((a) => a.id === id);
     choose(
-      known(wanted)
-        ? wanted
-        : known(apps.activeId)
-          ? apps.activeId
-          : (apps.applications[0]?.id ?? null)
+      known(wanted) ? wanted : (activeApplicationId(apps) ?? apps.applications[0]?.id ?? null)
     );
     setReady(true);
   }, [choose, readResume]);

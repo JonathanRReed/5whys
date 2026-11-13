@@ -1,6 +1,7 @@
 import * as React from 'react';
+import { shortDate } from '../lib/applications';
 import { type CareerDashboardData, readCareerDashboard } from '../lib/career-bridge';
-import { FOCUS_LABELS, STAGE_LABELS } from '../lib/profile';
+import { FOCUS_LABELS, STAGE_LABELS, stageAnswer } from '../lib/profile';
 import { STRONG_SCORE } from '../lib/resume-game/thresholds';
 import { cn } from '../lib/utils';
 import ApplicationsPanel, { NewApplicationForm } from './ApplicationsPanel';
@@ -37,7 +38,7 @@ const TOOL_LINKS = [
   {
     name: 'Networking Practice',
     url: '/networking-practice/',
-    desc: 'Rehearse your pitch',
+    desc: 'Time and rate your introduction',
     color: 'text-gold',
     bg: 'bg-gold/12',
     icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
@@ -252,7 +253,9 @@ function Summary({ data, onChanged }: { data: CareerDashboardData; onChanged: ()
             href="/start/"
             className="inline-flex items-center gap-2 self-start rounded-full border border-border/40 bg-overlay/25 px-3 py-1.5 text-xs text-muted-foreground transition hover:border-border/60 hover:text-foreground"
           >
-            <span className="font-medium text-foreground">{STAGE_LABELS[data.profile.stage]}</span>
+            <span className="font-medium text-foreground">
+              {STAGE_LABELS[stageAnswer(data.profile)]}
+            </span>
             <span aria-hidden="true">·</span>
             <span>{FOCUS_LABELS[data.profile.focus]}</span>
             <span className="text-foam">Change</span>
@@ -354,7 +357,8 @@ function Summary({ data, onChanged }: { data: CareerDashboardData; onChanged: ()
                       {step.company ? ` at ${step.company}` : ''}
                     </span>
                   </span>
-                  <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                  <span className="text-xs tabular-nums text-muted-foreground">
+                    {shortDate(step.due)},{' '}
                     {step.daysUntil < 0
                       ? `${-step.daysUntil} ${step.daysUntil === -1 ? 'day' : 'days'} overdue`
                       : step.daysUntil === 0
@@ -481,25 +485,6 @@ function Summary({ data, onChanged }: { data: CareerDashboardData; onChanged: ()
 function EmptyState({ onRestored, revision }: { onRestored: () => void; revision: number }) {
   return (
     <div className="mx-auto w-full max-w-2xl space-y-8 text-center">
-      {/* Large themed icon */}
-      <div className="flex justify-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-foam/12">
-          <svg
-            aria-hidden="true"
-            className="h-8 w-8 text-foam"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1.5}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-            />
-          </svg>
-        </div>
-      </div>
       <div className="space-y-3">
         <h2
           id="dashboard-empty-heading"

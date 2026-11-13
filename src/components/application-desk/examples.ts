@@ -6,7 +6,10 @@ export interface DeskExamples {
   experienceHelp: string;
   experiencePlaceholder: string;
   impactPlaceholder: string;
-  bulletPlaceholder: string;
+  /** One placeholder per bullet box, so the two never read the same. */
+  bulletPlaceholders: readonly [string, string];
+  /** For the draft fields: a verb, what was done, what happened. */
+  draft: { verb: string; task: string; result: string };
   /** A hook that starts with something done, shown when the opener is generic. */
   hook: string;
   /** A finished letter: greeting, four parts, sign-off. */
@@ -19,8 +22,15 @@ const STUDENT: DeskExamples = {
   experiencePlaceholder: 'I ran social media for the campus radio station for a year...',
   impactPlaceholder:
     'Because of the weekly schedule I set up, volunteers stopped missing shifts...',
-  bulletPlaceholder:
-    "Grew the station's Instagram from 400 to 2,100 followers by posting three times a week",
+  bulletPlaceholders: [
+    'Counted and balanced my register drawer at the end of every shift',
+    'Showed two new cashiers how to open the register in their first week',
+  ],
+  draft: {
+    verb: 'Ran',
+    task: "the club's weekly sign-up table",
+    result: 'more first-years came to the second meeting',
+  },
   hook: "Over the last year I grew my club's Instagram into a real community, and I would love to do that for your team.",
   letter: [
     'Dear Ms. Okafor,',
@@ -39,8 +49,15 @@ const WORKING: DeskExamples = {
   experiencePlaceholder: 'I ran the evening shift at a distribution warehouse for six years...',
   impactPlaceholder:
     'Because I changed how the handover between shifts was written down, late orders stopped slipping to the next day...',
-  bulletPlaceholder:
-    'Cut late orders from 40 a week to 6 by rewriting the handover between the day and evening shifts',
+  bulletPlaceholders: [
+    'Cut late orders from 40 a week to 6 by rewriting the handover between shifts',
+    'Trained new pickers on the scanners so they reached full pace in their first week',
+  ],
+  draft: {
+    verb: 'Rewrote',
+    task: 'the handover notes between the day and evening shifts',
+    result: 'late orders stopped slipping to the next day',
+  },
   hook: 'For six years I ran an evening shift where forty orders a week used to go out late, and I got that down to six. I would like to bring that to your operations team.',
   letter: [
     'Dear Mr. Haddad,',

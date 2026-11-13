@@ -6,14 +6,14 @@ import {
   setQualification,
   updateActionStep,
 } from '../../lib/application-desk';
+import { shortDate } from '../../lib/applications';
+import { describeStanding, deskRequirements, standing } from '../../lib/desk-checks';
 import {
   type CoverageRow,
-  describeCoverage,
   describeParts,
   hiringCondition,
   type PostingRequirement,
   type PostingSection,
-  requirementsFromBullets,
   summarizeCoverage,
 } from '../../lib/posting';
 import { cn } from '../../lib/utils';
@@ -89,20 +89,13 @@ export default function QualificationsStation({ desk }: { desk: DeskState }) {
   const [step, setStep] = React.useState('');
   const [due, setDue] = React.useState('');
 
-  const confirmed = React.useMemo(
-    () => requirementsFromBullets(role?.bullets ?? []).filter((r) => r.status === 'confirmed'),
-    [role?.bullets]
-  );
   // Work authorization, a minimum age, a background check: kept apart, because
   // they are not skills to show or to get.
-  const conditions = React.useMemo(
-    () => confirmed.filter((r) => hiringCondition(r.text) !== null),
-    [confirmed]
+  const { requirements, conditions } = React.useMemo(
+    () => deskRequirements(role?.bullets ?? []),
+    [role?.bullets]
   );
-  const requirements = React.useMemo(
-    () => confirmed.filter((r) => hiringCondition(r.text) === null),
-    [confirmed]
-  );
+  const confirmed = requirements.length + conditions.length;
   const coverage = React.useMemo(
     () => (resumeText.trim() ? summarizeCoverage(requirements, resumeText) : null),
     [requirements, resumeText]
@@ -111,10 +104,13 @@ export default function QualificationsStation({ desk }: { desk: DeskState }) {
   const appId = application.id;
   const rows = new Map(desk.desk.qualifications.map((row) => [row.requirementId, row]));
   const evidence = new Map(coverage?.rows.map((row) => [row.requirement.id, row]) ?? []);
-  const tally = { have: 0, maybe: 0, 'not-yet': 0, unset: 0 };
-  for (const requirement of requirements) tally[rows.get(requirement.id)?.status ?? 'unset'] += 1;
+  const where = standing(
+    requirements,
+    desk.desk.qualifications,
+    coverage ? new Map(coverage.rows.map((row) => [row.requirement.id, row.state])) : null
+  );
 
-  if (!confirmed.length) {
+  if (!confirmed) {
     return (
       <p className="max-w-[60ch] text-sm leading-relaxed text-muted-foreground">
         Confirm some requirements on the Posting station first. Each one becomes a row here, where
@@ -250,34 +246,17 @@ export default function QualificationsStation({ desk }: { desk: DeskState }) {
           will show it or how you could get it.
         </p>
         <p className="text-sm font-medium text-foreground" data-testid="standing-line">
-          {requirements.length === 0
-            ? 'Every confirmed line is a condition of the job, listed below.'
-            : tally.unset === requirements.length
-              ? `${requirements.length} to mark.`
-              : `${tally.have} have it, ${tally.maybe} maybe, ${tally['not-yet']} not yet${
-                  tally.unset ? `, ${tally.unset} still to mark` : ''
-                }.`}{' '}
-          {requirements.length > 0 &&
-            tally.unset === 0 &&
-            (tally['not-yet'] + tally.maybe === 0
-              ? 'You can show every one of these. Apply.'
-              : tally.have >= tally['not-yet']
-                ? 'You have more than you are missing. That is enough to apply; plan for the gaps below.'
-                : 'You are missing more than you have. You can still apply, and the plan below is where to start.')}
+          {describeStanding(where)}
         </p>
-        <p className="text-sm text-foreground" data-testid="coverage-line">
-          {coverage ? (
-            describeCoverage(coverage)
-          ) : (
-            <>
-              Add your resume in the{' '}
-              <a className="underline underline-offset-2" href="/resume-game/">
-                Resume Game
-              </a>{' '}
-              and this page will show where it already backs each requirement.
-            </>
-          )}
-        </p>
+        {!coverage && (
+          <p className="text-sm text-foreground" data-testid="coverage-line">
+            Add your resume in the{' '}
+            <a className="underline underline-offset-2" href="/resume-game/">
+              Resume Game
+            </a>{' '}
+            and this page will show where it already backs each requirement.
+          </p>
+        )}
       </div>
 
       <div className="space-y-8">
@@ -343,8 +322,8 @@ export default function QualificationsStation({ desk }: { desk: DeskState }) {
               >
                 {item.text}
                 {item.due && (
-                  <span className="ml-2 font-mono text-xs text-muted-foreground">
-                    by {item.due}
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    by {shortDate(item.due)}
                   </span>
                 )}
               </span>

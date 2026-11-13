@@ -6,7 +6,7 @@ import {
   saveMessageVariant,
   updateLetter,
 } from '../../lib/application-desk';
-import { isGenericOpener, LINKEDIN_NOTE_LIMIT } from '../../lib/desk-checks';
+import { isGenericOpener, LINKEDIN_NOTE_LIMIT, whyYouDraft } from '../../lib/desk-checks';
 import { loadFeature, runFeature } from '../../lib/lazy-feature';
 import type { AiResult } from '../../lib/local-ai';
 import { requirementsFromBullets } from '../../lib/posting';
@@ -16,6 +16,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { useDeskExamples } from './examples';
+import LetterPreview from './LetterPreview';
 import type { DeskState } from './useDesk';
 
 const PARTS: { key: LetterPart; title: string; help: string; rows: number }[] = [
@@ -70,13 +71,13 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
   const appId = application.id;
   const letter = desk.desk.letter;
   const generic = letter.hook.trim() ? isGenericOpener(letter.hook) : false;
-  // Up to three requirements the student marked "have it": the skeleton of
-  // "why you" is one skill from the posting, then quick proof.
-  const statuses = new Map(desk.desk.qualifications.map((row) => [row.requirementId, row.status]));
-  const haveIt = requirementsFromBullets(role?.bullets ?? [])
-    .filter((r) => r.status === 'confirmed' && statuses.get(r.id) === 'have')
-    .slice(0, 3)
-    .map((r) => r.text.replace(/[.;]+$/, ''));
+  // Up to three requirements the student marked "have it", each with the
+  // proof they typed for it on the qualifications station. Conditions of
+  // hiring and lines that sell no one (being enrolled) are left out.
+  const haveIt = whyYouDraft(
+    requirementsFromBullets(role?.bullets ?? []),
+    desk.desk.qualifications
+  );
 
   const derive = async () => {
     setBusy(true);
@@ -191,13 +192,18 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
                 onClick={() =>
                   changeDesks((data) =>
                     updateLetter(data, appId, {
-                      whyYou: haveIt.map((text) => `${text}: [your proof]`).join('\n'),
+                      whyYou: haveIt.join('\n'),
                     })
                   )
                 }
               >
                 Start from what you marked "have it"
               </Button>
+            )}
+            {part.key === 'whyYou' && haveIt.length > 0 && !letter.whyYou.trim() && (
+              <p className="text-xs text-muted-foreground">
+                Fills in each one with the proof you wrote for it under Qualifications.
+              </p>
             )}
             {part.key === 'hook' && generic && (
               <p role="status" className="rounded-lg bg-gold/12 px-3 py-2 text-sm text-foreground">
@@ -207,6 +213,15 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
             )}
           </div>
         ))}
+
+        <div className="border-t border-border/40 pt-6">
+          <LetterPreview
+            letter={letter}
+            title={application.title}
+            company={application.company}
+            headingId="letter-preview-heading"
+          />
+        </div>
       </div>
 
       <div className="min-w-0 space-y-5" data-guide="letter-messages">
