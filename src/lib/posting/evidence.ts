@@ -31,7 +31,11 @@ import {
 import {
   type DatedRole,
   type DocumentLineKind,
+  datePoints,
+  educationInProgress,
+  type MonthStamp,
   monthsCovered,
+  notDoneSpans,
   readDocument,
   startsWithAction,
 } from './resume-lines';
@@ -62,6 +66,12 @@ export interface RequirementAsk {
   label: string;
   terms: RequirementTerm[];
   alternatives?: boolean;
+  /**
+   * `degree`: a degree level, shown by a finished degree (or, when the
+   * posting asks for study in progress, by one not yet finished).
+   * `enrollment`: shown by any education line for study not yet finished.
+   */
+  role?: 'degree' | 'enrollment';
 }
 
 export interface YearsAsk {
@@ -69,8 +79,12 @@ export interface YearsAsk {
   min: number;
   /** "2+ years", "1 to 3 years". */
   label: string;
+  /** The same, in whole months: 18 for "1.5 years", 3 for "3 months". */
+  minMonths: number;
   /** Fields that count, any one of them ("operations", "logistics"). Empty for "2+ years of experience". */
   fields: RequirementTerm[];
+  /** True when every field is asked for ("Python and SQL"), not any one of them. */
+  allFields?: boolean;
 }
 
 export interface RequirementAnalysis {
@@ -83,6 +97,8 @@ export interface RequirementAnalysis {
   years?: YearsAsk;
   /** "or equivalent experience" */
   acceptsEquivalent: boolean;
+  /** "Currently enrolled in", "pursuing a degree": study in progress is what is asked for. */
+  enrollment?: boolean;
 }
 
 export interface RequirementPart {
@@ -152,12 +168,21 @@ const NUMBER_WORDS: Record<string, number> = {
   eight: 8,
   nine: 9,
   ten: 10,
+  eleven: 11,
+  twelve: 12,
+  eighteen: 18,
 };
-const NUM = '(\\d{1,2}|zero|one|two|three|four|five|six|seven|eight|nine|ten)';
+const NUM =
+  '(\\d{1,2}(?:\\.\\d+)?|zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|eighteen)';
+// Groups: 1 the least, 2 "+", 3 the most, 4 the unit, 5 the connector.
 const YEARS_PATTERN = new RegExp(
-  `\\b${NUM}\\s*(\\+|plus|or more)?\\s*(?:(?:-|–|to)\\s*${NUM}\\s*\\+?\\s*)?(?:full[- ]time\\s+)?years?['’]?\\s*(?:\\+\\s*)?(of|in|as|with)?\\b\\s*`,
+  `\\b${NUM}\\s*(\\+|plus|or more)?\\s*(?:(?:-|–|to)\\s*${NUM}\\s*\\+?\\s*)?(?:full[- ]time\\s+)?(years?|months?)['’]?\\s*(?:\\+\\s*)?(of|in|as|with)?\\b\\s*`,
   'i'
 );
+/** "within 6 months of hire", "over the past 3 years": a deadline or a window, not experience. */
+const WINDOW_BEFORE = /\b(?:within|after|first|every|per|each|next|last|past)\s+(?:the\s+)?$/i;
+const WINDOW_AFTER =
+  /^(?:old|or\s+older|and\s+older|of\s+age|age|hire|hiring|employment|starting|joining|graduation|the\s+start)\b/i;
 
 function toNumber(value: string): number {
   return NUMBER_WORDS[value.toLowerCase()] ?? Number(value);
@@ -197,16 +222,22 @@ function trimItem(item: string): string {
   return words.join(' ');
 }
 
-/** Splits "operations, logistics, supply chain, or a related field" into its alternatives. */
-export function fieldList(text: string, offset: number, source: string): RequirementTerm[] {
+/** The field list of a years requirement, with leading and trailing filler removed. */
+function fieldText(text: string): string {
   let rest = text;
   for (let i = 0; i < 3; i++)
     rest = rest.replace(STRIP_LEADING, '').replace(/^(?:in|as|with|of)\s+/i, '');
   const cut = rest.search(CUT_AT);
   if (cut >= 0) rest = rest.slice(0, cut);
   for (let i = 0; i < 3; i++) rest = rest.replace(TRAILING, '').trim();
+  return rest;
+}
+
+/** Splits "operations, logistics, supply chain, or a related field" into its alternatives. */
+export function fieldList(text: string, offset: number, source: string): RequirementTerm[] {
+  const rest = fieldText(text);
   const terms: RequirementTerm[] = [];
-  for (const raw of rest.split(/\s*,\s*|\s+or\s+|\s+and\s+|\s*\/\s*|\s+&\s+/)) {
+  for (const raw of rest.split(/\s*,\s*(?:(?:and|or)\s+)?|\s+or\s+|\s+and\s+|\s*\/\s*|\s+&\s+/)) {
     const item = trimItem(raw);
     if (!item || item.length < 2) continue;
     const lower = item.toLowerCase();
@@ -225,34 +256,44 @@ export function fieldList(text: string, offset: number, source: string): Require
   return terms;
 }
 
-/** "2+ years of experience in operations, logistics, or supply chain" read as a number and fields. */
+/**
+ * "2+ years of experience in operations, logistics, or supply chain" read as
+ * a duration and fields. "1.5 years" stays one and a half; "3 months" is a
+ * quarter of a year. Fields joined by "and" ("Python and SQL") are each
+ * asked for; only "or" offers alternatives.
+ */
 export function parseYears(requirementText: string): YearsAsk | null {
   const text = normalizePunctuation(requirementText);
   const match = text.match(YEARS_PATTERN);
   if (!match || match.index === undefined) return null;
   const after = text.slice(match.index + match[0].length);
-  if (
-    /^(?:old|or\s+older|and\s+older|of\s+age|age)\b/i.test(after) ||
-    (match[4]?.toLowerCase() === 'of' && /^age\b/i.test(after))
-  )
-    return null;
-  const connector = match[4];
+  if (WINDOW_AFTER.test(after) || WINDOW_BEFORE.test(text.slice(0, match.index))) return null;
+  const connector = match[5];
   if (!connector && !/\bexperience\b/i.test(after)) return null;
-  const min = toNumber(match[1]);
-  const max = match[3] ? toNumber(match[3]) : null;
-  const plural = (n: number) => (n === 1 ? 'year' : 'years');
+  const inMonths = /^month/i.test(match[4]);
+  const least = toNumber(match[1]);
+  const most = match[3] ? toNumber(match[3]) : null;
+  const unit = (n: number) =>
+    inMonths ? (n === 1 ? 'month' : 'months') : n === 1 ? 'year' : 'years';
   const label =
-    max !== null
-      ? `${min} to ${max} ${plural(max)}`
-      : `${min}${match[2] ? '+' : ''} ${plural(min)}`;
+    most !== null
+      ? `${least} to ${most} ${unit(most)}`
+      : `${least}${match[2] ? '+' : ''} ${unit(least)}`;
+  const minMonths = Math.round(inMonths ? least : least * 12);
+  const fields = fieldList(after, match.index + match[0].length, text);
+  const rest = fieldText(after);
+  const allFields = fields.length > 1 && /\band\b/i.test(rest) && !/\bor\b|\//i.test(rest);
   return {
-    min,
+    min: minMonths / 12,
+    minMonths,
     label,
-    fields: fieldList(after, match.index + match[0].length, text),
+    fields,
+    ...(allFields ? { allFields: true } : {}),
   };
 }
 
 function aboutDuration(months: number): string {
+  if (months < 1) return 'less than a month';
   if (months < 12) return `about ${months} ${months === 1 ? 'month' : 'months'}`;
   const years = Math.round(months / 12);
   return `about ${years} ${years === 1 ? 'year' : 'years'}`;
@@ -285,6 +326,23 @@ const EXAMPLES =
  */
 const ELIGIBILITY =
   /^(?:must\s+(?:be\s+)?(?:able\s+to\s+(?:lift|stand|sit|walk|work|travel|commute)|available|willing|eligible|authorized|legally|at\s+least\s+\d|\d+|a\s+current|currently|enrolled|18|16|21)|availab|willing(?:ness)?\s+to|able\s+to\s+(?:lift|stand|work\s+(?:weekends|evenings|nights))|(?:an?\s+)?(?:interest|passion|enthusiasm)\s+(?:in|for)\b|(?:must\s+)?(?:have|possess)\s+reliable\s+transportation)/i;
+
+/**
+ * Study in progress: "Currently enrolled in a college program", "Pursuing a
+ * bachelor's degree". An education line with an expected date shows it. "A
+ * current Bellmont student" is left out: a resume cannot show which school
+ * a posting means by a name alone.
+ */
+const ENROLLMENT =
+  /\b(?:currently\s+(?:enrolled|attending|pursuing|studying|working\s+toward)|enrolled\s+(?:in|at)\b|pursuing\s+(?:an?\s+|your\s+)?(?:[\w'.-]+\s+){0,4}?(?:degree|diploma|program|studies|major)|working\s+towards?\s+(?:an?\s+)?(?:[\w'.-]+\s+){0,4}?(?:degree|diploma))\b/i;
+
+/** A line that names a degree of its own. */
+const DEGREE_WORDS =
+  /\b(?:bachelor|master|associate|doctor|diploma|degree|ph\.?d|ged)\b|\b(?:B\.?\s?[AS]|M\.?\s?[AS]|MBA|AAS|A\.A\.S?)(?![A-Za-z])/i;
+
+/** Words that name a kind of school, not a field of study. */
+const INSTITUTION_WORDS =
+  /^(?:college|university|community|community college|school|high school|program|institution|accredited|undergraduate|graduate)$/i;
 
 function isDuty(text: string): boolean {
   return (
@@ -370,7 +428,8 @@ export function analyzeRequirement(
   const negated = Boolean(cues.negated) && !cues.required && !cues.preferred;
   // A capitalized name ("Bellmont") does not make "Must be a current Bellmont student" checkable; a tool would.
   const tools = named.filter((t) => t.source !== 'phrase' || /^[A-Z][A-Z&]{1,5}s?$/.test(t.label));
-  const eligibility = ELIGIBILITY.test(text.trim()) && tools.length === 0;
+  const enrollment = ENROLLMENT.test(text);
+  const eligibility = !enrollment && ELIGIBILITY.test(text.trim()) && tools.length === 0;
   if (negated || eligibility) {
     return { kind: 'task', terms: [], weakTerms, asks: [], acceptsEquivalent };
   }
@@ -388,7 +447,7 @@ export function analyzeRequirement(
   }
 
   const levels = terms.filter((t) => DEGREE_KEYS.has(t.key));
-  if (levels.length > 0 || /\b(?:degree|diploma)\b/i.test(text)) {
+  if (enrollment || levels.length > 0 || /\b(?:degree|diploma)\b/i.test(text)) {
     const asks: RequirementAsk[] = [];
     if (levels.length > 0) {
       const levelLabel = levels[0].label;
@@ -396,7 +455,10 @@ export function analyzeRequirement(
         label: /degree|diploma/i.test(levelLabel) ? levelLabel : `${levelLabel} degree`,
         terms: levels,
         alternatives: true,
+        role: 'degree',
       });
+    } else if (enrollment) {
+      asks.push({ label: 'Currently enrolled', terms: [], alternatives: true, role: 'enrollment' });
     }
     const fieldStart = text.search(
       /\b(?:degree|diploma|bachelor'?s|master'?s|associate'?s|b\.?[as]\.?|m\.?[as]\.?)(?:\s+program)?\s+(?:in|of)\s+/i
@@ -409,6 +471,9 @@ export function analyzeRequirement(
       const from = fieldStart + lead.length;
       fields = fieldList(text.slice(from).replace(/,?\s*or\s+equivalent\b.*$/i, ''), from, text);
     }
+    // "Currently enrolled in a Computer Science program": the field, without the kind of school.
+    if (fieldStart < 0 && enrollment)
+      fields = terms.filter((t) => !levels.includes(t) && !INSTITUTION_WORDS.test(t.key));
     if (fields.length > 0)
       asks.push({ label: orList(fields.map((f) => f.label)), terms: fields, alternatives: true });
     return {
@@ -417,6 +482,7 @@ export function analyzeRequirement(
       weakTerms,
       asks,
       acceptsEquivalent,
+      ...(enrollment ? { enrollment: true } : {}),
     };
   }
 
@@ -501,6 +567,31 @@ function rankFor(terms: RequirementTerm[]) {
   };
 }
 
+type Range = { from: MonthStamp; to: MonthStamp };
+
+const monthIndex = (stamp: MonthStamp) => stamp.year * 12 + stamp.month;
+
+/**
+ * "Started learning Python in Dec 2024": the tool counts from that date, not
+ * from the start of the job. Without a date, nobody can say for how long.
+ */
+const LEARNING_START =
+  /\b(?:(?:start(?:ed|ing)|began|begin(?:ning)?)\s+(?:to\s+)?(?:learn(?:ing)?|use|using|study(?:ing)?|work(?:ing)?\s+with)|(?:currently|now|still)\s+learning|new\s+to|picked\s+up|introduced\s+to)\b/i;
+
+/** The months of `role` a line can vouch for, or null when it names no start date. */
+function rangeFromLine(role: DatedRole, line: string): Range | null {
+  if (!LEARNING_START.test(line)) return role;
+  const start = datePoints(line)[0];
+  if (!start) return null;
+  const from = monthIndex(start) > monthIndex(role.from) ? start : role.from;
+  return monthIndex(from) > monthIndex(role.to)
+    ? { from: role.to, to: role.to }
+    : { from, to: role.to };
+}
+
+const insideAny = (span: SourceSpan, spans: readonly SourceSpan[]) =>
+  spans.some((s) => s.start <= span.start && span.end <= s.end);
+
 function yearsEvidence(
   analysis: RequirementAnalysis & { years: YearsAsk },
   documentText: string,
@@ -527,8 +618,7 @@ function yearsEvidence(
   const normalized = normalizePunctuation(documentText);
   const lower = normalized.toLowerCase();
   const total = monthsCovered(doc.roles);
-  const enough = (months: number) => months >= years.min * 12 && months > 0;
-  const fieldsOr = orList(years.fields.map((f) => f.label));
+  const enough = (months: number) => months >= years.minMonths && months > 0;
 
   if (years.fields.length === 0) {
     const shown = enough(total);
@@ -545,24 +635,37 @@ function yearsEvidence(
     };
   }
 
-  const roleHits = new Map<DatedRole, RequirementTerm[]>();
+  const denied = notDoneSpans(documentText);
+  // Per field: the months each mention can vouch for, and whether a mention gave no start date.
+  const ranges = new Map<RequirementTerm, Range[]>();
+  const undated = new Set<RequirementTerm>();
   const matchSpans: { term: RequirementTerm; span: SourceSpan }[] = [];
   for (const role of doc.roles) {
     for (const term of years.fields) {
       for (const variant of term.variants) {
         const spans = findVariant(variant, normalized, lower).filter(
-          (s) => s.start >= role.start && s.end <= role.end
+          (s) => s.start >= role.start && s.end <= role.end && !insideAny(s, denied)
         );
-        if (spans.length === 0) continue;
-        roleHits.set(role, [...(roleHits.get(role) ?? []), term]);
-        for (const span of spans) matchSpans.push({ term, span });
+        for (const span of spans) {
+          matchSpans.push({ term, span });
+          const line = doc.lines.find((l) => l.start <= span.start && span.end <= l.end);
+          const range = rangeFromLine(role, line?.text ?? '');
+          if (range) ranges.set(term, [...(ranges.get(term) ?? []), range]);
+          else undated.add(term);
+        }
       }
     }
   }
-  const fieldRoles = [...roleHits.keys()];
-  const fieldMonths = monthsCovered(fieldRoles);
-  const found = years.fields.filter((f) => fieldRoles.some((r) => roleHits.get(r)?.includes(f)));
+  const found = years.fields.filter((f) => ranges.has(f) || undated.has(f));
   const missing = years.fields.filter((f) => !found.includes(f));
+  const monthsFor = (fields: RequirementTerm[]) =>
+    monthsCovered(fields.flatMap((f) => ranges.get(f) ?? []));
+  // "Python and SQL": each needs the years. "Python or SQL": any one does.
+  const fieldsShown = years.allFields ? missing.length === 0 : found.length > 0;
+  const fieldMonths =
+    years.allFields && missing.length === 0
+      ? Math.min(...years.fields.map((f) => monthsFor([f])))
+      : monthsFor(found);
   const matches = matchSpans.map(({ term, span }) => ({
     ...span,
     text: documentText.slice(span.start, span.end),
@@ -571,54 +674,77 @@ function yearsEvidence(
   }));
   const excerpts = groupIntoExcerpts(documentText, matches, WORK_LINES).sort(byStrength);
   const foundLabels = andList(found.map((f) => f.label));
-  const fieldPart = (shown: boolean): RequirementPart => ({
-    label: `experience in ${fieldsOr}`,
-    shown,
-    terms: years.fields,
-    excerpt: shown ? excerpts[0] : undefined,
-  });
+  const fieldsLabel = years.allFields
+    ? andList(years.fields.map((f) => f.label))
+    : orList(years.fields.map((f) => f.label));
+  const excerptFor = (fields: RequirementTerm[]) => {
+    const keys = new Set(fields.map((f) => f.key));
+    return excerpts.find((e) => e.matches.some((m) => keys.has(m.termKey)));
+  };
+  const fieldParts = (): RequirementPart[] =>
+    years.allFields
+      ? years.fields.map((f) => ({
+          label: `experience in ${f.label}`,
+          shown: found.includes(f),
+          terms: [f],
+          excerpt: found.includes(f) ? excerptFor([f]) : undefined,
+        }))
+      : [
+          {
+            label: `experience in ${fieldsLabel}`,
+            shown: found.length > 0,
+            terms: years.fields,
+            excerpt: found.length > 0 ? excerpts[0] : undefined,
+          },
+        ];
+  const common = {
+    ...base,
+    excerpts: found.length > 0 ? excerpts : [],
+    foundTerms: found,
+    missingTerms: missing,
+  };
 
-  if (fieldMonths > 0 && enough(fieldMonths)) {
+  if (fieldsShown && enough(fieldMonths)) {
     return {
-      ...base,
-      excerpts,
-      foundTerms: found,
-      missingTerms: missing,
+      ...common,
       state: 'evidence',
-      parts: [{ label: years.label, shown: true, terms: [] }, fieldPart(true)],
+      parts: [{ label: years.label, shown: true, terms: [] }, ...fieldParts()],
       note: `${capitalize(aboutDuration(fieldMonths))} in roles mentioning ${foundLabels}.`,
     };
   }
-  if (fieldMonths > 0) {
+  if (found.length > 0) {
+    const notes: string[] = [];
+    if (fieldMonths === 0 && undated.size > 0) {
+      notes.push(
+        `Your resume mentions ${foundLabels} without saying since when, so whether it adds up to ${years.label} is for you to judge`
+      );
+    } else {
+      notes.push(
+        `${capitalize(aboutDuration(fieldMonths))} in roles mentioning ${foundLabels}; the posting asks for ${years.label}`
+      );
+    }
+    if (years.allFields && missing.length > 0)
+      notes.push(`no role names ${andList(missing.map((f) => f.label))}`);
     return {
-      ...base,
-      excerpts,
-      foundTerms: found,
-      missingTerms: missing,
+      ...common,
       state: 'partial',
-      parts: [{ label: years.label, shown: false, terms: [] }, fieldPart(true)],
-      note: `${capitalize(aboutDuration(fieldMonths))} in roles mentioning ${foundLabels}; the posting asks for ${years.label}.`,
+      parts: [{ label: years.label, shown: false, terms: [] }, ...fieldParts()],
+      note: `${notes.join('; ')}.`,
     };
   }
   if (enough(total)) {
     return {
-      ...base,
-      excerpts: [],
-      foundTerms: [],
-      missingTerms: years.fields,
+      ...common,
       state: 'partial',
-      parts: [{ label: years.label, shown: true, terms: [] }, fieldPart(false)],
-      note: `Your resume has ${aboutDuration(total)} of dated work, but no role names ${fieldsOr}.`,
+      parts: [{ label: years.label, shown: true, terms: [] }, ...fieldParts()],
+      note: `Your resume has ${aboutDuration(total)} of dated work, but no role names ${fieldsLabel}.`,
     };
   }
   return {
-    ...base,
-    excerpts: [],
-    foundTerms: [],
-    missingTerms: years.fields,
+    ...common,
     state: 'none',
-    parts: [{ label: years.label, shown: false, terms: [] }, fieldPart(false)],
-    note: `Your resume has ${aboutDuration(total)} of dated work, and no role names ${fieldsOr}.`,
+    parts: [{ label: years.label, shown: false, terms: [] }, ...fieldParts()],
+    note: `Your resume has ${aboutDuration(total)} of dated work, and no role names ${fieldsLabel}.`,
   };
 }
 
@@ -659,13 +785,52 @@ export function findRequirementEvidence(
     };
   }
   const kinds = kind === 'education' ? EDUCATION_LINES : WORK_LINES;
-  const allMatches = findTermMatches(terms, documentText);
+  // "Never used Python", "Planning to learn SQL": a denial or a plan is not evidence.
+  const denied = notDoneSpans(documentText);
+  const allMatches = findTermMatches(terms, documentText).filter((m) => !insideAny(m, denied));
   const candidates = groupIntoExcerpts(documentText, allMatches, kinds).sort(rankFor(terms));
+  const today = options.today ?? new Date();
+  const docLines = kind === 'education' ? readDocument(documentText, { today }).lines : [];
+  // "Associate in Business" over "Lakeshore Community College, expected 2027": the date may sit on the next line.
+  const inProgress = (e: { start: number; end: number; text: string }) => {
+    if (educationInProgress(e.text, today)) return true;
+    const at = docLines.findIndex((l) => l.start <= e.start && e.end <= l.end);
+    const next = at >= 0 ? docLines[at + 1] : undefined;
+    return (
+      next !== undefined &&
+      next.kind === 'education' &&
+      !DEGREE_WORDS.test(next.text) &&
+      educationInProgress(next.text, today)
+    );
+  };
+  let unfinished: EvidenceExcerpt | undefined;
   const used = new Set<EvidenceExcerpt>();
   const shownKeys = new Set<string>();
   const parts: RequirementPart[] = asks.map((ask) => {
+    if (ask.role === 'enrollment') {
+      const line = docLines.find((l) => l.kind === 'education' && inProgress(l));
+      const excerpt: EvidenceExcerpt | undefined = line && {
+        start: line.start,
+        end: line.end,
+        text: line.text,
+        matches: [],
+        listedOnly: false,
+        kind: line.kind,
+      };
+      if (excerpt) {
+        candidates.unshift(excerpt);
+        used.add(excerpt);
+      }
+      return { label: ask.label, shown: Boolean(excerpt), terms: [], excerpt };
+    }
     const keys = new Set(ask.terms.map((t) => t.key));
-    const showing = candidates.filter((e) => lineShows(ask, e));
+    let showing = candidates.filter((e) => lineShows(ask, e));
+    if (ask.role === 'degree') {
+      // A degree asked for is a finished one, unless the posting asks for study in progress.
+      const wanted = showing.filter((e) => inProgress(e) === Boolean(analysis.enrollment));
+      if (!analysis.enrollment && wanted.length === 0) unfinished = showing.find(inProgress);
+      showing = wanted;
+    }
     for (const e of showing) {
       used.add(e);
       for (const m of e.matches) if (keys.has(m.termKey)) shownKeys.add(m.termKey);
@@ -674,9 +839,18 @@ export function findRequirementEvidence(
     return { label: ask.label, shown: Boolean(excerpt), terms: ask.terms, excerpt };
   });
   const excerpts = candidates.filter((e) => used.has(e));
+  if (unfinished) used.add(unfinished);
   const shownCount = parts.filter((p) => p.shown).length;
   const state: EvidenceState =
-    shownCount === parts.length ? 'evidence' : shownCount > 0 ? 'partial' : 'none';
+    shownCount === parts.length ? 'evidence' : shownCount > 0 || unfinished ? 'partial' : 'none';
+  const notes = [
+    unfinished
+      ? `Your degree is in progress ("${unfinished.text.trim()}"); the posting asks for a finished one.`
+      : '',
+    kind === 'education' && state !== 'evidence' && analysis.acceptsEquivalent
+      ? 'The posting also accepts equivalent experience.'
+      : '',
+  ].filter(Boolean);
   return {
     terms,
     excerpts,
@@ -686,9 +860,6 @@ export function findRequirementEvidence(
     kind,
     parts,
     weakTerms,
-    note:
-      kind === 'education' && state !== 'evidence' && analysis.acceptsEquivalent
-        ? 'The posting also accepts equivalent experience.'
-        : undefined,
+    note: notes.length > 0 ? notes.join(' ') : undefined,
   };
 }

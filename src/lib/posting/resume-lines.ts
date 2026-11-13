@@ -285,7 +285,7 @@ function classifyLine(
     // "Library Assistant, State University | Jan 2024 - Dec 2025" is a job:
     // under Experience, or with a job title in it, the employer's name does
     // not make it schooling.
-    const job = section === 'experience' || JOB_TITLE_WORDS.test(line);
+    const job = section === 'experience' || JOB_TITLE_WORDS.test(withoutDegreeNames(line));
     return EDUCATION.test(line) && !job ? 'education' : 'title';
   }
   if (!action && EDUCATION.test(line) && words <= 14 && section !== 'experience')
@@ -302,6 +302,11 @@ function classifyLine(
   }
   if (!action && words < 6) return 'other';
   return 'experience';
+}
+
+/** "Associate in Business" is a degree, not a job title. */
+function withoutDegreeNames(line: string): string {
+  return line.replace(/\bassociate(?:['’]?s)?\s+(?:degree|of|in)\b/gi, ' ');
 }
 
 function stampOf(monthWord: string | undefined, monthNumber: string | undefined, year: string) {
@@ -445,4 +450,91 @@ export function monthsCovered(ranges: { from: MonthStamp; to: MonthStamp }[]): n
     for (let m = a; m < b; m++) covered.add(m);
   }
   return covered.size;
+}
+
+/**
+ * A clause that says the work was not done, or is only planned: "Never used
+ * Python", "No experience with SQL yet", "Planning to learn Excel next
+ * semester". The cue must open a clause, so "Tutored students who wanted to
+ * learn Python" still shows Python. "Never missed a shift" is a result, not
+ * a denial.
+ */
+const NOT_DONE = new RegExp(
+  [
+    '(?:^|[.;:!?]\\s*|,\\s*(?:(?:and|but)\\s+)?|\\s(?:and|but|though|although|yet)\\s+)',
+    "(?:i\\s+(?:am\\s+|'m\\s+|have\\s+|'ve\\s+|had\\s+|will\\s+|would\\s+)?)?(?:currently\\s+|still\\s+)?",
+    '(?:',
+    [
+      'never(?!\\s+(?:missed|miss|late|lost|failed|had\\s+an?\\s+(?:error|complaint|incident|accident)|been\\s+late))',
+      'not\\s+yet',
+      'no\\s+(?:prior\\s+|previous\\s+|formal\\s+|professional\\s+|real\\s+|hands-on\\s+|direct\\s+)?(?:experience|exposure|background|knowledge|training|familiarity)',
+      "(?:have|has|had|did|do|does|could|can|was|were)\\s*(?:not|n't)",
+      "(?:haven|hasn|hadn|didn|don|doesn|couldn|can|wasn|weren)['’]t",
+      'cannot',
+      'unable\\s+to',
+      'plan(?:s|ning|ned)?\\s+to',
+      'will\\s+(?:be\\s+)?(?:learn|learning|take|taking|start|starting|study|studying|use|using|begin|beginning)',
+      'going\\s+to',
+      'hop(?:e|es|ing)\\s+to',
+      'want(?:s|ing)?\\s+to',
+      'would\\s+like\\s+to',
+      'aim(?:s|ing)?\\s+to',
+      'intend(?:s|ing)?\\s+to',
+      'looking\\s+forward\\s+to',
+      'eager\\s+to',
+      'wish(?:es)?\\s+to',
+      'interested\\s+in\\s+learning',
+    ].join('|'),
+    ')\\b',
+  ].join(''),
+  'gi'
+);
+
+/**
+ * Spans of `text` that say something was not done or is only planned, from
+ * the cue to the end of its sentence. Matches inside them are not evidence.
+ */
+export function notDoneSpans(text: string): SourceSpan[] {
+  const spans: SourceSpan[] = [];
+  let lineStart = 0;
+  while (lineStart <= text.length) {
+    let lineEnd = text.indexOf('\n', lineStart);
+    if (lineEnd === -1) lineEnd = text.length;
+    const raw = text.slice(lineStart, lineEnd);
+    const glyph = raw.match(/^\s*(?:[•\-*◦○●‣⁃▪■–—·]\s*)?/)?.[0].length ?? 0;
+    const line = raw.slice(glyph);
+    for (const match of line.matchAll(NOT_DONE)) {
+      const from = (match.index ?? 0) + match[0].search(/\S/);
+      const stop = line.slice(from).search(/[.;!?](?:\s|$)/);
+      const to = stop >= 0 ? from + stop : line.length;
+      spans.push({ start: lineStart + glyph + from, end: lineStart + glyph + to });
+    }
+    lineStart = lineEnd + 1;
+  }
+  return spans;
+}
+
+const DATE_POINT = new RegExp(
+  `\\b(?:(${MONTH_WORD})\\.?\\s+|(\\d{1,2})\\/)?((?:19|20)\\d{2})\\b`,
+  'gi'
+);
+
+/** Every month or year a line names, in reading order. Missing months count from January. */
+export function datePoints(text: string): MonthStamp[] {
+  return [...text.matchAll(DATE_POINT)].map((m) => stampOf(m[1], m[2], m[3]));
+}
+
+const IN_PROGRESS =
+  /\b(?:expected|anticipated|candidate|in progress|pursuing|currently|enrolled|present|ongoing|to date|working toward)\b/i;
+
+/**
+ * True when an education line describes study that is not finished: it says
+ * "expected", "in progress", or "present", or its latest date is after today.
+ */
+export function educationInProgress(line: string, today: Date = new Date()): boolean {
+  if (IN_PROGRESS.test(line)) return true;
+  const points = datePoints(line);
+  if (points.length === 0) return false;
+  const latest = Math.max(...points.map((p) => p.year * 12 + p.month));
+  return latest > today.getFullYear() * 12 + today.getMonth() + 1;
 }

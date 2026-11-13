@@ -14,7 +14,7 @@
 
 import { analyzeRequirement, type EvidenceOptions } from './evidence';
 import { findVariant, type RequirementTerm, stem, tokenize, tokenRoles } from './match';
-import { readDocument } from './resume-lines';
+import { notDoneSpans, readDocument } from './resume-lines';
 import { normalizePunctuation } from './text';
 import type { SourceSpan } from './types';
 import { WORK_SYNONYM_GROUPS, type WorkSynonymGroup } from './work-synonyms';
@@ -158,6 +158,14 @@ function withoutParentheses(text: string): string {
   return text.replace(/\([^)]*\)/g, (m) => ' '.repeat(m.length));
 }
 
+/** `text` with the spans `find` returns replaced by spaces, keeping offsets. */
+function blank(text: string, find: (text: string) => SourceSpan[]): string {
+  let out = text;
+  for (const span of find(text))
+    out = out.slice(0, span.start) + ' '.repeat(span.end - span.start) + out.slice(span.end);
+  return out;
+}
+
 function mergeLabels(text: string, spans: SourceSpan[]): string[] {
   const sorted = [...spans].sort((a, b) => a.start - b.start);
   const merged: SourceSpan[] = [];
@@ -194,7 +202,12 @@ export function findNearMisses(
   const inFields = (span: SourceSpan) =>
     fieldTerms.some((f) => f.span.start <= span.start && span.end <= f.span.end);
   const source = withoutParentheses(requirement);
-  const wanted = concepts(source, analysis.kind === 'years' ? inFields : undefined);
+  // A named tool ("Excel") is used or not: a line about spreadsheets does not show it.
+  const tools = analysis.terms.filter((t) => t.shape === 'named');
+  const notTool = (span: SourceSpan) => !tools.some((t) => overlaps(t.span, span));
+  const wanted = concepts(source, (span) =>
+    analysis.kind === 'years' ? inFields(span) : notTool(span)
+  );
   // A field names an area of work; the table says which everyday work belongs to it.
   for (const field of fieldTerms) {
     for (const id of FIELD_WORK[field.key] ?? []) {
@@ -219,7 +232,8 @@ export function findNearMisses(
   doc.lines.forEach((line, order) => {
     if (line.kind !== 'experience') return;
     if (exclude.some((span) => overlaps(span, line))) return;
-    const text = normalized.slice(line.start, line.end);
+    // "Never coordinated", "Plan to learn": a denial or a plan is not the work.
+    const text = blank(normalized.slice(line.start, line.end), notDoneSpans);
     const found = conceptsOfLine(text).filter((h) => wantedIds.has(h.concept));
     const ids = new Set(found.map((h) => h.concept));
     const things = new Set(found.filter((h) => h.kind === 'thing').map((h) => h.concept));
@@ -245,7 +259,10 @@ export function findNearMisses(
   const results: NearMiss[] = [];
   for (const candidate of scored) {
     if (results.length >= limit) break;
-    const lineText = normalized.slice(candidate.line.start, candidate.line.end);
+    const lineText = blank(
+      normalized.slice(candidate.line.start, candidate.line.end),
+      notDoneSpans
+    );
     const sharedIds = differing(
       candidate.shared.map((h) => ({
         ...h,
