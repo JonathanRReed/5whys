@@ -114,10 +114,10 @@ export default function ScenarioBlueprint({ currentScenario, scenarioSteps, time
                     key={`${currentScenario.id}-step-${index}`}
                     className="flex items-center gap-3 rounded-2xl border border-border/35 bg-background/60 px-4 py-3 text-sm"
                   >
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-overlay/40 text-xs font-semibold text-foam">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-overlay/40 text-xs font-semibold text-foam">
                       {index + 1}
                     </span>
-                    <span className="flex-1 text-foreground">{step}</span>
+                    <span className="min-w-0 flex-1 wrap-anywhere text-foreground">{step}</span>
                   </li>
                 ))}
               </ol>

@@ -313,13 +313,13 @@ export default function ApplicationsPanel({ applications, readiness, onChanged }
                 className="rounded-2xl border border-border/35 bg-overlay/20 p-4 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-foam"
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                  <p className="font-medium text-foreground">
+                  <p className="min-w-0 max-w-full font-medium wrap-anywhere text-foreground">
                     {app.title}
                     {app.company && (
                       <span className="text-muted-foreground"> at {app.company}</span>
                     )}
                     {app.isActive && (
-                      <span className="ml-2 rounded-full bg-gold/15 px-2 py-0.5 align-middle text-xs font-medium text-foreground">
+                      <span className="ml-2 inline-block whitespace-nowrap rounded-full bg-gold/15 px-2 py-0.5 align-middle text-xs font-medium text-foreground">
                         In focus
                       </span>
                     )}

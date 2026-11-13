@@ -66,7 +66,7 @@ export default function RapportWarmups({ rapportSamples, scenarioId, onCopy, cop
                 key={key}
                 className="flex items-start justify-between gap-3 rounded-2xl border border-border/35 bg-background/60 p-4"
               >
-                <p className="text-sm text-foreground">{sample}</p>
+                <p className="min-w-0 flex-1 text-sm wrap-anywhere text-foreground">{sample}</p>
                 <Button
                   type="button"
                   size="sm"

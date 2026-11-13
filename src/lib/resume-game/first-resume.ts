@@ -29,6 +29,9 @@ import { buildBullet } from './analysis';
  * before the dates, which the posting reader groups into a dated role.
  */
 
+/** The fewest digits a phone number can have and still be dialled. */
+export const MIN_PHONE_DIGITS = 7;
+
 export type ExperienceKind = 'job' | 'club' | 'volunteer' | 'project' | 'family' | 'other';
 
 export interface DraftLine {
@@ -455,8 +458,11 @@ function checkYou(draft: ResumeDraft): DraftError[] {
       message: 'This email needs an @ and a domain, like name@example.com.',
     });
   }
-  if (phone && (phone.replace(/\D/g, '').length < 7 || /[a-z]/i.test(phone))) {
-    errors.push({ field: fieldId.phone, message: 'This phone number needs at least 7 digits.' });
+  if (phone && (phone.replace(/\D/g, '').length < MIN_PHONE_DIGITS || /[a-z]/i.test(phone))) {
+    errors.push({
+      field: fieldId.phone,
+      message: `This phone number needs at least ${MIN_PHONE_DIGITS} digits.`,
+    });
   }
   return errors;
 }

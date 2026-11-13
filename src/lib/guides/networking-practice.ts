@@ -21,8 +21,8 @@ export const networkingPracticeGuide: Guide = {
       body: 'In "Draft", write an opener, who you are, one honest line about what you bring, and one question. "Help me write it" has lines that work with no experience.',
       why: "Use your own words. If a line only works with someone else's achievements in it, cut it.",
       target: '#intro-draft',
-      done: { kind: 'filled', selector: '#intro-draft', minLength: 40 },
-      passed: { kind: 'filled', selector: '#intro-draft', minLength: 40 },
+      done: { kind: 'filled', selector: '#intro-draft', minLength: 10 },
+      passed: { kind: 'filled', selector: '#intro-draft', minLength: 10 },
     },
     {
       id: 'timer',
@@ -49,7 +49,7 @@ export const networkingPracticeGuide: Guide = {
       body: 'Write the one thing you will change next time in "One fix for next rep".',
       why: 'Pick the change that would help most. The rest can wait for later reps.',
       target: '#reflection-nextFocus',
-      done: { kind: 'filled', selector: '#reflection-nextFocus', minLength: 5 },
+      done: { kind: 'filled', selector: '#reflection-nextFocus', minLength: 2 },
     },
     {
       id: 'save',

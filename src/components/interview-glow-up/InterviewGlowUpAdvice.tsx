@@ -38,10 +38,32 @@ export default function InterviewGlowUpAdvice() {
   return (
     <article className="space-y-12 rounded-2xl border border-border/50 bg-card/45 px-6 py-12 sm:px-10 sm:py-14">
       {/* v1.3 Positioning Banner */}
-      <div className="flex items-center gap-3 rounded-2xl border border-gold/35 bg-gold/8 px-5 py-4">
-        <ClockIcon className="h-6 w-6 shrink-0 text-gold" />
-        <p className="min-w-0 text-sm font-medium text-foreground sm:text-base">
-          <strong>Got an interview tomorrow?</strong> Build your cheat sheet tonight.
+      <div className="space-y-4 rounded-2xl border border-gold/35 bg-gold/8 px-5 py-5">
+        <div className="flex items-center gap-3">
+          <ClockIcon className="h-6 w-6 shrink-0 text-gold" />
+          <p className="min-w-0 text-sm font-medium text-foreground sm:text-base">
+            <strong>Got an interview tomorrow?</strong> Build your cheat sheet tonight.
+          </p>
+        </div>
+        {/* The two things the tool does come first; the advice below can wait. */}
+        <div className="flex flex-col gap-3 sm:flex-row" data-testid="glowup-start">
+          <a
+            href="/interview-glow-up/workspace/?guide=1"
+            className="inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-center text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            Prepare for a posting
+          </a>
+          <a
+            href="/interview-glow-up/rehearse/"
+            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border bg-overlay/30 px-5 py-2.5 text-center text-sm font-semibold text-foreground transition-colors hover:bg-overlay/50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            Rehearse questions
+          </a>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Paste a job posting to get the questions it is likely to raise and the stories to answer
+          them, or go straight to practicing answers out loud or in writing. The advice below is
+          optional reading.
         </p>
       </div>
 

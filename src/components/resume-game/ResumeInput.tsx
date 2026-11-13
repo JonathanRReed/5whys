@@ -1,4 +1,5 @@
 import type * as React from 'react';
+import { MAX_RESUME_FILE_MB } from '../../lib/resume-game';
 import ConfirmButton from '../shared/ConfirmButton';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -62,7 +63,8 @@ export default function ResumeInput({
         <p className="text-sm text-muted-foreground">
           Paste your resume or upload a PDF, Word file, or text file. Check the text below before
           you analyze it. A scanned PDF is a picture of text, so there is nothing to read; export it
-          from the program you wrote it in. Everything stays in your browser.
+          from the program you wrote it in. Files up to {MAX_RESUME_FILE_MB} MB. Everything stays in
+          your browser.
         </p>
         {onStartBlank && (
           <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-4">

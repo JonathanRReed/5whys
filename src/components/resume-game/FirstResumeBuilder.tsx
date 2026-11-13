@@ -16,6 +16,7 @@ import {
   fieldId,
   MAX_EXPERIENCES,
   MAX_LINES,
+  MIN_PHONE_DIGITS,
   type ResumeDraft,
 } from '../../lib/resume-game/first-resume';
 import { cn } from '../../lib/utils';
@@ -280,6 +281,7 @@ export default function FirstResumeBuilder({
                   <Field
                     id={fieldId.phone}
                     label="Phone"
+                    hint={`${MIN_PHONE_DIGITS} or more digits.`}
                     type="tel"
                     autoComplete="tel"
                     value={draft.phone}

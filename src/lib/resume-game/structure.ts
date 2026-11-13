@@ -55,6 +55,17 @@ const JOB_TITLE_WORDS =
 const wordCount = (line: string) => line.split(/\s+/).filter(Boolean).length;
 const isAllCaps = (line: string) => /[A-Z]/.test(line) && line === line.toUpperCase();
 
+const ENDS_IN_TITLE = new RegExp(`${JOB_TITLE_WORDS.source}$`, 'i');
+
+/** A short "Title, Place" line with no sentence in it. */
+function isTitleLine(line: string, wordsInLine: number): boolean {
+  if (wordsInLine > 9 || /[.!?;]/.test(line) || /\d/.test(line)) return false;
+  const [head, ...rest] = line.split(/\s*[,|•·]\s*|\s+[-–]\s+/);
+  if (rest.length === 0 || !head) return false;
+  const headWords = wordCount(head);
+  return headWords >= 1 && headWords <= 4 && ENDS_IN_TITLE.test(head.trim());
+}
+
 function classify(line: string, index: number, wordsInLine: number): SkippedKind | 'bullet' {
   if (EMAIL.test(line) || PHONE.test(line)) return 'contact';
   // A project address inside a sentence about the work ("Built example.com
@@ -78,6 +89,10 @@ function classify(line: string, index: number, wordsInLine: number): SkippedKind
   // "Member, Marketing Club, 2024 - 2025" is a title line, not an achievement,
   // even though it opens with an involvement verb.
   if (DATE_RANGE.test(line) && wordsInLine <= 10 && /[|,•·]/.test(line)) return 'dates';
+  // "Research Assistant, Department of Economics" opens with a word that can
+  // be a verb, but the part before the comma ends in a job title: it names a
+  // role, and the bullets under it are the achievements.
+  if (isTitleLine(line, wordsInLine)) return 'dates';
   if (!startsWithVerb(line)) {
     if (EDUCATION.test(line) && wordsInLine <= 14) return 'education';
     if (DATE_RANGE.test(line) && wordsInLine <= 14) return 'dates';

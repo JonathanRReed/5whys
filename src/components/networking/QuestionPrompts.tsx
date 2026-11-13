@@ -77,7 +77,7 @@ export default function QuestionPrompts({
                 key={template.id}
                 className="flex items-start justify-between gap-3 rounded-2xl border border-border/35 bg-background/60 p-4"
               >
-                <div>
+                <div className="min-w-0 flex-1 wrap-anywhere">
                   <p className="text-xs uppercase tracking-[0.3em] text-iris">{template.label}</p>
                   <p className="mt-2 text-sm text-foreground">{template.prompt}</p>
                 </div>

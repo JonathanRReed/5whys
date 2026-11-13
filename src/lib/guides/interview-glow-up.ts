@@ -52,7 +52,7 @@ export const interviewGlowUpGuide: Guide = {
       why: 'Put a result under "What came of it" only if it is true. Never invent a number.',
       target: '#story-play',
       reveal: '[data-guide="tab-stories"]',
-      done: { kind: 'filled', selector: '#story-play', minLength: 40 },
+      done: { kind: 'filled', selector: '#story-play', minLength: 10 },
     },
     {
       id: 'save-story',

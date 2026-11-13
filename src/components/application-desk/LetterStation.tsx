@@ -9,6 +9,7 @@ import {
 import { isGenericOpener, LINKEDIN_NOTE_LIMIT, whyYouDraft } from '../../lib/desk-checks';
 import { loadFeature, runFeature } from '../../lib/lazy-feature';
 import type { AiResult } from '../../lib/local-ai';
+import { isNonAnswer, MIN_ANSWER_WORDS } from '../../lib/non-answer';
 import { requirementsFromBullets } from '../../lib/posting';
 import { cn } from '../../lib/utils';
 import { sourceLabel } from '../shared/AiText';
@@ -67,10 +68,22 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
   const examples = useDeskExamples();
   const [busy, setBusy] = React.useState(false);
   const [copied, setCopied] = React.useState<MessageKind | null>(null);
+  // A message cleared in order to rewrite it keeps its box on screen. Keyed
+  // by application, so one application's empty boxes do not follow to the next.
+  const [opened, setOpened] = React.useState<ReadonlySet<string>>(new Set());
   if (!application) return null;
   const appId = application.id;
   const letter = desk.desk.letter;
   const generic = letter.hook.trim() ? isGenericOpener(letter.hook) : false;
+  // "idk" or two words would be wrapped in three polished messages as is.
+  const thin = isNonAnswer(letter.hook);
+  const shown = MESSAGES.filter(
+    ({ kind }) => letter.messages[kind] || opened.has(`${appId}:${kind}`)
+  );
+  const editedKinds = MESSAGES.filter(({ kind }) => {
+    const variant = letter.messages[kind];
+    return variant?.source === 'student' && variant.text.trim();
+  });
   // Up to three requirements the student marked "have it", each with the
   // proof they typed for it on the qualifications station. Conditions of
   // hiring and lines that sell no one (being enrolled) are left out.
@@ -99,12 +112,18 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
       'follow-up-email': `Subject: ${followUpEmail.subject}\n\n${followUpEmail.body}`,
       'intro-call': introCallOpener,
     };
+    // A message the visitor edited is theirs; only the others are rewritten.
+    const kept = new Set(editedKinds.map(({ kind }) => kind));
     changeDesks((data) =>
       MESSAGES.reduce(
-        (next, { kind }) => saveMessageVariant(next, appId, kind, { text: texts[kind], source }),
+        (next, { kind }) =>
+          kept.has(kind)
+            ? next
+            : saveMessageVariant(next, appId, kind, { text: texts[kind], source }),
         data
       )
     );
+    setOpened(new Set(MESSAGES.map(({ kind }) => `${appId}:${kind}`)));
     setBusy(false);
   };
 
@@ -237,7 +256,13 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
           <Button
             type="button"
             onClick={() => void runFeature(derive, () => setBusy(false))}
-            disabled={busy || !letter.hook.trim() || generic}
+            disabled={
+              busy ||
+              !letter.hook.trim() ||
+              generic ||
+              thin ||
+              editedKinds.length === MESSAGES.length
+            }
           >
             {busy ? 'Writing' : hasMessages ? 'Write them again' : 'Write the three messages'}
           </Button>
@@ -252,9 +277,22 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
           </p>
         )}
 
-        {MESSAGES.map(({ kind, title }) => {
-          const variant = letter.messages[kind];
-          if (!variant) return null;
+        {letter.hook.trim() && !generic && thin && (
+          <p className="text-sm text-foreground">
+            Write one thing you did, or why this role interests you. A hook needs {MIN_ANSWER_WORDS}{' '}
+            words or more.
+          </p>
+        )}
+        {hasMessages && editedKinds.length > 0 && (
+          <p className="text-sm text-muted-foreground">
+            {editedKinds.length === MESSAGES.length
+              ? 'You edited all three, so they are kept as they are. Clear one to have it written again.'
+              : 'Messages you edited are kept. Clear one to have it written again.'}
+          </p>
+        )}
+
+        {shown.map(({ kind, title }) => {
+          const variant = letter.messages[kind] ?? { text: '', source: 'student' as const };
           return (
             <div
               key={kind}
@@ -266,14 +304,16 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
                 <Textarea
                   rows={kind === 'follow-up-email' ? 8 : 4}
                   value={variant.text}
-                  onChange={(event) =>
+                  placeholder="Write this message, or press the button above to have it written."
+                  onChange={(event) => {
+                    setOpened((before) => new Set(before).add(`${appId}:${kind}`));
                     changeDesks((data) =>
                       saveMessageVariant(data, appId, kind, {
                         text: event.target.value,
                         source: 'student',
                       })
-                    )
-                  }
+                    );
+                  }}
                   className="text-base"
                 />
               </label>
@@ -282,11 +322,14 @@ export default function LetterStation({ desk }: { desk: DeskState }) {
                   type="button"
                   size="xs"
                   variant="ghost"
+                  disabled={!variant.text.trim()}
                   onClick={() => copy(kind, variant.text)}
                 >
                   {copied === kind ? 'Copied' : 'Copy'}
                 </Button>
-                <span className="text-xs text-muted-foreground">{SOURCE_TEXT[variant.source]}</span>
+                <span className="text-xs text-muted-foreground">
+                  {variant.text.trim() ? SOURCE_TEXT[variant.source] : 'Empty'}
+                </span>
               </div>
               {kind === 'linkedin' && (
                 <p

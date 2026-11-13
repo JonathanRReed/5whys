@@ -873,13 +873,21 @@ export default function RehearsalRoom() {
           <Button
             type="button"
             size="lg"
-            disabled={!typed.trim()}
+            disabled={!/[\p{L}\p{N}]/u.test(typed)}
+            aria-describedby="typed-answer-needs"
             onClick={() =>
               finishWith(null, typed, Math.max(0, (performance.now() - startedAt.current) / 1000))
             }
           >
             Review my answer
           </Button>
+          {!/[\p{L}\p{N}]/u.test(typed) && (
+            <p id="typed-answer-needs" className="text-sm text-muted-foreground">
+              {typed.trim()
+                ? 'Write your answer in words to review it.'
+                : 'Write an answer to review it. One sentence is enough to start.'}
+            </p>
+          )}
         </div>
       )}
 

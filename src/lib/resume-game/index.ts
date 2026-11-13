@@ -12,7 +12,7 @@ export {
   summarizeLines,
   summarySentences,
 } from './analysis';
-export { ACTION_VERBS, WEAK_WORDS } from './constants';
+export { ACTION_VERBS, MAX_RESUME_FILE_MB, WEAK_WORDS } from './constants';
 export { readDatesNote } from './dates-note';
 export { downloadTextFile, exportDocx } from './exporters';
 export type { HighlightToken } from './highlight';

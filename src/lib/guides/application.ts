@@ -64,8 +64,8 @@ export const applicationGuide: Guide = {
     },
   ],
   finish: {
-    title: 'You have worked one application end to end',
-    body: 'Next, see how your resume backs each requirement, then prepare stories for the interview.',
+    title: 'You have seen every station',
+    body: '"Before you send" lists what is still open for this application. When it is clear, see how your resume backs each requirement, then prepare stories for the interview.',
     link: { label: 'Match your resume to this posting', href: '/resume-game/' },
   },
 };

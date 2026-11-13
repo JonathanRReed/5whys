@@ -16,7 +16,7 @@ import DecodeSection, { type SaveState } from './DecodeSection';
 import InterviewHUD from './InterviewHUD';
 import PacketPrint from './PacketPrint';
 import PacketSection from './PacketSection';
-import StoriesSection, { CLOSED_EDITOR, type StoryEditor } from './StoriesSection';
+import StoriesSection, { CLOSED_EDITOR, newStoryEditor, type StoryEditor } from './StoriesSection';
 import TrackApplication from './TrackApplication';
 import VaultSection from './VaultSection';
 import WorkspaceHeader from './WorkspaceHeader';
@@ -235,7 +235,7 @@ export default function InterviewGlowUpWorkspace() {
       {currentRole && (
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-border/30 bg-overlay/15 px-4 py-2 text-sm print:hidden">
           <span className="text-muted-foreground">Prepping for</span>
-          <span className="font-medium text-foreground">
+          <span className="min-w-0 max-w-full font-medium wrap-anywhere text-foreground">
             {currentRole.jobTitle || 'Untitled role'}
             {currentRole.company ? ` at ${currentRole.company}` : ''}
           </span>
@@ -288,7 +288,15 @@ export default function InterviewGlowUpWorkspace() {
             />
           </TabsContent>
           <TabsContent value="vault">
-            <VaultSection data={data} setData={setData} currentPacket={currentPacket} />
+            <VaultSection
+              data={data}
+              setData={setData}
+              currentPacket={currentPacket}
+              onGoToStories={() => {
+                setStoryEditor(newStoryEditor());
+                setActiveTab('stories');
+              }}
+            />
           </TabsContent>
           <TabsContent value="packet">
             <PacketSection

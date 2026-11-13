@@ -70,6 +70,24 @@ const OVERTIME_AFTER_HOURS = 40;
 
 type Search = (query: string, limit?: number) => TitleCandidate[];
 
+const MISSING_LABEL = {
+  basePay: 'base pay',
+  payPeriod: 'how often it is paid',
+  hoursPerWeek: 'hours a week',
+  weeksPerYear: 'weeks a year',
+} as const;
+
+/** Names only the fields that are still blank, so nobody is sent back to one they filled. */
+function missingHint(missing: ReadonlyArray<keyof typeof MISSING_LABEL>): string {
+  if (missing.length === 1 && missing[0] === 'payPeriod') {
+    return 'Choose how often this is paid under "Paid" to see the figures.';
+  }
+  const names = missing.map((key) => MISSING_LABEL[key]);
+  const list =
+    names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0];
+  return `Fill in ${list} to complete the blank figures.`;
+}
+
 export default function PayTool() {
   // --- Wage lookup -------------------------------------------------------
   const [query, setQuery] = React.useState('');
@@ -325,7 +343,8 @@ export default function PayTool() {
       return;
     }
     // What was typed with no application to keep it goes with the new one.
-    const kept = !appId && scratch.basePay !== null;
+    // Hours or a note written before the rate is known are work too.
+    const kept = !appId && JSON.stringify(scratch) !== JSON.stringify(createEmptyDesk().offer);
     if (kept) {
       const next = updateOfferWorksheet(loadApplicationDesks(), application.id, {
         ...scratch,
@@ -825,8 +844,8 @@ export default function PayTool() {
               </p>
             )}
             {equivalents.missing.length > 0 && offer.basePay !== null && (
-              <p className="text-xs text-muted-foreground">
-                Fill in hours and weeks to complete the blank figures.
+              <p className="text-xs text-foreground" data-testid="pay-missing-hint">
+                {missingHint(equivalents.missing)}
               </p>
             )}
           </dl>

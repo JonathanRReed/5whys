@@ -23,7 +23,7 @@ import {
   toggleStoryInPacket,
   updateStory,
 } from '../../lib/glowup-store';
-import { isNonAnswer, isRealAnswer, nonAnswerFollowUp } from '../../lib/non-answer';
+import { ANSWER_RULE, isNonAnswer, isRealAnswer, nonAnswerFollowUp } from '../../lib/non-answer';
 import { cn } from '../../lib/utils';
 import Announcer, { useAnnouncer } from '../shared/Announcer';
 import { LightbulbIcon, PencilIcon, WarningIcon, XIcon } from './icons';
@@ -32,6 +32,24 @@ import SkillSelect from './SkillSelect';
 /** The story being written, kept by the workspace so a tab switch does not drop it. */
 export type StoryEditor = { editingId: string | null; formData: Partial<Story> };
 export const CLOSED_EDITOR: StoryEditor = { editingId: null, formData: {} };
+
+/** The editor for a story that does not exist yet. */
+export const newStoryEditor = (skillId?: string): StoryEditor => ({
+  editingId: 'new',
+  formData: {
+    primarySkillId: skillId ?? '',
+    otherSkillIds: [],
+    trigger: '',
+    hook: '',
+    proofSnippet: '',
+    play: '',
+    proof: '',
+    confidence: 30,
+    readiness: 'rough',
+    questionPrompts: [],
+    tags: [],
+  },
+});
 
 type Props = {
   data: GlowUpData;
@@ -107,22 +125,7 @@ export default function StoriesSection({
     focusAfterRender(editorHeadingRef);
     setCustomQuestion('');
     setShowGeneralQuestions(false);
-    setEditor({
-      editingId: 'new',
-      formData: {
-        primarySkillId: skillId ?? '',
-        otherSkillIds: [],
-        trigger: '',
-        hook: '',
-        proofSnippet: '',
-        play: '',
-        proof: '',
-        confidence: 30,
-        readiness: 'rough',
-        questionPrompts: [],
-        tags: [],
-      },
-    });
+    setEditor(newStoryEditor(skillId));
   };
 
   const saveStory = () => {
@@ -533,7 +536,7 @@ export default function StoriesSection({
               )}
             </label>
             <p className="mb-1 text-xs text-muted-foreground">
-              The heart of the story: what you did and decided. Say "I", not "we".
+              The heart of the story: what you did and decided. Say "I", not "we". {ANSWER_RULE}
             </p>
             <textarea
               id="story-play"
@@ -713,7 +716,7 @@ export default function StoriesSection({
                 : !formData.primarySkillId
                   ? 'To save, choose the skill this story proves.'
                   : playIsPlaceholder
-                    ? 'To save, say a little more about what you did.'
+                    ? `To save, say a little more about what you did. ${ANSWER_RULE}`
                     : 'To save, write what you did.'}
             </p>
           )}

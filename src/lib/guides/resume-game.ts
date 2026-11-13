@@ -11,7 +11,9 @@ export const resumeGameGuide: Guide = {
       body: 'Paste your resume into the box, or upload a PDF or Word file. Bullets only is fine. No resume yet? Press "I do not have a resume yet" and answer a few short questions.',
       why: 'Everything here works on the lines you give it, and it stays on this device.',
       target: '[aria-label="Paste resume text"]',
-      done: { kind: 'filled', selector: '[aria-label="Paste resume text"]', minLength: 40 },
+      done: { kind: 'filled', selector: '[aria-label="Paste resume text"]', minLength: 10 },
+      // A scored line means a resume is in, however short it was.
+      passed: { kind: 'exists', selector: '[data-bullet-list] button' },
       example: { label: 'Use a sample resume', click: '[data-guide="resume-sample"]' },
     },
     {

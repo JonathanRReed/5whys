@@ -23,6 +23,7 @@ import {
   EMPTY_SIGNAL_REPORT,
   exportDocx,
   FIRST_JOB_SAMPLE_RESUME,
+  MAX_RESUME_FILE_MB,
   PROFESSIONAL_PLACEHOLDER,
   PROFESSIONAL_SAMPLE_RESUME,
   REVIEW_FILE_BASE,
@@ -251,9 +252,9 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     const sequence = ++uploadSequence.current;
     setFileError(null);
     setStatus(null);
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > MAX_RESUME_FILE_MB * 1024 * 1024) {
       setIsLoadingFile(false);
-      setFileError('File too large. Maximum size is 5MB.');
+      setFileError(`File too large. Maximum size is ${MAX_RESUME_FILE_MB} MB.`);
       return;
     }
     setIsLoadingFile(true);

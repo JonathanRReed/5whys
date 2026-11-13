@@ -627,3 +627,6 @@ export const SOFT_SKILLS = [
   'recruitment',
   'onboarding',
 ];
+
+/** The largest resume file the upload reads, in megabytes. */
+export const MAX_RESUME_FILE_MB = 5;
