@@ -1,10 +1,6 @@
 import * as React from 'react';
-import {
-  loadApplicationDesks,
-  remapLinkedDesks,
-  saveApplicationDesks,
-} from '../../lib/application-desk';
-import { readTrackedApplications, rolesForApplications } from '../../lib/career-bridge';
+import { saveRemappedDesks } from '../../lib/application-desk';
+import { applicationIdsForRole } from '../../lib/career-bridge';
 import {
   type Audience,
   getSkillName,
@@ -117,31 +113,6 @@ function shortText(text: string): string {
 
 const EMPTY_FIELDS: RoleFields = { jobTitle: '', company: '', jdUrl: '', rawJdText: '' };
 
-/**
- * Move the qualification rows of every application on this posting to their
- * requirements' new ids, after the posting is decoded again. Written only
- * when a row actually moved or went.
- */
-function remapDesksFor(
-  roleId: string,
-  roles: Parameters<typeof rolesForApplications>[1],
-  moved: ReadonlyMap<string, string>,
-  parsedIds: ReadonlySet<string>
-): void {
-  // The applications the desk shows this posting for: a saved link, or the
-  // same title match the desk and the dashboard use.
-  const applications = readTrackedApplications();
-  const links = rolesForApplications(applications, roles);
-  const linked = applications.filter((a) => links.get(a.id)?.roleId === roleId).map((a) => a.id);
-  if (linked.length === 0) return;
-  const desks = loadApplicationDesks();
-  const next = remapLinkedDesks(desks, linked, moved, parsedIds);
-  const changed = linked.some(
-    (id) => desks.desks[id] && next.desks[id]?.qualifications !== desks.desks[id].qualifications
-  );
-  if (changed) saveApplicationDesks(next);
-}
-
 export default function DecodeSection({
   data,
   setData,
@@ -219,7 +190,13 @@ export default function DecodeSection({
         parsed.text
       );
       parsedBullets = bulletsFromRequirements(redecoded.requirements, bullets);
-      remapDesksFor(currentRole.id, data.roles, redecoded.moved, redecoded.parsedIds);
+      // Every application on this posting keeps its marks and plans: the
+      // bridge names the applications, the desk moves its own rows.
+      saveRemappedDesks(
+        applicationIdsForRole(currentRole.id, data.roles),
+        redecoded.moved,
+        redecoded.parsedIds
+      );
     }
     const setAside = parsed.setAside.filter((line) => line.reason !== 'heading').length;
     announce(

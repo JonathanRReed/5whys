@@ -130,3 +130,18 @@ describe("a posting's pay is the applicant's, not money the job handles", () => 
     expect(readPostingPay('$15.00/hr | 15-25 hrs/week')?.basePay).toBe(15);
   });
 });
+
+describe('a front desk is not hospitality on its own', () => {
+  const clinic = `Ana Cruz\n\nEXPERIENCE\n\nFront Desk Receptionist, Valley Dental Clinic | Jan 2021 - Jan 2024\n- Checked patients in and booked visits`;
+  const hotel = `Ana Cruz\n\nEXPERIENCE\n\nFront Desk Agent, Lakeside Hotel | Jan 2021 - Jan 2024\n- Checked guests in and out`;
+  it('does not credit a dental clinic job', () => {
+    for (const ask of ['Hospitality experience', 'At least 2 years of hospitality experience']) {
+      expect(findRequirementEvidence(ask, clinic, { today }).state, ask).not.toBe('evidence');
+    }
+  });
+  it('credits a hotel job', () => {
+    expect(findRequirementEvidence('Hospitality experience', hotel, { today }).state).toBe(
+      'evidence'
+    );
+  });
+});

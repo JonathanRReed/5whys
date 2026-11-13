@@ -522,6 +522,16 @@ const sameName = (a: string | undefined, b: string | undefined): boolean => {
 type RawRole = NonNullable<GlowUpRaw['roles']>[number];
 
 /**
+ * The applications a decoded role's posting belongs to: a saved link, or the
+ * same title match the desk and the dashboard use. Only reads.
+ */
+export function applicationIdsForRole(roleId: string, roles: RawRole[]): string[] {
+  const applications = readTrackedApplications();
+  const links = rolesForApplications(applications, roles);
+  return applications.filter((app) => links.get(app.id)?.roleId === roleId).map((app) => app.id);
+}
+
+/**
  * Every tracked application, for a tool that needs to find the one its own
  * work belongs to (the rehearsal room, a posting decoded again). Only reads.
  */

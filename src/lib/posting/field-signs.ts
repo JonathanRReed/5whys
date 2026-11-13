@@ -79,7 +79,9 @@ export const FIELD_SIGNS: Readonly<Record<string, readonly string[]>> = {
     'physician',
     'urgent care',
   ],
-  hospitality: ['hospitality', 'hotel', 'resort', 'inn', 'front desk', 'guest services'],
+  // A front desk or guest services counter is found in a clinic or a store as
+  // well as a hotel, so neither places a job in hospitality on its own.
+  hospitality: ['hospitality', 'hotel', 'motel', 'resort', 'inn', 'concierge'],
 };
 
 /** Second words that name an area of work inside a field: "retail operations", "food service experience". */

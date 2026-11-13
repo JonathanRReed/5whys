@@ -619,6 +619,27 @@ export function remapLinkedDesks(
   );
 }
 
+/**
+ * After a posting is decoded again elsewhere (the interview workspace), move
+ * the qualification rows of the applications on that posting to their
+ * requirements' new ids and save. The desk's own operation on its own store:
+ * the caller names the applications and never reads the store itself.
+ * Written only when a row actually moved or went. Returns whether it wrote.
+ */
+export function saveRemappedDesks(
+  applicationIds: readonly string[],
+  map: ReadonlyMap<string, string>,
+  parsedIds: ReadonlySet<string>
+): boolean {
+  if (applicationIds.length === 0) return false;
+  const desks = loadApplicationDesks();
+  const next = remapLinkedDesks(desks, applicationIds, map, parsedIds);
+  const changed = applicationIds.some(
+    (id) => desks.desks[id] && next.desks[id]?.qualifications !== desks.desks[id].qualifications
+  );
+  return changed ? saveApplicationDesks(next) : false;
+}
+
 export function setQualification(
   data: ApplicationDeskData,
   applicationId: string,
