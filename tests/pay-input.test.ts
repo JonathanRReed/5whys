@@ -39,9 +39,12 @@ it('counts overtime at time and a half for hourly pay only', () => {
     weeksPerYear: 52,
     overtimeHoursPerWeek: 3,
   });
-  // 26 x 40 x 52 = 54,080, plus 26 x 1.5 x 3 x 52 = 6,084.
-  expect(hourly.annualBase).toBe(60164);
+  // 26 x 40 x 52 = 54,080 base; overtime 26 x 1.5 x 3 x 52 = 6,084 is kept
+  // apart from it and counted only with the pay that is not promised.
+  expect(hourly.annualBase).toBe(54080);
   expect(hourly.overtimeAnnual).toBe(6084);
+  expect(hourly.annualGuaranteed).toBe(54080);
+  expect(hourly.annualWithVariable).toBe(60164);
 
   const salaried = offerEquivalents({
     ...base,

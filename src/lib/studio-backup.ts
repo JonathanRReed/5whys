@@ -14,6 +14,7 @@
  * export dialog can say so. Files of every earlier version import unchanged.
  */
 
+import { localDate } from './applications';
 import { isLocalDbAvailable } from './local-db/db';
 import { hasDownloadedModels } from './local-db/models';
 import {
@@ -169,7 +170,7 @@ export async function downloadBackup(): Promise<StudioBackup> {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = `5whys-career-studio-${backup.exportedAt.slice(0, 10)}.json`;
+  anchor.download = `5whys-career-studio-${localDate(new Date(backup.exportedAt))}.json`;
   anchor.click();
   URL.revokeObjectURL(url);
   return backup;
@@ -239,7 +240,10 @@ const notes = (value: unknown) => isObject(value) && Object.values(value).every(
 /** Small checks for the shapes each tool's loader accepts, without rewriting old saves. */
 const STORE_CHECKS: Record<StudioStorageKey, (value: unknown) => boolean> = {
   'career-tools-profile': (v) =>
-    isObject(v) && isStage(v.stage) && isFocus(v.focus) && fields(v, { updatedAt: isText }),
+    isObject(v) &&
+    isStage(v.stage) &&
+    isFocus(v.focus) &&
+    fields(v, { updatedAt: isText, firstJob: isBoolean }),
   'career-why-session-v2': (v) => reflection(v) && isObject(v) && isText(v.topic),
   'career-why-history': (v) => Array.isArray(v) && v.every(reflection),
   'career-why-history-limit': (v) => isNumber(v) && [6, 12, 24].includes(Number(v)),
@@ -381,6 +385,7 @@ const STORE_CHECKS: Record<StudioStorageKey, (value: unknown) => boolean> = {
           company: isText,
           deadline: nullableText,
           roleId: nullableText,
+          sentOn: nullableText,
           createdAt: isNumber,
           updatedAt: isNumber,
         }) &&
@@ -407,7 +412,9 @@ const STORE_CHECKS: Record<StudioStorageKey, (value: unknown) => boolean> = {
             bullets: (slots) =>
               Array.isArray(slots) &&
               slots.every(
-                (slot) => isText(slot) || object({ bulletId: nullableText, text: isText })(slot)
+                (slot) =>
+                  isText(slot) ||
+                  object({ bulletId: nullableText, text: isText, included: isBoolean })(slot)
               ),
           }),
           letter: object({
@@ -436,6 +443,7 @@ const STORE_CHECKS: Record<StudioStorageKey, (value: unknown) => boolean> = {
             wageSource: isText,
             wageSourceDate: nullableText,
             percentOfBase: (p) => isObject(p) && Object.values(p).every(amountLike),
+            currency: isText,
           }),
           resumeSelection: nullable(
             (r) =>

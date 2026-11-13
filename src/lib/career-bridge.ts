@@ -30,8 +30,10 @@ import {
 } from './application-desk';
 import {
   type ApplicationsData,
+  activeApplicationId,
   daysUntilDeadline,
   loadApplications,
+  shortDate,
   sortApplications,
 } from './applications';
 import { averageRating, computeNextStep, type Ratings } from './networking-advice';
@@ -367,6 +369,8 @@ export interface ApplicationSummary {
   deadline: string | null;
   daysUntil: number | null;
   isActive: boolean;
+  /** 'YYYY-MM-DD' the visitor marked it sent, or null. A sent application is never overdue. */
+  sentOn?: string | null;
   roleId: string | null;
   /** The linked role exists and its posting was actually parsed. */
   decoded: boolean;
@@ -387,6 +391,7 @@ function summarizeApplications(
   const storyIds = new Set(
     (glow?.stories ?? []).map((s) => s.id).filter((id): id is string => typeof id === 'string')
   );
+  const activeId = activeApplicationId(data);
   const summaries = data.applications.map((app) => {
     const role = app.roleId ? roles.find((r) => r.id === app.roleId) : undefined;
     const decoded = !!role?.bullets?.some((b) => b.status !== 'ignored');
@@ -400,7 +405,8 @@ function summarizeApplications(
       company: role?.company?.trim() || app.company,
       deadline: app.deadline,
       daysUntil: daysUntilDeadline(app.deadline),
-      isActive: app.id === data.activeId,
+      isActive: app.id === activeId,
+      sentOn: app.sentOn ?? null,
       roleId: app.roleId,
       decoded,
       packetStories,
@@ -408,7 +414,7 @@ function summarizeApplications(
       updatedAt: app.updatedAt,
     };
   });
-  return sortApplications(summaries, data.activeId);
+  return sortApplications(summaries, activeId);
 }
 
 // ============================================================================
@@ -431,10 +437,16 @@ function readActionSteps(
   applications: ApplicationSummary[]
 ): DashboardActionStep[] {
   const byId = new Map(applications.map((app) => [app.id, app]));
-  return datedActionSteps(desks, byId.keys()).map((step) => {
-    const app = byId.get(step.applicationId);
-    return { ...step, applicationTitle: app?.title ?? '', company: app?.company ?? '' };
-  });
+  return (
+    datedActionSteps(desks, byId.keys())
+      // A step whose date passed on an application already sent is not overdue
+      // work: the application went.
+      .filter((step) => !(byId.get(step.applicationId)?.sentOn && step.daysUntil < 0))
+      .map((step) => {
+        const app = byId.get(step.applicationId);
+        return { ...step, applicationTitle: app?.title ?? '', company: app?.company ?? '' };
+      })
+  );
 }
 
 // ============================================================================
@@ -548,8 +560,9 @@ export function readCareerDashboard(): CareerDashboardData {
     hasPackedPacket
   );
   const focusedApp = applications.find((a) => a.isActive);
-  const focusedDue =
-    focusedApp && focusedApp.daysUntil !== null
+  const focusedDue = focusedApp?.sentOn
+    ? ` You sent ${focusedApp.title} on ${shortDate(focusedApp.sentOn)}.`
+    : focusedApp && focusedApp.daysUntil !== null
       ? focusedApp.daysUntil < 0
         ? ` ${focusedApp.title} is past its deadline.`
         : focusedApp.daysUntil === 0
@@ -656,6 +669,16 @@ export function readCareerDashboard(): CareerDashboardData {
   // so a busy season cannot crowd out the tool pointers below.
   for (const app of applications.slice(0, 2)) {
     const name = `"${app.title}${app.company ? ` at ${app.company}` : ''}"`;
+    if (app.sentOn) {
+      // Sent: no deadline to chase. The useful next thing is the interview.
+      recommendations.push({
+        tool: 'Interview Glow Up',
+        text: `${name} was sent on ${shortDate(app.sentOn)}. Practice for the interview while you wait.`,
+        href: '/interview-glow-up/rehearse/',
+        cta: 'Rehearse the interview',
+      });
+      continue;
+    }
     const when =
       app.daysUntil === null
         ? ''
@@ -723,14 +746,22 @@ export function readCareerDashboard(): CareerDashboardData {
     }
     const weakestScore = weakest?.improvedScore ?? 0;
     if (weakest && weakestScore < 60) {
+      // Lead with what is already there. The low line is the next one to work
+      // on, named by its words, never by its score.
       const excerpt = clip(weakest.original || '', 70);
+      const total = resume.bullets.length;
+      const strong = resume.bullets.filter(
+        (b) => typeof b.improvedScore === 'number' && b.improvedScore >= STRONG_SCORE
+      ).length;
+      const lead =
+        strong > 0
+          ? `${strong} of your ${total} resume ${total === 1 ? 'line is' : 'lines are'} already strong.`
+          : `You have ${total} resume ${total === 1 ? 'line' : 'lines'} to build on.`;
       recommendations.push({
         tool: 'The Resume Game',
-        text: excerpt
-          ? `Your lowest bullet scores ${weakestScore}: "${excerpt}".`
-          : `Your lowest bullet scores ${weakestScore}.`,
+        text: excerpt ? `${lead} A good next line to work on: "${excerpt}".` : lead,
         href: `${TOOL_URLS['The Resume Game']}?bullet=${encodeURIComponent(weakest.id)}`,
-        cta: 'Rewrite it',
+        cta: 'Work on this line',
       });
     }
   }
@@ -785,7 +816,7 @@ export function readCareerDashboard(): CareerDashboardData {
       tool: 'Networking Practice',
       text: 'You drafted an intro but never ran it against the timer.',
       href: TOOL_URLS['Networking Practice'],
-      cta: 'Do one two-minute rep',
+      cta: 'Do one timed rep',
     });
   }
 

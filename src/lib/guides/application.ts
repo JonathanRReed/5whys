@@ -1,4 +1,5 @@
 import type { Guide } from '../guide';
+import { countWord, SEND_CHECK_IDS } from '../send-check-ids';
 
 export const applicationGuide: Guide = {
   tool: 'application',
@@ -65,7 +66,7 @@ export const applicationGuide: Guide = {
     {
       id: 'check',
       title: 'Check before you send',
-      body: 'Open "Before you send". Four checks are computed from what you wrote; two only you can answer.',
+      body: `Open "Before you send". ${countWord(SEND_CHECK_IDS.length)} checks are computed from what you wrote; two only you can answer.`,
       target: '[data-guide="station-send"]',
       done: { kind: 'exists', selector: '[data-guide="send-checks"]' },
     },

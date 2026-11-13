@@ -144,9 +144,12 @@ describe('application desk storage', () => {
     expect(desk.actionPlan[1]).toMatchObject({ due: null, done: false });
     expect(desk.actionPlan[1].id).toBeTruthy();
     expect(desk.bullets.experience).toBe('Food bank drive');
+    // Saved before "included" was recorded: written text with no place was
+    // left out of the tailored copy, and stays out. An empty slot takes the
+    // new default.
     expect(desk.bullets.bullets).toEqual([
-      { bulletId: null, text: 'Organized 12 volunteers' },
-      { bulletId: null, text: '' },
+      { bulletId: null, text: 'Organized 12 volunteers', included: false },
+      { bulletId: null, text: '', included: true },
     ]);
     expect(desk.letter.messages.linkedin).toMatchObject({ text: 'Hello', source: 'student' });
     expect(desk.letter.messages['intro-call']).toBeNull();
@@ -228,8 +231,8 @@ describe('pure updates', () => {
     data = updateBulletsFlow(data, 'a', { impact: 'Fewer failed labs', reflection: 'Fits QA' });
     const flow = getDesk(data, 'a').bullets;
     expect(flow.bullets).toEqual([
-      { bulletId: null, text: '' },
-      { bulletId: 'master-7', text: 'Calibrated pH meters for 30 lab sections' },
+      { bulletId: null, text: '', included: true },
+      { bulletId: 'master-7', text: 'Calibrated pH meters for 30 lab sections', included: true },
     ]);
     expect(flow).toMatchObject({
       experience: 'Chemistry lab partner',
@@ -299,7 +302,7 @@ describe('removing an application', () => {
 
     const stored = JSON.parse(localStorage.getItem(APPLICATIONS_KEY) ?? '{}');
     expect(Object.keys(stored.applications[0]).sort()).toEqual(
-      ['company', 'createdAt', 'deadline', 'id', 'roleId', 'title', 'updatedAt'].sort()
+      ['company', 'createdAt', 'deadline', 'id', 'roleId', 'sentOn', 'title', 'updatedAt'].sort()
     );
 
     deleteApplication(one.application.id);
@@ -426,6 +429,7 @@ describe('pay normalization', () => {
     };
     expect(offerEquivalents(offer)).toEqual({
       hourly: 20,
+      weekly: 800,
       annualBase: null,
       overtimeAnnual: 0,
       annualGuaranteed: null,
@@ -434,6 +438,7 @@ describe('pay normalization', () => {
     });
     expect(offerEquivalents({ ...offer, weeksPerYear: 50 })).toEqual({
       hourly: 20,
+      weekly: 800,
       annualBase: 40_000,
       overtimeAnnual: 0,
       annualGuaranteed: 41_000,

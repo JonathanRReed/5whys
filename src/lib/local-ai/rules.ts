@@ -3,7 +3,7 @@
  * deterministic, and held to the same invented-claim check as model output.
  */
 import { buildPrompts, ensureResponsesLength } from '../../components/career-5whys/shared';
-import { LINKEDIN_NOTE_LIMIT } from '../desk-checks';
+import { LINKEDIN_NOTE_LIMIT, namesCompany, namesRole } from '../desk-checks';
 import {
   type Audience,
   detectSkillsFromText,
@@ -303,30 +303,53 @@ export function messageVariantsRules(input: MessageVariantsInput): MessageVarian
   const role = input.role.replace(/\s+/g, ' ').trim() || 'open';
   const company = input.company.replace(/\s+/g, ' ').trim();
   const at = company ? ` at ${company}` : '';
-  const name = input.contactName?.replace(/\s+/g, ' ').trim() || 'there';
+  const contact = input.contactName?.replace(/\s+/g, ' ').trim();
+  // A note with no person's name is not addressed to a team: "Hi Hiring Team"
+  // reads as a form letter in a direct message.
+  const greeting =
+    contact && !/^(?:the\s+)?hiring (?:team|manager)$/i.test(contact) ? `Hi ${contact},` : 'Hello,';
   const line = openerSentence(input.opener);
   const withLine = (text: string) => (line ? `${text} ${line}` : text);
+  // When the visitor's own line already names the role and the employer, the
+  // template does not name them a second time.
+  const lineHasRole = Boolean(line) && input.role.trim() !== '' && namesRole(line, input.role);
+  const lineHasCompany = !company || (Boolean(line) && namesCompany(line, company));
+  const named = lineHasRole && lineHasCompany;
+  const roleOnly = lineHasRole && !lineHasCompany;
 
   // The first form that fits the note: keep the visitor's own line as long as
   // a shorter ask makes room for it, and drop it only when nothing else fits.
-  const hello = `Hi ${name}, I am applying for the ${role} role${at}.`;
+  const hello = `${greeting} I am applying for the ${role} role${at}.`;
+  const opening = named
+    ? `${greeting} ${line} I have applied.`
+    : roleOnly
+      ? `${greeting} ${line} I have applied to ${company}.`
+      : withLine(hello);
   const fullAsk = 'Would you be open to a short conversation about the team?';
   const linkedInMessage =
     [
-      `${withLine(hello)} ${fullAsk}`,
-      `${withLine(hello)} Would you be open to a short conversation?`,
-      `${withLine(hello)} Could we talk for a few minutes?`,
+      `${opening} ${fullAsk}`,
+      `${opening} Would you be open to a short conversation?`,
+      `${opening} Could we talk for a few minutes?`,
     ].find((text) => text.length <= LINKEDIN_NOTE_LIMIT) ?? `${hello} ${fullAsk}`;
 
   const body = [
-    `Hi ${name},`,
-    withLine(`I recently applied for the ${role} role${at} and wanted to follow up.`),
+    greeting,
+    named
+      ? `I recently applied and wanted to follow up. ${line}`
+      : roleOnly
+        ? `I recently applied to ${company} and wanted to follow up. ${line}`
+        : withLine(`I recently applied for the ${role} role${at} and wanted to follow up.`),
     'If it would help, I am glad to share more about my experience. Thank you for your time.',
   ].join('\n\n');
 
-  const introCallOpener = `${withLine(
-    `Thank you for making time to talk. I am interested in the ${role} role${at}.`
-  )} I would like to hear what the work looks like from your side.`;
+  const introCallOpener = named
+    ? `Thank you for making time to talk. ${line} I would like to hear what the work looks like from your side.`
+    : roleOnly
+      ? `Thank you for making time to talk. ${line} I would like to hear what the work looks like at ${company}.`
+      : `${withLine(
+          `Thank you for making time to talk. I am interested in the ${role} role${at}.`
+        )} I would like to hear what the work looks like from your side.`;
 
   return {
     linkedInMessage,
