@@ -114,7 +114,8 @@ export type ExportOptions = {
 };
 export type PrintParagraph = {
   lineId: string;
-  kind: 'name' | 'contact' | 'heading' | 'bullet' | 'text';
+  /** `title` is a job or role line: "Shift Supervisor, Midwest Fulfillment  Mar 2017 - Apr 2018". */
+  kind: 'name' | 'contact' | 'heading' | 'title' | 'bullet' | 'text';
   text: string;
 };
 export type PrintModel = {

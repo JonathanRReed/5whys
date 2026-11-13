@@ -106,6 +106,21 @@ export function docMatchesText(doc: ResumeDoc, text: string): boolean {
   const accepted = comparable(text);
   return accepted !== '' && comparable(doc.sourceText ?? toEditorText(doc)) === accepted;
 }
+/** A date range on a line: "Mar 2017 - Apr 2018", "2008 - 2015", "2021 to present". */
+const DATE_RANGE =
+  /\b(?:[a-z]{3,9}\.?\s+)?(?:19|20)\d{2}\s*(?:[-–—]|to)\s*(?:(?:[a-z]{3,9}\.?\s+)?(?:19|20)\d{2}|present|current|now)\b/i;
+
+/**
+ * A job or role line: short, not a sentence, and either dated or heading the
+ * bullets under it. It is set in bold in the clean copy, as job titles are in
+ * most resumes.
+ */
+function isTitleLine(text: string, nextIsBullet: boolean): boolean {
+  const words = text.trim().split(/\s+/).length;
+  if (words > 16 || /[.!?]$/.test(text.trim())) return false;
+  return DATE_RANGE.test(text) || (nextIsBullet && words <= 12);
+}
+
 function cleanCopy(doc: ResumeDoc, options: ExportOptions): ResumeDoc {
   const copy = moveContactToTop(linearize(doc));
   return options.dateStyle ? normalizeDates(copy, options.dateStyle) : copy;
@@ -114,6 +129,14 @@ export function toPrintModel(doc: ResumeDoc, options: ExportOptions = {}): Print
   const copy = cleanCopy(doc, options);
   const contactIds = contactLineIds(copy);
   const headings = new Set(copy.sections.map((section) => section.headingLineId));
+  // Job lines are looked for under work headings, or anywhere when the
+  // resume has none: a dated school line is not a job title.
+  const work = new Set(
+    copy.sections
+      .filter((section) => ['experience', 'projects', 'activities'].includes(section.kind))
+      .flatMap((section) => section.lineIds)
+  );
+  const mayBeTitle = (id: string) => work.size === 0 || work.has(id);
   const kept = (line: { id: string; bullet: boolean }) =>
     !line.bullet || !options.bulletLineIds || options.bulletLineIds.has(line.id);
   const ordered = logicalLines(copy.lines);
@@ -145,7 +168,10 @@ export function toPrintModel(doc: ResumeDoc, options: ExportOptions = {}): Print
                   ? 'bullet'
                   : index === 0
                     ? 'name'
-                    : 'text',
+                    : mayBeTitle(line.id) &&
+                        isTitleLine(line.text, ordered[index + 1]?.bullet ?? false)
+                      ? 'title'
+                      : 'text',
             text: rewritten.get(line) ?? (line.bullet ? line.text.replace(MARKER, '') : line.text),
           } satisfies PrintParagraph,
         ]
@@ -215,7 +241,12 @@ export async function toDocx(doc: ResumeDoc, options: ExportOptions = {}): Promi
           : paragraph.kind === 'heading'
             ? '<w:pStyle w:val="Heading1"/>'
             : '';
-      const run = paragraph.kind === 'name' ? '<w:rPr><w:b/><w:sz w:val="28"/></w:rPr>' : '';
+      const run =
+        paragraph.kind === 'name'
+          ? '<w:rPr><w:b/><w:sz w:val="28"/></w:rPr>'
+          : paragraph.kind === 'title'
+            ? '<w:rPr><w:b/></w:rPr>'
+            : '';
       return `<w:p><w:pPr>${properties}</w:pPr><w:r>${run}<w:t xml:space="preserve">${escapeXml(paragraph.text)}</w:t></w:r></w:p>`;
     })
     .join('');

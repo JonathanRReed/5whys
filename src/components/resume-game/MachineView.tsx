@@ -44,7 +44,7 @@ const REPAIRS: Partial<
   },
   'move-contact': {
     label: 'Move contact details into the body',
-    done: 'Contact details moved under your name.',
+    done: 'Contact details moved under your name, each one once.',
     run: moveContactToTop,
   },
   'normalize-dates': {
@@ -551,6 +551,10 @@ function PrintResume({ model }: { model: PrintModel }) {
               <h1 key={p.lineId}>{p.text}</h1>
             ) : p.kind === 'heading' ? (
               <h2 key={p.lineId}>{p.text}</h2>
+            ) : p.kind === 'title' ? (
+              <p key={p.lineId} data-kind={p.kind}>
+                <strong>{p.text}</strong>
+              </p>
             ) : (
               <p key={p.lineId} data-kind={p.kind}>
                 {p.text}
