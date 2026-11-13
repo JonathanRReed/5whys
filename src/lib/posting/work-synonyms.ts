@@ -7,17 +7,28 @@
  * asks whether it is the same work before offering the posting's words.
  *
  * Each word is matched on word boundaries with plural, -ing, and -ed forms.
- * A word written in capitals ("DC") only matches in capitals.
+ * A noun ending in -ing is written in the plural ("meetings") so both
+ * forms match. A word written in capitals ("DC") only matches in capitals.
  *
  * `thing` groups name objects of work (freight, schedules, invoices);
  * `action` groups name what is done to them (train, reconcile). A near miss
  * needs at least one thing in common, never just a verb.
+ *
+ * A word may sit in more than one group ("vendor" is a carrier and a
+ * stakeholder). A group marked `alone` names a kind of work specific enough
+ * that one shared concept, said in other words, may be the same work: a
+ * rollout and a go-live, a food cost and a budget, a safety meeting and a
+ * status meeting. Every other group needs a second concept in common, since
+ * sharing an object (freight, customers, staff) does not make two jobs the
+ * same work.
  */
 
 export interface WorkSynonymGroup {
   id: string;
   kind: 'thing' | 'action';
   words: readonly string[];
+  /** Specific enough to suggest the same work on its own. */
+  alone?: boolean;
 }
 
 export const WORK_SYNONYM_GROUPS: readonly WorkSynonymGroup[] = [
@@ -59,6 +70,7 @@ export const WORK_SYNONYM_GROUPS: readonly WorkSynonymGroup[] = [
   {
     id: 'carrier',
     kind: 'thing',
+    alone: true,
     words: ['carrier', 'vendor', 'supplier', 'distributor', 'trucking company'],
   },
   {
@@ -79,6 +91,7 @@ export const WORK_SYNONYM_GROUPS: readonly WorkSynonymGroup[] = [
   {
     id: 'inventory',
     kind: 'thing',
+    alone: true,
     words: [
       'inventory',
       'stock',
@@ -88,6 +101,11 @@ export const WORK_SYNONYM_GROUPS: readonly WorkSynonymGroup[] = [
       'restock',
       'replenishment',
       'sku',
+      'hand receipt',
+      'property book',
+      'supplies',
+      'supply room',
+      'equipment accountability',
     ],
   },
   {
@@ -112,6 +130,7 @@ export const WORK_SYNONYM_GROUPS: readonly WorkSynonymGroup[] = [
   {
     id: 'purchasing',
     kind: 'thing',
+    alone: true,
     words: ['purchase order', 'purchasing', 'procurement', 'ordering', 'reorder', 'requisition'],
   },
 
@@ -119,6 +138,7 @@ export const WORK_SYNONYM_GROUPS: readonly WorkSynonymGroup[] = [
   {
     id: 'schedule',
     kind: 'thing',
+    alone: true,
     words: ['schedule', 'roster', 'shift plan', 'rota', 'timetable', 'calendar', 'staffing plan'],
   },
   {
@@ -129,7 +149,21 @@ export const WORK_SYNONYM_GROUPS: readonly WorkSynonymGroup[] = [
   {
     id: 'train',
     kind: 'action',
-    words: ['train', 'coach', 'onboard', 'orient', 'mentor', 'teach new hires'],
+    words: [
+      'train',
+      'coach',
+      'onboard',
+      'orient',
+      'mentor',
+      'teach new hires',
+      'onboarding',
+      'orientation',
+      'cross-train',
+      'teach',
+      'taught',
+      'instruct',
+      'new hire trainings',
+    ],
   },
   { id: 'hire', kind: 'action', words: ['hire', 'recruit', 'interview candidates', 'staff up'] },
   {
@@ -148,20 +182,52 @@ export const WORK_SYNONYM_GROUPS: readonly WorkSynonymGroup[] = [
   {
     id: 'staff',
     kind: 'thing',
-    words: ['associate', 'employee', 'crew', 'staff member', 'team member', 'worker'],
+    words: [
+      'associate',
+      'employee',
+      'crew',
+      'staff member',
+      'team member',
+      'worker',
+      'new hire',
+      'frontline staff',
+      'picker',
+      'packer',
+      'soldier',
+      'personnel',
+      'troops',
+      'caregiver',
+      'aide',
+      'server',
+    ],
   },
-  { id: 'volunteer', kind: 'thing', words: ['volunteer', 'volunteers', 'volunteer shift'] },
+  {
+    id: 'volunteer',
+    kind: 'thing',
+    words: ['volunteer', 'volunteers', 'volunteer shift'],
+  },
 
   // Customers and service
   {
     id: 'customer',
     kind: 'thing',
-    words: ['customer', 'client', 'guest', 'patron', 'shopper', 'visitor', 'caller'],
+    words: [
+      'customer',
+      'client',
+      'guest',
+      'patron',
+      'shopper',
+      'visitor',
+      'caller',
+      'patient',
+      'resident',
+      'family member',
+    ],
   },
   {
     id: 'escalation',
     kind: 'thing',
-    words: ['escalation', 'complaint', 'dispute', 'service issue'],
+    words: ['escalation', 'complaint', 'dispute', 'service issue', 'problem', 'grievance'],
   },
   { id: 'resolve', kind: 'action', words: ['resolve', 'resolution', 'solve'] },
   {
@@ -180,7 +246,11 @@ export const WORK_SYNONYM_GROUPS: readonly WorkSynonymGroup[] = [
     words: ['front desk', 'reception', 'welcome desk', 'check-in', 'lobby'],
   },
   { id: 'greet', kind: 'action', words: ['greet', 'welcome guests', 'host'] },
-  { id: 'appointment', kind: 'thing', words: ['appointment', 'booking', 'reservation', 'sign-up'] },
+  {
+    id: 'appointment',
+    kind: 'thing',
+    words: ['appointment', 'bookings', 'reservation', 'sign-up'],
+  },
 
   // Retail and money
   {
@@ -202,26 +272,66 @@ export const WORK_SYNONYM_GROUPS: readonly WorkSynonymGroup[] = [
   {
     id: 'rollout',
     kind: 'thing',
-    words: ['rollout', 'roll out', 'launch', 'implementation', 'go-live', 'conversion', 'pilot'],
+    alone: true,
+    words: [
+      'rollout',
+      'roll out',
+      'launch',
+      'implementation',
+      'go-live',
+      'conversion',
+      'pilot',
+      'go live',
+      'cutover',
+      'changeover',
+      'new system',
+      'system upgrade',
+    ],
   },
   { id: 'loss', kind: 'thing', words: ['shrink', 'loss prevention', 'theft', 'waste'] },
   {
     id: 'budget',
     kind: 'thing',
-    words: ['budget', 'payroll', 'labor cost', 'spend', 'expense', 'p&l', 'cost'],
+    alone: true,
+    words: [
+      'budget',
+      'payroll',
+      'labor cost',
+      'spend',
+      'expense',
+      'p&l',
+      'cost',
+      'food cost',
+      'cost of goods',
+      'operating budget',
+      'spending',
+    ],
   },
   {
     id: 'invoice',
     kind: 'thing',
+    alone: true,
     words: ['invoice', 'billing', 'accounts payable', 'accounts receivable'],
   },
-  { id: 'kpi', kind: 'thing', words: ['kpi', 'metric', 'scorecard', 'benchmark'] },
+  { id: 'kpi', kind: 'thing', alone: true, words: ['kpi', 'metric', 'scorecard', 'benchmark'] },
 
   // Office and records
   {
     id: 'report',
     kind: 'thing',
-    words: ['report', 'summary', 'dashboard', 'recap', 'status update', 'tracker'],
+    words: [
+      'report',
+      'summary',
+      'dashboard',
+      'recap',
+      'status update',
+      'tracker',
+      'status report',
+      'end-of-day report',
+      'shift report',
+      'handoff report',
+      'progress report',
+    ],
   },
   {
     id: 'spreadsheet',
@@ -236,23 +346,63 @@ export const WORK_SYNONYM_GROUPS: readonly WorkSynonymGroup[] = [
   {
     id: 'records',
     kind: 'thing',
-    words: ['records', 'filing', 'paperwork', 'documentation', 'log', 'logbook'],
+    words: [
+      'records',
+      'filing',
+      'paperwork',
+      'documentation',
+      'log',
+      'logbook',
+      'chart',
+      'charting',
+      'care notes',
+      'incident log',
+    ],
   },
   {
     id: 'procedure',
     kind: 'thing',
+    alone: true,
     words: ['sop', 'procedure', 'checklist', 'how-to guide', 'playbook', 'process document'],
   },
   {
     id: 'meeting',
     kind: 'thing',
-    words: ['meeting', 'agenda', 'huddle', 'standup', 'briefing', 'minutes'],
+    alone: true,
+    words: [
+      'meetings',
+      'agenda',
+      'huddle',
+      'standup',
+      'briefings',
+      'minutes',
+      'status meetings',
+      'safety meetings',
+      'shift meetings',
+      'staff meetings',
+      'team meetings',
+      'pre-shift meetings',
+      'toolbox talk',
+      'stand-ups',
+      'line-ups',
+      'pre-shift',
+    ],
   },
   { id: 'notes', kind: 'thing', words: ['notes', 'action items', 'follow-up'] },
   {
     id: 'deadline',
     kind: 'thing',
-    words: ['milestone', 'deadline', 'timeline', 'due date', 'target date'],
+    alone: true,
+    words: [
+      'milestone',
+      'deadline',
+      'timeline',
+      'due date',
+      'target date',
+      'cutoff',
+      'go-live date',
+      'launch date',
+    ],
   },
   {
     id: 'improve',
@@ -262,9 +412,25 @@ export const WORK_SYNONYM_GROUPS: readonly WorkSynonymGroup[] = [
   {
     id: 'audit',
     kind: 'thing',
+    alone: true,
     words: ['audit', 'inspection', 'walk-through', 'compliance check', 'quality check'],
   },
-  { id: 'safety', kind: 'thing', words: ['safety', 'osha', 'compliance', 'incident', 'hazard'] },
+  {
+    id: 'safety',
+    kind: 'thing',
+    alone: true,
+    words: [
+      'safety',
+      'osha',
+      'compliance',
+      'incident',
+      'hazard',
+      'regulatory',
+      'infection control',
+      'incident report',
+      'safety meetings',
+    ],
+  },
   {
     id: 'contractor',
     kind: 'thing',
@@ -303,6 +469,7 @@ export const WORK_SYNONYM_GROUPS: readonly WorkSynonymGroup[] = [
   {
     id: 'event',
     kind: 'thing',
+    alone: true,
     words: ['event', 'workshop', 'fundraiser', 'open house', 'orientation', 'program night'],
   },
   {
@@ -338,5 +505,78 @@ export const WORK_SYNONYM_GROUPS: readonly WorkSynonymGroup[] = [
     id: 'mentor',
     kind: 'action',
     words: ['advise', 'peer advisor', 'resident assistant', 'counsel'],
+  },
+  // People a project answers to, in any setting
+  {
+    id: 'stakeholder',
+    kind: 'thing',
+    words: [
+      'stakeholder',
+      'client',
+      'vendor',
+      'carrier',
+      'supplier',
+      'partner',
+      'department head',
+      'community partner',
+    ],
+  },
+  {
+    id: 'project',
+    kind: 'thing',
+    words: ['project', 'mission', 'initiative', 'launch'],
+  },
+
+  // Teaching
+  {
+    id: 'curriculum',
+    kind: 'thing',
+    alone: true,
+    words: [
+      'curriculum',
+      'lesson plan',
+      'unit plan',
+      'syllabus',
+      'training material',
+      'course material',
+      'training guide',
+      'job aid',
+      'learning module',
+    ],
+  },
+  {
+    id: 'assessment',
+    kind: 'thing',
+    alone: true,
+    words: [
+      'assessment',
+      'grading',
+      'rubric',
+      'evaluation',
+      'performance review',
+      'progress report',
+      'observation',
+    ],
+  },
+
+  // Caregiving and health
+  {
+    id: 'care-plan',
+    kind: 'thing',
+    alone: true,
+    words: [
+      'care plan',
+      'treatment plan',
+      'service plan',
+      'case plan',
+      'IEP',
+      'individualized plan',
+      'support plan',
+    ],
+  },
+  {
+    id: 'intake',
+    kind: 'thing',
+    words: ['intake', 'admission', 'registration', 'check-in'],
   },
 ];

@@ -8,13 +8,18 @@
  * Conservative by design. A line needs two separate things in common with
  * the requirement (after stemming and the authored table in
  * work-synonyms.ts), at least one of them an object of work rather than a
- * verb. Tool, education, and unreadable requirements get none: a tool is
- * either used or not. A near miss never counts as evidence.
+ * verb. A duty can also be bridged by one specific kind of work the table
+ * knows, said in other words, on a line that opens with something the
+ * person did: "Ran safety meetings" for "run weekly status meetings", "Led
+ * rollout of a new WMS" for "go-live readiness". Tool, education, and
+ * unreadable requirements get none: a tool is either used or not. A near
+ * miss never counts as evidence, and never offers a named tool or
+ * credential the line does not have.
  */
 
 import { analyzeRequirement, type EvidenceOptions } from './evidence';
 import { findVariant, type RequirementTerm, stem, tokenize, tokenRoles } from './match';
-import { notDoneSpans, readDocument } from './resume-lines';
+import { notDoneSpans, readDocument, startsWithAction } from './resume-lines';
 import { normalizePunctuation } from './text';
 import type { SourceSpan } from './types';
 import { WORK_SYNONYM_GROUPS, type WorkSynonymGroup } from './work-synonyms';
@@ -111,7 +116,13 @@ function concepts(text: string, region?: (span: SourceSpan) => boolean): Concept
   candidates.sort((a, b) => b.end - b.start - (a.end - a.start) || a.start - b.start);
   const hits: ConceptHit[] = [];
   for (const hit of candidates) {
-    if (!hits.some((h) => overlaps(h, hit))) hits.push(hit);
+    // One phrase can name two kinds of work ("vendor" is a carrier and a
+    // stakeholder); a shorter phrase inside a longer one is dropped.
+    const blocked = hits.some(
+      (h) => overlaps(h, hit) && !(h.start === hit.start && h.end === hit.end)
+    );
+    if (!blocked && !hits.some((h) => h.concept === hit.concept && overlaps(h, hit)))
+      hits.push(hit);
   }
   const tokens = tokenize(text);
   const roles = tokenRoles(text, tokens);
@@ -134,10 +145,15 @@ const stems = (words: string) =>
   words
     .toLowerCase()
     .split(/[^a-z0-9]+/)
-    .filter((w) => w.length >= 3)
+    .filter((w) => w.length >= 2)
     .map((w) => stem(w).root);
 
-/** Concepts the line says with different words from the requirement's own (`ownWords`). */
+/**
+ * Concepts the line says with different words from the requirement's own
+ * (`ownWords`): "carriers" for "vendors", "safety meetings" for "status
+ * meetings". A phrase made only of the requirement's words ("under budget"
+ * for "budgets") is the same words, not other words.
+ */
 function differing(
   hits: ConceptHit[],
   text: string,
@@ -148,9 +164,21 @@ function differing(
     if (!hit.viaTable) continue;
     const own = ownWords.get(hit.concept) ?? new Set<string>();
     const lineStems = stems(text.slice(hit.start, hit.end));
-    if (!lineStems.some((w) => own.has(w))) ids.add(hit.concept);
+    if (lineStems.some((w) => !own.has(w))) ids.add(hit.concept);
   }
   return ids;
+}
+
+const ALONE = new Set(WORK_SYNONYM_GROUPS.filter((g) => g.alone).map((g) => g.id));
+
+/**
+ * The posting's words for a shared concept: the requirement term that holds
+ * it, unless that term trails off into a word that is not part of the work
+ * ("stakeholders informed"), when the table's own phrase reads better.
+ */
+function postingLabelSpan(hit: SourceSpan, holder: RequirementTerm, requirement: string) {
+  const tail = requirement.slice(hit.end, holder.span.end);
+  return /\b[a-z]+ed\s*$/i.test(tail) ? hit : holder.span;
 }
 
 /** Blanks out parenthetical examples ("(on-time shipping, order accuracy)"), keeping offsets. */
@@ -228,7 +256,12 @@ export function findNearMisses(
   const doc = readDocument(resumeText, { today: options.today });
   const normalized = normalizePunctuation(resumeText);
 
-  const scored: { line: (typeof doc.lines)[number]; shared: ConceptHit[]; order: number }[] = [];
+  const scored: {
+    line: (typeof doc.lines)[number];
+    shared: ConceptHit[];
+    order: number;
+    strength: number;
+  }[] = [];
   doc.lines.forEach((line, order) => {
     if (line.kind !== 'experience') return;
     if (exclude.some((span) => overlaps(span, line))) return;
@@ -237,24 +270,39 @@ export function findNearMisses(
     const found = conceptsOfLine(text).filter((h) => wantedIds.has(h.concept));
     const ids = new Set(found.map((h) => h.concept));
     const things = new Set(found.filter((h) => h.kind === 'thing').map((h) => h.concept));
+    const places = new Set(found.map((h) => `${h.start}:${h.end}`));
     const words = new Set(found.map((h) => text.slice(h.start, h.end).toLowerCase()));
-    const enough =
-      (ids.size >= 2 && things.size >= 1) ||
-      // A field list ("logistics") names one area; three different words for it in one line is enough.
-      (analysis.kind === 'years' && things.size >= 1 && words.size >= 3);
-    if (!enough) return;
     // "In other words": at least one shared thing must be said differently.
     // A line that only repeats the requirement's own words is not a near miss.
-    if (differing(found, text, requirementWords).size === 0) return;
+    const different = differing(found, text, requirementWords);
+    if (different.size === 0) return;
+    // Two things in common means two places in the requirement too: "client"
+    // is a customer and a stakeholder, but it is still one thing asked for.
+    const asked = new Set(
+      wanted.filter((h) => ids.has(h.concept)).map((h) => `${h.start}:${h.end}`)
+    );
+    const two =
+      (ids.size >= 2 && places.size >= 2 && asked.size >= 2 && things.size >= 1) ||
+      // A field list ("logistics") names one area; three different words for it in one line is enough.
+      (analysis.kind === 'years' && things.size >= 1 && words.size >= 3);
+    // One specific kind of work, said in other words, on a line about something the person did.
+    const bridge =
+      analysis.kind === 'task' &&
+      startsWithAction(text.replace(/^[\s•\-*◦○●‣⁃▪■–—·]+/, '')) &&
+      [...different].some((id) => ALONE.has(id));
+    if (!two && !bridge) return;
     scored.push({
       line,
       shared: found.map((h) => ({ ...h, start: h.start + line.start, end: h.end + line.start })),
       order,
+      strength: two ? 2 : 1,
     });
   });
 
   const conceptCount = (s: (typeof scored)[number]) => new Set(s.shared.map((h) => h.concept)).size;
-  scored.sort((a, b) => conceptCount(b) - conceptCount(a) || a.order - b.order);
+  scored.sort(
+    (a, b) => b.strength - a.strength || conceptCount(b) - conceptCount(a) || a.order - b.order
+  );
 
   const results: NearMiss[] = [];
   for (const candidate of scored) {
@@ -281,7 +329,7 @@ export function findNearMisses(
         (t) => t.span.start <= hit.start && hit.end <= t.span.end
       );
       if (holders.length === 0) spans.push(hit);
-      for (const holder of holders) spans.push(holder.span);
+      for (const holder of holders) spans.push(postingLabelSpan(hit, holder, requirement));
     }
     const postingTerms = mergeLabels(requirement, spans).filter(
       (label) => findVariant(label.toLowerCase(), lineText, lineLower).length === 0
