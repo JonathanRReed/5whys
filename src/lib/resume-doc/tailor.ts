@@ -100,7 +100,16 @@ export function resumeRoles(doc: ResumeDoc): ResumeRole[] {
       return;
     }
     if (isTitleLine(line.text, lines[index + 1]?.bullet ?? false)) {
-      if (current && current.bulletIds.length === 0 && current.id !== section?.headingLineId) {
+      // A second heading line of the same job ("Alpha Store" then "Manager,
+      // Jan 2023 - Present") joins it. A job whose heading already has its
+      // title and its dates is whole: the next title line is another job,
+      // even when the first has no bullets yet.
+      if (
+        current &&
+        current.bulletIds.length === 0 &&
+        current.id !== section?.headingLineId &&
+        !isWholeHeading(current.label)
+      ) {
         current.label = `${current.label}, ${line.text.trim()}`;
         current.lastLineId = line.id;
         return;
@@ -113,6 +122,15 @@ export function resumeRoles(doc: ResumeDoc): ResumeRole[] {
     if (current) current.lastLineId = line.id;
   });
   return roles;
+}
+
+const DATED = /\b(?:19|20)\d{2}\b|\b(?:present|current|now|ongoing)\b/i;
+const DATE_WORDS =
+  /\b(?:19|20)\d{2}\b|\b(?:present|current|now|ongoing|to|through|until|jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sept?(?:ember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?|spring|summer|fall|autumn|winter)\b/gi;
+
+/** A job heading that has both words (a title or a place) and its dates. */
+function isWholeHeading(label: string): boolean {
+  return DATED.test(label) && /[a-z]{2,}/i.test(label.replace(DATE_WORDS, ''));
 }
 
 /** The role a line is in, by the line's id or the role's own id. */

@@ -39,9 +39,17 @@ export interface HiringCondition {
 }
 
 /** "We do not sponsor visas", "unable to sponsor", "without sponsorship", "sponsorship is not available". */
-const NO_SPONSORSHIP =
-  /\b(?:not|unable\s+to|cannot|can't|won't|will\s+not|do\s+not|does\s+not|don't|doesn't|no)\b[^.]{0,40}?\bsponsor|\bwithout\s+(?:\w+\s+)?sponsorship\b|\bsponsorship\s+(?:is\s+)?(?:not\s+(?:available|offered|provided|possible)|unavailable)\b/i;
-
+const NO_SPONSORSHIP = new RegExp(
+  [
+    // The refusal and the word it refuses stay together: "No prior experience
+    // required; visa sponsorship is available" refuses nothing about visas.
+    String.raw`\b(?:unable\s+to|not\s+able\s+to|cannot|can\s?not|can't|won't|will\s+not|do\s+not|does\s+not|don't|doesn't|are\s+not|is\s+not|must\s+not|not)\s+(?:(?:currently|presently|be|able|to|offer|offering|provide|providing|or|any|consider|considering|require|requiring|need|needing|eligible|for|a|an|the)\s+){0,5}(?:(?:visa|work|employment|immigration|h-?1b|new)\s+){0,2}sponsor`,
+    String.raw`\bno\s+(?:(?:visa|work|employment|immigration|h-?1b|new)\s+){0,2}sponsor`,
+    String.raw`\bwithout\s+(?:\w+\s+)?sponsorship\b`,
+    String.raw`\bsponsorship\s+(?:is\s+)?(?:not\s+(?:available|offered|provided|possible)|unavailable)\b`,
+  ].join('|'),
+  'i'
+);
 const WORK_AUTHORIZATION_ABOUT =
   'F-1, J-1, and H-1B are visa types; CPT and OPT are kinds of work permission for students on an F-1 visa. An I-9 is the form US employers use to check work eligibility at hiring, and a Social Security number is used for pay and tax records. None of this is a skill or goes on a resume.';
 

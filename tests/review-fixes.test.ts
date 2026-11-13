@@ -186,3 +186,78 @@ describe('a path id is an own entry', () => {
     localStorage.clear();
   });
 });
+
+describe('a refusal to sponsor is read from its own clause', () => {
+  it('does not read a refusal into a posting that offers sponsorship', async () => {
+    const { hiringCondition } = await import('../src/lib/posting');
+    for (const line of [
+      'No prior experience required; visa sponsorship is available.',
+      'We do not require a degree and visa sponsorship is available.',
+      'Not sure you qualify? Apply anyway. We sponsor work visas.',
+    ]) {
+      expect(hiringCondition(line)?.noSponsorship ?? false, line).toBe(false);
+    }
+  });
+
+  it('still reads the ways a posting says it will not sponsor', async () => {
+    const { hiringCondition } = await import('../src/lib/posting');
+    for (const line of [
+      'We are unable to sponsor or take over sponsorship of an employment visa at this time.',
+      'We do not sponsor visas.',
+      'We cannot offer visa sponsorship for this role.',
+      'No visa sponsorship.',
+      'Must be authorized to work in the United States without sponsorship.',
+      'Candidates must not require sponsorship now or in the future.',
+      'Sponsorship is not available.',
+      'This role is not eligible for visa sponsorship.',
+    ]) {
+      expect(hiringCondition(line)?.noSponsorship, line).toBe(true);
+    }
+  });
+});
+
+describe('two dated jobs are two roles, even when the first has no bullets', () => {
+  it('keeps them apart so a bullet can be placed under either', async () => {
+    const { fromText } = await import('../src/lib/resume-doc');
+    const { resumeRoles } = await import('../src/lib/resume-doc/tailor');
+    const roles = resumeRoles(
+      fromText(
+        [
+          'Sam Rivera',
+          'sam@example.edu',
+          '',
+          'Experience',
+          'Manager, Alpha Store | Jan 2023 - Present',
+          'Cashier, Beta Shop | Jan 2021 - Dec 2022',
+          '- Ran a register on weekends',
+        ].join('\n')
+      )
+    );
+    expect(roles.map((role) => role.label)).toEqual([
+      'Manager, Alpha Store | Jan 2023 - Present',
+      'Cashier, Beta Shop | Jan 2021 - Dec 2022',
+    ]);
+    expect(roles[0].bulletIds).toHaveLength(0);
+    expect(roles[1].bulletIds).toHaveLength(1);
+  });
+
+  it('still joins the two lines of one heading', async () => {
+    const { fromText } = await import('../src/lib/resume-doc');
+    const { resumeRoles } = await import('../src/lib/resume-doc/tailor');
+    const roles = resumeRoles(
+      fromText(
+        [
+          'Sam Rivera',
+          'sam@example.edu',
+          '',
+          'Experience',
+          'Alpha Store, Dayton, OH',
+          'Store Manager, Jan 2023 - Present',
+          '- Managed a team of 22 associates',
+        ].join('\n')
+      )
+    );
+    expect(roles).toHaveLength(1);
+    expect(roles[0].bulletIds).toHaveLength(1);
+  });
+});
