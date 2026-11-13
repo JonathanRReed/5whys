@@ -247,7 +247,7 @@ describe('Five Whys non-answers', () => {
     expect(screen.getByText(/3 words or more counts as an answer/)).toBeInTheDocument();
     rerender(<WhyForm {...props} responses={['test this', '', '', '', '']} />);
     expect(
-      screen.getByText('Add 1 more word. 3 words or more counts as an answer.')
+      screen.getByText(/^Add 1 more word\. 3 words or more counts as an answer\./)
     ).toBeInTheDocument();
     expect(screen.queryByText(NON_ANSWER_FOLLOW_UP)).not.toBeInTheDocument();
     // A held key is not three words, however long it runs.
@@ -267,7 +267,9 @@ describe('Five Whys prompts', () => {
     expect(quotableAnswer(long)).toBe('');
     const prompt = buildPrompts('career', 'Nursing', [long])[1];
     expect(prompt).not.toMatch(/\.\.\.|…/);
-    expect(prompt).toBe('Why does your first answer matter to you?');
+    expect(prompt).toBe(
+      'Why does that first reason matter to you? Say what it gives you that other work would not.'
+    );
   });
 
   it('asks about the interest without assuming the visitor would work for free', () => {

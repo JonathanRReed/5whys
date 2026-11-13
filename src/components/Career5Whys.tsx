@@ -18,10 +18,13 @@ import {
   HISTORY_LIMIT_KEY,
   HISTORY_LIMIT_OPTIONS,
   isBrowser,
+  type Lens,
+  lensConfig,
+  lensOf,
   type Register,
+  readOutcome,
   readStoredHistory,
   sameSnapshot,
-  TRACKS,
   toSlug,
   trackSamples,
   useStoredSession,
@@ -50,7 +53,9 @@ export default function Career5Whys({
       setRegister('professional');
     }
   }, []);
-  const samples = trackSamples(session.track, register);
+  const lens = lensOf(session);
+  const samples = trackSamples(lens, register);
+  const outcome = readOutcome(session as unknown as Record<string, unknown>);
 
   // Offer model-written follow-ups only when the browser already has its own
   // model. This check never downloads anything.
@@ -77,10 +82,10 @@ export default function Career5Whys({
     isComplete,
     whyStatement,
     nextStep,
-  } = useSynthesis(session.responses, session.topic, session.track, session.rootIndex);
+  } = useSynthesis(session.responses, session.topic, lens, session.rootIndex);
   const prompts = React.useMemo(
-    () => buildPrompts(session.track, session.topic, session.responses),
-    [session.track, session.topic, session.responses]
+    () => buildPrompts(lens, session.topic, session.responses),
+    [lens, session.topic, session.responses]
   );
 
   const persistHistory = React.useCallback((entries: WhySnapshot[]) => {
@@ -187,6 +192,8 @@ export default function Career5Whys({
       topic: session.topic,
       responses: [...session.responses],
       ...(session.rootIndex !== undefined ? { rootIndex: session.rootIndex } : {}),
+      ...(session.start ? { start: session.start } : {}),
+      ...outcome,
       updatedAt: session.updatedAt,
       version: 3,
     };
@@ -210,13 +217,14 @@ export default function Career5Whys({
       nextStep,
       createdAt: new Date().toISOString(),
     };
-    const topicSlug = toSlug(session.topic || TRACKS[session.track].label) || session.track;
+    const topicSlug = toSlug(session.topic || lensConfig(lens).label) || session.track;
     downloadJson(`career-why-${topicSlug}-${localDate()}.json`, exportPayload);
     setStatus('Export ready. Check your downloads.');
   };
 
   const handleExportSnapshot = (snapshot: WhySnapshot) => {
-    const topicSlug = toSlug(snapshot.topic || TRACKS[snapshot.track].label) || snapshot.track;
+    const topicSlug =
+      toSlug(snapshot.topic || lensConfig(lensOf(snapshot)).label) || snapshot.track;
     downloadJson(
       `career-why-snapshot-${topicSlug}-${snapshot.timestamp.slice(0, 10)}.json`,
       snapshot
@@ -257,6 +265,8 @@ export default function Career5Whys({
       topic: snapshot.topic,
       responses: ensureResponsesLength(snapshot.responses),
       ...(snapshot.rootIndex !== undefined ? { rootIndex: snapshot.rootIndex } : {}),
+      ...(snapshot.start ? { start: snapshot.start } : {}),
+      ...readOutcome(snapshot as unknown as Record<string, unknown>),
       updatedAt: new Date().toISOString(),
     });
     setExampleOpen({});
@@ -272,13 +282,28 @@ export default function Career5Whys({
   // Changing the lens keeps what the visitor wrote; only the questions
   // change. Pressing the track already chosen does nothing. "Reset session"
   // is the one control that clears the work.
-  const handleTrackChange = (track: 'career' | 'interest') => {
-    if (track === session.track) return;
+  // An experience start is stored as the Interest Path plus a marker, so
+  // every reader that knows only the two tracks still reads it.
+  const handleTrackChange = (next: Lens) => {
+    if (next === lens) return;
     setExampleOpen({});
-    updateSession({ track });
+    setSession((previous) => {
+      const { start: _start, ...rest } = previous;
+      return {
+        ...rest,
+        ...(next === 'experience'
+          ? { track: 'interest' as const, start: 'experience' as const }
+          : { track: next }),
+        updatedAt: new Date().toISOString(),
+      };
+    });
     if (session.topic.trim() || session.responses.some((response) => response.trim())) {
-      setStatus(`Switched to ${TRACKS[track].label}. Your answers are kept.`);
+      setStatus(`Switched to ${lensConfig(next).label}. Your answers are kept.`);
     }
+  };
+
+  const handleOutcomeChange = (field: keyof typeof outcome, value: string) => {
+    updateSession({ [field]: value });
   };
 
   return (
@@ -286,7 +311,7 @@ export default function Career5Whys({
       <div className={cn('mx-auto w-full max-w-6xl space-y-8 px-4 py-8', !showHeader && 'py-6')}>
         <CareerHeader
           showHeader={showHeader}
-          track={session.track}
+          track={lens}
           topic={session.topic}
           sequentialCount={sequentialCount}
           progressPercent={progressPercent}
@@ -324,6 +349,10 @@ export default function Career5Whys({
               nextStep={nextStep}
               answers={session.responses}
               rootIndex={session.rootIndex}
+              root={root}
+              outcome={outcome}
+              fromExperience={lens === 'experience'}
+              onOutcomeChange={handleOutcomeChange}
               onRootChange={(rootIndex) =>
                 setSession((previous) => ({
                   ...previous,

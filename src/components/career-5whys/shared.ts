@@ -1,5 +1,10 @@
 import * as React from 'react';
-import { isNonAnswer, isRealAnswer, nonAnswerFollowUp } from '../../lib/non-answer';
+import {
+  answerWordCount,
+  isNonAnswer,
+  isRealAnswer,
+  nonAnswerFollowUp,
+} from '../../lib/non-answer';
 import { isStudentLike, readProfile } from '../../lib/profile';
 
 export const WHY_COUNT = 5;
@@ -53,19 +58,21 @@ export const TRACKS: Record<'career' | 'interest', TrackConfig> = {
     questions: [
       ({ topic }) => `What is pulling you toward ${topic} right now? Name the most concrete thing.`,
       ({ prev }) =>
-        prev ? `Why does "${prev}" matter to you?` : 'Why does your first answer matter to you?',
+        prev
+          ? `Why does "${prev}" matter to you? What does it give you that other work would not?`
+          : 'Why does that first reason matter to you? Say what it gives you that other work would not.',
       ({ prev }) =>
         prev
-          ? `And why does that matter? What sits underneath "${prev}"?`
-          : 'And why does that matter? What sits underneath it?',
+          ? `What sits underneath "${prev}"? Name the moment, the person, or the need it comes from.`
+          : 'What sits underneath your last answer? Name the moment, the person, or the need it comes from.',
       ({ prev }) =>
         prev
-          ? `Keep going. Why is "${prev}" strong enough to steer your career?`
-          : 'Keep going. Why is that strong enough to steer your career?',
+          ? `Would "${prev}" still hold if the job paid less or had a smaller title? Say why it is strong enough to steer your choice.`
+          : 'Would that reason still hold if the job paid less or had a smaller title? Say why it is strong enough to steer your choice.',
       ({ prev }) =>
         prev
-          ? `Last layer. If "${prev}" is the real reason, what value or need sits at the root of it?`
-          : 'Last layer. What value or need sits at the root of all this?',
+          ? `Last layer. If "${prev}" is the real reason, what value or need sits at the root of it, the thing you would check for in any job?`
+          : 'Last layer. What value or need sits at the root of all this, the thing you would check for in any job?',
     ],
     example: {
       persona: 'Second-year community college student, set on nursing',
@@ -134,12 +141,85 @@ export const TRACKS: Record<'career' | 'interest', TrackConfig> = {
 
 export type Track = keyof typeof TRACKS;
 
+/**
+ * The optional third start: one concrete experience instead of a role or an
+ * interest. It is stored as the Interest Path with `start: 'experience'`, so
+ * every reader that knows only the two tracks still reads it.
+ */
+export const EXPERIENCE: TrackConfig = {
+  label: 'Start from an experience',
+  description: 'Something you did that stuck with you: a shift, a project, a club, a hard week.',
+  topicLabel: 'The experience',
+  topicPlaceholder: 'e.g., Running the bake sale table, my first lab report',
+  questions: [
+    ({ topic }) =>
+      topic === 'this experience'
+        ? 'Tell the story of this experience. What did you do, in a sentence or two?'
+        : `Tell the story of "${topic}". What did you do, in a sentence or two?`,
+    ({ prev }) =>
+      prev
+        ? `Which part of "${prev}" did you like most? Say why that part and not the rest.`
+        : 'Which part of it did you like most? Say why that part and not the rest.',
+    ({ prev }) =>
+      prev
+        ? `Why does "${prev}" matter to you? What did it give you that an ordinary day does not?`
+        : 'Why does that part matter to you? What did it give you that an ordinary day does not?',
+    ({ prev }) =>
+      prev
+        ? `Where else have you felt "${prev}"? Say what the two moments share.`
+        : 'Where else have you felt that? Say what the two moments share.',
+    ({ prev }) =>
+      prev
+        ? `If "${prev}" is the need, what would a job have to let you do every week?`
+        : 'If that is the need, what would a job have to let you do every week?',
+  ],
+  example: {
+    persona: 'High school senior, started from a weekend job',
+    topic: 'Closing the bakery on Saturdays',
+    answers: [
+      'On Saturdays I close the bakery alone. I count the drawer, pack the leftovers for the shelter, and write the list for the morning crew.',
+      'Writing the list for the morning crew. When they come in, they know exactly what to do, and nobody has to call me.',
+      'It means I left things easier for someone else. I like that my work keeps going after I go home.',
+      'In group projects I am the one who makes the shared doc and the checklist. Both times I am setting up other people to do well.',
+      'A job would have to let me set things up so a team runs smoothly, and let me see that it worked.',
+    ],
+  },
+  professional: {
+    topicPlaceholder: 'e.g., The quarter I rebuilt the onboarding process',
+    example: {
+      persona: 'Career changer, started from one hard quarter at work',
+      topic: 'Rebuilding onboarding',
+      answers: [
+        'New hires kept quitting in their first month, so I rewrote our onboarding checklist and paired each one with a buddy for two weeks.',
+        'Sitting with the first new hire who used it and watching her finish week one without asking me for help.',
+        'It showed me a problem I could fix by changing how the work is set up, not by working longer hours.',
+        'When I reorganized the stockroom years ago, it was the same feeling: the system did the work after I left.',
+        'A job would have to let me design how work gets done for other people, and give me a way to see whether it helped.',
+      ],
+    },
+  },
+};
+
+/** How a session starts: one of the two tracks, or from an experience. */
+export type Lens = Track | 'experience';
+
+export const LENSES: readonly Lens[] = ['career', 'interest', 'experience'];
+
+export function lensConfig(lens: Lens): TrackConfig {
+  return lens === 'experience' ? EXPERIENCE : TRACKS[lens];
+}
+
+/** The lens a stored session or snapshot was written in. */
+export function lensOf(entry: { track: Track; start?: unknown }): Lens {
+  return entry.start === 'experience' ? 'experience' : entry.track;
+}
+
 /** The placeholder and worked example for a track in the visitor's register. */
 export function trackSamples(
-  track: Track,
+  track: Lens,
   register: Register
 ): { topicPlaceholder: string; example: TrackExample } {
-  const config = TRACKS[track];
+  const config = lensConfig(track);
   if (register === 'professional' && config.professional) return config.professional;
   return { topicPlaceholder: config.topicPlaceholder, example: config.example };
 }
@@ -157,6 +237,13 @@ export type WhySnapshot = {
   responses: string[];
   /** The answer the visitor chose as the real reason, when they chose one. */
   rootIndex?: number;
+  /** Set when the chain started from an experience rather than a role or interest. */
+  start?: 'experience';
+  /** The statement the visitor assembled from their own phrases and edited. */
+  statement?: string;
+  /** What a role must offer, and what the visitor can give up, in their words. */
+  mustOffer?: string;
+  canGiveUp?: string;
   updatedAt: string;
   version: number;
 };
@@ -172,8 +259,27 @@ export type Session = {
    * insight is.
    */
   rootIndex?: number;
+  start?: 'experience';
+  statement?: string;
+  mustOffer?: string;
+  canGiveUp?: string;
   updatedAt: string;
 };
+
+/** The visitor's own closing words: statement and criteria. */
+export type WhyOutcome = Pick<Session, 'statement' | 'mustOffer' | 'canGiveUp'>;
+
+export const OUTCOME_FIELDS = ['statement', 'mustOffer', 'canGiveUp'] as const;
+
+/** Copies only the outcome fields that hold text. */
+export function readOutcome(data: Record<string, unknown>): WhyOutcome {
+  const outcome: WhyOutcome = {};
+  for (const field of OUTCOME_FIELDS) {
+    const value = data[field];
+    if (typeof value === 'string' && value.trim()) outcome[field] = value;
+  }
+  return outcome;
+}
 
 /** A saved root choice that points at one of the five answers, or undefined. */
 export function validRootIndex(value: unknown): number | undefined {
@@ -271,6 +377,10 @@ export function normalizeSnapshot(entry: unknown): WhySnapshot | null {
     topic,
     responses,
     ...(rootIndex !== undefined ? { rootIndex } : {}),
+    ...(data.start === 'experience' && track === 'interest'
+      ? { start: 'experience' as const }
+      : {}),
+    ...readOutcome(data),
     updatedAt: typeof data.updatedAt === 'string' ? data.updatedAt : new Date().toISOString(),
     version: typeof data.version === 'number' ? data.version : 1,
   } satisfies WhySnapshot;
@@ -300,6 +410,12 @@ export function sameSnapshot(a: WhySnapshot, b: WhySnapshot): boolean {
   return a.id === b.id && a.timestamp === b.timestamp;
 }
 
+/** A first sentence, in writing that ends sentences with . ! ? or 。！？ */
+const SENTENCE = /^[^.!?。！？]+[.!?。！？]?/;
+const SENTENCE_END = /[.!?。！？]$/;
+const SENTENCE_BODY = /^[^.!?。！？]+/;
+const TRAILING_PUNCTUATION = /[.,;:!?。，、；：！？]+$/;
+
 /**
  * The full first sentence of an answer, with a period at the end. Used where
  * the user's own words should not be clipped mid-thought.
@@ -307,9 +423,9 @@ export function sameSnapshot(a: WhySnapshot, b: WhySnapshot): boolean {
 export function firstSentence(raw: unknown): string {
   const text = (typeof raw === 'string' ? raw : '').replace(/\s+/g, ' ').trim();
   if (!text) return '';
-  const match = text.match(/^[^.!?]+[.!?]?/);
+  const match = text.match(SENTENCE);
   const sentence = (match ? match[0] : text).trim();
-  return /[.!?]$/.test(sentence) ? sentence : `${sentence}.`;
+  return SENTENCE_END.test(sentence) ? sentence : `${sentence}.`;
 }
 
 const TOPIC_LEAD_INS = [
@@ -351,11 +467,13 @@ export function normalizeTopic(raw: string): string {
  * shaped topics fall back to the neutral label so the copy never reads
  * "one person doing I want to work in product management".
  */
-export function topicLabel(raw: string, track: Track): string {
-  const fallback = track === 'career' ? 'this path' : 'this interest';
+export function topicLabel(raw: string, track: Lens): string {
+  const fallback =
+    track === 'career' ? 'this path' : track === 'experience' ? 'this experience' : 'this interest';
   const normalized = normalizeTopic(raw);
   if (!normalized) return fallback;
   const words = normalized.split(' ');
+  if (track === 'experience') return words.length > 8 ? fallback : normalized;
   const readsLikeSentence =
     words.length > 6 ||
     /^(i|we|you|it|my|our|they|to|that|there)\b/i.test(normalized) ||
@@ -374,15 +492,20 @@ export const QUOTE_MAX_WORDS = 14;
 export function condenseAnswer(raw: unknown, maxWords = 10): string {
   const text = (typeof raw === 'string' ? raw : '').replace(/\s+/g, ' ').trim();
   if (!text) return '';
-  const sentenceMatch = text.match(/^[^.!?]+/);
+  const sentenceMatch = text.match(SENTENCE_BODY);
   const sentence = (sentenceMatch ? sentenceMatch[0] : text).trim();
   const words = sentence.split(' ');
+  // Writing without spaces is one long "word" to split(' '); clip it by
+  // characters instead, about four per word.
+  const letters = Array.from(sentence);
+  if (words.length === 1 && letters.length > maxWords * 4) {
+    return `${letters
+      .slice(0, maxWords * 3)
+      .join('')
+      .replace(TRAILING_PUNCTUATION, '')}\u2026`;
+  }
   const truncated = words.length > maxWords;
-  const clipped = words
-    .slice(0, maxWords)
-    .join(' ')
-    .replace(/[.,;:!?]+$/, '')
-    .trim();
+  const clipped = words.slice(0, maxWords).join(' ').replace(TRAILING_PUNCTUATION, '').trim();
   return truncated ? `${clipped}\u2026` : clipped;
 }
 
@@ -396,9 +519,11 @@ export function condenseAnswer(raw: unknown, maxWords = 10): string {
 export function quotableAnswer(raw: unknown): string {
   if (!isRealAnswer(raw)) return '';
   const text = (raw as string).replace(/\s+/g, ' ').trim();
-  const sentenceMatch = text.match(/^[^.!?]+/);
-  const sentence = (sentenceMatch ? sentenceMatch[0] : text).replace(/[.,;:!?]+$/, '').trim();
-  return sentence.split(' ').length <= QUOTE_MAX_WORDS ? sentence : '';
+  const sentenceMatch = text.match(SENTENCE_BODY);
+  const sentence = (sentenceMatch ? sentenceMatch[0] : text)
+    .replace(TRAILING_PUNCTUATION, '')
+    .trim();
+  return answerWordCount(sentence) <= QUOTE_MAX_WORDS ? sentence : '';
 }
 
 /**
@@ -406,11 +531,14 @@ export function quotableAnswer(raw: unknown): string {
  * every later depth interpolates a condensed version of the previous answer,
  * so the chain is built from the user's own words.
  */
-export function buildPrompts(track: Track, topic: string, responses: string[]): string[] {
-  const config = TRACKS[track];
+export function buildPrompts(track: Lens, topic: string, responses: string[]): string[] {
+  const config = lensConfig(track);
   const safe = ensureResponsesLength(responses);
   // A sentence-shaped topic is reduced to a label the question can name.
-  const label = topicLabel(topic, track);
+  const named = topicLabel(topic, track);
+  // A role or an interest reads lowercase mid-sentence; an experience is
+  // quoted as the visitor wrote it.
+  const label = track === 'experience' ? named : midSentence(named);
   return config.questions.map((build, index) =>
     build({
       topic: label,
@@ -495,18 +623,99 @@ export function getAnswerNudge(current: string, previous: string): string | null
   if (previous.trim() && isNearRepeat(trimmed, previous.trim())) {
     return 'This mostly restates your last answer. Go one level down: what does it protect, cost, or prove?';
   }
-  const wordCount = trimmed.split(/\s+/).length;
-  if (wordCount < 8) {
+  if (answerWordCount(trimmed) < 8) {
     return 'This counts. To make it stronger, name a value, a constraint, a moment, a person, or a fear.';
   }
   return null;
 }
 
 /**
- * One concrete "test this by" step, derived from track, topic, and the
- * language of the user's own answers. Never generic filler.
+ * The topic as it reads inside a sentence: "Operations analyst" becomes
+ * "operations analyst". A word with capitals inside it ("UX", "iOS") is a
+ * name or an acronym and keeps its case.
  */
-export function suggestNextStep(track: Track, topic: string, answerText: string): string {
+export function midSentence(label: string): string {
+  return label.replace(/^(\p{Lu})(\p{Ll}*)(?=[\s,]|$)/u, (_, first: string, rest: string) =>
+    rest ? `${first.toLowerCase()}${rest}` : `${first}${rest}`
+  );
+}
+
+/**
+ * "Research technician or pharmacy" is two options, not one. Splits a topic
+ * on "or", "vs" and "versus" (and the commas of a list that uses them) into
+ * two or three options. Anything else is one option.
+ */
+export function topicOptions(label: string): string[] {
+  if (!/\s(?:or|vs\.?|versus)\s/i.test(label)) return [label];
+  const parts = label
+    .split(/\s*,\s*(?:or\s+)?|\s+(?:or|vs\.?|versus)\s+/i)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return parts.length >= 2 && parts.length <= 3 ? parts : [label];
+}
+
+/** Words that end like a job title but name a field or a thing. */
+const NOT_ROLES = new Set([
+  'career',
+  'computer',
+  'content',
+  'water',
+  'paper',
+  'power',
+  'theater',
+  'theatre',
+  'sector',
+  'student',
+  'nonprofit',
+  'art',
+  'tech',
+]);
+const ROLE_ENDING =
+  /(?:er|or|ist|ian|ant|ent|eer|nurse|chef|lead|analyst|assistant|associate|clerk|aide|specialist|scientist|therapist|physician|coach|pilot|medic|tutor|vet|tech)$/i;
+
+/** True when the option names a person's job ("research technician") rather than a field ("pharmacy"). */
+export function isRoleTitle(option: string): boolean {
+  const words = option.trim().split(/\s+/);
+  const last = words[words.length - 1]?.toLowerCase() ?? '';
+  if (!last || /ment$/.test(last)) return false;
+  // "Tech" alone is a field; "pharmacy tech" is a job.
+  if (words.length === 1 && NOT_ROLES.has(last)) return false;
+  return ROLE_ENDING.test(last);
+}
+
+/** "a research technician", "an operations analyst", "an MBA student", "a UX designer". */
+function withArticle(noun: string): string {
+  const first = noun.trim().split(/\s+/)[0] ?? '';
+  const acronym = first.length > 1 && first === first.toUpperCase() && /\p{Lu}/u.test(first);
+  const vowelSound = acronym
+    ? /^[AEFHILMNORSX]/.test(first)
+    : /^[aeiou]/i.test(first) && !/^(?:uni|use|usu|eu|one)/i.test(first);
+  return `${vowelSound ? 'an' : 'a'} ${noun}`;
+}
+
+/** "as a research technician" or "in pharmacy". */
+function worksPhrase(option: string, fallback: boolean): string {
+  if (fallback) return 'on this path';
+  return isRoleTitle(option) ? `as ${withArticle(option)}` : `in ${option}`;
+}
+
+/** "a research technician" or "pharmacy". */
+function workOf(option: string): string {
+  return isRoleTitle(option) ? withArticle(option) : option;
+}
+
+/** "A", "A and B", "A, B, and C". */
+function list(items: string[]): string {
+  if (items.length <= 2) return items.join(' and ');
+  return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
+}
+
+/**
+ * One concrete "test this by" step, derived from track, topic, and the
+ * language of the user's own answers. Never generic filler. A topic that
+ * names two or three options gets the test for each of them.
+ */
+export function suggestNextStep(track: Lens, topic: string, answerText: string): string {
   const text = answerText.toLowerCase();
   const mentionsPeople =
     /\b(people|person|help|helping|teach|teaching|mentor|patient|patients|student|students|user|users|team|community|communities|family|kids|children)\b/.test(
@@ -520,18 +729,64 @@ export function suggestNextStep(track: Track, topic: string, answerText: string)
     /\b(learn|learning|understand|understanding|research|curious|curiosity|explain|explaining|knowledge|mechanism|study|studying)\b/.test(
       text
     );
-  const target = topicLabel(topic, track);
-  if (track === 'career') {
+  const label = topicLabel(topic, track);
+  const fallback = label !== normalizeTopic(topic) || !normalizeTopic(topic);
+  const options = fallback ? [label] : topicOptions(midSentence(label));
+  const target = options[0] ?? label;
+
+  if (track === 'experience') {
     if (mentionsPeople) {
-      return `Book 30 minutes with one person doing ${target} today. Ask what their week actually looks like, then check whether your root reason survives the answer.`;
+      return 'Ask one person whose job includes the part you liked most what their week looks like. Listen for whether that part is a small piece of the job or most of it.';
+    }
+    return 'Find one job posting that names the part you liked most as a duty, not a perk. Then turn this experience into a story you can tell in an interview or an intro.';
+  }
+
+  if (track === 'career') {
+    if (options.length > 1) {
+      const works = options.map((option) => `who works ${worksPhrase(option, false)}`);
+      const people = works.map(
+        (phrase, index) => `${index === 0 ? 'one person' : 'one'} ${phrase}`
+      );
+      if (mentionsPeople) {
+        return `Book 30 minutes with ${list(people)} this week. Ask each what their week actually looks like, then check which answer your root reason survives.`;
+      }
+      if (mentionsBuilding) {
+        return `Try one small piece of the actual work of each, ${list(options.map(workOf))}, this month. The one that feeds your root reason is the one to look at harder.`;
+      }
+      if (mentionsLearning) {
+        return `Read one honest account from ${list(works.map((phrase) => `someone ${phrase}`))}. Compare each day-to-day against your root reason, not the job posting.`;
+      }
+      return `Talk to ${list(people)}. Trade your five whys for theirs and see whose roots match yours.`;
+    }
+    const works = worksPhrase(target, fallback);
+    if (mentionsPeople) {
+      return `Book 30 minutes with one person who works ${works} today. Ask what their week actually looks like, then check whether your root reason survives the answer.`;
     }
     if (mentionsBuilding) {
-      return `Ship one small piece of the actual work of ${target} this month, no title required. If doing it feeds your root reason, the path holds.`;
+      return `Ship one small piece of the actual work of ${fallback ? target : workOf(target)} this month, no title required. If doing it feeds your root reason, the path holds.`;
     }
     if (mentionsLearning) {
-      return `Take one short course or read one practitioner's honest writeup of ${target}. Compare the day-to-day against your root reason, not the job posting.`;
+      return `Take one short course, or read one honest account from someone who works ${works}. Compare the day-to-day against your root reason, not the job posting.`;
     }
-    return `Talk to one person two years into ${target}. Trade your five whys for theirs and see if the roots match.`;
+    return `Talk to one person who has worked ${works} for about two years. Trade your five whys for theirs and see if the roots match.`;
+  }
+
+  if (options.length > 1) {
+    if (mentionsPeople) {
+      const people = options.map((option, index) =>
+        index === 0
+          ? `one person who turned ${option} into work`
+          : `one who turned ${option} into work`
+      );
+      return `Find ${list(people)}. Ask each one question: which part survived becoming a job?`;
+    }
+    if (mentionsBuilding) {
+      return `Make one small thing from each, ${list(options)}, this week. Two hours each, zero stakes. Notice which one you want a second session of.`;
+    }
+    if (mentionsLearning) {
+      return `Go one level deeper than class goes on each of ${list(options)}: one lecture, paper, or video apiece. Notice which one pulls you back.`;
+    }
+    return `Give ${list(options)} two focused hours each this week. Wanting a third hour of one of them is the signal you are looking for.`;
   }
   if (mentionsPeople) {
     return `Find one person who turned ${target} into work and ask one question: which part survived becoming a job?`;
@@ -567,7 +822,7 @@ export type Synthesis = {
 export function computeSynthesis(
   responses: unknown,
   topic: unknown,
-  track: Track,
+  track: Lens,
   rootIndex?: number
 ): Synthesis {
   const safe = ensureResponsesLength(responses);
@@ -589,7 +844,7 @@ export function computeSynthesis(
     ? 'The reason you picked as the real one'
     : 'Working hypothesis from your final answer';
   // Quote the topic exactly as typed instead of splicing it into a sentence.
-  const quoted = topicText ? `"${topicText}"` : track === 'career' ? 'this path' : 'this interest';
+  const quoted = topicText ? `"${topicText}"` : topicLabel('', track);
 
   let whyStatement: string;
   if (sequentialCount === 0) {
@@ -598,6 +853,8 @@ export function computeSynthesis(
   } else if (!isComplete) {
     const latest = chain[chain.length - 1];
     whyStatement = `Layer ${sequentialCount} of 5 answered. Latest reason: "${latest}". Keep asking why until the answer names a value or need.`;
+  } else if (track === 'experience') {
+    whyStatement = `You started from ${quoted}. What happened: "${surface}". ${rootSource}: ${root} An experience like this is a story you can tell in an interview or an intro.`;
   } else if (track === 'career') {
     whyStatement = `You started with ${quoted}. On the surface it was about "${surface}". ${rootSource}: ${root} Use the next step to test it against a real experience. Earlier answers may matter too.`;
   } else {
@@ -621,7 +878,7 @@ export function computeSynthesis(
 export function useSynthesis(
   responses: string[],
   topic: string,
-  track: Track,
+  track: Lens,
   rootIndex?: number
 ): Synthesis {
   return React.useMemo(
@@ -665,6 +922,10 @@ export function useStoredSession() {
           topic: typeof data.topic === 'string' ? data.topic : '',
           responses: ensureResponsesLength(data.responses),
           rootIndex: validRootIndex(data.rootIndex),
+          ...(data.start === 'experience' && data.track === 'interest'
+            ? { start: 'experience' as const }
+            : {}),
+          ...readOutcome(data as Record<string, unknown>),
           updatedAt: typeof data.updatedAt === 'string' ? data.updatedAt : fallback.updatedAt,
         });
       }
