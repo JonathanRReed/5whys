@@ -529,7 +529,7 @@ export function useNetworkingPractice() {
     resetTimer();
     setRecordedSeconds(0);
     setStorageNotice(
-      'Rep saved. Its next step is under "Last rep" above your draft, and your draft stays for the next one.'
+      'Rep saved to your local history. Its next step is under "Last rep", above your draft.'
     );
   }, [
     currentVersion,
