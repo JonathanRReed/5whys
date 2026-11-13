@@ -53,6 +53,7 @@ function fitsContext(lower: string, start: number, end: number, context?: Keywor
   if (context.needsLine && !context.needsLine.test(lower)) return false;
   if (context.notBefore?.test(before)) return false;
   if (context.notAfter?.test(after)) return false;
+  if (context.notLine?.test(lower)) return false;
   return true;
 }
 

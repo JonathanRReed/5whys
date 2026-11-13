@@ -16,6 +16,7 @@ import {
   toggleStoryInPacket,
   updatePacket,
 } from '../../lib/glowup-store';
+import { isRealAnswer } from '../../lib/non-answer';
 import { cn } from '../../lib/utils';
 import AiQuestions from './AiQuestions';
 import { ClipboardIcon, PrinterIcon, TargetIcon } from './icons';
@@ -26,6 +27,8 @@ type Props = {
   currentRole: DecodedRole | undefined;
   currentPacket: InterviewPacket | undefined;
   onLaunchHUD: () => void;
+  /** Print the packet as a plain review sheet. */
+  onPrint?: () => void;
   onGoToStories: () => void;
   onGoToDecode: () => void;
   audience?: Audience;
@@ -37,6 +40,7 @@ export default function PacketSection({
   currentRole,
   currentPacket,
   onLaunchHUD,
+  onPrint,
   onGoToStories,
   onGoToDecode,
   audience = 'student',
@@ -102,12 +106,12 @@ export default function PacketSection({
               .join(' at ')}
           </h2>
           <p className="text-sm text-muted-foreground">
-            {packetStories.length === 1 ? '1 story' : `${packetStories.length} stories`} in the
-            packet. Five is plenty for one interview.
+            {packetStories.length === 1 ? '1 story' : `${packetStories.length} stories`} in what you
+            bring to the interview (the packet). Five is plenty for one interview.
           </p>
           <p className="text-xs text-muted-foreground">
-            The HUD is a one-screen cheat sheet for the call: your stories, three keywords, and a
-            fallback story.
+            The one-screen cheat sheet (the HUD) shows your stories, three keywords, and a fallback
+            story for the call.
           </p>
         </div>
         <div className="flex gap-2">
@@ -143,7 +147,7 @@ export default function PacketSection({
             className="flex items-center gap-1 rounded-lg bg-foam px-3 py-1.5 text-sm font-semibold text-background focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
           >
             <TargetIcon className="h-4 w-4" />
-            Open the HUD
+            Open the cheat sheet (HUD)
           </button>
         </div>
       </div>
@@ -183,7 +187,9 @@ export default function PacketSection({
                       <p className="mt-1 text-sm font-medium text-foreground">
                         {story.trigger || 'Untitled'}
                       </p>
-                      <p className="text-xs text-muted-foreground">{readinessLabel(story)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {isRealAnswer(story.play) ? readinessLabel(story) : 'Not written yet'}
+                      </p>
                     </div>
                     <button
                       type="button"
@@ -413,7 +419,7 @@ export default function PacketSection({
                 className="flex items-center gap-2 rounded-lg bg-foam px-4 py-2.5 text-sm font-semibold text-background shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
               >
                 <TargetIcon className="h-4 w-4" />
-                Open the HUD
+                Open the cheat sheet (HUD)
               </button>
             </div>
           </div>
@@ -451,7 +457,7 @@ export default function PacketSection({
                       <div className="flex items-start justify-between gap-2">
                         <p className="font-medium text-foreground">{story.trigger || 'Untitled'}</p>
                         <span className="text-xs text-muted-foreground">
-                          {readinessLabel(story)}
+                          {isRealAnswer(story.play) ? readinessLabel(story) : 'Not written yet'}
                         </span>
                       </div>
                       {story.questionPrompts.length > 0 && (
@@ -509,15 +515,19 @@ export default function PacketSection({
         </div>
       )}
 
-      <div className="flex justify-center pt-4">
+      <div className="flex flex-col items-center gap-1 pt-4">
         <button
           type="button"
-          onClick={() => window.print()}
+          onClick={() => (onPrint ? onPrint() : window.print())}
+          aria-describedby="packet-print-note"
           className="flex items-center gap-2 rounded-lg border border-border/50 bg-overlay/30 px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-overlay/50 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foam focus-visible:ring-offset-2"
         >
           <PrinterIcon className="h-4 w-4" />
           Print or save as PDF
         </button>
+        <p id="packet-print-note" className="text-xs text-muted-foreground">
+          Prints the role, each story in full, your keywords, and your questions to ask.
+        </p>
       </div>
     </div>
   );

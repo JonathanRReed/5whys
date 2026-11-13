@@ -82,7 +82,7 @@ export default function WorkspaceTabs({ showHUD, onLaunchHUD, counts }: Props) {
           className="flex w-full items-center justify-center gap-2 rounded-xl border border-iris/40 sm:ml-auto sm:w-auto sm:justify-start bg-iris/10 px-4 py-2.5 text-sm font-semibold text-iris transition-colors hover:bg-iris/20 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-iris focus-visible:ring-offset-2"
         >
           <TargetIcon className="size-4" />
-          <span>Open the HUD</span>
+          <span>Open the cheat sheet (HUD)</span>
         </button>
       )}
     </div>

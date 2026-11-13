@@ -5,6 +5,11 @@ type Props = {
   children: React.ReactNode;
   /** Called once the print dialog has closed. */
   onDone: () => void;
+  /**
+   * Open the print dialog on mount. False when the browser's dialog is
+   * already opening (the sheet was mounted from a beforeprint event).
+   */
+  autoPrint?: boolean;
 };
 
 /**
@@ -12,7 +17,7 @@ type Props = {
  * page. Mount it to print; it opens the browser's print dialog and reports
  * back when the dialog closes. Styled by `.resume-print` in globals.css.
  */
-export default function PrintSheet({ children, onDone }: Props) {
+export default function PrintSheet({ children, onDone, autoPrint = true }: Props) {
   React.useEffect(() => {
     const root = document.documentElement;
     root.dataset.print = 'resume';
@@ -21,13 +26,13 @@ export default function PrintSheet({ children, onDone }: Props) {
       onDone();
     };
     window.addEventListener('afterprint', done, { once: true });
-    const frame = window.requestAnimationFrame(() => window.print());
+    const frame = autoPrint ? window.requestAnimationFrame(() => window.print()) : 0;
     return () => {
-      window.cancelAnimationFrame(frame);
+      if (frame) window.cancelAnimationFrame(frame);
       window.removeEventListener('afterprint', done);
       delete root.dataset.print;
     };
-  }, [onDone]);
+  }, [onDone, autoPrint]);
 
   return createPortal(
     <div className="resume-print" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>

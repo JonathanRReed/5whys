@@ -60,7 +60,7 @@ afterEach(() => {
 it('starts a real JSON download and reports that start without relabeling the action', async () => {
   const onClearData = vi.fn();
   render(<WorkspaceHeader onClearData={onClearData} />);
-  const button = screen.getByRole('button', { name: 'Export JSON' });
+  const button = screen.getByRole('button', { name: 'Download a backup file' });
   const status = screen.getByRole('status');
   expect(status).toBeEmptyDOMElement();
   expect(status).toHaveAttribute('aria-live', 'polite');
@@ -71,7 +71,7 @@ it('starts a real JSON download and reports that start without relabeling the ac
 
   expect(screen.getByText('Download started.')).toBeVisible();
   expect(status).toHaveTextContent('Download started.');
-  expect(screen.getByRole('button', { name: 'Export JSON' })).toBe(button);
+  expect(screen.getByRole('button', { name: 'Download a backup file' })).toBe(button);
   expect(button).toBeEnabled();
   expect(button).toHaveFocus();
   expect(createObjectURL).toHaveBeenCalledTimes(1);
@@ -91,12 +91,12 @@ it('starts a real JSON download and reports that start without relabeling the ac
   act(() => vi.advanceTimersByTime(2000));
   expect(status).toBeEmptyDOMElement();
   expect(button).toBeEnabled();
-  expect(button).toHaveAccessibleName('Export JSON');
+  expect(button).toHaveAccessibleName('Download a backup file');
 });
 
 it('changes the announcement for every repeated export and restarts the feedback interval', () => {
   render(<WorkspaceHeader onClearData={vi.fn()} />);
-  const button = screen.getByRole('button', { name: 'Export JSON' });
+  const button = screen.getByRole('button', { name: 'Download a backup file' });
   const status = screen.getByRole('status');
   button.focus();
   fireEvent.click(button);
@@ -108,7 +108,7 @@ it('changes the announcement for every repeated export and restarts the feedback
   expect(secondAnnouncement).not.toBe(firstAnnouncement);
   expect(status).toHaveTextContent('Download started.');
   expect(button).toHaveFocus();
-  expect(button).toHaveAccessibleName('Export JSON');
+  expect(button).toHaveAccessibleName('Download a backup file');
   expect(button).toBeEnabled();
 
   act(() => vi.advanceTimersByTime(1000));
@@ -127,7 +127,7 @@ it('changes the announcement for every repeated export and restarts the feedback
 it('clears pending feedback when the header unmounts', () => {
   const { unmount } = render(<WorkspaceHeader onClearData={vi.fn()} />);
   const initialTimers = vi.getTimerCount();
-  fireEvent.click(screen.getByRole('button', { name: 'Export JSON' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Download a backup file' }));
   expect(vi.getTimerCount()).toBe(initialTimers + 1);
 
   unmount();
@@ -141,7 +141,7 @@ it.each([false, true])(
   'does not announce a new download when export throws (previous feedback: %s)',
   (hasPreviousFeedback) => {
     render(<WorkspaceHeader onClearData={vi.fn()} />);
-    const button = screen.getByRole('button', { name: 'Export JSON' });
+    const button = screen.getByRole('button', { name: 'Download a backup file' });
     const status = screen.getByRole('status');
     if (hasPreviousFeedback) {
       fireEvent.click(button);
@@ -169,7 +169,7 @@ it.each([false, true])(
     expect(status.textContent).toBe(previousAnnouncement);
     expect(clickedAnchors).toHaveLength(previousDownloadCount);
     expect(button).toBeEnabled();
-    expect(button).toHaveAccessibleName('Export JSON');
+    expect(button).toHaveAccessibleName('Download a backup file');
     // A failed retry must not restart the earlier success feedback interval.
     act(() => vi.advanceTimersByTime(1000));
     expect(status).toBeEmptyDOMElement();

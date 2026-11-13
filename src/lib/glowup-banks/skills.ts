@@ -22,6 +22,8 @@ export interface KeywordContext {
   notBefore?: RegExp;
   /** The keyword does not count when the text right after it matches. */
   notAfter?: RegExp;
+  /** The keyword does not count when the whole line matches. */
+  notLine?: RegExp;
 }
 
 export interface Skill {
@@ -42,6 +44,23 @@ export interface Skill {
   /** Words that name this skill only in the right context. Tagging only. */
   contextual?: Record<string, KeywordContext>;
 }
+
+/**
+ * A line that asks for analysis, not just a spreadsheet: "analyze visit
+ * trends in Excel" is data analysis, "track pantry visits in a spreadsheet"
+ * is record keeping.
+ */
+const ANALYSIS_LINE =
+  /\b(?:analy[sz]\w*|analytics|trends?|metrics|insights?|forecast\w*|dashboards?|pivot|visuali[sz]\w*|statistic\w*|reports?|reporting|kpis?)\b/i;
+
+/** Spreadsheet words that are record keeping unless the line asks for analysis. */
+const SPREADSHEET_RECORDS: Record<string, KeywordContext> = {
+  spreadsheet: { notLine: ANALYSIS_LINE },
+  spreadsheets: { notLine: ANALYSIS_LINE },
+  'google sheets': { notLine: ANALYSIS_LINE },
+  // KEYWORD_CONTEXT asks "excel" for an analysis line; here it must not.
+  excel: { needsLine: undefined, notLine: ANALYSIS_LINE },
+};
 
 /** People, not tasks: "lead a team", "manage associates". */
 const PEOPLE_AFTER =
@@ -152,9 +171,6 @@ export const SKILL_BANK: Skill[] = [
     category: 'technical',
     keywords: ['data analysis', 'analytics', 'visualization', 'tableau', 'power bi', 'excel'],
     tagOnly: [
-      'spreadsheet',
-      'spreadsheets',
-      'google sheets',
       'pivot table',
       'pivot tables',
       'vlookup',
@@ -165,6 +181,9 @@ export const SKILL_BANK: Skill[] = [
       'monthly reports',
     ],
     contextual: {
+      spreadsheet: { needsLine: ANALYSIS_LINE },
+      spreadsheets: { needsLine: ANALYSIS_LINE },
+      'google sheets': { needsLine: ANALYSIS_LINE },
       reporting: { notAfter: /^\s+(?:to|directly)\b/i },
       reports: { notBefore: /\bdirect\s+$/i, notAfter: /^\s+to\b/i },
     },
@@ -572,6 +591,7 @@ export const SKILL_BANK: Skill[] = [
       'meeting notes',
     ],
     contextual: {
+      ...SPREADSHEET_RECORDS,
       agendas: {},
       filing: { notAfter: /^\s+(?:taxes|a claim|claims)\b/i },
       correspondence: {},
@@ -691,8 +711,10 @@ export const KEYWORD_CONTEXT: Readonly<Record<string, KeywordContext>> = {
     needsBefore:
       /\b(?:gather|gathering|define|defining|business|product|user|on|technical|software)\s+$/i,
   },
-  // "excel in a fast-paced role" is a verb.
-  excel: { notAfter: /^\s+(?:in|at|under)\b/i },
+  // "excel in a fast-paced role" is a verb. "Excel or Google Sheets" on its
+  // own is a tool for keeping records; it is data analysis only beside
+  // analysis words.
+  excel: { notAfter: /^\s+(?:in|at|under)\b/i, needsLine: ANALYSIS_LINE },
   // "job security", "social security".
   security: { notBefore: /\b(?:social|job|financial|food)\s+$/i },
   // "quality of life".
