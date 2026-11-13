@@ -47,3 +47,21 @@ describe('a job title is not an achievement', () => {
     expect(bullets).toHaveLength(1);
   });
 });
+
+describe('messages for a company whose name ends in a period', () => {
+  it('never end a sentence with two periods', async () => {
+    const { messageVariants } = await import('../src/lib/local-ai');
+    const result = await messageVariants({
+      opener: 'I kept the weekly counts at FreshWay.',
+      role: 'Operations Intern',
+      company: 'Coastline Supply Co.',
+    });
+    const all = [
+      result.value.linkedInMessage,
+      result.value.followUpEmail.body,
+      result.value.introCallOpener,
+    ].join('\n');
+    expect(all).toContain('Coastline Supply Co.');
+    expect(all).not.toMatch(/(?<!\.)\.\.(?!\.)/);
+  });
+});
