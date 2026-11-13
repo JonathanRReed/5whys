@@ -114,7 +114,8 @@ describe('false evidence from the career changer walkthrough', () => {
     expect(excerptTexts('1-3 years of project coordination or related experience')).not.toContain(
       OBJECTIVE_LINE
     );
-    expect(excerptTexts('Retail store operations experience')).toEqual([]);
+    // The job title places the work in retail; the objective sentence never counts.
+    expect(excerptTexts('Retail store operations experience')).not.toContain(OBJECTIVE_LINE);
   });
 
   it('does not match a place name in one line to the same place in another', () => {
@@ -422,11 +423,13 @@ describe('coverage for the career changer, row by row', () => {
   it('reads the project coordinator posting honestly', () => {
     const summary = rows('changer-project-coordinator');
     expect(describeCoverage(summary)).toBe(
-      '1 of 13 confirmed requirements has evidence in your resume.'
+      '2 of 13 confirmed requirements have evidence in your resume.'
     );
     const evidenced = summary.rows.filter((r) => r.state === 'evidence');
+    // "Store Manager" is retail store work, read from the job title.
     expect(evidenced.map((r) => r.requirement.text)).toEqual([
       'Proficient in Microsoft Office, especially Excel',
+      'Retail store operations experience',
     ]);
     for (const row of summary.rows) {
       for (const excerpt of row.excerpts) {

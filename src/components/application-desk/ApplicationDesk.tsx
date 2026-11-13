@@ -1,5 +1,10 @@
 import * as React from 'react';
-import { type ApplicationDesk as Desk, stationsWithContent } from '../../lib/application-desk';
+import {
+  type ApplicationDesk as Desk,
+  deadlineInWords,
+  stationsWithContent,
+  titleFromPosting,
+} from '../../lib/application-desk';
 import {
   addApplication,
   daysUntilDeadline,
@@ -10,17 +15,19 @@ import {
 } from '../../lib/applications';
 import { fullLetter } from '../../lib/desk-checks';
 import { switchRole, updateRole } from '../../lib/glowup-store';
+import { requirementsFromBullets } from '../../lib/posting';
+import { POSTING_HANDOFF_KEY } from '../../lib/posting-handoff';
 import { focusWhenReady } from '../../lib/utils';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import BulletsStation from './BulletsStation';
+import { useDeskExamples } from './examples';
 import LetterStation from './LetterStation';
 import PostingStation from './PostingStation';
 import QualificationsStation from './QualificationsStation';
 import ResumeStation from './ResumeStation';
-import SendStation from './SendStation';
-import SentControl from './SentControl';
+import SendStation, { MarkSent, sendState } from './SendStation';
 import { type DeskLoss, useDesk } from './useDesk';
 
 type Station = 'posting' | 'qualifications' | 'bullets' | 'resume' | 'letter' | 'send';
@@ -166,6 +173,7 @@ export default function ApplicationDesk() {
       );
     }
   };
+  const examples = useDeskExamples();
   const [station, setStation] = React.useState<Station>('posting');
   const [adding, setAdding] = React.useState(false);
   const [title, setTitle] = React.useState('');
@@ -177,6 +185,31 @@ export default function ApplicationDesk() {
 
   // The forms belong to the application on screen; another one starts them over.
   const shownId = application?.id ?? null;
+  // A posting brought from the homepage waits in this tab. An application
+  // with no posting takes it on its Posting station; one that already has a
+  // posting never does, so the desk says it is waiting and asks.
+  const hasPosting = Boolean(role?.rawJdText?.trim());
+  const [waiting, setWaiting] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    if (!shownId || !hasPosting) {
+      setWaiting(null);
+      return;
+    }
+    try {
+      const text = window.sessionStorage.getItem(POSTING_HANDOFF_KEY);
+      setWaiting(text?.trim() ? text : null);
+    } catch {
+      setWaiting(null);
+    }
+  }, [shownId, hasPosting]);
+  const dropWaiting = () => {
+    try {
+      window.sessionStorage.removeItem(POSTING_HANDOFF_KEY);
+    } catch {
+      // Storage is blocked; the posting goes when the tab closes.
+    }
+    setWaiting(null);
+  };
   // biome-ignore lint/correctness/useExhaustiveDependencies: resets when the application changes
   React.useEffect(() => {
     setEditing(false);
@@ -245,55 +278,82 @@ export default function ApplicationDesk() {
 
   const lostNotice = desk.lost && <LossNotice lost={desk.lost} onDismiss={desk.dismissLost} />;
 
+  const deadlineWords = deadlineInWords(deadline);
+  // Sized by its own width, not the window's: at large text or in a wide
+  // typeface the fields stack instead of squeezing into one row.
   const form = (
-    <form
-      onSubmit={create}
-      data-guide="desk-new"
-      className="grid max-w-3xl gap-3 sm:grid-cols-[2fr_2fr_auto_auto] sm:items-end"
-    >
-      <label className="space-y-1">
-        <span className="block text-sm text-muted-foreground">Role</span>
-        <Input
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          placeholder="Marketing intern"
-          className="text-base"
-          required
-        />
-      </label>
-      <label className="space-y-1">
-        <span className="block text-sm text-muted-foreground">
-          Company or organization (optional)
-        </span>
-        <Input
-          value={company}
-          onChange={(event) => setCompany(event.target.value)}
-          placeholder="Riverside Food Bank"
-          className="text-base"
-        />
-      </label>
-      <label className="space-y-1">
-        <span className="block text-sm text-muted-foreground">Deadline (optional)</span>
-        <Input
-          type="date"
-          value={deadline}
-          onChange={(event) => setDeadline(event.target.value)}
-          className="text-base"
-        />
-      </label>
-      <Button
-        type="submit"
-        disabled={!title.trim()}
-        aria-describedby={title.trim() ? undefined : 'desk-new-needs'}
+    <div className="@container max-w-3xl">
+      <form
+        onSubmit={create}
+        data-guide="desk-new"
+        className="grid gap-3 @xl:grid-cols-2 @xl:items-end @3xl:grid-cols-[2fr_2fr_auto_auto]"
       >
-        Start this application
-      </Button>
-      {!title.trim() && (
-        <p id="desk-new-needs" className="text-xs text-muted-foreground sm:col-span-4">
-          Type the role to start.
-        </p>
-      )}
-    </form>
+        <label className="min-w-0 space-y-1">
+          <span className="block text-sm text-muted-foreground">Role</span>
+          <Input
+            id="desk-new-title"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder={examples.role}
+            className="text-base"
+            required
+          />
+        </label>
+        <label className="min-w-0 space-y-1">
+          <span className="block text-sm text-muted-foreground">
+            Company or organization (optional)
+          </span>
+          <Input
+            value={company}
+            onChange={(event) => setCompany(event.target.value)}
+            placeholder={examples.company}
+            className="text-base"
+          />
+        </label>
+        <label className="min-w-0 space-y-1">
+          <span className="block text-sm text-muted-foreground">Deadline (optional)</span>
+          <Input
+            type="date"
+            value={deadline}
+            onChange={(event) => setDeadline(event.target.value)}
+            onKeyDown={(event) => {
+              // Enter starts the application here too, as in the other fields.
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+              }
+            }}
+            aria-describedby={deadlineWords ? 'desk-new-deadline-words' : undefined}
+            className="text-base"
+          />
+        </label>
+        <Button
+          type="submit"
+          disabled={!title.trim()}
+          aria-describedby={title.trim() ? undefined : 'desk-new-needs'}
+          className="h-auto min-h-9 whitespace-normal"
+        >
+          Start this application
+        </Button>
+        {deadlineWords && (
+          <p
+            id="desk-new-deadline-words"
+            className="text-xs text-muted-foreground @xl:col-span-2 @3xl:col-span-4"
+            data-testid="deadline-words"
+          >
+            Deadline read as {deadlineWords}.
+          </p>
+        )}
+        {!title.trim() && (
+          <p
+            id="desk-new-needs"
+            className="text-xs text-muted-foreground @xl:col-span-2 @3xl:col-span-4"
+          >
+            Type the role to start.
+          </p>
+        )}
+      </form>
+    </div>
   );
 
   if (!application) {
@@ -332,6 +392,13 @@ export default function ApplicationDesk() {
   }
 
   const days = daysUntilDeadline(application.deadline);
+  const send = sendState(
+    desk.desk.letter,
+    application.title,
+    application.company,
+    requirementsFromBullets(role?.bullets ?? []),
+    desk.desk.qualifications
+  );
   const filled = stationsWithContent(desk.desk);
   const hasContent: Record<Station, boolean> = {
     posting: Boolean(role?.bullets.length),
@@ -366,17 +433,25 @@ export default function ApplicationDesk() {
           </p>
           {!application.sentOn && days !== null && (
             <p className="text-sm text-muted-foreground">
-              {days < 0 ? 'The deadline has passed' : deadlineLabel(days)}
+              {days < 0
+                ? 'The deadline has passed'
+                : days > 1
+                  ? `Due ${deadlineLabel(days)}`
+                  : deadlineLabel(days)}
             </p>
           )}
-          <SentControl
-            className="pt-1"
-            sentOn={application.sentOn}
-            title={application.title}
-            onChange={(sentOn) =>
-              changeApplications((data) => markSent(data, application.id, sentOn))
-            }
-          />
+          {/* Nothing to send before there is a posting; once sent, the date stays. */}
+          {(hasPosting || application.sentOn) && (
+            <MarkSent
+              className="pt-1"
+              sentOn={application.sentOn}
+              title={application.title}
+              blocker={send.blocker}
+              onChange={(sentOn) =>
+                changeApplications((data) => markSent(data, application.id, sentOn))
+              }
+            />
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {applications.applications.length > 1 && (
@@ -385,7 +460,7 @@ export default function ApplicationDesk() {
               <select
                 value={application.id}
                 onChange={(event) => focusOn(event.target.value)}
-                className="h-auto min-h-9 w-full min-w-0 max-w-[14rem] rounded-md border border-border/50 bg-transparent px-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                className="h-auto min-h-9 w-full min-w-0 max-w-full rounded-md border border-border/50 bg-transparent px-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring sm:w-auto sm:max-w-[28rem]"
               >
                 {applications.applications.map((item) => (
                   <option key={item.id} value={item.id}>
@@ -443,7 +518,7 @@ export default function ApplicationDesk() {
             <Input
               value={editCompany}
               onChange={(event) => setEditCompany(event.target.value)}
-              placeholder="Riverside Food Bank"
+              placeholder={examples.company}
               className="text-base"
             />
           </label>
@@ -454,6 +529,39 @@ export default function ApplicationDesk() {
             The posting and everything on this desk stay as they are.
           </p>
         </form>
+      )}
+
+      {waiting && !adding && (
+        <div
+          role="status"
+          className="max-w-3xl space-y-3 rounded-lg bg-gold/12 px-4 py-3 text-sm"
+          data-testid="posting-waiting"
+        >
+          <p className="text-foreground">
+            The posting you brought from the homepage is waiting. It starts: "
+            {waiting.trim().split('\n')[0].slice(0, 90)}". It was not put on {application.title},
+            which already has a posting.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                setTitle(titleFromPosting(waiting));
+                setCompany('');
+                setDeadline('');
+                setEditing(false);
+                setAdding(true);
+                focusWhenReady('desk-new-title');
+              }}
+            >
+              Start a new application with it
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={dropWaiting}>
+              Leave it
+            </Button>
+          </div>
+        </div>
       )}
 
       {adding && form}

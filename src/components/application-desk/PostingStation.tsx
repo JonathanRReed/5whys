@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { remapQualifications } from '../../lib/application-desk';
+import { remapLinkedDesks } from '../../lib/application-desk';
 import { updateApplication } from '../../lib/applications';
 import { keepDeskDraft, readDeskDraft } from '../../lib/desk-drafts';
 import { detectSkillsFromText } from '../../lib/glowup-banks';
@@ -12,7 +12,6 @@ import {
 import {
   addRequirement,
   bulletsFromRequirements,
-  carryOverDecisions,
   confirmAllSuggested,
   confirmRequirement,
   confirmsByDefault,
@@ -23,7 +22,7 @@ import {
   type PostingRequirement,
   type PostingSection,
   parsePosting,
-  requirementIdMap,
+  redecodeRequirements,
   requirementsFromBullets,
   restoreRequirement,
   SAMPLE_POSTING,
@@ -79,13 +78,18 @@ function shortText(text: string): string {
   return text.length > 60 ? `${text.slice(0, 57).trimEnd()}...` : text;
 }
 
-/** Says so when a line is about who may be hired rather than what they can do. */
+/**
+ * Says so when a line is about who may be hired rather than what they can do,
+ * and that it is not a skill to confirm.
+ */
 function ConditionNote({ text }: { text: string }) {
   const condition = hiringCondition(text);
   if (!condition) return null;
   return (
     <p className="text-xs leading-relaxed text-muted-foreground">
-      <span className="font-medium text-foreground">{condition.label}. </span>
+      <span className="font-medium text-foreground">
+        {condition.label}, a condition of the job.{' '}
+      </span>
       {condition.note}
     </p>
   );
@@ -242,19 +246,27 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
           if (!fresh) return data;
           const current = requirementsFromBullets(fresh.bullets);
           const source = fresh.parsedJdText ?? fresh.rawJdText ?? '';
-          result.next = carryOverDecisions(current, parsed.requirements, source, parsed.text);
           // Where you stand on each requirement follows the requirement, not
           // its place in the text.
-          result.moved = requirementIdMap(current, parsed.requirements, source, parsed.text);
-          result.parsedIds = new Set(current.filter((r) => r.origin === 'parsed').map((r) => r.id));
+          const redecoded = redecodeRequirements(current, source, parsed.requirements, parsed.text);
+          result.next = redecoded.requirements;
+          result.moved = redecoded.moved;
+          result.parsedIds = redecoded.parsedIds;
           return updateRole(data, role.id, {
             ...fields,
             bullets: withSkills(bulletsFromRequirements(result.next, fresh.bullets)),
           });
         });
         const { moved, parsedIds } = result;
-        if (moved && parsedIds && desk.desk.qualifications.length > 0) {
-          changeDesks((data) => remapQualifications(data, application.id, moved, parsedIds));
+        // Every application on this posting keeps its marks, not only this one.
+        const linked = desk.applications.applications
+          .filter((a) => a.roleId === role.id || a.id === application.id)
+          .map((a) => a.id);
+        if (moved && parsedIds) {
+          changeDesks((data) => {
+            const next = remapLinkedDesks(data, linked, moved, parsedIds);
+            return next.desks === data.desks ? data : next;
+          });
         }
         if (result.next) announce(`Posting decoded. ${countLine(result.next)}`);
       } else {
@@ -351,6 +363,10 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
   }
 
   const live = requirements.filter((r) => r.status !== 'dismissed');
+  // The terms behind condition notes, shown once however many lines use them.
+  const glossary = [
+    ...new Set(live.map((r) => hiringCondition(r.text)?.about).filter(Boolean)),
+  ] as string[];
   const dismissed = requirements.filter((r) => r.status === 'dismissed');
   const suggested = live.filter((r) => r.status === 'suggested').length;
   // The button confirms only these; duties and unsorted lines wait for the student.
@@ -654,6 +670,19 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
                 </li>
               ))}
             </ul>
+          </details>
+        )}
+
+        {glossary.length > 0 && (
+          <details className="text-sm" data-testid="condition-terms">
+            <summary className="cursor-pointer text-muted-foreground">
+              What these terms mean
+            </summary>
+            {glossary.map((about) => (
+              <p key={about} className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                {about}
+              </p>
+            ))}
           </details>
         )}
 

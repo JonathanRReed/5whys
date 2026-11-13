@@ -72,6 +72,8 @@ export {
   decodePostingToBullets,
   dismissRequirement,
   editRequirementText,
+  type Redecoded,
+  redecodeRequirements,
   removeRequirement,
   requirementIdMap,
   requirementsFromBullets,
