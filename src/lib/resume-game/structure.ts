@@ -93,7 +93,9 @@ export const PERSONAL_DETAIL =
  */
 const CAREER_BREAK = [
   /^(?:full[- ]time\s+|part[- ]time\s+)?(?:family\s+)?(?:caregiver|caregiving|carer)\b/i,
-  /^(?:cared|caring)\s+for\s+(?:my\s+|a\s+|an\s+|our\s+)?(?:\w+\s+)?(?:parents?|mother|father|mom|dad|child|children|kids|baby|newborn|family|spouse|partner|husband|wife|grand\w+|relatives?|family members?)\b/i,
+  /^(?:cared|caring)\s+for\s+(?:my\s+|a\s+|an\s+|our\s+)?(?:\w+\s+)?(?:parents?|mother|father|mom|dad|family|spouse|partner|husband|wife|grand\w+|relatives?|family members?)\b/i,
+  // Children are a break only when they are the visitor's own.
+  /^(?:cared|caring)\s+for\s+(?:my|our)\s+(?:\w+\s+)?(?:child|children|kids|baby|newborn|sons?|daughters?)\b/i,
   /^(?:career break|parental leave|maternity leave|paternity leave|family leave|medical leave|sabbatical|planned break|time off|gap year)\b/i,
   /^(?:full[- ]time|stay[- ]at[- ]home)\s+(?:parent|mom|dad|mother|father|caregiver)\b/i,
   /^(?:took|taking)\s+(?:time off|a (?:career |planned )?break|(?:parental |medical |family )?leave)\b/i,
@@ -102,8 +104,16 @@ const CAREER_BREAK = [
 ];
 
 /** True when a line states a career break rather than describing work. */
+/**
+ * Caring for people as a job: a count of them, or the place and the people a
+ * care worker names. "Cared for 12 children at summer camp" is work.
+ */
+const CARE_WORK =
+  /\b\d+\s+(?:\w+\s+)?(?:children|kids|toddlers|infants|people|adults|seniors|residents|patients|clients|campers|students)\b|\b(?:residents?|patients?|clients?|campers?|students?|toddlers|classroom|daycare|day care|preschool|summer camp|nursing home|care home|assisted living|facility|clinic|hospital|ward|shifts?)\b/i;
+
 export function isCareerBreak(line: string): boolean {
   const text = line.replace(GLYPH, '').trim();
+  if (CARE_WORK.test(text)) return false;
   return wordCount(text) <= 14 && CAREER_BREAK.some((pattern) => pattern.test(text));
 }
 const isAllCaps = (line: string) => /[A-Z]/.test(line) && line === line.toUpperCase();
@@ -115,6 +125,9 @@ function isTitleLine(line: string, wordsInLine: number): boolean {
   if (wordsInLine > 9 || /[.!?;]/.test(line) || /\d/.test(line)) return false;
   const [head, ...rest] = line.split(/\s*[,|•·]\s*|\s+[-–]\s+/);
   if (rest.length === 0 || !head) return false;
+  // "Supported manager, organized files and answered calls" is work: what
+  // follows the comma goes on with an action, where a title goes on with a place.
+  if (/^[a-z]+(?:ed|ing)\b/i.test(rest[0]?.trim() ?? '')) return false;
   const headWords = wordCount(head);
   return headWords >= 1 && headWords <= 4 && ENDS_IN_TITLE.test(head.trim());
 }

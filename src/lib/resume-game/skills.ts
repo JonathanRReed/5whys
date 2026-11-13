@@ -36,7 +36,9 @@ const SKILL_CONTEXT: Record<string, RegExp> = {
 // are set aside before the skill is looked for.
 const NOT_A_SKILL: Record<string, RegExp> = {
   'customer service':
-    /\b(?:with|and|to|from|for)\s+(?:the\s+)?customer service\b(?!\s+(?:skills?|experience))|\bcustomer service\s+(?:team|department|desk|reps?|representatives?|staff|managers?|center|line)\b/gi,
+    // Named as a department, or as one of the teams worked with. "Provided
+    // sales and customer service" and a skills list are the visitor's own.
+    /\b(?:with|between|alongside)\s+(?:the\s+)?(?:[\w&-]+\s+){0,3}?(?:and|&)\s+(?:the\s+)?customer service\b(?!\s+(?:skills?|experience))|\b(?:with|from|alongside)\s+(?:the\s+)?customer service\b(?!\s+(?:skills?|experience))|\bto\s+the\s+customer service\b|\bcustomer service\s+(?:team|department|desk|reps?|representatives?|staff|managers?|center|line)\b/gi,
 };
 
 /**

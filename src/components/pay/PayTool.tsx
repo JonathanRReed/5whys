@@ -534,7 +534,8 @@ export default function PayTool() {
       (offer.basePay !== fromPosting.basePay ||
         (offer.basePayTo ?? null) !== fromPosting.basePayTo ||
         offer.payPeriod !== fromPosting.payPeriod)) ||
-      (fromPosting.hoursPerWeek !== null && offer.hoursPerWeek !== fromPosting.hoursPerWeek));
+      (fromPosting.hoursPerWeek !== null && offer.hoursPerWeek !== fromPosting.hoursPerWeek) ||
+      (fromPosting.basePay !== null && !!offer.currency));
   const applyPostingPay = () => {
     if (!fromPosting) return;
     changeOffer({
@@ -543,6 +544,9 @@ export default function PayTool() {
             basePay: fromPosting.basePay,
             basePayTo: fromPosting.basePayTo,
             payPeriod: fromPosting.payPeriod,
+            // A posting's figures are read in dollars: the worksheet follows,
+            // so a dollar amount is never relabelled in another currency.
+            currency: '$',
           }
         : {}),
       ...(fromPosting.hoursPerWeek !== null ? { hoursPerWeek: fromPosting.hoursPerWeek } : {}),
@@ -684,6 +688,12 @@ export default function PayTool() {
               <p className="text-xs text-muted-foreground">
                 Hours a week will take the low end, {posting.pay.hoursPerWeek}. Change it if you
                 expect more.
+              </p>
+            )}
+            {offer.currency && fromPosting?.basePay !== null && (
+              <p className="text-xs text-foreground" data-testid="posting-pay-currency">
+                This worksheet is in {offer.currency}. The posting's figures are read in dollars, so
+                using them switches the worksheet to dollars. Check the other amounts after.
               </p>
             )}
             <Button type="button" size="sm" onClick={applyPostingPay}>

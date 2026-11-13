@@ -344,9 +344,11 @@ export function sortApplications<
     updatedAt: number;
     sentOn?: string | null;
     setAside?: SetAside | null;
+    /** True when an offer is in hand: it needs an answer, sent or not. */
+    offerReceived?: boolean;
   },
 >(applications: T[], activeId: string | null): T[] {
-  const group = (app: T) => (app.setAside ? 2 : app.sentOn ? 1 : 0);
+  const group = (app: T) => (app.setAside ? 2 : app.sentOn && !app.offerReceived ? 1 : 0);
   return [...applications].sort((a, b) => {
     if (group(a) !== group(b)) return group(a) - group(b);
     if (a.daysUntil !== b.daysUntil) {

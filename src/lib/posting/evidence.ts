@@ -44,6 +44,12 @@ import { findCues } from './sections';
 import { normalizePunctuation } from './text';
 import type { SourceSpan } from './types';
 
+/** A requirement that names managing or leading, not only a field of work. */
+const ASKS_FOR_MANAGING = /\b(?:manag\w*|supervis\w*|leadership|leading)\b/i;
+/** A job title that says the holder managed or led. */
+const MANAGING_TITLE =
+  /\b(?:manager|management|supervisor|lead|leader|director|head|chief|owner|foreman|superintendent|captain|principal|president|coordinator)\b/i;
+
 export type RequirementKind = 'years' | 'education' | 'tool' | 'task';
 
 /**
@@ -738,6 +744,11 @@ function yearsEvidence(
       const field = fieldOf(term.key);
       const sign = field ? fieldSignIn(heading, field) : null;
       if (!sign) continue;
+      // "Retail management" asks for managing, not for time in a store: a
+      // cashier's years count only when the title itself says they led.
+      if (ASKS_FOR_MANAGING.test(`${term.key} ${term.label}`) && !MANAGING_TITLE.test(heading)) {
+        continue;
+      }
       const span = {
         start: role.headingSpan.start + sign.start,
         end: role.headingSpan.start + sign.end,

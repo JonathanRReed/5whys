@@ -188,14 +188,26 @@ export default function InterviewGlowUpWorkspace() {
     // Only an edit that has not reached storage yet is written; a saved tab
     // writes nothing on its way out.
     const flush = () => {
-      if (!latestRef.current) return;
+      const pending = latestRef.current;
+      if (!pending) return;
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = null;
-      commit(latestRef.current);
+      const written = commit(pending);
+      if (!written) {
+        // The browser refused: the edit stays pending, so another tab's save
+        // cannot replace it, and it is tried again when the tab comes back.
+        setSaveState('failed');
+        return;
+      }
       latestRef.current = null;
+      setSaveState('saved');
+      // Another tab's newer work was merged in: this tab must show it too,
+      // or its next edit would write the older copy over the merge.
+      if (written !== pending) setData(written);
     };
     const onVisibility = () => {
-      if (document.visibilityState === 'hidden') flush();
+      // Hidden: write what is waiting. Back again: retry a write that failed.
+      flush();
     };
     // Another tab saved (the desk, an import, a second workspace). With no
     // edit waiting here, show its version; with one waiting, the next save
@@ -389,7 +401,8 @@ export default function InterviewGlowUpWorkspace() {
               setData={setData}
               currentPacket={currentPacket}
               onGoToStories={() => {
-                setStoryEditor(newStoryEditor());
+                // A story already being written is kept; only a closed editor opens new.
+                setStoryEditor((current) => (current.editingId ? current : newStoryEditor()));
                 setActiveTab('stories');
               }}
             />

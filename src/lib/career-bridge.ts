@@ -532,7 +532,7 @@ const isDecoded = (role: RawRole | undefined): boolean =>
  * only when exactly one role fits and no other application already holds it.
  * Matching is read only: nothing is written.
  */
-function rolesForApplications(
+export function rolesForApplications(
   applications: TrackedApplication[],
   roles: RawRole[]
 ): Map<string, { roleId: string; matched: boolean }> {
@@ -628,6 +628,7 @@ function summarizeApplications(
       updatedAt: app.updatedAt,
       sentOn: app.sentOn,
       setAside: app.setAside,
+      offerReceived: app.offer !== null,
     })),
     activeId
   ).map((entry) => entry.app);

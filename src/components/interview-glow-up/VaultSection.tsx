@@ -227,6 +227,7 @@ export default function VaultSection({ data, setData, currentPacket, onGoToStori
                 onClick={() => {
                   setFilter('');
                   setSkillFilter('');
+                  setShowUnused(false);
                 }}
                 className="inline-flex min-h-11 items-center rounded-lg border border-border/60 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-overlay/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-foam"
               >

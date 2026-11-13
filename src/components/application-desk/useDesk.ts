@@ -17,7 +17,12 @@ import {
   saveApplications,
   type TrackedApplication,
 } from '../../lib/applications';
-import { RESUME_SESSION_KEY, readResumeRewrites, readResumeText } from '../../lib/career-bridge';
+import {
+  RESUME_SESSION_KEY,
+  readResumeRewrites,
+  readResumeText,
+  rolesForApplications,
+} from '../../lib/career-bridge';
 import { forgetDeskDrafts } from '../../lib/desk-drafts';
 import { onDeviceCleared } from '../../lib/device-events';
 import {
@@ -331,9 +336,18 @@ export function useDesk(options: { snapshot?: () => string } = {}): DeskState {
   const plainRefresh = React.useCallback(() => refresh(), [refresh]);
 
   const application = applications.applications.find((a) => a.id === selectedId) ?? null;
-  const role = application?.roleId
-    ? (glow.roles.find((r) => r.id === application.roleId) ?? null)
-    : null;
+  // The same matching the dashboard uses, so a posting the dashboard calls
+  // decoded is the posting this desk opens: a saved link first, otherwise the
+  // one decoded role with this title. Read only; nothing is linked on open.
+  const roleId = React.useMemo(
+    () =>
+      application
+        ? (rolesForApplications(applications.applications, glow.roles).get(application.id)
+            ?.roleId ?? null)
+        : null,
+    [application, applications.applications, glow.roles]
+  );
+  const role = roleId ? (glow.roles.find((r) => r.id === roleId) ?? null) : null;
   const desk = React.useMemo(() => getDesk(desks, application?.id ?? ''), [desks, application?.id]);
 
   return {
