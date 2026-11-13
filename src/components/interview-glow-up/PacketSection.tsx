@@ -114,7 +114,7 @@ export default function PacketSection({
             story for the call.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => setMode('prep')}

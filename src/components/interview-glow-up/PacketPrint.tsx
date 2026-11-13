@@ -61,8 +61,15 @@ export default function PacketPrint({
           <p>No stories in the packet yet.</p>
         ) : (
           chosen.map((story) => (
-            <section key={story.id}>
-              <h3>
+            <section key={story.id} style={{ marginTop: '8pt' }}>
+              <h3
+                style={{
+                  margin: '0 0 2pt',
+                  fontFamily: 'inherit',
+                  fontSize: '12pt',
+                  fontWeight: 700,
+                }}
+              >
                 {story.trigger.trim() || 'Untitled'} ({getSkillName(story.primarySkillId)})
               </h3>
               {story.hook.trim() && (

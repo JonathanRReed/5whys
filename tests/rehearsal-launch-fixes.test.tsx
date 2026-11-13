@@ -65,7 +65,11 @@ describe('review counts', () => {
       recorded({
         text: words,
         durationSeconds: 12,
-        audio: { ...recorded().audio!, durationMs: 12000 },
+        audio: {
+          blob: new Blob(['x'], { type: 'audio/webm' }),
+          durationMs: 12000,
+          mimeType: 'audio/webm',
+        },
       })
     );
     await waitFor(() =>
