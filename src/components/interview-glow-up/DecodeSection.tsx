@@ -4,8 +4,7 @@ import {
   remapLinkedDesks,
   saveApplicationDesks,
 } from '../../lib/application-desk';
-import { loadApplications } from '../../lib/applications';
-import { rolesForApplications } from '../../lib/career-bridge';
+import { readTrackedApplications, rolesForApplications } from '../../lib/career-bridge';
 import {
   type Audience,
   getSkillName,
@@ -131,7 +130,7 @@ function remapDesksFor(
 ): void {
   // The applications the desk shows this posting for: a saved link, or the
   // same title match the desk and the dashboard use.
-  const applications = loadApplications().applications;
+  const applications = readTrackedApplications();
   const links = rolesForApplications(applications, roles);
   const linked = applications.filter((a) => links.get(a.id)?.roleId === roleId).map((a) => a.id);
   if (linked.length === 0) return;

@@ -522,6 +522,18 @@ const sameName = (a: string | undefined, b: string | undefined): boolean => {
 type RawRole = NonNullable<GlowUpRaw['roles']>[number];
 
 /**
+ * Every tracked application, for a tool that needs to find the one its own
+ * work belongs to (the rehearsal room, a posting decoded again). Only reads.
+ */
+export function readTrackedApplications(): TrackedApplication[] {
+  try {
+    return loadApplications().applications;
+  } catch {
+    return [];
+  }
+}
+
+/**
  * The application in focus on the dashboard, for a tool that offers its role
  * and company back to the visitor (networking prompts). Only reads.
  */

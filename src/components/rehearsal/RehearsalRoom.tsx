@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { loadApplications } from '../../lib/applications';
 import {
   type Audience,
   audienceFor,
@@ -187,24 +186,35 @@ export default function RehearsalRoom() {
   // biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount
   React.useEffect(() => {
     let cancelled = false;
-    const data = loadData();
-    const target = roomTarget(data, loadApplications().applications, window.location.search);
-    const current = target.role;
-    // A link that names a role (from the dashboard, opened in a new tab, say)
-    // makes it current, as choosing it would; the workspace then opens on the
-    // same job. With no role named, nothing is written.
-    if (target.asked && current) openRole(current.id);
-    setRole(current);
-    setStories(data.stories);
-    setPacketLines(packetQuestions(current?.id ?? null));
-    setKeptAnswers((data.answers ?? []).filter((a) => a.roleId === (current?.id ?? null)));
-    setApplicationId(target.applicationId);
+    // The role this room is for, once read. Used if the questions fail to load.
+    let opened: ReturnType<typeof roomTarget>['role'] | undefined;
+    const open = (applications: Parameters<typeof roomTarget>[1]) => {
+      const data = loadData();
+      const target = roomTarget(data, applications, window.location.search);
+      const current = target.role;
+      // A link that names a role (from the dashboard, opened in a new tab, say)
+      // makes it current, as choosing it would; the workspace then opens on the
+      // same job. With no role named, nothing is written.
+      if (target.asked && current) openRole(current.id);
+      setRole(current);
+      setStories(data.stories);
+      setPacketLines(packetQuestions(current?.id ?? null));
+      setKeptAnswers((data.answers ?? []).filter((a) => a.roleId === (current?.id ?? null)));
+      setApplicationId(target.applicationId);
+      opened = current;
+      return current;
+    };
     void (async () => {
-      const [{ likelyQuestions }, { readProfile }, { readResumeText }] = await Promise.all([
-        loadFeature(import('../../lib/local-ai')),
-        loadFeature(import('../../lib/profile')),
-        loadFeature(import('../../lib/career-bridge')),
-      ]);
+      const [{ likelyQuestions }, { readProfile }, { readResumeText, readTrackedApplications }] =
+        await Promise.all([
+          loadFeature(import('../../lib/local-ai')),
+          loadFeature(import('../../lib/profile')),
+          // The one cross-tool reader: the applications and the resume both
+          // come through it.
+          loadFeature(import('../../lib/career-bridge')),
+        ]);
+      if (cancelled) return;
+      const current = open(readTrackedApplications());
       // The career review decides; without one, years of dated work on the
       // resume keep a long-time worker from being asked about coursework.
       const who = audienceFor(readProfile(), readResumeText());
@@ -257,6 +267,9 @@ export default function RehearsalRoom() {
       // still give the room its standing questions.
       reportFeatureFailure(error);
       if (!cancelled) {
+        // The reader itself may be what failed: open the room on the role the
+        // address or the workspace names, without the application behind it.
+        const current = opened === undefined ? open([]) : opened;
         setPlanBase({
           audience: 'student',
           fromPosting: [],
