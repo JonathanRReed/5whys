@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { setResumeSelection, updateBulletsFlow } from '../../lib/application-desk';
-import { readResumeRewrites } from '../../lib/career-bridge';
+import { readResumeRewrites, readResumeText } from '../../lib/career-bridge';
 import { loadFeature, reportFeatureFailure } from '../../lib/lazy-feature';
 import {
   extractRequirementTerms,
@@ -83,27 +83,76 @@ export function sameResume(doc: ResumeDoc, resumeText: string): boolean {
   });
 }
 
+/** The words of a line, for telling a corrected line from a different one. */
+function tokens(key: string): Set<string> {
+  return new Set(key.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []);
+}
+
 /**
- * Which bullets a saved choice covers in the resume as it is now. The choice
- * is matched on the bullets' words, because line ids are positions and stop
- * naming the same bullets once the resume is edited. If none of the chosen
- * bullets is in the resume any more, it is a different resume and nothing
- * has been chosen for it yet, so every bullet is included.
+ * How much two lines share: the words in common over the longer line's
+ * words. "Built a spreadsheet tracking 30 volunteers" and the same line with
+ * 45 share five of six.
  */
+function overlap(a: string, b: string): number {
+  const left = tokens(a);
+  const right = tokens(b);
+  const size = Math.max(left.size, right.size);
+  if (size === 0) return 0;
+  let shared = 0;
+  for (const word of left) if (right.has(word)) shared += 1;
+  return shared / size;
+}
+
+/** At least this share of words in common makes a line the same line, edited. */
+const SAME_LINE = 0.6;
+
+/**
+ * Which bullets a saved choice covers in the resume as it is now, and whether
+ * the choice had to be dropped. The choice is matched on the bullets' words,
+ * because line ids are positions and stop naming the same bullets once the
+ * resume is edited. A bullet whose words were corrected (a number, a word) is
+ * still the same bullet when most of its words are unchanged. Only when none
+ * of the chosen bullets can be found is it a different resume: nothing has
+ * been chosen for it yet, so every bullet is included and `reset` says so.
+ */
+export function matchSelection(
+  bullets: readonly { id: string; key: string }[],
+  saved: { bulletIds: string[]; bulletTexts?: string[] } | null
+): { ids: string[]; reset: boolean } {
+  const all = bullets.map((b) => b.id);
+  if (!saved) return { ids: all, reset: false };
+  if (!saved.bulletTexts) {
+    const known = new Set(all);
+    return { ids: saved.bulletIds.filter((id) => known.has(id)), reset: false };
+  }
+  if (saved.bulletTexts.length === 0) return { ids: [], reset: false };
+  const chosen = new Set<string>();
+  const pending: string[] = [];
+  for (const text of saved.bulletTexts) {
+    const exact = bullets.find((b) => b.key === text && !chosen.has(b.id));
+    if (exact) chosen.add(exact.id);
+    else pending.push(text);
+  }
+  // Each edited line takes the unclaimed bullet closest to it, if close enough.
+  for (const text of pending) {
+    let best: { id: string; score: number } | null = null;
+    for (const bullet of bullets) {
+      if (chosen.has(bullet.id)) continue;
+      const score = overlap(text, bullet.key);
+      if (score >= SAME_LINE && (!best || score > best.score)) best = { id: bullet.id, score };
+    }
+    if (best) chosen.add(best.id);
+  }
+  if (chosen.size === 0) return { ids: all, reset: true };
+  return { ids: all.filter((id) => chosen.has(id)), reset: false };
+}
+
+/** The bullet ids a saved choice covers now. See `matchSelection`. */
 export function selectedIds(
   bullets: readonly { id: string; key: string }[],
   saved: { bulletIds: string[]; bulletTexts?: string[] } | null
 ): string[] {
-  const all = bullets.map((b) => b.id);
-  if (!saved) return all;
-  if (!saved.bulletTexts) {
-    const known = new Set(all);
-    return saved.bulletIds.filter((id) => known.has(id));
-  }
-  if (saved.bulletTexts.length === 0) return [];
-  const keys = new Set(saved.bulletTexts);
-  const matched = bullets.filter((b) => keys.has(b.key)).map((b) => b.id);
-  return matched.length > 0 ? matched : all;
+  return matchSelection(bullets, saved).ids;
 }
 
 /**
@@ -112,12 +161,12 @@ export function selectedIds(
  * selection is all an application keeps.
  */
 export default function ResumeStation({ desk }: { desk: DeskState }) {
-  const { application, role, resumeText, changeDesks } = desk;
+  // The resume and its rewrites are read again when another tab saves them
+  // and when this tab comes back into view (see useDesk). Lines rewritten in
+  // the Resume Game replace their originals in this copy.
+  const { application, role, resumeText, rewrites, changeDesks } = desk;
   const [doc, setDoc] = React.useState<ResumeDoc | null | undefined>(undefined);
   const [notice, setNotice] = React.useState<string | null>(null);
-  // Lines rewritten in the Resume Game replace their originals in this copy.
-  const [rewrites, setRewrites] = React.useState<{ original: string; improved: string }[]>([]);
-  React.useEffect(() => setRewrites(readResumeRewrites()), []);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -195,7 +244,8 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
   }
 
   const known = new Set(bullets.map((b) => b.id));
-  const selected = new Set(selectedIds(bullets, desk.desk.resumeSelection));
+  const match = matchSelection(bullets, desk.desk.resumeSelection);
+  const selected = new Set(match.ids);
   const matching = bullets.filter((b) => b.requirements.length > 0);
 
   const choose = (ids: string[] | null) => {
@@ -233,6 +283,22 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
     }));
 
   const download = async () => {
+    // Another tab may have corrected the resume since this list was drawn.
+    // Build the file only from the resume as it is saved now.
+    const savedRewrites = readResumeRewrites();
+    if (
+      readResumeText() !== resumeText ||
+      savedRewrites.length !== rewrites.length ||
+      savedRewrites.some(
+        (r, i) => r.original !== rewrites[i].original || r.improved !== rewrites[i].improved
+      )
+    ) {
+      desk.refresh();
+      setNotice(
+        'Your resume changed in another tab, so nothing was downloaded. The list now shows the saved resume. Check it, then download again.'
+      );
+      return;
+    }
     try {
       const { toDocx, checkExport } = await loadFeature(import('../../lib/resume-doc'));
       const bytes = await toDocx(doc, { bulletLineIds: selected, addedBullets, rewrites });
@@ -273,6 +339,12 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
           {selected.size} of {bullets.length} bullets included. {matching.length} mention a
           confirmed requirement.
         </p>
+        {match.reset && (
+          <p className="rounded-lg bg-gold/12 px-3 py-2 text-sm text-foreground" role="status">
+            None of the bullets you chose for this role are in your resume now, so every bullet is
+            included again. Check the list before you download.
+          </p>
+        )}
         <div className="flex flex-wrap gap-2">
           <Button
             type="button"

@@ -23,13 +23,26 @@ export function isGenericOpener(hook: string): boolean {
   return GENERIC_OPENERS.some((pattern) => pattern.test(text));
 }
 
-const ASK_PATTERN =
-  /\?|\b(i would (love|welcome) (to|the chance|a chance)|i('d| would) like to (talk|speak|meet|discuss|schedule|set up|hear|learn|show|share|walk)|could we|can we|let me know|happy to (talk|speak|meet|share|send)|available (to|for)|reach me|contact me|look forward to (speaking|talking|hearing|meeting))\b/i;
+/**
+ * A next step a letter can ask for: a conversation, an interview, a call, a
+ * reply, a meeting, or a way to be contacted.
+ */
+const NEXT_STEP =
+  /\b(talk|talking|speak|speaking|chat|conversation|discuss|discussing|interview|interviewing|call|meet|meeting|reply|respond|response|hear back|hear from you|hearing back|hearing from you|contact|reach me|reach out|connect|connecting|schedule|set up a time)\b/i;
+
+/** The sentence asks for it, rather than only mentioning the word. */
+const REQUEST =
+  /\?|\b(would|could|can|may|might|please|let me know|i('d| would) (love|like|welcome|appreciate)|i hope|look forward|looking forward|happy to|glad to|available|welcome the|eager)\b/i;
 
 /** Thanks alone is polite, but it does not ask for anything. */
 const THANKS_ONLY = /^(thank you|thanks)[^?]*$/i;
 
-/** True when a closing asks for a next step, not only says thanks. */
+/**
+ * True when a closing asks for a next step, not only says thanks. A question
+ * mark alone is not an ask: "Why is the sky blue?" requests nothing. The
+ * sentence must ask for a conversation, interview, call, reply, meeting or
+ * contact.
+ */
 export function asks(closing: string): boolean {
   const sentences = closing
     .split(/(?<=[.!?])\s+/)
@@ -37,7 +50,8 @@ export function asks(closing: string): boolean {
     .filter(Boolean);
   return sentences.some(
     (sentence) =>
-      ASK_PATTERN.test(sentence) &&
+      NEXT_STEP.test(sentence) &&
+      REQUEST.test(sentence) &&
       !THANKS_ONLY.test(sentence) &&
       !/\blike to thank\b/i.test(sentence)
   );
@@ -119,20 +133,41 @@ export function coreTitle(title: string): string {
     .trim();
 }
 
-const includesName = (text: string, name: string) => {
-  const wanted = name.trim().toLowerCase();
-  if (!wanted) return false;
-  const haystack = text.toLowerCase();
-  if (haystack.includes(wanted)) return true;
-  const core = coreTitle(name).toLowerCase();
-  if (core.length > 2 && haystack.includes(core)) return true;
-  // A company is usually named by its distinctive first word: "Northgate"
-  // for "Northgate Logistics Partners".
-  const first = wanted.split(/\s+/)[0]?.replace(/[^a-z0-9]/g, '') ?? '';
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Whether `phrase` appears in `text` as whole words: "Meta" is not in
+ * "metadata", and "Data analyst" is not in "Data engineer". Spacing and case
+ * do not matter.
+ */
+function hasPhrase(text: string, phrase: string): boolean {
+  const words = phrase.trim().split(/\s+/).filter(Boolean).map(escapeRegExp);
+  if (words.length === 0) return false;
+  return new RegExp(`(?<![\\p{L}\\p{N}])${words.join('\\s+')}(?![\\p{L}\\p{N}])`, 'iu').test(text);
+}
+
+/** The role is named when its title, or the title's core words, appear whole. */
+const namesRole = (text: string, title: string) => {
+  if (!title.trim()) return false;
+  if (hasPhrase(text, title)) return true;
+  const core = coreTitle(title);
+  return core.length > 2 && hasPhrase(text, core);
+};
+
+/**
+ * The employer is named when its name appears whole, or its distinctive
+ * first word does: "Northgate" for "Northgate Logistics Partners".
+ */
+const namesCompany = (text: string, company: string) => {
+  if (!company.trim()) return false;
+  if (hasPhrase(text, company)) return true;
+  const first =
+    company
+      .trim()
+      .split(/\s+/)[0]
+      ?.replace(/[^\p{L}\p{N}&'-]/gu, '') ?? '';
   return (
-    first.length >= 4 &&
-    !GENERIC_NAME_WORDS.has(first) &&
-    new RegExp(`\\b${first}\\b`).test(haystack)
+    first.length >= 4 && !GENERIC_NAME_WORDS.has(first.toLowerCase()) && hasPhrase(text, first)
   );
 };
 
@@ -185,8 +220,8 @@ export function runSendChecks({
   const written = text.length > 0;
   const words = countWords(text);
 
-  const hasRole = includesName(text, title);
-  const hasCompany = includesName(text, company);
+  const hasRole = namesRole(text, title);
+  const hasCompany = namesCompany(text, company);
   const namesKnown = Boolean(title.trim() && company.trim());
 
   const confirmed = requirements.filter((r) => r.status === 'confirmed');

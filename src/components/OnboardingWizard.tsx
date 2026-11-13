@@ -535,8 +535,11 @@ export default function OnboardingWizard() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <div className="w-20">
+      {/* On a phone the question gets the full width and Back sits on its own
+          row above it. From the small breakpoint up, Back and an equal empty
+          column keep the question centered. */}
+      <div className="grid gap-3 sm:grid-cols-[5rem_minmax(0,1fr)_5rem] sm:items-center">
+        <div className={cn(step === 0 && 'max-sm:hidden')}>
           {step > 0 && (
             <button
               type="button"
@@ -557,7 +560,7 @@ export default function OnboardingWizard() {
             </button>
           )}
         </div>
-        <div className="flex-1 text-center">
+        <div className="min-w-0 text-center" data-testid="review-question">
           <h2
             ref={headingRef}
             tabIndex={-1}
@@ -567,7 +570,7 @@ export default function OnboardingWizard() {
           </h2>
           <p className="text-muted-foreground">{currentStep.subtitle}</p>
         </div>
-        <div className="w-20" />
+        <div className="max-sm:hidden" aria-hidden="true" />
       </div>
 
       <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">

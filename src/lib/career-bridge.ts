@@ -20,6 +20,7 @@ import {
 } from '../components/career-5whys/shared';
 import {
   type ApplicationDeskData,
+  createDefaultDeskData,
   type DatedActionStep,
   type DeskStationId,
   datedActionSteps,
@@ -61,6 +62,32 @@ function readJson<T>(key: string): T | null {
   }
 }
 
+// Stored data can be hand-edited, imported from an older build, or written
+// by a tool mid-change. Every reader below treats a wrong shape as empty and
+// never throws: one malformed store must not take the dashboard down with it.
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  !!value && typeof value === 'object' && !Array.isArray(value);
+
+/** The objects in a stored list; anything that is not a list is an empty one. */
+const records = (value: unknown): Record<string, unknown>[] =>
+  Array.isArray(value) ? value.filter(isRecord) : [];
+
+const textOr = <T>(value: unknown, fallback: T): string | T =>
+  typeof value === 'string' ? value : fallback;
+
+const numberOr = <T>(value: unknown, fallback: T): number | T =>
+  typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+
+/** Run a reader; if it fails anyway, use what an empty store would give. */
+function safely<T>(read: () => T, empty: T): T {
+  try {
+    return read();
+  } catch (error) {
+    console.error('[career-bridge] A saved store could not be read:', error);
+    return empty;
+  }
+}
+
 const clip = (text: string, max: number): string => {
   const trimmed = text.trim();
   return trimmed.length > max ? `${trimmed.slice(0, max).trimEnd()}...` : trimmed;
@@ -70,7 +97,8 @@ const clip = (text: string, max: number): string => {
 // Resume Game — src/lib/resume-game/session.ts
 // ============================================================================
 
-const RESUME_SESSION_KEY = 'resume-game-session-v2';
+/** Read here; written only by the Resume Game. */
+export const RESUME_SESSION_KEY = 'resume-game-session-v2';
 
 interface ResumeBulletRecord {
   id: string;
@@ -92,19 +120,35 @@ interface ResumeGameData {
 }
 
 function readResumeGame(): ResumeGameData | null {
-  const data = readJson<ResumeGameData>(RESUME_SESSION_KEY);
-  if (data && Array.isArray(data.bullets)) {
+  const data = readJson<unknown>(RESUME_SESSION_KEY);
+  if (isRecord(data) && Array.isArray(data.bullets)) {
     // A score is a pure function of the line, and the Resume Game works it
     // out again on load. Do the same here, so a session saved under an older
     // rubric shows the dashboard the numbers the tool itself would show.
+    const signal = isRecord(data.signalReport) ? data.signalReport : null;
     return {
-      ...data,
-      bullets: data.bullets.map((bullet) => {
-        const original = typeof bullet?.original === 'string' ? bullet.original : '';
-        const improved = typeof bullet?.improved === 'string' ? bullet.improved : '';
-        if (!original && !improved) return bullet;
-        return {
+      resumeText: textOr(data.resumeText, undefined),
+      needsRescan: typeof data.needsRescan === 'boolean' ? data.needsRescan : undefined,
+      lastAnalyzedAt: textOr(data.lastAnalyzedAt, null),
+      signalReport: signal
+        ? {
+            hardSkills: Array.isArray(signal.hardSkills)
+              ? signal.hardSkills.filter((skill): skill is string => typeof skill === 'string')
+              : undefined,
+          }
+        : undefined,
+      bullets: records(data.bullets).map((bullet) => {
+        const original = textOr(bullet.original, '');
+        const improved = textOr(bullet.improved, '');
+        const record = {
           ...bullet,
+          id: textOr(bullet.id, ''),
+          original,
+          improved,
+        } as unknown as ResumeBulletRecord;
+        if (!original && !improved) return record;
+        return {
+          ...record,
           baselineScore: scoreBullet(original || improved),
           improvedScore: scoreBullet(improved || original),
         };
@@ -139,7 +183,7 @@ function readCareer5Whys(): { session: WhySession | null; snapshots: WhySnapshot
   const sessionRaw = readJson<Partial<WhySession>>(WHY_SESSION_KEY);
   const historyRaw = readJson<unknown[]>(WHY_HISTORY_KEY);
   const session: WhySession | null =
-    sessionRaw && typeof sessionRaw === 'object'
+    sessionRaw && isRecord(sessionRaw)
       ? {
           track: sessionRaw.track === 'interest' ? 'interest' : 'career',
           topic: typeof sessionRaw.topic === 'string' ? sessionRaw.topic : '',
@@ -182,8 +226,33 @@ export interface GlowUpSummary {
   lastUpdated: number | null;
 }
 
+/** The Glow Up store reduced to the fields read here, each in the shape expected. */
 function readGlowUpRaw(): GlowUpRaw | null {
-  return readJson<GlowUpRaw>(GLOWUP_KEY);
+  const data = readJson<unknown>(GLOWUP_KEY);
+  if (!isRecord(data)) return null;
+  return {
+    roles: records(data.roles)
+      .filter((role) => typeof role.id === 'string')
+      .map((role) => ({
+        id: role.id as string,
+        jobTitle: textOr(role.jobTitle, undefined),
+        company: textOr(role.company, undefined),
+        updatedAt: numberOr(role.updatedAt, undefined),
+        bullets: records(role.bullets).map((bullet) => ({
+          status: textOr(bullet.status, undefined),
+        })),
+      })),
+    stories: records(data.stories).map((story) => ({
+      id: textOr(story.id, undefined),
+      updatedAt: numberOr(story.updatedAt, undefined),
+    })),
+    packets: records(data.packets).map((packet) => ({
+      roleId: textOr(packet.roleId, undefined),
+      topStoryIds: Array.isArray(packet.topStoryIds) ? packet.topStoryIds : [],
+      updatedAt: numberOr(packet.updatedAt, undefined),
+    })),
+    currentRoleId: textOr(data.currentRoleId, null),
+  };
 }
 
 function readGlowUp(data: GlowUpRaw | null): GlowUpSummary | null {
@@ -243,23 +312,29 @@ export interface NetworkingSummary {
 
 function readNetworking(): NetworkingSummary | null {
   const versions = readJson<unknown[]>(NETWORKING_VERSIONS_KEY);
-  const sessions = readJson<NetworkingSessionRaw[]>(NETWORKING_SESSIONS_KEY);
-  const draft = readJson<{ text?: string }>(NETWORKING_DRAFT_KEY);
+  const sessions = readJson<unknown>(NETWORKING_SESSIONS_KEY);
+  const draft = readJson<unknown>(NETWORKING_DRAFT_KEY);
   if (!versions && !sessions && !draft) return null;
 
-  const hasDraft = typeof draft?.text === 'string' && !!draft.text.trim();
-  const list = Array.isArray(sessions) ? sessions : [];
-  const rated = list
-    .map((s) => s.ratings)
-    .filter((r): r is Ratings => !!r && typeof r.confidence === 'number');
+  const draftText = isRecord(draft) ? draft.text : undefined;
+  const hasDraft = typeof draftText === 'string' && !!draftText.trim();
+  const list: NetworkingSessionRaw[] = records(sessions).map((session) => ({
+    createdAt: textOr(session.createdAt, undefined),
+    scenarioTitle: textOr(session.scenarioTitle, undefined),
+    ratings: isRecord(session.ratings) ? (session.ratings as Partial<Ratings>) : undefined,
+  }));
+  // A rating counts only when all four parts of it are numbers.
+  const complete = (r: Partial<Ratings> | undefined): r is Ratings =>
+    !!r &&
+    [r.confidence, r.clarity, r.rapport, r.authenticity].every(
+      (value) => typeof value === 'number' && Number.isFinite(value)
+    );
+  const rated = list.map((s) => s.ratings).filter(complete);
   const average = rated.length
     ? Math.round((rated.reduce((sum, r) => sum + averageRating(r), 0) / rated.length) * 10) / 10
     : null;
   const latest = list[0];
-  const latestRatings =
-    latest?.ratings && typeof latest.ratings.confidence === 'number'
-      ? (latest.ratings as Ratings)
-      : null;
+  const latestRatings = latest && complete(latest.ratings) ? latest.ratings : null;
 
   return {
     hasDraft,
@@ -421,15 +496,18 @@ export interface CareerDashboardData {
 }
 
 export function readCareerDashboard(): CareerDashboardData {
-  const profile = readProfile();
-  const resume = readResumeGame();
-  const why = readCareer5Whys();
-  const glowRaw = readGlowUpRaw();
-  const glowup = readGlowUp(glowRaw);
-  const networking = readNetworking();
-  const desks = loadApplicationDesks();
-  const applications = summarizeApplications(loadApplications(), glowRaw, desks);
-  const actionSteps = readActionSteps(desks, applications);
+  const profile = safely(readProfile, null);
+  const resume = safely(readResumeGame, null);
+  const why = safely(readCareer5Whys, { session: null, snapshots: [] });
+  const glowRaw = safely(readGlowUpRaw, null);
+  const glowup = safely(() => readGlowUp(glowRaw), null);
+  const networking = safely(readNetworking, null);
+  const desks = safely(loadApplicationDesks, createDefaultDeskData());
+  const applications = safely(
+    () => summarizeApplications(loadApplications(), glowRaw, desks),
+    [] as ApplicationSummary[]
+  );
+  const actionSteps = safely(() => readActionSteps(desks, applications), []);
 
   // A five whys session auto-saves without the user pressing anything, so a
   // finished chain counts as data even when no snapshot was taken.

@@ -175,15 +175,6 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
   if (!application) return null;
   const showEditor = editing || !role || !sourceText.trim();
 
-  const saveRequirements = (next: PostingRequirement[]) => {
-    if (!role || next === requirements) return;
-    changeGlow((data) =>
-      updateRole(data, role.id, {
-        bullets: withSkills(bulletsFromRequirements(next, role.bullets)),
-      })
-    );
-  };
-
   /** The count line under "What it asks for", for the status message. */
   const countLine = (list: PostingRequirement[]) => {
     const kept = list.filter((r) => r.status !== 'dismissed');
@@ -192,51 +183,86 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
     return `${done} confirmed, ${left} to review.`;
   };
 
-  /** Save, then say what changed and put focus on `focusId` if given. */
-  const act = (next: PostingRequirement[], said: string, focusId?: string) => {
+  /**
+   * Apply one change to the requirements as they are saved now, not as this
+   * page last drew them, so a confirmation made in another tab is kept. Each
+   * change names its requirement by id. Then say what changed, and put focus
+   * on `focusId` if given.
+   */
+  const act = (
+    change: (list: PostingRequirement[]) => PostingRequirement[],
+    said: string,
+    focusId?: string
+  ) => {
+    if (!role) return;
     if (focusId) pendingFocus.current = focusId;
-    saveRequirements(next);
-    announce(`${said} ${countLine(next)}`);
+    const result: { after?: PostingRequirement[] } = {};
+    changeGlow((data) => {
+      const fresh = data.roles.find((r) => r.id === role.id);
+      if (!fresh) return data;
+      const current = requirementsFromBullets(fresh.bullets);
+      const next = change(current);
+      result.after = next;
+      if (next === current) return data;
+      return updateRole(data, role.id, {
+        bullets: withSkills(bulletsFromRequirements(next, fresh.bullets)),
+      });
+    });
+    if (said && result.after) announce(`${said} ${countLine(result.after)}`);
   };
 
   const decode = () => {
     const text = draft.trim();
     if (!text) return;
     const parsed = parsePosting(text);
-    const next = role
-      ? carryOverDecisions(requirements, parsed.requirements, sourceText, parsed.text)
-      : parsed.requirements;
-    const bullets = withSkills(bulletsFromRequirements(next, role?.bullets ?? []));
-    // Where you stand on each requirement follows the requirement, not its
-    // place in the text.
-    if (role && desk.desk.qualifications.length > 0) {
-      const moved = requirementIdMap(requirements, parsed.requirements, sourceText, parsed.text);
-      const parsedIds = new Set(requirements.filter((r) => r.origin === 'parsed').map((r) => r.id));
-      changeDesks((data) => remapQualifications(data, application.id, moved, parsedIds));
-    }
     pendingFocus.current = 'desk-posting-heading';
-    announce(`Posting decoded. ${countLine(next)}`);
     const fields = {
       rawJdText: text,
       parsedJdText: parsed.text,
-      bullets,
       postingEngineVersion: POSTING_ENGINE_VERSION,
     };
     withViewTransition(() => {
       if (role) {
-        changeGlow((data) => updateRole(data, role.id, fields));
+        // Decisions carry over from the requirements as saved now.
+        const result: {
+          next?: PostingRequirement[];
+          moved?: ReadonlyMap<string, string>;
+          parsedIds?: ReadonlySet<string>;
+        } = {};
+        changeGlow((data) => {
+          const fresh = data.roles.find((r) => r.id === role.id);
+          if (!fresh) return data;
+          const current = requirementsFromBullets(fresh.bullets);
+          const source = fresh.parsedJdText ?? fresh.rawJdText ?? '';
+          result.next = carryOverDecisions(current, parsed.requirements, source, parsed.text);
+          // Where you stand on each requirement follows the requirement, not
+          // its place in the text.
+          result.moved = requirementIdMap(current, parsed.requirements, source, parsed.text);
+          result.parsedIds = new Set(current.filter((r) => r.origin === 'parsed').map((r) => r.id));
+          return updateRole(data, role.id, {
+            ...fields,
+            bullets: withSkills(bulletsFromRequirements(result.next, fresh.bullets)),
+          });
+        });
+        const { moved, parsedIds } = result;
+        if (moved && parsedIds && desk.desk.qualifications.length > 0) {
+          changeDesks((data) => remapQualifications(data, application.id, moved, parsedIds));
+        }
+        if (result.next) announce(`Posting decoded. ${countLine(result.next)}`);
       } else {
         const data = changeGlow((current) =>
           createRole(current, {
             jobTitle: application.title,
             company: application.company,
             ...fields,
+            bullets: withSkills(bulletsFromRequirements(parsed.requirements, [])),
           })
         );
         const roleId = data.currentRoleId;
         if (roleId) {
           changeApplications((apps) => updateApplication(apps, application.id, { roleId }));
         }
+        announce(`Posting decoded. ${countLine(parsed.requirements)}`);
       }
       setEditing(false);
     });
@@ -432,9 +458,7 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
               type="button"
               size="sm"
               variant="outline"
-              onClick={() =>
-                act(confirmAllSuggested(requirements), 'Confirmed.', 'desk-asks-heading')
-              }
+              onClick={() => act(confirmAllSuggested, 'Confirmed.', 'desk-asks-heading')}
             >
               Confirm the required and preferred ones ({confirmable})
             </Button>
@@ -482,10 +506,10 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
                         onClick={() =>
                           requirement.status === 'confirmed'
                             ? act(
-                                restoreRequirement(requirements, requirement.id),
+                                (list) => restoreRequirement(list, requirement.id),
                                 'Back to review.'
                               )
-                            : act(confirmRequirement(requirements, requirement.id), 'Confirmed.')
+                            : act((list) => confirmRequirement(list, requirement.id), 'Confirmed.')
                         }
                       >
                         {requirement.status === 'confirmed' ? 'Confirmed' : 'Confirm'}
@@ -498,7 +522,7 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
                         className="max-sm:min-h-11 max-sm:px-3"
                         onClick={() =>
                           act(
-                            dismissRequirement(requirements, requirement.id),
+                            (list) => dismissRequirement(list, requirement.id),
                             'Dismissed.',
                             nextFocusAfter(requirement.id)
                           )
@@ -510,15 +534,10 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
                         <span className="sr-only">Section for: {requirement.text}</span>
                         <select
                           value={requirement.section}
-                          onChange={(event) =>
-                            saveRequirements(
-                              setRequirementSection(
-                                requirements,
-                                requirement.id,
-                                event.target.value as PostingSection
-                              )
-                            )
-                          }
+                          onChange={(event) => {
+                            const section = event.target.value as PostingSection;
+                            act((list) => setRequirementSection(list, requirement.id, section), '');
+                          }}
                           className="h-7 max-sm:h-11 rounded-md border border-border/50 bg-transparent px-1.5 text-xs text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                         >
                           {SECTION_ORDER.map((option) => (
@@ -540,7 +559,8 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
           className="flex gap-2"
           onSubmit={(event) => {
             event.preventDefault();
-            act(addRequirement(requirements, own, { section: 'required' }), 'Added.');
+            const text = own;
+            act((list) => addRequirement(list, text, { section: 'required' }), 'Added.');
             setOwn('');
           }}
         >
@@ -573,7 +593,7 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
                     variant="ghost"
                     onClick={() =>
                       act(
-                        restoreRequirement(requirements, requirement.id),
+                        (list) => restoreRequirement(list, requirement.id),
                         'Restored.',
                         `confirm-${requirement.id}`
                       )
@@ -611,10 +631,11 @@ export default function PostingStation({ desk }: { desk: DeskState }) {
                     variant="ghost"
                     onClick={() =>
                       act(
-                        addRequirement(requirements, line.text, {
-                          section: 'unclassified',
-                          status: 'suggested',
-                        }),
+                        (list) =>
+                          addRequirement(list, line.text, {
+                            section: 'unclassified',
+                            status: 'suggested',
+                          }),
                         'Added to the list.',
                         'desk-asks-heading'
                       )

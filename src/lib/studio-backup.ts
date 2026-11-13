@@ -218,6 +218,21 @@ const reflection = (value: unknown) =>
     rootReason: isText,
     nextStep: isText,
   });
+/** Each entry is an object whose present fields pass `checks`. */
+const each =
+  (checks: Record<string, (value: unknown) => boolean>) =>
+  (value: unknown): boolean =>
+    objectArray(value) && value.every((entry) => fields(entry, checks));
+const object =
+  (checks: Record<string, (value: unknown) => boolean>) =>
+  (value: unknown): boolean =>
+    isObject(value) && fields(value, checks);
+const nullable =
+  (check: (value: unknown) => boolean) =>
+  (value: unknown): boolean =>
+    value === null || check(value);
+/** An amount on the offer worksheet; its loader also reads a numeric string. */
+const amountLike = (value: unknown) => value === null || isNumber(value) || isText(value);
 const ratings = (value: unknown) => isObject(value) && Object.values(value).every(isNumber);
 const notes = (value: unknown) => isObject(value) && Object.values(value).every(isText);
 
@@ -236,7 +251,7 @@ const STORE_CHECKS: Record<StudioStorageKey, (value: unknown) => boolean> = {
       needsRescan: isBoolean,
       selectedBulletId: nullableText,
       lastAnalyzedAt: nullableText,
-      signalReport: isObject,
+      signalReport: object({ hardSkills: textArray }),
     }) &&
     v.bullets.every((b: Record<string, unknown>) =>
       fields(b, {
@@ -245,6 +260,7 @@ const STORE_CHECKS: Record<StudioStorageKey, (value: unknown) => boolean> = {
         fields: notes,
         baselineScore: isNumber,
         improvedScore: isNumber,
+        edited: isBoolean,
       })
     ),
   'networking-practice-versions': (v) =>
@@ -306,16 +322,52 @@ const STORE_CHECKS: Record<StudioStorageKey, (value: unknown) => boolean> = {
     namedRecords(v.packets) &&
     fields(v, { version: isNumber, currentRoleId: nullableText, currentPacketId: nullableText }) &&
     v.roles.every((role: Record<string, unknown>) =>
-      fields(role, { jobTitle: isText, company: isText, rawJdText: isText, bullets: namedRecords })
+      fields(role, {
+        jobTitle: isText,
+        company: isText,
+        rawJdText: isText,
+        parsedJdText: isText,
+        createdAt: isNumber,
+        bullets: (b) =>
+          namedRecords(b) &&
+          each({
+            text: isText,
+            status: isText,
+            primarySkillId: nullableText,
+            secondarySkillIds: textArray,
+            suggestion: each({ skillId: isText, matchedKeywords: textArray }),
+            section: isText,
+            sourceSpan: nullable(object({ start: isNumber, end: isNumber })),
+            confirmed: isBoolean,
+            origin: isText,
+          })(b),
+      })
     ) &&
     v.stories.every((story: Record<string, unknown>) =>
       fields(story, {
+        primarySkillId: isText,
+        trigger: isText,
         hook: isText,
+        proofSnippet: isText,
         play: isText,
         proof: isText,
+        confidence: isNumber,
         otherSkillIds: textArray,
         questionPrompts: textArray,
         tags: textArray,
+      })
+    ) &&
+    // The dashboard and the interview tools walk each packet's lists.
+    v.packets.every((packet: Record<string, unknown>) =>
+      fields(packet, {
+        roleId: isText,
+        mode: isText,
+        topStoryIds: textArray,
+        customQuestions: textArray,
+        notes: isText,
+        panicAnswer: isText,
+        aiQuestions: isText,
+        companyIntel: object({ keywords: textArray, notes: isText, links: textArray }),
       })
     ),
   'career-applications': (v) =>
@@ -342,13 +394,55 @@ const STORE_CHECKS: Record<StudioStorageKey, (value: unknown) => boolean> = {
       (desk) =>
         isObject(desk) &&
         fields(desk, {
-          qualifications: namedRecords,
-          actionPlan: namedRecords,
-          bullets: isObject,
-          letter: isObject,
+          qualifications: (q) =>
+            namedRecords(q) &&
+            each({ requirementId: isText, status: isText, plan: isText, updatedAt: isNumber })(q),
+          actionPlan: (a) =>
+            namedRecords(a) &&
+            each({ text: isText, due: nullableText, done: isBoolean, createdAt: isNumber })(a),
+          bullets: object({
+            experience: isText,
+            impact: isText,
+            reflection: isText,
+            bullets: (slots) =>
+              Array.isArray(slots) &&
+              slots.every(
+                (slot) => isText(slot) || object({ bulletId: nullableText, text: isText })(slot)
+              ),
+          }),
+          letter: object({
+            hook: isText,
+            whyYou: isText,
+            whyThem: isText,
+            closingAsk: isText,
+            recipient: isText,
+            sender: isText,
+            messages: (m) =>
+              isObject(m) &&
+              Object.values(m).every(
+                nullable(object({ text: isText, source: isText, savedAt: isNumber }))
+              ),
+          }),
           checklist: (c) => isObject(c) && Object.values(c).every(isBoolean),
-          offer: isObject,
-          resumeSelection: (r) => r === null || (isObject(r) && textArray(r.bulletIds)),
+          offer: object({
+            basePay: amountLike,
+            payPeriod: nullableText,
+            guaranteedBonus: amountLike,
+            variablePay: amountLike,
+            hoursPerWeek: amountLike,
+            weeksPerYear: amountLike,
+            overtimeHoursPerWeek: amountLike,
+            notes: isText,
+            wageSource: isText,
+            wageSourceDate: nullableText,
+            percentOfBase: (p) => isObject(p) && Object.values(p).every(amountLike),
+          }),
+          resumeSelection: nullable(
+            (r) =>
+              isObject(r) &&
+              textArray(r.bulletIds) &&
+              fields(r, { bulletTexts: textArray, updatedAt: isNumber })
+          ),
           updatedAt: isNumber,
         })
     ),

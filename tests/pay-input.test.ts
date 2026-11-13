@@ -11,7 +11,8 @@ it('reads the ways people write money', () => {
 });
 
 it('reads a percentage only where it has something to be a percentage of', () => {
-  expect(parseAmount('5%', { percentOf: 62000 })).toEqual({ ok: true, value: 3100 });
+  // The percentage itself is returned too, so the worksheet can keep it.
+  expect(parseAmount('5%', { percentOf: 62000 })).toEqual({ ok: true, value: 3100, percent: 5 });
   expect(parseAmount('5%', { percentOf: null })).toMatchObject({ ok: false, value: null });
   expect(parseAmount('5%', { label: 'Hours a week' })).toMatchObject({
     ok: false,

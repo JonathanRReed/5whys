@@ -1,17 +1,26 @@
 import * as React from 'react';
 import {
+  APPLICATION_DESK_KEY,
   type ApplicationDeskData,
+  applyOfferChanges,
   createDefaultDeskData,
   createEmptyDesk,
   loadApplicationDesks,
+  type OfferChanges,
   type OfferWorksheet,
   offerEquivalents,
   PAY_PERIODS,
   type PayPeriod,
+  type PercentField,
   saveApplicationDesks,
   updateOfferWorksheet,
 } from '../../lib/application-desk';
-import { loadApplications, type TrackedApplication } from '../../lib/applications';
+import {
+  APPLICATIONS_KEY,
+  loadApplications,
+  type TrackedApplication,
+} from '../../lib/applications';
+import { onDeviceCleared } from '../../lib/device-events';
 import {
   createPayLoaders,
   createTitleSearch,
@@ -172,11 +181,63 @@ export default function PayTool() {
   const [offerEdited, setOfferEdited] = React.useState(false);
   const heldDesks = React.useRef<ReturnType<typeof loadApplicationDesks> | null>(null);
   const [unsaved, setUnsaved] = React.useState(false);
+  // Set when the application this worksheet was saved with went away in
+  // another tab (removed, or the device cleared).
+  const [gone, setGone] = React.useState(false);
+
+  /**
+   * Read applications and worksheets again. If the chosen application no
+   * longer exists, the worksheet stops saving under it and empties, so an
+   * open page cannot bring removed or cleared work back.
+   */
+  const shownAppId = React.useRef(appId);
+  shownAppId.current = appId;
+  const reread = React.useCallback(() => {
+    const apps = loadApplications();
+    setApplications(apps.applications);
+    if (!heldDesks.current) setDesks(loadApplicationDesks());
+    const current = shownAppId.current;
+    if (!current || apps.applications.some((a) => a.id === current)) return;
+    heldDesks.current = null;
+    setUnsaved(false);
+    setScratch(createEmptyDesk().offer);
+    setGone(true);
+    setAppId('');
+  }, []);
+
+  React.useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (
+        event.key === null ||
+        event.key === APPLICATIONS_KEY ||
+        event.key === APPLICATION_DESK_KEY
+      )
+        reread();
+    };
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') reread();
+    };
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('focus', reread);
+    document.addEventListener('visibilitychange', onVisible);
+    const stop = onDeviceCleared(reread);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('focus', reread);
+      document.removeEventListener('visibilitychange', onVisible);
+      stop();
+    };
+  }, [reread]);
+
   const offer = appId ? (desks.desks[appId]?.offer ?? createEmptyDesk().offer) : scratch;
-  const changeOffer = (changes: Partial<OfferWorksheet>) => {
+  const changeOffer = (changes: OfferChanges) => {
     setOfferEdited(true);
     if (!appId) {
-      setScratch((current) => ({ ...current, ...changes }));
+      setScratch((current) => applyOfferChanges(current, changes));
+      return;
+    }
+    if (!loadApplications().applications.some((a) => a.id === appId)) {
+      reread();
       return;
     }
     // Build on the store as it is now, so work saved in another tab is kept.
@@ -210,6 +271,7 @@ export default function PayTool() {
       hint={options.hint}
       guide={`offer-${key}`}
       value={offer[key]}
+      percent={isPercentField(key) ? (offer.percentOfBase?.[key] ?? null) : null}
       parse={(text) =>
         parseAmount(text, {
           label,
@@ -219,7 +281,13 @@ export default function PayTool() {
         })
       }
       percentOf={options.percent ? yearlyBase : undefined}
-      onCommit={(value) => changeOffer({ [key]: value })}
+      onCommit={(value, percent) =>
+        changeOffer(
+          isPercentField(key)
+            ? { [key]: value, percentOfBase: { [key]: percent ?? null } }
+            : { [key]: value }
+        )
+      }
     />
   );
 
@@ -427,6 +495,12 @@ export default function PayTool() {
             Put an offer or a posted rate into one set of terms. Nothing is assumed: if hours or
             weeks are blank, the figure that needs them stays blank.
           </p>
+          {gone && (
+            <p role="alert" className="rounded-lg bg-gold/12 px-3 py-2 text-sm text-foreground">
+              The application this worksheet was saved with was removed in another tab, so the
+              worksheet was emptied and is no longer saved.
+            </p>
+          )}
           {unsaved && (
             <p role="alert" className="rounded-lg bg-gold/12 px-3 py-2 text-sm text-foreground">
               This browser would not save your last change. It is still on this page, but it will be
@@ -438,7 +512,10 @@ export default function PayTool() {
               <span>Save with</span>
               <select
                 value={appId}
-                onChange={(event) => setAppId(event.target.value)}
+                onChange={(event) => {
+                  setGone(false);
+                  setAppId(event.target.value);
+                }}
                 className="h-9 min-w-0 max-w-[min(18rem,100%)] rounded-md border border-border/50 bg-transparent px-2 text-sm text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <option value="">No application (not saved)</option>
@@ -538,7 +615,8 @@ export default function PayTool() {
                 <dt className="text-sm text-muted-foreground">{term}</dt>
                 <dd
                   className={cn(
-                    'font-mono text-base tabular-nums',
+                    // A long figure wraps inside the panel instead of widening the page.
+                    'min-w-0 max-w-full font-mono text-base tabular-nums break-all',
                     value === 'Needs more detail' ? 'text-muted-foreground' : 'text-foreground'
                   )}
                 >
@@ -628,6 +706,9 @@ export default function PayTool() {
   );
 }
 
+const isPercentField = (key: NumberKey): key is PercentField =>
+  key === 'guaranteedBonus' || key === 'variablePay';
+
 type NumberKey =
   | 'basePay'
   | 'guaranteedBonus'
@@ -641,27 +722,43 @@ type AmountFieldProps = {
   hint?: string;
   guide: string;
   value: number | null;
+  /** The percentage this amount was typed as, when it was: 5 for "5%". */
+  percent?: number | null;
   parse: (text: string) => ParsedAmount;
   /** What a typed percentage is a share of. When it changes, a percentage is worked out again. */
   percentOf?: number | null;
-  onCommit: (value: number | null) => void;
+  onCommit: (value: number | null, percent: number | null) => void;
 };
+
+/** What the field shows for a stored amount: the percentage it was typed as, or the number. */
+const shownText = (value: number | null, percent: number | null | undefined) =>
+  typeof percent === 'number' ? `${percent}%` : value === null ? '' : String(value);
 
 /**
  * A pay field that keeps what was typed. "62k" and "5%" are understood and
  * shown as understood; anything else is refused with a reason, never guessed.
  */
-function AmountField({ label, hint, guide, value, parse, percentOf, onCommit }: AmountFieldProps) {
-  const [text, setText] = React.useState(value === null ? '' : String(value));
+function AmountField({
+  label,
+  hint,
+  guide,
+  value,
+  percent,
+  parse,
+  percentOf,
+  onCommit,
+}: AmountFieldProps) {
+  const [text, setText] = React.useState(shownText(value, percent));
   const [error, setError] = React.useState<string | null>(null);
   const lastCommitted = React.useRef(value);
   const noteId = React.useId();
 
   // Follow changes that came from elsewhere (another application, a reload).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the percentage is read with the value it belongs to
   React.useEffect(() => {
     if (value === lastCommitted.current) return;
     lastCommitted.current = value;
-    setText(value === null ? '' : String(value));
+    setText(shownText(value, percent));
     setError(null);
   }, [value]);
 
@@ -670,7 +767,7 @@ function AmountField({ label, hint, guide, value, parse, percentOf, onCommit }: 
     const parsed = parse(next);
     setError(parsed.ok ? null : parsed.error);
     lastCommitted.current = parsed.value;
-    onCommit(parsed.value);
+    onCommit(parsed.value, parsed.ok ? (parsed.percent ?? null) : null);
   };
 
   // "5%" of the base pay is a different amount once the base pay is corrected.
@@ -705,7 +802,10 @@ function AmountField({ label, hint, guide, value, parse, percentOf, onCommit }: 
         />
       </label>
       {note && (
-        <p id={noteId} className={cn('text-xs', error ? 'text-love' : 'text-muted-foreground')}>
+        <p
+          id={noteId}
+          className={cn('text-xs break-words', error ? 'text-love' : 'text-muted-foreground')}
+        >
           {note}
         </p>
       )}

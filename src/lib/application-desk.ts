@@ -122,6 +122,11 @@ export type PayPeriod = 'hour' | 'week' | 'month' | 'year';
 
 export const PAY_PERIODS: readonly PayPeriod[] = ['hour', 'week', 'month', 'year'];
 
+/** The worksheet amounts that can be written as a share of base pay, such as "5%". */
+export type PercentField = 'guaranteedBonus' | 'variablePay';
+
+export const PERCENT_FIELDS: readonly PercentField[] = ['guaranteedBonus', 'variablePay'];
+
 /**
  * The offer worksheet. Every number is what the student typed, or null when
  * they have not. Bonus and variable pay are amounts per year.
@@ -143,6 +148,13 @@ export interface OfferWorksheet {
   wageSource: string;
   /** 'YYYY-MM-DD' the wage source was consulted. */
   wageSourceDate: string | null;
+  /**
+   * An amount the student typed as a percentage of yearly base pay, such as
+   * 5 for "5%". The amount field still holds what it came to; this keeps the
+   * relationship, so a corrected base pay corrects the bonus too, after a
+   * reload as well. Absent in worksheets saved before it was recorded.
+   */
+  percentOfBase?: Partial<Record<PercentField, number>>;
 }
 
 /** Which master-resume bullets to include when exporting for this role. */
@@ -286,6 +298,17 @@ function normalizeVariant(value: unknown, now: number): MessageVariant | null {
   };
 }
 
+/** Typed percentages, kept only when each is a finite share that is not negative. */
+function normalizePercents(value: unknown): Partial<Record<PercentField, number>> | null {
+  if (!isRecord(value)) return null;
+  const out: Partial<Record<PercentField, number>> = {};
+  for (const field of PERCENT_FIELDS) {
+    const share = amount(value[field]);
+    if (share !== null) out[field] = share;
+  }
+  return Object.keys(out).length > 0 ? out : null;
+}
+
 /** First entry wins when a list repeats an id. */
 function uniqueBy<T>(items: T[], key: (item: T) => string): T[] {
   const seen = new Set<string>();
@@ -363,6 +386,8 @@ export function normalizeDesk(value: unknown, now = Date.now()): ApplicationDesk
       wageSource: text(o.wageSource),
       wageSourceDate: date(o.wageSourceDate),
     };
+    const percents = normalizePercents(o.percentOfBase);
+    if (percents) desk.offer.percentOfBase = percents;
   }
   if (isRecord(value.resumeSelection) && Array.isArray(value.resumeSelection.bulletIds)) {
     desk.resumeSelection = {
@@ -670,36 +695,58 @@ export function setChecklistTick(
   }));
 }
 
+export type OfferChanges = Partial<Omit<OfferWorksheet, 'percentOfBase'>> & {
+  /** A number records the field as typed as that percentage; null clears it. */
+  percentOfBase?: Partial<Record<PercentField, number | null>>;
+};
+
 /**
- * Change worksheet fields. Numbers are kept only when finite and not
- * negative; anything else, including null, clears the field.
+ * The worksheet with `changes` applied. Numbers are kept only when finite and
+ * not negative; anything else, including null, clears the field.
  */
+export function applyOfferChanges(current: OfferWorksheet, changes: OfferChanges): OfferWorksheet {
+  const offer = { ...current };
+  for (const field of [
+    'basePay',
+    'guaranteedBonus',
+    'variablePay',
+    'hoursPerWeek',
+    'weeksPerYear',
+    'overtimeHoursPerWeek',
+  ] as const) {
+    if (field in changes) offer[field] = amount(changes[field]);
+  }
+  if ('payPeriod' in changes) {
+    offer.payPeriod =
+      changes.payPeriod && PAY_PERIODS.includes(changes.payPeriod) ? changes.payPeriod : null;
+  }
+  if (typeof changes.notes === 'string') offer.notes = changes.notes;
+  if (typeof changes.wageSource === 'string') offer.wageSource = changes.wageSource;
+  if ('wageSourceDate' in changes) offer.wageSourceDate = date(changes.wageSourceDate);
+  if (changes.percentOfBase) {
+    const percents = { ...offer.percentOfBase };
+    for (const field of PERCENT_FIELDS) {
+      if (!(field in changes.percentOfBase)) continue;
+      const share = amount(changes.percentOfBase[field]);
+      if (share === null) delete percents[field];
+      else percents[field] = share;
+    }
+    if (Object.keys(percents).length > 0) offer.percentOfBase = percents;
+    else delete offer.percentOfBase;
+  }
+  return offer;
+}
+
+/** Change one application's worksheet. See `applyOfferChanges`. */
 export function updateOfferWorksheet(
   data: ApplicationDeskData,
   applicationId: string,
-  changes: Partial<OfferWorksheet>
+  changes: OfferChanges
 ): ApplicationDeskData {
-  return updateDesk(data, applicationId, (desk) => {
-    const offer = { ...desk.offer };
-    for (const field of [
-      'basePay',
-      'guaranteedBonus',
-      'variablePay',
-      'hoursPerWeek',
-      'weeksPerYear',
-      'overtimeHoursPerWeek',
-    ] as const) {
-      if (field in changes) offer[field] = amount(changes[field]);
-    }
-    if ('payPeriod' in changes) {
-      offer.payPeriod =
-        changes.payPeriod && PAY_PERIODS.includes(changes.payPeriod) ? changes.payPeriod : null;
-    }
-    if (typeof changes.notes === 'string') offer.notes = changes.notes;
-    if (typeof changes.wageSource === 'string') offer.wageSource = changes.wageSource;
-    if ('wageSourceDate' in changes) offer.wageSourceDate = date(changes.wageSourceDate);
-    return { ...desk, offer };
-  });
+  return updateDesk(data, applicationId, (desk) => ({
+    ...desk,
+    offer: applyOfferChanges(desk.offer, changes),
+  }));
 }
 
 /** Choose the master-resume bullets for this role's export. Null returns to "not chosen". */
@@ -970,20 +1017,31 @@ export interface OfferEquivalents {
  */
 export function offerEquivalents(offer: OfferWorksheet): OfferEquivalents {
   const { basePay, payPeriod, hoursPerWeek, weeksPerYear } = offer;
-  const hourly = hourlyEquivalent(basePay, payPeriod, hoursPerWeek, weeksPerYear);
-  const regular = annualEquivalent(basePay, payPeriod, hoursPerWeek, weeksPerYear);
+  // A figure too large to count is no figure: it is shown as missing, never
+  // as infinity.
+  const finite = (value: number | null): number | null =>
+    value !== null && Number.isFinite(value) ? value : null;
+  const hourly = finite(hourlyEquivalent(basePay, payPeriod, hoursPerWeek, weeksPerYear));
+  const regular = finite(annualEquivalent(basePay, payPeriod, hoursPerWeek, weeksPerYear));
   // Overtime only exists for hourly pay, at time and a half.
   const overtimeAnnual =
     payPeriod === 'hour' &&
     basePay !== null &&
     positive(offer.overtimeHoursPerWeek) &&
     positive(weeksPerYear)
-      ? basePay * OVERTIME_MULTIPLIER * offer.overtimeHoursPerWeek * weeksPerYear
+      ? (finite(basePay * OVERTIME_MULTIPLIER * offer.overtimeHoursPerWeek * weeksPerYear) ?? 0)
       : 0;
-  const annualBase = regular === null ? null : regular + overtimeAnnual;
-  const annualGuaranteed = annualBase === null ? null : annualBase + (offer.guaranteedBonus ?? 0);
+  // A share typed as a percentage follows the base pay it is a share of.
+  const extra = (field: PercentField): number => {
+    const share = offer.percentOfBase?.[field];
+    if (typeof share === 'number' && regular !== null) return (share / 100) * regular;
+    return offer[field] ?? 0;
+  };
+  const annualBase = regular === null ? null : finite(regular + overtimeAnnual);
+  const annualGuaranteed =
+    annualBase === null ? null : finite(annualBase + extra('guaranteedBonus'));
   const annualWithVariable =
-    annualGuaranteed === null ? null : annualGuaranteed + (offer.variablePay ?? 0);
+    annualGuaranteed === null ? null : finite(annualGuaranteed + extra('variablePay'));
 
   // Whatever the period, one of the two figures needs hours and one needs
   // weeks, so a complete worksheet always has both.

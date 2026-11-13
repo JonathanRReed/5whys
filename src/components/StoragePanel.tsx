@@ -13,9 +13,11 @@ export function formatBytes(bytes: number): string {
 
 /**
  * What this site keeps on the device, measured, with a way to delete the
- * large things. It only measures when opened, and it never writes.
+ * large things. It only measures when opened, and it never writes. While
+ * open it measures again whenever `revision` changes (the page imported or
+ * deleted something) and when another tab changes saved work.
  */
-export default function StoragePanel() {
+export default function StoragePanel({ revision = 0 }: { revision?: number }) {
   const [report, setReport] = React.useState<StorageReport | null>(null);
   const [open, setOpen] = React.useState(false);
   const [notice, setNotice] = React.useState<string | null>(null);
@@ -25,8 +27,16 @@ export default function StoragePanel() {
     setReport(await storageReport());
   }, []);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a new revision means the stored work changed, so measure again
   React.useEffect(() => {
     if (open) void measure().catch(reportFeatureFailure);
+  }, [open, measure, revision]);
+
+  React.useEffect(() => {
+    if (!open) return undefined;
+    const onStorage = () => void measure().catch(reportFeatureFailure);
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
   }, [open, measure]);
 
   const removeRecordings = async () => {
