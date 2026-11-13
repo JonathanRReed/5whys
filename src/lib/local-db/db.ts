@@ -145,6 +145,49 @@ export async function closeLocalDb(): Promise<void> {
   db?.close();
 }
 
+/**
+ * True when the database already exists. Never creates it: a read on a fresh
+ * profile must leave nothing behind. Uses `indexedDB.databases()` where the
+ * browser has it; otherwise it opens without a version and aborts the
+ * upgrade a missing database would need, which leaves no database behind.
+ */
+export async function localDbExists(): Promise<boolean> {
+  if (connection) return (await connection) !== null;
+  const factory = getFactory();
+  if (!factory) return false;
+  if (typeof factory.databases === 'function') {
+    try {
+      const list = await factory.databases();
+      return list.some((info) => info.name === LOCAL_DB_NAME);
+    } catch {
+      /* fall through to the probe */
+    }
+  }
+  return new Promise<boolean>((resolve) => {
+    let request: IDBOpenDBRequest;
+    try {
+      request = factory.open(LOCAL_DB_NAME);
+    } catch {
+      resolve(false);
+      return;
+    }
+    request.onupgradeneeded = () => {
+      // Only a missing database needs an upgrade from no version. Aborting
+      // it deletes the database the open was about to create.
+      request.transaction?.abort();
+    };
+    request.onsuccess = () => {
+      request.result.close();
+      resolve(true);
+    };
+    request.onerror = (event) => {
+      event.preventDefault();
+      resolve(false);
+    };
+    request.onblocked = () => resolve(true);
+  });
+}
+
 /** True when the database can be opened in this browser. */
 export async function isLocalDbAvailable(): Promise<boolean> {
   return (await openLocalDb()) !== null;
@@ -203,6 +246,8 @@ export async function readSoft<T>(
   fallback: T
 ): Promise<T> {
   try {
+    // A read never creates the database. Nothing saved yet means nothing to read.
+    if (!(await localDbExists())) return fallback;
     if (!(await openLocalDb())) return fallback;
     return await inTransaction(stores, 'readonly', work);
   } catch {

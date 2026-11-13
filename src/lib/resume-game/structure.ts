@@ -16,6 +16,11 @@ export type SkippedKind = 'contact' | 'heading' | 'education' | 'dates' | 'skill
 export interface ResumeStructure {
   /** Lines to score, glyphs stripped. */
   bullets: string[];
+  /**
+   * Positions in `text.split('\n')` of every line that went into a bullet,
+   * wrapped continuations included. The highlighter marks only these.
+   */
+  achievementLines: number[];
   /** Lines left out of scoring, by reason. */
   skipped: Record<SkippedKind, number>;
   /** True when the text carried bullet markers and they were used. */
@@ -82,10 +87,15 @@ function classify(line: string, index: number, wordsInLine: number): SkippedKind
 }
 
 export function detectResumeStructure(text: string): ResumeStructure {
-  const rawLines = text
-    .split('\n')
-    .map((line) => line.replace(/\s+/g, ' ').trim())
-    .filter(Boolean);
+  const sourceLines: number[] = [];
+  const rawLines: string[] = [];
+  text.split('\n').forEach((source, position) => {
+    const line = source.replace(/\s+/g, ' ').trim();
+    if (!line) return;
+    rawLines.push(line);
+    sourceLines.push(position);
+  });
+  const achievementLines: number[] = [];
   const skipped: Record<SkippedKind, number> = {
     contact: 0,
     heading: 0,
@@ -104,7 +114,10 @@ export function detectResumeStructure(text: string): ResumeStructure {
     if (usedGlyphs) {
       if (GLYPH.test(line)) {
         const normalized = normalizeLine(line);
-        if (normalized) bullets.push(normalized);
+        if (normalized) {
+          bullets.push(normalized);
+          achievementLines.push(sourceLines[index]);
+        }
         continuingBullet = Boolean(normalized);
       } else {
         const kind = classify(line, index, wordCount(line));
@@ -124,8 +137,10 @@ export function detectResumeStructure(text: string): ResumeStructure {
           (kind === 'bullet' || kind === 'other');
         if (isContinuation) {
           bullets[bullets.length - 1] = `${previous} ${line}`;
+          achievementLines.push(sourceLines[index]);
         } else if (startsAchievement) {
           bullets.push(line);
+          achievementLines.push(sourceLines[index]);
           continuingBullet = true;
         } else {
           continuingBullet = false;
@@ -145,8 +160,10 @@ export function detectResumeStructure(text: string): ResumeStructure {
       return;
     }
     const kind = classify(normalized, index, wordCount(normalized));
-    if (kind === 'bullet') bullets.push(normalized);
-    else skipped[kind] += 1;
+    if (kind === 'bullet') {
+      bullets.push(normalized);
+      achievementLines.push(sourceLines[index]);
+    } else skipped[kind] += 1;
   });
 
   const skippedTotal = Object.values(skipped).reduce((sum, n) => sum + n, 0);
@@ -172,5 +189,5 @@ export function detectResumeStructure(text: string): ResumeStructure {
     note = `No bullet markers found, so the ${bullets.length === 1 ? '1 line' : `${bullets.length} lines`} that read as achievements were scored.${skippedText}`;
   }
 
-  return { bullets, skipped, usedGlyphs, note };
+  return { bullets, achievementLines, skipped, usedGlyphs, note };
 }

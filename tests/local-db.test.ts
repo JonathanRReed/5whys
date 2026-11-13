@@ -301,3 +301,33 @@ describe('storage report and model deletion', () => {
     expect(await deleteModels()).toEqual({ ok: true, value: 0 });
   });
 });
+
+describe('reading never creates the database', () => {
+  const databaseNames = async () =>
+    (await (indexedDB as IDBFactory).databases()).map((info) => info.name);
+
+  it('returns empty reads on a fresh profile and leaves no database behind', async () => {
+    expect(await getResumeDoc()).toBeNull();
+    expect(await getResumeFile()).toBeNull();
+    expect(await listRecordings()).toEqual([]);
+    expect(await countRecordings()).toBe(0);
+    const report = await storageReport();
+    expect(report.indexedDb.bytes).toBe(0);
+    expect(await databaseNames()).toEqual([]);
+  });
+
+  it('still finds nothing to create when the browser has no databases() list', async () => {
+    const factory = new IDBFactory();
+    Object.defineProperty(factory, 'databases', { value: undefined });
+    vi.stubGlobal('indexedDB', factory);
+    expect(await getResumeDoc()).toBeNull();
+    expect(await listRecordings()).toEqual([]);
+    expect(await new IDBFactory().databases.call(factory)).toEqual([]);
+  });
+
+  it('reads what was saved once the database exists', async () => {
+    await saveResumeDoc({ name: 'Jordan' });
+    await closeLocalDb();
+    expect((await getResumeDoc<{ name: string }>())?.doc).toEqual({ name: 'Jordan' });
+  });
+});

@@ -50,6 +50,10 @@ const YEAR = /^(?:19|20)\d{2}$/;
 const DATE_RANGE = /\b(?:19|20)\d{2}\s*(?:[-–—]|to)\s*(?:(?:19|20)\d{2}|present|current|now)\b/gi;
 const PHONE = /(?:\+?\d{1,2}[\s.-])?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}/g;
 const ORDINAL = /^\d+(?:st|nd|rd|th)$/i;
+// A grade point average is a record of school, not a measure of the work:
+// "GPA 3.6", "GPA: 3.6/4.0", "3.6 GPA", "3.8 cumulative GPA".
+const GPA =
+  /\bGPA\b\s*(?::\s*|of\s+)?\d\.\d{1,2}(?:\s*\/\s*\d(?:\.\d{1,2})?)?|\b\d\.\d{1,2}(?:\s*\/\s*\d(?:\.\d{1,2})?)?\s+(?:[a-z]+\s+)?GPA\b/gi;
 const BARE_NUMBER_CLEAN_PATTERN = /[$,%kKmMxX]/g;
 const SYMBOL = /[$%]|\d[kKmMxX]$/;
 
@@ -62,17 +66,35 @@ const SUPERVISING_BEFORE =
 
 export type MeasureKind = 'measure' | 'scope' | 'bare';
 export type FoundNumber = { text: string; kind: MeasureKind };
+/** A found number with where its token sits in the line, for highlighting. */
+export type NumberSpan = FoundNumber & { token: string; start: number; end: number };
+
+const blank = (match: string) => ' '.repeat(match.length);
+
+/**
+ * Removes what is never a measure: date ranges, phone numbers, and GPAs.
+ * Each is replaced by spaces of the same length, so positions in the result
+ * are positions in the original line.
+ */
+function stripNonMeasures(text: string): string {
+  return text.replace(DATE_RANGE, blank).replace(PHONE, blank).replace(GPA, blank);
+}
 
 /**
  * Every number in a line that could be a count, sorted into a measure (says
  * what it counts), scope (a team size or headcount), or bare (nothing says
- * what it counts). Years, date ranges, phone numbers, and ordinals are left
- * out entirely.
+ * what it counts). Years, date ranges, phone numbers, GPAs, and ordinals are
+ * left out entirely.
  */
 export function findNumbers(text: string): FoundNumber[] {
+  return findNumberSpans(text).map(({ text: found, kind }) => ({ text: found, kind }));
+}
+
+/** findNumbers, with the position of each number's token in the line. */
+export function findNumberSpans(text: string): NumberSpan[] {
   if (!/\d/.test(text)) return [];
-  const stripped = text.replace(DATE_RANGE, ' ').replace(PHONE, ' ');
-  const found: FoundNumber[] = [];
+  const stripped = stripNonMeasures(text);
+  const found: NumberSpan[] = [];
   for (const match of stripped.matchAll(NUMBER_TOKEN)) {
     const token = match[0];
     const index = match.index ?? 0;
@@ -91,22 +113,23 @@ export function findNumbers(text: string): FoundNumber[] {
         ? `${token} ${nextWord}`
         : token;
 
+    const span = { token, start: index, end: index + token.length };
     const isScope =
       (hyphenUnit !== undefined && unitIsPeople) ||
       (unitIsPeople && (GROUP_OF.test(before) || WITH_BEFORE.test(before))) ||
       (unitIsPeople && SUPERVISING_BEFORE.test(before)) ||
       (GROUP_OF.test(before) && !SYMBOL.test(token));
     if (isScope) {
-      found.push({ text: unitText, kind: 'scope' });
+      found.push({ text: unitText, kind: 'scope', ...span });
       continue;
     }
     const unitIsWord = !!unit && !STOPWORDS.has(unit.toLowerCase());
     const pairs =
       /^\s*(?:of|to|out of)\s+\$?\d/i.test(after) || /\b(?:from|of|to)\s+$/i.test(before);
     if (SYMBOL.test(token) || unitIsWord || pairs) {
-      found.push({ text: SYMBOL.test(token) ? token : unitText, kind: 'measure' });
+      found.push({ text: SYMBOL.test(token) ? token : unitText, kind: 'measure', ...span });
     } else {
-      found.push({ text: token, kind: 'bare' });
+      found.push({ text: token, kind: 'bare', ...span });
     }
   }
   return found;
@@ -125,8 +148,7 @@ export function findMeasures(text: string): string[] {
  */
 export function findQuantifiers(text: string): string[] {
   if (!/\d/.test(text)) return [];
-  const stripped = text.replace(DATE_RANGE, ' ').replace(PHONE, ' ');
-  const tokens = stripped.match(NUMBER_TOKEN) ?? [];
+  const tokens = stripNonMeasures(text).match(NUMBER_TOKEN) ?? [];
   return tokens.filter((token) => {
     const bare = token.replace(BARE_NUMBER_CLEAN_PATTERN, '');
     if (YEAR.test(bare) && !/[$%]/.test(token)) return false;

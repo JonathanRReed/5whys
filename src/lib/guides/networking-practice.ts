@@ -32,8 +32,8 @@ export const networkingPracticeGuide: Guide = {
     {
       id: 'rate',
       title: 'Rate the rep honestly',
-      body: 'Under "Rate this rep", move each slider to say how it went.',
-      why: 'The "Next step" under the sliders follows your lowest score.',
+      body: 'Under "Rate this rep", pick 1 to 5 for each of the four to say how it went.',
+      why: 'The "Next step" under the ratings follows your lowest one.',
       target: '[data-guide="rep-ratings"]',
       done: {
         kind: 'exists',

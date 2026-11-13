@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
 /** Seed the career profile before the page loads, the way /start saves it. */
 export async function useStudentProfile(page: Page) {
@@ -43,4 +43,13 @@ export async function chooseOption(page: Page, trigger: string, optionName: stri
   await page.locator(trigger).click();
   await page.getByRole('option', { name: optionName }).click();
   await page.waitForTimeout(150);
+}
+
+/** Pick a 1 to 5 rating in Networking Practice's "Rate this rep". */
+export async function rate(page: Page, label: string, value: number) {
+  const group = page.getByRole('radiogroup', { name: label });
+  // The radio is visually hidden inside its numbered label; click the label,
+  // as a visitor would, then confirm the radio took it.
+  await group.locator('label').filter({ hasText: new RegExp(`^${value}$`) }).click();
+  await expect(group.getByRole('radio', { name: String(value), exact: true })).toBeChecked();
 }

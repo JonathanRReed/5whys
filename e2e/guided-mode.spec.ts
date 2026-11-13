@@ -1,7 +1,7 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 import type { GuideCheck, GuideTool } from '../src/lib/guide';
 import { GUIDES } from '../src/lib/guides';
-import { useStudentProfile, waitForHydration } from './helpers';
+import { rate, useStudentProfile, waitForHydration } from './helpers';
 
 /** On a phone the coach is a one-line bar; open it before pressing anything inside. */
 async function openCoach(page: import('@playwright/test').Page) {
@@ -195,7 +195,9 @@ test('guided mode walks a first-timer through one networking rep', async ({ page
       await page.getByRole('button', { name: 'Start', exact: true }).click();
     },
     rate: async () => {
-      await page.locator('#rating-clarity').fill('4');
+      for (const label of ['Confidence', 'Clarity', 'Rapport', 'Authenticity']) {
+        await rate(page, label, 4);
+      }
     },
     'next-fix': async () => {
       await page.locator('#reflection-nextFocus').fill('Slow down on the opener');
