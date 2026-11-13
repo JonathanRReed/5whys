@@ -49,7 +49,10 @@ const CONDITIONS: readonly (HiringCondition & { pattern: RegExp; unless?: RegExp
   {
     kind: 'age-coded',
     label: 'Age wording',
-    pattern: /\bdigital natives?\b|\brecent (?:college |university )?grad(?:uate)?s?\b|\byoung\b/i,
+    // "Young" only where it describes who is wanted ("a young, energetic
+    // team", "young professional"), not who the work is with ("young children").
+    pattern:
+      /\bdigital natives?\b|\brecent (?:college |university )?grad(?:uate)?s?\b|\byoung(?:,| and)?\s+(?:(?:energetic|dynamic|ambitious|motivated|vibrant|hungry|fun)\s+)?(?:team|company|compan(?:y|ies)|start-?up|culture|environment|professionals?|candidates?|talent|graduates?|person|individuals?|go-getters?)\b/i,
     note: 'Wording like this can read as a preference for younger people. US law protects workers aged 40 and over from age discrimination in hiring. If you can do the work, you can apply.',
   },
   {

@@ -10,6 +10,8 @@ describe('conditions of hiring', () => {
     ['Native English speaker', 'native-speaker'],
     ['Native speaker of Spanish preferred', 'native-speaker'],
     ['We want a digital native who lives on social media', 'age-coded'],
+    ['Join a young, energetic team', 'age-coded'],
+    ['Ideal for a young professional', 'age-coded'],
     ['Must be 18 or older', 'minimum-age'],
     ['Must be at least 21 years of age', 'minimum-age'],
     ['Offer is contingent on a background check', 'background-check'],
@@ -29,6 +31,8 @@ describe('conditions of hiring', () => {
     'Experience organizing people, events, or schedules',
     'Background in biology or a related field',
     'Experience in drug testing procedures',
+    'Experience working with young children',
+    'Tutored young adults in reading',
     'Conduct background checks for new hires',
   ])('leaves "%s" as a qualification', (text) => {
     expect(hiringCondition(text)).toBeNull();
