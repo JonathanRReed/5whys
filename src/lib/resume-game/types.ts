@@ -1,3 +1,5 @@
+import type { ResumeDraft } from './first-resume';
+
 export type BulletFields = { verb: string; task: string; impact: string; quantifier: string };
 
 export type RepetitiveVerb = {
@@ -62,4 +64,9 @@ export type StoredResumeSession = {
   selectedBulletId: string | null;
   lastAnalyzedAt: string | null;
   signalReport: SignalReport;
+  /**
+   * The "start from nothing" form while it is being filled in. Optional:
+   * older sessions have none, and it is only saved once the visitor types.
+   */
+  draft?: ResumeDraft;
 };

@@ -1,6 +1,7 @@
 import * as React from 'react';
 
 import { buildBullet } from './analysis';
+import { normalizeDraft } from './first-resume';
 import { scoreBullet } from './scoring';
 import { decodeEntities, uniqueId } from './text';
 import type { BulletFields, BulletRecord, SignalReport, StoredResumeSession } from './types';
@@ -155,6 +156,7 @@ function normalizeStoredSession(value: unknown): StoredResumeSession {
   }
   const lastAnalyzedAt = typeof data.lastAnalyzedAt === 'string' ? data.lastAnalyzedAt : null;
   const signalReport = normalizeSignalReport(data.signalReport);
+  const draft = normalizeDraft(data.draft);
   return {
     resumeText,
     // Older sessions did not record whether their saved text was re-analyzed.
@@ -163,6 +165,7 @@ function normalizeStoredSession(value: unknown): StoredResumeSession {
     selectedBulletId,
     lastAnalyzedAt,
     signalReport,
+    ...(draft ? { draft } : {}),
   };
 }
 
@@ -231,4 +234,4 @@ export function useResumeSession() {
   return { session, setSession, storageNotice } as const;
 }
 
-export { EMPTY_SESSION, EMPTY_SIGNAL_REPORT, SESSION_STORAGE_KEY };
+export { EMPTY_SESSION, EMPTY_SIGNAL_REPORT, normalizeStoredSession, SESSION_STORAGE_KEY };

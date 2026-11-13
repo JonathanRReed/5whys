@@ -1,5 +1,6 @@
 export type { LineSummary } from './analysis';
 export {
+  analyzeResumeText,
   applyFieldChange,
   buildBullet,
   buildDeepSignalReport,
@@ -18,6 +19,7 @@ export { buildReviewReport, REVIEW_FILE_BASE } from './review';
 export type { Register } from './samples';
 export {
   FIELD_PLACEHOLDERS,
+  FIRST_JOB_SAMPLE_RESUME,
   PROFESSIONAL_PLACEHOLDER,
   PROFESSIONAL_SAMPLE_RESUME,
   registerForStage,
