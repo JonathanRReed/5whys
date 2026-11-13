@@ -8,7 +8,7 @@ export const resumeGameGuide: Guide = {
     {
       id: 'add-resume',
       title: 'Put a resume in',
-      body: 'Paste your resume into the box, or upload a PDF or Word file. Bullets only is fine.',
+      body: 'Paste your resume into the box, or upload a PDF or Word file. Bullets only is fine. No resume yet? Press "I do not have a resume yet" and answer a few short questions.',
       why: 'Everything here works on the lines you give it, and it stays on this device.',
       target: '[aria-label="Paste resume text"]',
       done: { kind: 'filled', selector: '[aria-label="Paste resume text"]', minLength: 40 },

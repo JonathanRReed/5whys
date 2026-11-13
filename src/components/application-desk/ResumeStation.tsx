@@ -234,11 +234,20 @@ export default function ResumeStation({ desk }: { desk: DeskState }) {
             ? 'Your uploaded resume has no bullets we could read. Check it in the machine view first.'
             : 'Add your resume in the Resume Game: paste it, or upload a PDF or Word file. Then come back here to choose which bullets go into the copy for this role.'}
         </p>
-        <Button asChild>
-          <a href={`/resume-game/?application=${encodeURIComponent(appId)}`}>
-            Open the Resume Game
-          </a>
-        </Button>
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+          <Button asChild className="min-h-11">
+            <a href={`/resume-game/?application=${encodeURIComponent(appId)}`}>
+              Open the Resume Game
+            </a>
+          </Button>
+          {!doc && (
+            <Button asChild variant="outline" className="min-h-11">
+              <a href={`/resume-game/?start=blank&application=${encodeURIComponent(appId)}`}>
+                No resume yet? Build one
+              </a>
+            </Button>
+          )}
+        </div>
       </div>
     );
   }

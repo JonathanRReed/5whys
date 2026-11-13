@@ -4,7 +4,13 @@ import { findMeasures, hasResult, STRONG_SCORE, scoreBullet, scoreParts } from '
 import { extractSkills } from './skills';
 import { detectResumeStructure } from './structure';
 import { normalizeLine, uniqueId } from './text';
-import type { BulletFields, BulletRecord, RepetitiveVerb, SignalReport } from './types';
+import type {
+  BulletFields,
+  BulletRecord,
+  RepetitiveVerb,
+  SignalReport,
+  StoredResumeSession,
+} from './types';
 import { gerundToPast, isVerbWord, leadingAction } from './verbs';
 
 // ============================================================================
@@ -411,5 +417,27 @@ export function applyFieldChange(
     edited: true,
     weakWords: detectWeakWords(improved),
     hasImpact: hasResult(improved),
+  };
+}
+
+/**
+ * Score a resume's text: find its achievement lines, score each as written,
+ * and build the report. What "Analyze resume" stores in the session.
+ */
+export function analyzeResumeText(
+  text: string
+): Pick<
+  StoredResumeSession,
+  'bullets' | 'selectedBulletId' | 'signalReport' | 'lastAnalyzedAt' | 'needsRescan'
+> {
+  const structure = detectResumeStructure(text);
+  const records = structure.bullets.map((line, index) => createBulletRecord(line, index));
+  const skipped = Object.values(structure.skipped).reduce((sum, n) => sum + n, 0);
+  return {
+    bullets: records,
+    selectedBulletId: records[0]?.id ?? null,
+    signalReport: buildDeepSignalReport(records, text, structure.note, skipped),
+    lastAnalyzedAt: new Date().toISOString(),
+    needsRescan: false,
   };
 }

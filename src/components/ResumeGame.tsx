@@ -5,16 +5,17 @@ import type { ResumeDoc } from '../lib/resume-doc';
 import { bulletRewrites, isResumeLimitError, rewriteText } from '../lib/resume-doc';
 import type { BulletFields, BulletRecord, Register, StoredResumeSession } from '../lib/resume-game';
 import {
+  analyzeResumeText,
   applyFieldChange,
   buildDeepSignalReport,
   buildReviewReport,
   createBulletRecord,
   decodeEntities,
-  detectResumeStructure,
   downloadTextFile,
   EMPTY_SESSION,
   EMPTY_SIGNAL_REPORT,
   exportDocx,
+  FIRST_JOB_SAMPLE_RESUME,
   PROFESSIONAL_PLACEHOLDER,
   PROFESSIONAL_SAMPLE_RESUME,
   REVIEW_FILE_BASE,
@@ -28,8 +29,10 @@ import { cn, scrollBehavior } from '../lib/utils';
 import BeforeAfter from './resume-game/BeforeAfter';
 import BulletEditor from './resume-game/BulletEditor';
 import BulletList from './resume-game/BulletList';
+import FirstResumeBuilder from './resume-game/FirstResumeBuilder';
 import MachineView from './resume-game/MachineView';
 import PostingMatch from './resume-game/PostingMatch';
+import ResumeFileActions from './resume-game/ResumeFile';
 import ResumeHeader from './resume-game/ResumeHeader';
 import ResumeInput from './resume-game/ResumeInput';
 import ReviewLines from './resume-game/ReviewLines';
@@ -42,6 +45,16 @@ import Announcer, { useAnnouncer } from './shared/Announcer';
 // the button press has visible feedback; it is not a fake progress display.
 const SCAN_TRANSITION_MS = 300;
 const STATUS_RESET_MS = 3500;
+
+const STUDENT_SAMPLES = [
+  { id: 'first-job', label: 'First job' },
+  { id: 'college', label: 'College student' },
+] as const;
+
+const scoredStatus = (count: number) =>
+  count === 0
+    ? 'No achievement lines found. Add bullets that start with what you did.'
+    : `Scored ${count === 1 ? '1 bullet' : `${count} bullets`}. Pick one below to rewrite it.`;
 
 type ResumeGameProps = {
   showHeader?: boolean;
@@ -151,23 +164,9 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
   );
 
   const analyzeResume = React.useCallback(() => {
-    const structure = detectResumeStructure(resumeText);
-    const records = structure.bullets.map((line, index) => createBulletRecord(line, index));
-    const skipped = Object.values(structure.skipped).reduce((sum, n) => sum + n, 0);
-    const report = buildDeepSignalReport(records, resumeText, structure.note, skipped);
-    setSessionState((previous) => ({
-      ...previous,
-      bullets: records,
-      selectedBulletId: records[0]?.id ?? null,
-      signalReport: report,
-      lastAnalyzedAt: new Date().toISOString(),
-      needsRescan: false,
-    }));
-    setStatus(
-      records.length === 0
-        ? 'No achievement lines found. Add bullets that start with what you did.'
-        : `Scored ${records.length === 1 ? '1 bullet' : `${records.length} bullets`}. Pick one below to rewrite it.`
-    );
+    const analysis = analyzeResumeText(resumeText);
+    setSessionState((previous) => ({ ...previous, ...analysis }));
+    setStatus(scoredStatus(analysis.bullets.length));
   }, [resumeText, setSessionState]);
 
   const handleScan = () => {
@@ -287,6 +286,67 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     }
   };
 
+  // "Start from nothing": the form opens from its button, from
+  // ?start=blank (the Application Desk links there), or because it was open
+  // when the visitor last typed in it.
+  const [builderOpen, setBuilderOpen] = React.useState(false);
+  const [builderFocus, setBuilderFocus] = React.useState(false);
+  const [builderMessage, announceBuilder] = useAnnouncer();
+  // The form's announcer stays in the page once the form has opened, so the
+  // message after "Use this as my resume" is heard after the form is gone.
+  const [builderSeen, setBuilderSeen] = React.useState(false);
+  React.useEffect(() => {
+    if (builderOpen) setBuilderSeen(true);
+  }, [builderOpen]);
+  React.useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('start') === 'blank') setBuilderOpen(true);
+  }, []);
+  React.useEffect(() => {
+    if (session.draft?.open) setBuilderOpen(true);
+  }, [session.draft?.open]);
+
+  const closeBuilder = () => {
+    setBuilderOpen(false);
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('start')) {
+      url.searchParams.delete('start');
+      window.history.replaceState(window.history.state, '', url);
+    }
+    // Only a form the visitor typed in is saved, so only that one is updated.
+    if (session.draft?.open) {
+      setSessionState((previous) =>
+        previous.draft ? { ...previous, draft: { ...previous.draft, open: false } } : previous
+      );
+    }
+  };
+
+  // The built resume goes in exactly as pasted text does, already analyzed.
+  const useBuiltResume = (text: string) => {
+    cancelScan();
+    cancelUpload();
+    keepResumeDoc(null);
+    const analysis = analyzeResumeText(text);
+    setSessionState((previous) => ({
+      ...previous,
+      resumeText: text,
+      ...analysis,
+      draft: previous.draft ? { ...previous.draft, open: false } : previous.draft,
+    }));
+    setScanComplete(true);
+    closeBuilder();
+    setStatus(`Your resume is in the box. ${scoredStatus(analysis.bullets.length)}`);
+    announceBuilder(`Your resume is in the box. ${scoredStatus(analysis.bullets.length)}`);
+    window.requestAnimationFrame(() => {
+      document.getElementById('bullet-editor')?.scrollIntoView?.({
+        behavior: scrollBehavior(),
+        block: 'start',
+      });
+      document.querySelector<HTMLElement>('[data-bullet-list] button')?.focus({
+        preventScroll: true,
+      });
+    });
+  };
+
   const handleTextChange = (value: string) => {
     cancelScan();
     cancelUpload();
@@ -345,7 +405,29 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
     >
       <ResumeHeader showHeader={showHeader} />
 
+      {builderSeen && <Announcer message={builderMessage} />}
+      {builderOpen && (
+        <FirstResumeBuilder
+          draft={session.draft ?? null}
+          onDraftChange={(draft) => setSessionState((previous) => ({ ...previous, draft }))}
+          onUse={useBuiltResume}
+          onClose={() => {
+            closeBuilder();
+            announceBuilder('Back to paste or upload. What you typed in the form is kept.');
+          }}
+          currentText={resumeText}
+          announce={announceBuilder}
+          focusOnOpen={builderFocus}
+        />
+      )}
+
       <ResumeInput
+        hidden={builderOpen}
+        onStartBlank={() => {
+          setBuilderFocus(true);
+          setBuilderOpen(true);
+        }}
+        samples={register === 'student' ? STUDENT_SAMPLES : undefined}
         resumeText={resumeText}
         isScanning={isScanning}
         scanComplete={scanComplete}
@@ -358,17 +440,18 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
         onTextChange={handleTextChange}
         onFileUpload={handleFileUpload}
         onScan={handleScan}
-        onLoadSample={() => {
+        onLoadSample={(id) => {
           cancelScan();
           cancelUpload();
-          setResumeTextValue(sampleResume);
+          setResumeTextValue(id === 'first-job' ? FIRST_JOB_SAMPLE_RESUME : sampleResume);
           keepResumeDoc(null);
           setStatus('Sample resume loaded. Run the analysis to see suggestions.');
         }}
         onClear={() => {
           cancelScan();
           cancelUpload();
-          setSessionState(() => ({ ...EMPTY_SESSION }));
+          // The start-from-nothing form has its own Start over.
+          setSessionState((previous) => ({ ...EMPTY_SESSION, draft: previous.draft }));
           setScanComplete(false);
           keepResumeDoc(null);
           setStatus('Workspace cleared. Paste a fresh resume to begin.');
@@ -465,6 +548,15 @@ export default function ResumeGame({ showHeader = true, className }: ResumeGameP
           onExportMarkdown={handleExportMarkdown}
           onExportDocx={handleExportDocx}
         />
+      )}
+
+      {!resumeDoc && !builderOpen && resumeText.trim() && (
+        <ResumeFileActions text={resumeText} rewrites={rewrites}>
+          <p className="max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
+            A one-column copy of the resume in the box, with standard headings and real bullets.
+            Lines you rewrite above go into it in their new wording. It is made on this device.
+          </p>
+        </ResumeFileActions>
       )}
 
       {scanComplete && !needsRescan && allStrong && <ShareScoreCard bullets={bullets} />}

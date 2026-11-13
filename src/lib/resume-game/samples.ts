@@ -26,6 +26,31 @@ SKILLS
 Canva, Google Sheets, Instagram, Spanish (conversational)`;
 
 /**
+ * A first job: a high-school senior with one part-time job, babysitting, and
+ * a club. No internships and no degree yet, which is where most first
+ * resumes start. Weak on purpose, like the others.
+ */
+export const FIRST_JOB_SAMPLE_RESUME = `Ava Morales
+ava.morales@example.com · (555) 404-1188 · Riverside, CA
+
+EDUCATION
+Riverside High School, expected June 2026 · Honor roll
+
+EXPERIENCE
+Cashier, FreshWay Market, June 2025 – Present
+Responsible for the register on weekend shifts
+Helped with stocking shelves
+
+Babysitter, Neighborhood families, 2023 – Present
+Watched kids after school
+
+Member, Key Club, 2024 – Present
+Participated in the canned food drive
+
+SKILLS
+Spanish (fluent), Google Docs, Canva, cash handling`;
+
+/**
  * The sample for anyone who is not a student: someone moving out of retail,
  * food service, warehouse, office, healthcare support, or customer service
  * work. Weak on purpose, like the student one.

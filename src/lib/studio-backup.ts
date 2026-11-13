@@ -252,6 +252,8 @@ const STORE_CHECKS: Record<StudioStorageKey, (value: unknown) => boolean> = {
       selectedBulletId: nullableText,
       lastAnalyzedAt: nullableText,
       signalReport: object({ hardSkills: textArray }),
+      // The "start from nothing" form in progress (resume-game/first-resume.ts).
+      draft: isObject,
     }) &&
     v.bullets.every((b: Record<string, unknown>) =>
       fields(b, {

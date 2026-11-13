@@ -69,7 +69,7 @@ it('does not label older results current when text changes during a scan', () =>
 it('cancels pending analysis when a sample replaces the input', () => {
   render(<ResumeGame />);
   beginScan();
-  fireEvent.click(screen.getByRole('button', { name: 'Try sample' }));
+  fireEvent.click(screen.getByRole('button', { name: 'College student' }));
   finishPendingScan();
 
   expect(screen.getByLabelText('Paste resume text')).not.toHaveValue(oldText);

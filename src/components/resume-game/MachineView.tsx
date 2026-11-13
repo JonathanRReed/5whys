@@ -1,6 +1,5 @@
 import * as React from 'react';
-import { createPortal } from 'react-dom';
-import type { PrintModel, ResumeDoc, ResumeFinding, ResumeLine } from '../../lib/resume-doc';
+import type { ResumeDoc, ResumeFinding, ResumeLine } from '../../lib/resume-doc';
 import {
   checkExport,
   countRewrites,
@@ -16,6 +15,7 @@ import {
 import { cn } from '../../lib/utils';
 import { withViewTransition } from '../../lib/view-transition';
 import { Button } from '../ui/button';
+import { DOCX_TYPE, downloadBytes, usePrintResume } from './ResumeFile';
 
 type Props = {
   doc: ResumeDoc;
@@ -72,15 +72,6 @@ function summarize(findings: ResumeFinding[]) {
   return parts.join(', ');
 }
 
-function download(bytes: Uint8Array, filename: string, type: string) {
-  const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.click();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
 /** Findings touching more lines than this are not pinned line by line. */
 const MAX_PINNED_LINES = 3;
 
@@ -98,7 +89,7 @@ export default function MachineView({ doc, onChange, rewrites, text }: Props) {
   const [activeFinding, setActiveFinding] = React.useState<string | null>(null);
   const [notice, setNotice] = React.useState<string | null>(null);
   const [exporting, setExporting] = React.useState(false);
-  const [printModel, setPrintModel] = React.useState<PrintModel | null>(null);
+  const [print, printPortal] = usePrintResume();
 
   const linesById = React.useMemo(() => new Map(doc.lines.map((l) => [l.id, l])), [doc.lines]);
   const ordered = React.useMemo(
@@ -160,11 +151,7 @@ export default function MachineView({ doc, onChange, rewrites, text }: Props) {
     setExporting(true);
     try {
       const bytes = await toDocx(doc, { rewrites });
-      download(
-        bytes,
-        `${baseName(doc.file.name)}-clean.docx`,
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-      );
+      downloadBytes(bytes, `${baseName(doc.file.name)}-clean.docx`, DOCX_TYPE);
       const check = await checkExport(bytes);
       setNotice(
         check.ok
@@ -181,26 +168,8 @@ export default function MachineView({ doc, onChange, rewrites, text }: Props) {
   };
 
   const printPdf = () => {
-    if (current) setPrintModel(toPrintModel(doc, { rewrites }));
+    if (current) print(toPrintModel(doc, { rewrites }));
   };
-
-  // Print once the clean copy is in the document, then take it out again.
-  React.useEffect(() => {
-    if (!printModel) return undefined;
-    const root = document.documentElement;
-    root.dataset.print = 'resume';
-    const done = () => {
-      delete root.dataset.print;
-      setPrintModel(null);
-    };
-    window.addEventListener('afterprint', done, { once: true });
-    const frame = window.requestAnimationFrame(() => window.print());
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.removeEventListener('afterprint', done);
-      delete root.dataset.print;
-    };
-  }, [printModel]);
 
   const copyFixList = async () => {
     try {
@@ -449,8 +418,7 @@ export default function MachineView({ doc, onChange, rewrites, text }: Props) {
         </p>
       </div>
 
-      {printModel &&
-        createPortal(<PrintResume model={printModel} />, document.body, 'resume-print')}
+      {printPortal}
     </section>
   );
 }
@@ -521,44 +489,5 @@ function PageSpecimen({
       </div>
       <figcaption className="mt-1 text-xs text-muted-foreground">{label}</figcaption>
     </figure>
-  );
-}
-
-/** The clean copy, rendered only for printing. Plain black on white by design. */
-function PrintResume({ model }: { model: PrintModel }) {
-  const groups: { bullets: boolean; items: PrintModel['paragraphs'] }[] = [];
-  for (const paragraph of model.paragraphs) {
-    const bullets = paragraph.kind === 'bullet';
-    const last = groups[groups.length - 1];
-    if (last && last.bullets === bullets) last.items.push(paragraph);
-    else groups.push({ bullets, items: [paragraph] });
-  }
-  return (
-    <div
-      className="resume-print"
-      style={{ fontFamily: `${model.fontFamily}, Helvetica, sans-serif` }}
-    >
-      {groups.map((group) =>
-        group.bullets ? (
-          <ul key={group.items[0].lineId}>
-            {group.items.map((p) => (
-              <li key={p.lineId}>{p.text}</li>
-            ))}
-          </ul>
-        ) : (
-          group.items.map((p) =>
-            p.kind === 'name' ? (
-              <h1 key={p.lineId}>{p.text}</h1>
-            ) : p.kind === 'heading' ? (
-              <h2 key={p.lineId}>{p.text}</h2>
-            ) : (
-              <p key={p.lineId} data-kind={p.kind}>
-                {p.text}
-              </p>
-            )
-          )
-        )
-      )}
-    </div>
   );
 }

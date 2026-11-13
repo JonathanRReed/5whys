@@ -8,7 +8,7 @@ test('a pasted student resume is scored honestly and a rewrite moves the score',
   await page.goto('/resume-game/');
   await waitForHydration(page);
 
-  await page.getByRole('button', { name: 'Try sample' }).click();
+  await page.getByRole('button', { name: 'College student' }).click();
   await expect(page.getByLabel('Paste resume text')).toHaveValue(/Jordan Lee/);
 
   await page.getByRole('button', { name: 'Analyze resume' }).click();
