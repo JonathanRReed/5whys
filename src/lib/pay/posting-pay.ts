@@ -7,6 +7,7 @@
  */
 import type { PayPeriod } from '../application-desk';
 import { parseAmount } from '../pay-input';
+import { mentionsPay } from '../posting/parse';
 
 export interface PostingPay {
   /** The bottom of the range, or the one figure. */
@@ -46,11 +47,16 @@ const amount = (text: string | undefined): number | null => {
 const periodOf = (unit: string): PayPeriod | null =>
   UNIT.find(([pattern]) => pattern.test(unit))?.[1] ?? null;
 
-/** The trimmed line a match was found on, kept short enough to quote. */
-function quote(text: string, index: number): string {
+/** The whole line a match was found on. */
+function lineAt(text: string, index: number): string {
   const start = text.lastIndexOf('\n', index) + 1;
   const end = text.indexOf('\n', index);
-  const line = text.slice(start, end === -1 ? undefined : end).trim();
+  return text.slice(start, end === -1 ? undefined : end).trim();
+}
+
+/** That line, kept short enough to quote. */
+function quote(text: string, index: number): string {
+  const line = lineAt(text, index);
   return line.length > 120 ? `${line.slice(0, 117).trimEnd()}...` : line;
 }
 
@@ -61,7 +67,12 @@ export function readPostingPay(text: string): PostingPay | null {
   let basePay: number | null = null;
   let basePayTo: number | null = null;
   let payPeriod: PayPeriod | null = null;
-  const pay = text.match(PAY);
+  // The first rate that is the applicant's pay. "Manage $200,000 per year in
+  // marketing spend" is money the job handles: the same rule that keeps such
+  // a line as a duty in the decoded posting passes over it here.
+  const pay = [...text.matchAll(new RegExp(PAY.source, 'gi'))].find(
+    (match) => match.index !== undefined && mentionsPay(lineAt(text, match.index))
+  );
   if (pay && pay.index !== undefined) {
     const low = amount(pay[1]);
     const high = amount(pay[2]);

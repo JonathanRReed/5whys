@@ -274,7 +274,13 @@ export default function Career5Whys({
   };
 
   const handleReset = () => {
-    updateSession(createEmptySession(session.track));
+    // A new session in place of the old one, not merged into it: the
+    // statement, the two lists and the chosen root go with the answers. Only
+    // how the visitor chose to start is kept.
+    setSession({
+      ...createEmptySession(session.track),
+      ...(session.start ? { start: session.start } : {}),
+    });
     setExampleOpen({});
     setStatus('Session cleared.');
   };

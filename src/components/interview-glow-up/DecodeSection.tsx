@@ -272,7 +272,9 @@ export default function DecodeSection({
       text: line.text,
       section: 'responsibility',
       status: 'suggested',
-      origin: 'parsed',
+      // The visitor's own decision, like a line they added: "Parse again"
+      // keeps it, where a parsed line the parser no longer finds is dropped.
+      origin: 'student',
       span: { start: line.start, end: line.end },
     });
     // Back in the posting's own order.

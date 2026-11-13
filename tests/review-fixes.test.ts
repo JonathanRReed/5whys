@@ -101,3 +101,21 @@ describe('an offer in hand is never sorted behind drafts', () => {
     expect(order[order.length - 1]).toBe('sent');
   });
 });
+
+describe("a posting's pay is the applicant's, not money the job handles", () => {
+  it('passes over business spending to the salary line', async () => {
+    const { readPostingPay } = await import('../src/lib/pay/posting-pay');
+    const pay = readPostingPay(
+      'Manage $200,000 per year in marketing spend.\nSalary: $44,000 per year'
+    );
+    expect(pay?.basePay).toBe(44000);
+    expect(pay?.payPeriod).toBe('year');
+    expect(pay?.quotes).toEqual(['Salary: $44,000 per year']);
+  });
+
+  it('reads nothing when only business money is written', async () => {
+    const { readPostingPay } = await import('../src/lib/pay/posting-pay');
+    expect(readPostingPay('Own a budget of $30,000 per month for events.')).toBeNull();
+    expect(readPostingPay('$15.00/hr | 15-25 hrs/week')?.basePay).toBe(15);
+  });
+});

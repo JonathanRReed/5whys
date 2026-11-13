@@ -289,3 +289,37 @@ describe('another tool can offer the finished reflection back', () => {
     expect(readReflectionForReuse()?.topic).toBe('Nursing');
   });
 });
+
+describe('resetting a reflection clears what was built from it', () => {
+  it('drops the statement and the lists, and keeps only how the visitor started', () => {
+    localStorage.setItem(
+      SESSION_KEY,
+      JSON.stringify({
+        id: 's1',
+        track: 'interest',
+        start: 'experience',
+        topic: 'Closing the bakery',
+        responses: FIVE,
+        rootIndex: 2,
+        statement: 'Setting things up so others do well',
+        mustOffer: 'a team to set up',
+        canGiveUp: 'a short commute',
+        updatedAt: new Date().toISOString(),
+      })
+    );
+    render(<Career5Whys showHeader={false} showFooter={false} />);
+    expect(screen.getByLabelText('Your statement')).toHaveValue(
+      'Setting things up so others do well'
+    );
+    // The reset arms in place, then clears.
+    fireEvent.click(screen.getByRole('button', { name: 'Reset session' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Clear all five answers?' }));
+    expect(screen.getByLabelText('Depth 1 response')).toHaveValue('');
+    expect(screen.queryByDisplayValue('Setting things up so others do well')).toBeNull();
+    expect(screen.queryByDisplayValue('a team to set up')).toBeNull();
+    expect(screen.getByRole('button', { name: /Start from an experience/ })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+  });
+});

@@ -614,12 +614,10 @@ function summarizeApplications(
     };
   });
   // An offer's answer-by date is as much a deadline as an application's.
-  const soonest = (app: ApplicationSummary): number | null => {
-    const days = [app.daysUntil, app.offer?.daysToAnswer ?? null].filter(
-      (d): d is number => d !== null
-    );
-    return days.length ? Math.min(...days) : null;
-  };
+  // Once an offer is in hand the application's own deadline is behind it:
+  // the date that matters is the one the offer must be answered by.
+  const soonest = (app: ApplicationSummary): number | null =>
+    app.offer ? app.offer.daysToAnswer : app.daysUntil;
   return sortApplications(
     summaries.map((app) => ({
       app,
