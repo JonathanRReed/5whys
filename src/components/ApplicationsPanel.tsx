@@ -12,9 +12,15 @@ import {
   shortDate,
   updateApplication,
 } from '../lib/applications';
-import { type ApplicationSummary, nextDeskStep } from '../lib/career-bridge';
+import {
+  type ApplicationSummary,
+  nextDeskStep,
+  readSendInputs,
+  withRole,
+} from '../lib/career-bridge';
 import { loadData, openRole, saveData, updateRole } from '../lib/glowup-store';
 import { cn } from '../lib/utils';
+import { MarkSent, sendState } from './application-desk/SendStation';
 import SentControl from './application-desk/SentControl';
 import Announcer, { useAnnouncer } from './shared/Announcer';
 import ConfirmButton from './shared/ConfirmButton';
@@ -99,10 +105,13 @@ function workLink(
 ): { href: string; label: string } | null {
   if (!app.decoded) return null;
   if (storyCount === 0) {
-    return { href: '/interview-glow-up/workspace/?tab=stories', label: 'Build a story' };
+    return {
+      href: withRole('/interview-glow-up/workspace/?tab=stories', app.roleId),
+      label: 'Build a story',
+    };
   }
   return {
-    href: '/interview-glow-up/workspace/?tab=packet',
+    href: withRole('/interview-glow-up/workspace/?tab=packet', app.roleId),
     label: app.packetStories === 0 ? 'Pack the packet' : 'Open the packet',
   };
 }
@@ -221,6 +230,20 @@ export function NewApplicationForm({
 export default function ApplicationsPanel({ applications, readiness, onChanged }: Props) {
   const [formOpen, setFormOpen] = React.useState(false);
   const [message, announce] = useAnnouncer();
+  // What still stands between each application and sending it, by the same
+  // rule the desk's "Mark as sent" uses ("The letter still has [your proof]").
+  // The list is read from storage after mount, so this reads no earlier.
+  const blockers = React.useMemo(() => {
+    const out: Record<string, string | null> = {};
+    for (const app of applications) {
+      const inputs = app.sentOn || app.offer ? null : readSendInputs(app.id);
+      out[app.id] = inputs
+        ? sendState(inputs.letter, inputs.title, inputs.company, inputs.requirements, inputs.rows)
+            .blocker
+        : null;
+    }
+    return out;
+  }, [applications]);
   const showForm = formOpen || applications.length === 0;
   // The row whose role and company are being edited, with the text so far.
   const [editing, setEditing] = React.useState<{
@@ -400,6 +423,9 @@ export default function ApplicationsPanel({ applications, readiness, onChanged }
                         : `Interview stories packed: ${app.packetStories}`}
                     </Chip>
                   )}
+                  {(app.keptAnswers ?? 0) > 0 && (
+                    <Chip on>Interview answers kept: {app.keptAnswers}</Chip>
+                  )}
                   {app.offer && <Chip on>Offer in hand</Chip>}
                   {app.stations.qualifications && <Chip on>Qualifications marked</Chip>}
                   {app.stations.bullets && <Chip on>Bullets drafted</Chip>}
@@ -414,7 +440,7 @@ export default function ApplicationsPanel({ applications, readiness, onChanged }
                   const rehearse = app.roleId ? (
                     <a
                       className={linkClass}
-                      href="/interview-glow-up/rehearse/"
+                      href={withRole('/interview-glow-up/rehearse/', app.roleId)}
                       onClick={() => openRole(app.roleId)}
                     >
                       Rehearse the interview
@@ -520,14 +546,23 @@ export default function ApplicationsPanel({ applications, readiness, onChanged }
                     </button>
                   ) : (
                     <>
-                      {!app.offer && (
-                        <SentControl
-                          showDate={false}
-                          sentOn={app.sentOn}
-                          title={app.title}
-                          onChange={(sentOn) => sent(app, sentOn)}
-                        />
-                      )}
+                      {!app.offer &&
+                        (app.sentOn ? (
+                          <SentControl
+                            showDate={false}
+                            sentOn={app.sentOn}
+                            title={app.title}
+                            onChange={(sentOn) => sent(app, sentOn)}
+                          />
+                        ) : (
+                          // Arms in place first when the letter is not ready, as on the desk.
+                          <MarkSent
+                            sentOn={app.sentOn}
+                            title={app.title}
+                            blocker={blockers[app.id] ?? null}
+                            onChange={(sentOn) => sent(app, sentOn)}
+                          />
+                        ))}
                       {!app.sentOn && (
                         <button
                           type="button"
