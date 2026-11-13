@@ -16,6 +16,8 @@ export type ParsedAmount =
        * the dollar sign. Absent for dollars and for a bare number.
        */
       currency?: string;
+      /** The top of a range such as "44k to 48k"; `value` is the bottom. */
+      to?: number;
     }
   | { ok: false; value: null; error: string };
 
@@ -31,7 +33,33 @@ export interface AmountOptions {
   label?: string;
   /** False for a field that is not money, such as hours: a currency symbol there is refused. */
   money?: boolean;
+  /**
+   * What the number counts, when it is not money. "20hrs" and "20 hours a
+   * week" are read as 20 in an hours field; "10 wks" as 10 in a weeks field.
+   */
+  unit?: 'hours' | 'weeks';
+  /** The example a message gives, such as "20" for hours. Defaults to 62000. */
+  example?: string;
+  /**
+   * Amounts joined with "+" are added: "35,000 + 40,000 LTIP" is 75,000. A
+   * word after an amount names it and is not read.
+   */
+  sum?: boolean;
+  /** "44k to 48k" or "$21-$23" is read as a range: `value` and `to`. */
+  range?: boolean;
 }
+
+/** Unit words an hours or weeks field accepts after the number. */
+const UNIT_WORDS: Record<NonNullable<AmountOptions['unit']>, RegExp> = {
+  hours: /\s*(?:h|hr|hrs|hour|hours)\.?(?:\s*(?:a|per|each|\/)\s*(?:week|wk))?\.?$/i,
+  weeks: /\s*(?:w|wk|wks|week|weeks)\.?(?:\s*(?:a|per|each|\/)\s*(?:year|yr))?\.?$/i,
+};
+
+/** A word or two after an amount that names it: "40,000 LTIP", "5000 signing". */
+const AMOUNT_NAME = /\s+(?![km]\b)[a-z][a-z .()/&'-]*$/i;
+
+/** Two amounts joined by "to" or a dash. */
+const RANGE = /^(.+?)\s*(?:-|–|—|\bto\b)\s*(.+)$/i;
 
 /**
  * The largest amount the worksheet works with. Past this a number can no
@@ -67,9 +95,15 @@ function readNumber(text: string, lakh = false): number | 'separator' | 'thousan
 }
 
 export function parseAmount(input: string, options: AmountOptions = {}): ParsedAmount {
-  const text = input.trim();
+  let text = input.trim();
   if (!text) return { ok: true, value: null };
   const label = options.label ?? 'This';
+  if (options.unit) text = text.replace(UNIT_WORDS[options.unit], '').trim();
+  if (options.range) {
+    const range = readRange(text, options);
+    if (range) return range;
+  }
+  if (options.sum && (text.includes('+') || AMOUNT_NAME.test(text))) return readSum(text, options);
 
   const percent = text.replace(/\s+/g, '').match(/^([\d.,]+)%$/);
   if (percent) {
@@ -118,7 +152,7 @@ export function parseAmount(input: string, options: AmountOptions = {}): ParsedA
     return {
       ok: false,
       value: null,
-      error: `${label} was not understood. Use a number such as 62000.`,
+      error: `${label} was not understood. Use a number such as ${options.example ?? '62000'}.`,
     };
   }
   const scale =
@@ -127,6 +161,95 @@ export function parseAmount(input: string, options: AmountOptions = {}): ParsedA
   return result.ok && symbols[0] && symbols[0] !== '$'
     ? { ...result, currency: symbols[0] }
     : result;
+}
+
+/**
+ * Amounts joined with "+", each of which may be followed by a name. A
+ * percentage cannot be added this way: it is a share of something else.
+ */
+function readSum(text: string, options: AmountOptions): ParsedAmount {
+  const label = options.label ?? 'This';
+  const terms = text.split('+').map((term) => term.trim());
+  if (terms.some((term) => !term)) {
+    return {
+      ok: false,
+      value: null,
+      error: `${label} has a "+" with nothing on one side of it. Write it as 35000 + 40000.`,
+    };
+  }
+  if (terms.length === 1) {
+    return parseAmount(terms[0].replace(AMOUNT_NAME, '').trim(), { ...options, sum: false });
+  }
+  let total = 0;
+  let currency: string | undefined;
+  for (const term of terms) {
+    const bare = term.replace(AMOUNT_NAME, '').trim();
+    if (bare.includes('%')) {
+      return {
+        ok: false,
+        value: null,
+        error: `${label} can add amounts with "+", but not percentages. Write each part as an amount.`,
+      };
+    }
+    const part = parseAmount(bare, { ...options, sum: false, range: false });
+    if (!part.ok) return part;
+    if (part.value === null) {
+      return {
+        ok: false,
+        value: null,
+        error: `${label} was not understood. Use a number such as ${options.example ?? '62000'}.`,
+      };
+    }
+    if (currency !== undefined && (part.currency ?? '$') !== currency) {
+      return { ok: false, value: null, error: `${label} has more than one currency in it.` };
+    }
+    currency = part.currency ?? '$';
+    total += part.value;
+  }
+  const result = within(total, options, label);
+  return result.ok && currency && currency !== '$' ? { ...result, currency } : result;
+}
+
+/**
+ * "44k to 48k", "$44,000 - $48,000" or "$21-23": the bottom and the top. A
+ * "k" written only on the top ("44-48k") is read on both. Null when the text
+ * is not two amounts, so it is read as one amount instead.
+ */
+function readRange(text: string, options: AmountOptions): ParsedAmount | null {
+  const match = text.match(RANGE);
+  if (!match) return null;
+  const label = options.label ?? 'This';
+  let [, lowText, highText] = match;
+  const scale = highText.trim().match(/(k|m)$/i)?.[1];
+  if (scale && /^[^a-z]*\d$/i.test(lowText.trim()) && !/[.,]\d{3}/.test(lowText)) {
+    const bare = parseAmount(lowText, { ...options, range: false });
+    const top = parseAmount(highText, { ...options, range: false });
+    if (
+      bare.ok &&
+      top.ok &&
+      bare.value !== null &&
+      top.value !== null &&
+      bare.value * 1000 <= top.value
+    ) {
+      lowText = `${lowText.trim()}${scale}`;
+    }
+  }
+  const low = parseAmount(lowText, { ...options, range: false });
+  const high = parseAmount(highText, { ...options, range: false });
+  if (!low.ok || !high.ok || low.value === null || high.value === null) return null;
+  if ((low.currency ?? '$') !== (high.currency ?? '$')) {
+    return { ok: false, value: null, error: `${label} has more than one currency in it.` };
+  }
+  if (high.value <= low.value) {
+    return {
+      ok: false,
+      value: null,
+      error: `${label} reads as a range, but the second number is not the larger. Write the lower one first, such as 44000 to 48000.`,
+    };
+  }
+  return low.currency
+    ? { ok: true, value: low.value, to: high.value, currency: low.currency }
+    : { ok: true, value: low.value, to: high.value };
 }
 
 function within(value: number, { min, max }: AmountOptions, label: string): ParsedAmount {

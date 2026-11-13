@@ -92,7 +92,7 @@ describe('applications store', () => {
     expect(result.activeId).toBe(data.applications[0].id);
   });
 
-  it('orders the focused application first, then soonest deadline', () => {
+  it('orders by soonest deadline, with the focused one first among equals', () => {
     const make = (id: string, daysUntil: number | null, updatedAt: number) => ({
       id,
       daysUntil,
@@ -102,7 +102,9 @@ describe('applications store', () => {
       [make('no-date', null, 9), make('soon', 2, 1), make('later', 30, 8), make('focus', 60, 2)],
       'focus'
     );
-    expect(sorted.map((a) => a.id)).toEqual(['focus', 'soon', 'later', 'no-date']);
+    // Triage goes by date: an application in focus with a far deadline does
+    // not sit above one due sooner.
+    expect(sorted.map((a) => a.id)).toEqual(['soon', 'later', 'focus', 'no-date']);
   });
 
   it('computes whole days against local dates and labels them', () => {
@@ -114,7 +116,7 @@ describe('applications store', () => {
 
     expect(deadlineLabel(0)).toBe('Due today');
     expect(deadlineLabel(1)).toBe('Due tomorrow');
-    expect(deadlineLabel(4)).toBe('in 4 days');
+    expect(deadlineLabel(4)).toBe('Due in 4 days');
     expect(deadlineLabel(-1)).toBe('1 day past');
   });
 });
@@ -235,6 +237,10 @@ describe('dashboard bridge reads applications', () => {
     const dash = readCareerDashboard();
     expect(dash.applications[0].decoded).toBe(false);
     const rec = dash.recommendations.find((r) => r.text.includes('decoded'));
-    expect(rec?.href).toBe('/interview-glow-up/workspace/?tab=decode');
+    // The desk's posting station is per application; the workspace opens on
+    // whichever role is current.
+    expect(rec?.href).toBe(
+      `/application/?id=${encodeURIComponent(data.applications[0].id)}&station=posting`
+    );
   });
 });

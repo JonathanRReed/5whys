@@ -135,10 +135,17 @@ export const PERCENT_FIELDS: readonly PercentField[] = ['guaranteedBonus', 'vari
 
 /**
  * The offer worksheet. Every number is what the student typed, or null when
- * they have not. Bonus and variable pay are amounts per year.
+ * they have not. Bonus and variable pay are amounts over the weeks entered:
+ * a year for a full-year job, the whole placement for a shorter one. They are
+ * labeled that way where they are typed, so nothing is prorated or guessed.
  */
 export interface OfferWorksheet {
   basePay: number | null;
+  /**
+   * The top of a posted range, when base pay was given as one ("44k to 48k").
+   * `basePay` holds the bottom. Absent when the pay is a single figure.
+   */
+  basePayTo?: number;
   payPeriod: PayPeriod | null;
   guaranteedBonus: number | null;
   variablePay: number | null;
@@ -166,6 +173,17 @@ export interface OfferWorksheet {
    * dollars, as in worksheets saved before other currencies were read.
    */
   currency?: string;
+  /**
+   * Money paid once, such as a signing or relocation bonus. It is counted in
+   * the first year only and never added to a yearly figure. Absent when none.
+   */
+  oneTimeBonus?: number;
+  /** True when the visitor has this offer in hand, not just a posted rate. */
+  received?: boolean;
+  /** 'YYYY-MM-DD' the visitor must answer the offer by. */
+  answerBy?: string;
+  /** When the worksheet was last changed (ms), so Pay can open on the offer worked on last. */
+  editedAt?: number;
 }
 
 /** Currency symbols the worksheet reads and shows results in. */
@@ -416,6 +434,18 @@ export function normalizeDesk(value: unknown, now = Date.now()): ApplicationDesk
     const percents = normalizePercents(o.percentOfBase);
     if (percents) desk.offer.percentOfBase = percents;
     if (isCurrencySymbol(o.currency) && o.currency !== '$') desk.offer.currency = o.currency;
+    const top = amount(o.basePayTo);
+    if (top !== null && desk.offer.basePay !== null && top > desk.offer.basePay) {
+      desk.offer.basePayTo = top;
+    }
+    const once = amount(o.oneTimeBonus);
+    if (once !== null && once > 0) desk.offer.oneTimeBonus = once;
+    if (o.received === true) desk.offer.received = true;
+    const answerBy = date(o.answerBy);
+    if (answerBy) desk.offer.answerBy = answerBy;
+    if (typeof o.editedAt === 'number' && Number.isFinite(o.editedAt)) {
+      desk.offer.editedAt = o.editedAt;
+    }
   }
   if (isRecord(value.resumeSelection) && Array.isArray(value.resumeSelection.bulletIds)) {
     desk.resumeSelection = {
@@ -724,9 +754,27 @@ export function setChecklistTick(
   }));
 }
 
-export type OfferChanges = Partial<Omit<OfferWorksheet, 'percentOfBase' | 'currency'>> & {
+export type OfferChanges = Partial<
+  Omit<
+    OfferWorksheet,
+    | 'percentOfBase'
+    | 'currency'
+    | 'basePayTo'
+    | 'oneTimeBonus'
+    | 'received'
+    | 'answerBy'
+    | 'editedAt'
+  >
+> & {
   /** A symbol records the currency typed with the base pay; null or "$" returns to dollars. */
   currency?: string | null;
+  /** The top of a range; null when the base pay is one figure. */
+  basePayTo?: number | null;
+  /** A one-time amount; null or zero clears it. */
+  oneTimeBonus?: number | null;
+  received?: boolean | null;
+  /** 'YYYY-MM-DD', or null to clear. */
+  answerBy?: string | null;
   /** A number records the field as typed as that percentage; null clears it. */
   percentOfBase?: Partial<Record<PercentField, number | null>>;
 };
@@ -759,6 +807,32 @@ export function applyOfferChanges(current: OfferWorksheet, changes: OfferChanges
       offer.currency = changes.currency;
     } else delete offer.currency;
   }
+  if ('basePayTo' in changes) {
+    const top = amount(changes.basePayTo);
+    if (top !== null) offer.basePayTo = top;
+    else delete offer.basePayTo;
+  }
+  // A range needs a top above its bottom; a changed bottom can undo it.
+  if (
+    offer.basePayTo !== undefined &&
+    (offer.basePay === null || offer.basePayTo <= offer.basePay)
+  ) {
+    delete offer.basePayTo;
+  }
+  if ('oneTimeBonus' in changes) {
+    const once = amount(changes.oneTimeBonus);
+    if (once !== null && once > 0) offer.oneTimeBonus = once;
+    else delete offer.oneTimeBonus;
+  }
+  if ('received' in changes) {
+    if (changes.received === true) offer.received = true;
+    else delete offer.received;
+  }
+  if ('answerBy' in changes) {
+    const answerBy = date(changes.answerBy);
+    if (answerBy) offer.answerBy = answerBy;
+    else delete offer.answerBy;
+  }
   if (changes.percentOfBase) {
     const percents = { ...offer.percentOfBase };
     for (const field of PERCENT_FIELDS) {
@@ -781,7 +855,7 @@ export function updateOfferWorksheet(
 ): ApplicationDeskData {
   return updateDesk(data, applicationId, (desk) => ({
     ...desk,
-    offer: applyOfferChanges(desk.offer, changes),
+    offer: { ...applyOfferChanges(desk.offer, changes), editedAt: Date.now() },
   }));
 }
 
@@ -890,7 +964,10 @@ export function stationsWithContent(desk: ApplicationDesk): Record<DeskStationId
       offer.weeksPerYear !== null ||
       filled(offer.notes) ||
       filled(offer.wageSource) ||
-      offer.wageSourceDate !== null,
+      offer.wageSourceDate !== null ||
+      offer.oneTimeBonus !== undefined ||
+      offer.received === true ||
+      offer.answerBy !== undefined,
   };
 }
 
@@ -1036,6 +1113,12 @@ export interface OfferEquivalents {
   hourly: number | null;
   /** Base pay for one week, without overtime, or null. */
   weekly: number | null;
+  /**
+   * Base pay for one month, without overtime, or null. A salary is divided by
+   * twelve; other rates count 52 weeks over 12 months, the same calendar
+   * conversion the worksheet uses for a monthly rate.
+   */
+  monthly: number | null;
   /** Base pay over the weeks entered (a year for a salary), without overtime, or null. */
   annualBase: number | null;
   /**
@@ -1050,6 +1133,14 @@ export interface OfferEquivalents {
    * it were paid, and any overtime. Null when the base is unknown.
    */
   annualWithVariable: number | null;
+  /** The one-time amount, or zero. It is never part of a yearly figure. */
+  oneTime: number;
+  /**
+   * The first year (or the whole placement): guaranteed pay plus the one-time
+   * amount. Null when the base is unknown. Equal to `annualGuaranteed` when
+   * there is no one-time amount.
+   */
+  firstYear: number | null;
   /** Inputs the student still needs to enter for the missing figures. */
   missing: Array<'basePay' | 'payPeriod' | 'hoursPerWeek' | 'weeksPerYear'>;
 }
@@ -1089,6 +1180,16 @@ export function offerEquivalents(offer: OfferWorksheet): OfferEquivalents {
       ? null
       : finite(annualGuaranteed + extra('variablePay') + overtimeAnnual);
   const weekly = finite(weeklyPay(basePay, payPeriod, hoursPerWeek, weeksPerYear));
+  const monthly =
+    payPeriod === 'year'
+      ? validPay(basePay)
+        ? finite(basePay / MONTHS_PER_YEAR)
+        : null
+      : weekly === null
+        ? null
+        : finite((weekly * WEEKS_PER_CALENDAR_YEAR) / MONTHS_PER_YEAR);
+  const oneTime = positive(offer.oneTimeBonus) ? offer.oneTimeBonus : 0;
+  const firstYear = annualGuaranteed === null ? null : finite(annualGuaranteed + oneTime);
 
   // Whatever the period, one of the two figures needs hours and one needs
   // weeks, so a complete worksheet always has both.
@@ -1100,12 +1201,39 @@ export function offerEquivalents(offer: OfferWorksheet): OfferEquivalents {
   return {
     hourly,
     weekly,
+    monthly,
     annualBase,
     overtimeAnnual,
     annualGuaranteed,
     annualWithVariable,
+    oneTime,
+    firstYear,
     missing,
   };
+}
+
+/**
+ * The figures for both ends of a posted range: `low` from the base pay, and
+ * `high` from the top of the range, or null when the pay is one figure. A
+ * bonus typed as a percentage follows each end; an amount stays the same.
+ */
+export function offerRange(offer: OfferWorksheet): {
+  low: OfferEquivalents;
+  high: OfferEquivalents | null;
+} {
+  const low = offerEquivalents(offer);
+  const top = offer.basePayTo;
+  const high =
+    typeof top === 'number' && offer.basePay !== null && top > offer.basePay
+      ? offerEquivalents({ ...offer, basePay: top })
+      : null;
+  return { low, high };
+}
+
+/** How the extras on a worksheet are named: "a year", or "for the 10 weeks" on a shorter job. */
+export function extrasPhrase(offer: Pick<OfferWorksheet, 'payPeriod' | 'weeksPerYear'>): string {
+  const period = periodPhrase(offer);
+  return period === 'a year' ? 'a year' : period.replace(/^over /, 'for the ');
 }
 
 /**
