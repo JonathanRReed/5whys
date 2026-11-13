@@ -43,7 +43,8 @@ function describe(summary: BackupSummary, stores: StudioBackup['stores']): strin
     );
   if (summary.applicationDesks)
     parts.push(
-      `${summary.applicationDesks} application ${summary.applicationDesks === 1 ? 'desk' : 'desks'}`
+      // "Desk" is the tool's own name; on its own it reads as jargon.
+      `desk work for ${summary.applicationDesks} ${summary.applicationDesks === 1 ? 'application' : 'applications'}`
     );
   if (summary.hasResumeDocument) parts.push('your structured resume');
   if (summary.hasProfile) parts.push('your career profile');
@@ -57,7 +58,7 @@ function describe(summary: BackupSummary, stores: StudioBackup['stores']): strin
     ['networking-practice-sessions', !summary.practiceRounds, 'your practice history'],
     ['interview-glow-up-data', !summary.stories, 'your interview preparation'],
     ['career-applications', !summary.applications, 'your application list'],
-    ['career-application-desk', !summary.applicationDesks, 'your application desks'],
+    ['career-application-desk', !summary.applicationDesks, 'your desk work'],
   ];
   for (const [key, include, label] of otherStores) {
     if (include && stores[key] !== undefined) parts.push(label);
