@@ -61,9 +61,9 @@ export default function InterviewGlowUpAdvice() {
           </a>
         </div>
         <p className="text-sm text-muted-foreground">
-          Paste a job posting to get the questions it is likely to raise and the stories to answer
-          them, or go straight to practicing answers out loud or in writing. The advice below is
-          optional reading.
+          Paste a job posting to see what questions are likely to come up and line up stories for
+          them, or jump straight into practicing answers out loud or in writing. The notes below are
+          optional.
         </p>
       </div>
 
@@ -84,97 +84,101 @@ export default function InterviewGlowUpAdvice() {
           />
         </svg>
         <span>
-          <strong>Private by design:</strong> nothing you write leaves this browser. Everything is
-          stored on this device.
+          <strong>Stays local:</strong> nothing you write leaves this browser. Everything saves on
+          this device.
         </span>
       </div>
 
       {/* Intro */}
-      <Section title="It's normal to feel nervous">
+      <Section title="Being nervous is normal">
         <p className="leading-relaxed">
-          If interviews make you anxious, you are not alone. An interview can feel like an exam, and
-          that is when people freeze.
+          Almost everyone gets tense before an interview. Most of the time it happens because an
+          interview feels like an oral exam where one wrong sentence sinks you, and that pressure
+          makes people lock up.
         </p>
         <p className="mt-3 leading-relaxed">
-          It is also fixable. With the right preparation, you can walk in calm and ready to have a
-          real conversation instead of giving a performance.
+          The easiest way to lower the stress is having a few concrete stories ready ahead of time
+          so you aren't scrambling to invent an example on the spot.
         </p>
       </Section>
 
       {/* Why Interviews Feel Hard */}
-      <Section title="Why interviews feel hard">
+      <Section title="Why interviews feel so awkward">
         <Callout variant="insight">
           <p className="font-medium">
-            The "exam mindset" is your enemy. When you think "I'm being tested," your brain goes
-            into survival mode. You forget details, speak too fast, and struggle to think clearly.
+            When you treat an interview like a test you have to pass from memory, it's easy to
+            freeze up. You talk too fast, blank on projects you know well, and lose track of what
+            they asked.
           </p>
         </Callout>
         <div className="mt-4 space-y-3">
-          <p>Common symptoms of exam mindset:</p>
+          <p>You can usually tell that's happening when you start doing things like:</p>
           <ul className="list-inside list-disc space-y-1 pl-2">
-            <li>Rehearsing answers word-for-word (then blanking on them)</li>
-            <li>Rambling without a clear point</li>
-            <li>Saying "I don't know" when you actually do know</li>
-            <li>Forgetting your best accomplishments</li>
-            <li>Feeling like an impostor despite real experience</li>
+            <li>Memorizing answers word for word, then freezing the second you forget a line</li>
+            <li>Talking in circles because you haven't landed on the point yet</li>
+            <li>Saying "I don't know" on something you've handled before</li>
+            <li>Forgetting your strongest examples until ten minutes after the call ends</li>
+            <li>Downplaying real work because you didn't have a fancy title</li>
           </ul>
         </div>
       </Section>
 
       {/* The Recruiter's Perspective */}
-      <Section title="What recruiters actually want">
+      <Section title="What the interviewer is checking">
         <p className="leading-relaxed">
-          <strong>Recruiters want to hire you.</strong> Every interview costs them time and money,
-          so they are rooting for you to be the person who ends the search.
+          <strong>They want to find someone and be done hiring.</strong> Running interviews takes
+          time away from their regular job, so they're hoping you're the person who works out.
         </p>
         <Callout variant="default">
-          <p className="font-medium">Three things every interviewer is checking:</p>
+          <p className="font-medium">Most questions come down to three things:</p>
           <ol className="mt-2 list-inside list-decimal space-y-1 pl-2">
             <li>
-              <strong>Can you do the job?</strong> (Skills and experience)
+              <strong>Can you do the work?</strong> Your skills and what you've already handled.
             </li>
             <li>
-              <strong>Will you do the job?</strong> (Motivation and effort)
+              <strong>Do you want to do it?</strong> Your interest and follow-through.
             </li>
             <li>
-              <strong>How do you work with people?</strong> (Day to day, and when things go wrong)
+              <strong>What's it like to work with you?</strong> Day to day, and when something goes
+              wrong.
             </li>
           </ol>
         </Callout>
         <p className="mt-4 leading-relaxed">
-          They are not trying to trick you. Most questions are skill checks in different clothing.
+          They're rarely trying to trick you. Even odd questions are usually asking for an example
+          of one of those three things.
         </p>
       </Section>
 
-      {/* Mindset Shift */}
-      <Section title="Shift your mindset: conversation over performance">
+      {/* Real examples */}
+      <Section title="Talk through real examples">
         <p className="leading-relaxed">
-          Stop thinking of interviews as performances. Think of them as{' '}
-          <strong>proof-based conversations</strong>. The interviewer asks "Can you solve X?" and
-          you respond with evidence that you have.
+          An interview works much better as a normal back-and-forth than a speech. The interviewer
+          asks whether you can handle something, and you give them a real example of a time you did.
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div className="rounded-xl border border-destructive/30 bg-destructive/6 p-4">
             <p className="flex items-center gap-1.5 text-sm font-semibold text-destructive">
-              <XIcon className="h-3.5 w-3.5" /> Don't
+              <XIcon className="h-3.5 w-3.5" /> Skip this
             </p>
-            <p className="mt-1 text-sm">Memorize scripts and deliver monologues</p>
+            <p className="mt-1 text-sm">Memorizing full scripts and reciting them</p>
           </div>
           <div className="rounded-xl border border-foam/30 bg-foam/6 p-4">
             <p className="flex items-center gap-1.5 text-sm font-semibold text-foam">
-              <CheckIcon className="h-3.5 w-3.5" /> Do
+              <CheckIcon className="h-3.5 w-3.5" /> Do this
             </p>
-            <p className="mt-1 text-sm">Prepare building blocks, then respond naturally</p>
+            <p className="mt-1 text-sm">Keep a few short notes ready and talk like yourself</p>
           </div>
         </div>
       </Section>
 
       {/* Read the posting */}
-      <Section title="Read the job posting for what it tests">
+      <Section title="Read the job posting for what it's going to test">
         <p className="leading-relaxed">
-          The job posting is your study guide. Under the jargon, most lines point to a skill you can
-          show with a story, and the decoder sorts each line into what is required, what is nice to
-          have, and the duties of the job.
+          The job posting tells you most of what they're going to ask about. Once you get past the
+          corporate wording, almost every bullet points to a specific skill. The decoder sorts each
+          line into required items, nice to haves, and day-to-day duties so you can see them
+          clearly.
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Callout variant="tip">
@@ -203,27 +207,27 @@ export default function InterviewGlowUpAdvice() {
           </Callout>
         </div>
         <p className="mt-4 leading-relaxed">
-          Once you have read the posting this way, most of the questions stop being surprises.
+          Once you break a posting down like this, very few questions catch you off guard.
         </p>
       </Section>
 
       {/* Play + Proof */}
-      <Section title="Stories with proof">
+      <Section title="Keep stories short and backed up">
         <p className="leading-relaxed">
-          For each skill the posting tests, you want <strong>one true story</strong> you can tell in
-          a minute or two. Each story has four parts:
+          For each skill the posting brings up, prepare <strong>one true story</strong> you can tell
+          in a minute or two. Each one has four parts:
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="rounded-xl border border-border/50 bg-overlay/30 p-4">
             <p className="font-semibold text-foreground">Trigger</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              A short name that brings the story back to mind, such as "holiday schedule".
+              A short name that reminds you which story this is, like "holiday schedule".
             </p>
           </div>
           <div className="rounded-xl border border-border/50 bg-overlay/30 p-4">
             <p className="font-semibold text-foreground">Hook</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              The situation in a sentence: what was going on, or what was wrong.
+              One sentence on the setup: what was going on or what broke.
             </p>
           </div>
           <div className="rounded-xl border border-border/50 bg-overlay/30 p-4">
@@ -231,7 +235,7 @@ export default function InterviewGlowUpAdvice() {
               <TargetIcon className="h-4 w-4 text-foam" /> Play
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              What you did and decided. Keep it short, and say "I", not "we".
+              What you did and decided. Keep it brief, and say "I" so your part is clear.
             </p>
           </div>
           <div className="rounded-xl border border-border/50 bg-overlay/30 p-4">
@@ -239,8 +243,8 @@ export default function InterviewGlowUpAdvice() {
               <ChartIcon className="h-4 w-4 text-iris" /> Proof
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              What came of it: a number you can stand behind, a before and after, a problem that
-              stopped, or what someone said.
+              What happened afterward: a real number, a clear before and after, a problem that went
+              away, or feedback you got.
             </p>
           </div>
         </div>
@@ -256,115 +260,121 @@ export default function InterviewGlowUpAdvice() {
             people missed their shifts, and the club still uses the form (Proof)."
           </p>
           <p className="mt-2 text-sm">
-            Know STAR? Situation and Task are the Hook, Action is the Play, and Result is the Proof.
+            If you've heard of STAR, Situation and Task are the Hook, Action is the Play, and Result
+            is the Proof.
           </p>
         </Callout>
       </Section>
 
       {/* Student On-Ramp */}
-      <Section title="Still in school? You still have proof">
+      <Section title="Still in school? You still have real examples">
         <p className="leading-relaxed">
-          A story does not care where it happened. It cares that you did something specific and can
-          say what came of it. Students have four sources most people overlook:
+          Interviewers mostly care that you can walk through something specific you did and what
+          changed because of it. Even without full-time office work, students usually have plenty of
+          good material in four places:
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
             <p className="text-sm font-semibold text-foreground">Class projects</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              The part you owned, the decision you made when the plan broke, the mistake you caught
-              the night before it was due.
+              The part you owned, the call you made when the plan fell apart, or the mistake you
+              caught the night before it was due.
             </p>
           </div>
           <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
             <p className="text-sm font-semibold text-foreground">Internships</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Even a small task counts if you can say why it mattered, what you did, and what
-              happened after.
+              Small tasks still work well if you can explain why they mattered, what you did, and
+              what happened next.
             </p>
           </div>
           <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
             <p className="text-sm font-semibold text-foreground">Clubs and volunteering</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              The event you organized, the budget you kept, the members you recruited. That is
-              leadership and ownership, named plainly.
+              Running an event, managing a club budget, or recruiting new members all show real
+              follow-through.
             </p>
           </div>
           <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
             <p className="text-sm font-semibold text-foreground">Campus and part-time jobs</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Handling a rush, an unhappy customer, training a new hire. Interviewers trust these
-              stories because they are hard to fake.
+              Dealing with a rush, calming down an upset customer, or training a new hire. People
+              trust these stories because they're grounded and hard to fake.
             </p>
           </div>
         </div>
         <Callout variant="tip">
-          <p className="font-medium">Proof without business numbers:</p>
+          <p className="font-medium">Ways to show results without corporate metrics:</p>
           <ul className="mt-2 list-inside list-disc space-y-1 pl-2 text-sm">
-            <li>A grade, or what an instructor said about the work</li>
-            <li>The size of the job: how many people, how long, how much money</li>
-            <li>A before and after: "sign-ups took three forms, now they take one"</li>
-            <li>People actually using what you made</li>
+            <li>A grade or specific feedback from an instructor</li>
+            <li>The scope of the work: how many people, how long it ran, or the budget involved</li>
+            <li>A simple before and after: "sign-ups took three forms, now they take one"</li>
+            <li>People continuing to use something you built or set up</li>
           </ul>
         </Callout>
       </Section>
 
       {/* Career changers */}
-      <Section title="Changing careers? Your last job is full of proof">
+      <Section title="Changing careers? Your last job already has examples">
         <p className="leading-relaxed">
-          Running a shift, a store, or a crew is real work, and most of it carries over. The job is
-          to say it in the new field's words, and only for work you really did.
+          Running a shift, managing a store, or leading a crew takes real coordination, and a lot of
+          it carries over. The main step is explaining it in the new field's terms without
+          stretching what you did.
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
             <p className="text-sm font-semibold text-foreground">Schedules and shifts</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              A schedule you built, or kept together when people called out.
+              A schedule you built or held together when people called out.
             </p>
           </div>
           <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
             <p className="text-sm font-semibold text-foreground">Customers</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              A complaint you turned around, or an account you kept.
+              A rough complaint you resolved or an account you kept from leaving.
             </p>
           </div>
           <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
             <p className="text-sm font-semibold text-foreground">Inventory and counts</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              A count that would not match until you found out why.
+              Numbers that wouldn't line up until you tracked down why.
             </p>
           </div>
           <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
             <p className="text-sm font-semibold text-foreground">A process you fixed</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              How it worked before, what you changed, and who uses it now.
+              How it worked before, what you changed, and who still uses it.
             </p>
           </div>
         </div>
         <p className="mt-4 leading-relaxed">
-          Expect to be asked why you are changing fields and about leaving your last job. The
-          rehearsal room asks both, so you can practice saying them plainly.
+          You'll probably get asked why you're switching fields and why you left your last job. The
+          rehearsal room includes both so you can practice giving a clean, plain answer.
         </p>
       </Section>
 
-      {/* Normalize Nerves */}
-      <Section title="Normalize the nerves">
+      {/* Practical reminders */}
+      <Section title="A few things to keep in mind">
         <div className="space-y-4">
           <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
             <p className="eyebrow">Before</p>
             <p className="mt-1 text-foreground">
-              "I'm prepared. I know my stories. This is just a conversation."
+              Skim your cheat sheet once, close the extra tabs, and keep a glass of water nearby.
+              Cramming new answers ten minutes before the call usually only makes you more anxious.
             </p>
           </div>
           <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
             <p className="eyebrow">During</p>
             <p className="mt-1 text-foreground">
-              "If I blank, I can pause, breathe, and check my notes. It's normal."
+              If you draw a blank, take a second and glance at your notes. Pausing for two seconds
+              always looks better than rambling.
             </p>
           </div>
           <div className="rounded-xl border border-border/50 bg-overlay/20 p-4">
             <p className="eyebrow">After</p>
             <p className="mt-1 text-foreground">
-              "I showed up and gave honest answers. That's a win regardless of outcome."
+              Write down any question that tripped you up while it's still fresh so you have a
+              better answer ready for the next interview.
             </p>
           </div>
         </div>
@@ -373,10 +383,10 @@ export default function InterviewGlowUpAdvice() {
       {/* CTA */}
       <div className="flex flex-col items-center gap-4 rounded-2xl border border-love/40 bg-love/7 px-6 py-8 text-center sm:px-10 sm:py-10">
         <h3 className="text-xl font-semibold text-foreground sm:text-2xl">
-          Ready to build your interview packet?
+          Ready to put your packet together?
         </h3>
         <p className="max-w-lg text-muted-foreground">
-          Decode a real job posting, write the stories it calls for, and build the HUD: a one-screen
+          Paste a real job posting, write the stories it asks for, and open the HUD, a one-screen
           cheat sheet for the call.
         </p>
         <a

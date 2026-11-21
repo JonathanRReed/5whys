@@ -4,14 +4,14 @@ import Base from '../layouts/Base.astro';
 import CareerDashboard from '../components/CareerDashboard';
 
 const noScriptContext = [
-  'The dashboard on this page requires JavaScript. It reads the work you have saved in this browser across the tools and summarizes it in one place: resume bullet scores and detected skills, saved five whys reflections, interview stories, and networking practice rounds, with a suggested next step drawn from that saved work. Nothing is loaded from a server and there is no account or profile behind it.',
-  'If you have not used the tools yet, the dashboard is empty. Start with any tool directly, or use the career review page to pick a starting point.',
+  "The dashboard needs JavaScript to read what you've saved in this browser across the tools and show it in one place: resume scores and skills, saved five whys reflections, interview stories, and networking practice rounds, along with a suggested next step. Nothing loads from a server and there's no account behind it.",
+  "If you haven't used any tools yet, the dashboard starts empty. You can open any tool directly or run the career review to pick where to start.",
 ];
 ---
 
 <Base
   title="Dashboard · 5 Whys Career Studio"
-  description="Your unified career progress dashboard. See scores, skills, recent activity, and recommended next steps across all tools."
+  description="See everything you've saved locally across the 5 Whys tools, including resume scores, reflections, stories, and next steps."
   noScriptContext={noScriptContext}
 >
   <div class="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-4 sm:pt-6">
@@ -19,7 +19,7 @@ const noScriptContext = [
       tag="The studio · Your work"
       roman=""
       title="Dashboard"
-      description="What you have saved on this device across the tools, and what to do next. Your work is read from this device, not from a server."
+      description="Everything you've saved on this device across the tools, plus what to work on next. Nothing here comes from a server."
       accent="foam"
     />
     <CareerDashboard client:load />

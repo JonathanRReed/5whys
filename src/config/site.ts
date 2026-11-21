@@ -1,9 +1,9 @@
 export const siteConfig = {
   siteUrl: 'https://5whys.jonathanrreed.com/',
-  siteName: '5 Whys Career Studio | Reflection tools by Jonathan R. Reed',
+  siteName: '5 Whys Career Studio | Free career tools by Jonathan R. Reed',
   titleTemplate: '%s · 5 Whys Career Studio',
   description:
-    '5 Whys is a small studio of career reflection tools by Jonathan R. Reed that helps job seekers clarify direction, improve resumes, and prepare stronger interview stories.',
+    '5 Whys Career Studio is a set of free, local-only career tools by Jonathan R. Reed for figuring out what you want, fixing resumes, practicing intros, and prepping for interviews.',
   keywords: [
     'career reflection',
     'resume game',
@@ -35,7 +35,7 @@ export const baseSchemas = {
     url: 'https://5whys.jonathanrreed.com/',
     name: '5 Whys Career Studio',
     description:
-      '5 Whys is a small studio of career reflection tools by Jonathan R. Reed that helps job seekers clarify direction, improve resumes, and prepare stronger interview stories.',
+      '5 Whys Career Studio is a set of free, local-only career tools by Jonathan R. Reed for figuring out what you want, fixing resumes, practicing intros, and prepping for interviews.',
     inLanguage: 'en-US',
     publisher: {
       '@id': 'https://jonathanrreed.com/about/#person',

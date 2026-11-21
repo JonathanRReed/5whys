@@ -25,23 +25,23 @@ const glowUpSchemas = [
     step: [
       {
         '@type': 'HowToStep',
-        name: 'Understand interview anxiety',
-        text: 'Nerves are normal. Treating an interview like an exam puts you in fight, flight, or freeze mode, and naming that is what lets you prepare around it.',
+        name: 'Drop the test framing',
+        text: 'Nerves are normal. Treating an interview like an oral exam makes people lock up, and preparing real examples ahead of time lowers the pressure.',
       },
       {
         '@type': 'HowToStep',
-        name: 'Write stories with proof',
-        text: 'Prepare short, true stories: the Play is what you did, the Proof is what came of it. A story with proof holds up when the interviewer asks a follow-up question.',
+        name: 'Write stories you can back up',
+        text: 'Prepare short, true stories where the Play is what you did and the Proof is what happened afterward. Real examples hold up much better when an interviewer asks follow-up questions.',
       },
       {
         '@type': 'HowToStep',
-        name: 'Decode the job posting',
-        text: 'Sort the job posting into what is required, what is nice to have, and the duties, see which skills each line tests, then match each one against your own experience.',
+        name: 'Break down the job posting',
+        text: 'Sort the posting into required skills, nice to haves, and day-to-day duties, see which skills each line asks for, and compare them with your own experience.',
       },
       {
         '@type': 'HowToStep',
         name: 'Build your interview packet',
-        text: 'Pull your stories, three keywords, and a fallback story onto one screen, a cheat sheet you can read before or during the interview.',
+        text: 'Pull your best stories, three key words, and a backup story onto a one-screen cheat sheet for the call.',
       },
     ],
   },
@@ -54,7 +54,7 @@ const glowUpSchemas = [
         name: 'What is the Play + Proof method?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Every interview story carries two parts: the Play is what you did, and the Proof is what came of it. You build a small library of those and pull out the one the question calls for.',
+          text: 'Each interview story centers on two parts: the Play is what you actually did, and the Proof is what happened because of it. You keep a small set of those ready and pull up whichever one fits the question.',
         },
       },
       {
@@ -62,7 +62,7 @@ const glowUpSchemas = [
         name: 'How do I decode a job posting?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Paste the job posting into the decoder. It sorts each line into required, nice to have, or a duty, and tags the skill each one tests. Then match them against your own experience to see your gaps and strengths.',
+          text: 'Paste the job posting into the decoder. It sorts each line into required, nice to have, or a duty, and tags the skill behind it so you can see where you already have a good story and where you still need one.',
         },
       },
       {
@@ -70,7 +70,7 @@ const glowUpSchemas = [
         name: 'Is my interview data private?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Yes. Job postings, stories, and packets are stored in your browser. Nothing is sent to any server.',
+          text: 'Yes. Job postings, stories, and packets stay in your browser on your device. Nothing gets sent to a server.',
         },
       },
     ],
@@ -80,7 +80,7 @@ const glowUpSchemas = [
 
 <Base
   title="Interview Glow Up"
-  description="Decode a job posting into the skills it tests, write interview stories you can prove, and build a one-screen cheat sheet to read before the call."
+  description="Break down a job posting into the skills it tests, write real interview stories you can back up, and put together a one-screen cheat sheet for the call."
   breadcrumbs={[
     { label: 'Home', href: '/' },
     { label: 'Interview Glow Up', href: '/interview-glow-up/' },
@@ -92,7 +92,7 @@ const glowUpSchemas = [
       tag="Plate IV · Prepare"
       roman="IV"
       title="Interview Glow Up"
-      description="Decode a job posting into the skills it actually tests, then build proof-based stories for each one."
+      description="Break down a job posting into the skills it tests, then write real stories from your own work for each one."
       accent="love"
     />
     <section class="mx-auto w-full max-w-6xl">
@@ -111,7 +111,7 @@ const glowUpSchemas = [
           id="interview-guide-heading"
           class="mt-3 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
         >
-          Prep around what you can prove
+          Prep around real examples
         </h2>
       </div>
 
@@ -139,17 +139,17 @@ const glowUpSchemas = [
           </div>
           <h3 class="text-xl font-semibold text-foreground">Decode the job posting</h3>
           <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Paste a job posting. Each line is sorted into what is required, what is nice to have,
-            and the duties, and tagged with the skill it tests. Then you can see which skills you
-            already have a story for, and which you do not.
+            Paste a job posting and the tool sorts each line into required, nice to have, or
+            duties, then tags the skill behind it. That makes it easy to see which skills you
+            already have a story for and which ones you don't.
           </p>
           <div
             class="mt-4 rounded-lg border border-love/20 bg-love/6 p-3"
           >
             <p class="eyebrow" style="color: hsl(var(--love))">Tip</p>
             <p class="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-              Watch the repeated phrases: the decoder counts them for you. If "schedule" keeps coming
-              back, have a story about a schedule you kept together.
+              Pay attention to phrases that show up more than once. If "schedule" keeps popping up,
+              bring a story about a schedule you actually managed.
             </p>
           </div>
         </article>
@@ -175,19 +175,19 @@ const glowUpSchemas = [
               ></path>
             </svg>
           </div>
-          <h3 class="text-xl font-semibold text-foreground">Write stories with proof</h3>
+          <h3 class="text-xl font-semibold text-foreground">Write stories you can back up</h3>
           <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-            For each skill, write a short true story in four parts: a Trigger (a short name that
-            brings it back to mind), a Hook (the situation), the Play (what you did), and the Proof
-            (what came of it). A story with proof holds up under a follow-up question; a memorized
-            answer usually does not.
+            For each skill, write a short true story in four parts: a Trigger to jog your memory,
+            a Hook for the setup, the Play for what you did, and the Proof for what happened
+            afterward. Real stories hold up when interviewers ask follow-ups, while memorized scripts
+            fall apart fast.
           </p>
           <div
             class="mt-4 rounded-lg border border-love/20 bg-love/6 p-3"
           >
             <p class="eyebrow" style="color: hsl(var(--love))">Tip</p>
             <p class="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-              Write the Proof first. If it is weak, the story needs a different example.
+              Write the Proof part first. If nothing changed, pick a different example.
             </p>
           </div>
         </article>
@@ -213,17 +213,19 @@ const glowUpSchemas = [
               ></path>
             </svg>
           </div>
-          <h3 class="text-xl font-semibold text-foreground">Assemble your packet</h3>
+          <h3 class="text-xl font-semibold text-foreground">Put together your packet</h3>
           <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Pull your best stories into one packet for the job. The HUD is a
-            one-screen cheat sheet for the call, short enough to read on your way in.
+            Pull your best stories into one packet for that specific job. The HUD gives you a
+            one-screen cheat sheet for the call so you can glance at your prompts without digging
+            through notes.
           </p>
           <div
             class="mt-4 rounded-lg border border-love/20 bg-love/6 p-3"
           >
             <p class="eyebrow" style="color: hsl(var(--love))">Tip</p>
             <p class="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-              Print or screenshot your packet. Having a physical backup reduces last-minute anxiety.
+              Print the packet or save a screenshot before the call so you aren't fumbling with
+              browser windows if your screen freezes.
             </p>
           </div>
         </article>

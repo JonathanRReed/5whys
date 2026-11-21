@@ -208,12 +208,12 @@ export default function HomeSpecimen() {
     <div className="grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-start">
       <div className="space-y-5 lg:sticky lg:top-28">
         <h2 className="text-3xl text-foreground sm:text-[2.4rem] sm:leading-[1.08]">
-          A job posting is written in code. Decode it.
+          See what a job posting is actually asking for.
         </h2>
         <p className="max-w-[46ch] text-pretty text-base leading-relaxed text-muted-foreground">
           {own === null
-            ? 'This is a made-up posting. Press the button and the same tool the Application Desk uses will sort what it asks for and point out what it leaves unsaid, right here on your device.'
-            : 'Paste a posting you are looking at. It is sorted on your device and goes nowhere.'}
+            ? "Here's a sample posting. Click the button and the same parser from the Application Desk will sort what it asks for and flag the vague phrases worth asking about, right here on your device."
+            : 'Paste a job posting you are looking at. It sorts right on your device and never gets sent anywhere.'}
         </p>
         {own === null && !requirements && (
           <fieldset className="m-0 min-w-0 border-0 p-0">

@@ -28,7 +28,7 @@ const aboutSchemas = [
 
 <Base
   title="About 5 Whys"
-  description="Learn about 5 Whys Career Studio, a practical set of career reflection, resume, networking, and interview preparation tools by Jonathan R. Reed."
+  description="About 5 Whys Career Studio, a set of free browser career tools built by Jonathan R. Reed."
   breadcrumbs={[
     { label: 'Home', href: '/' },
     { label: 'About', href: '/about/' },
@@ -39,64 +39,68 @@ const aboutSchemas = [
     <section class="mx-auto w-full max-w-6xl">
       <PageHero
         eyebrow="About"
-        title="Career tools you can check."
-        description="Free career tools for students and people changing careers. Work out what you want, then turn it into a resume, an application and interview answers you can stand behind."
+        title="Career tools you can check for yourself."
+        description="Free browser tools for students and anyone switching careers. Figure out what you want, then build a resume, an application, and interview answers you can back up."
       />
     </section>
 
     <section class="mx-auto w-full max-w-6xl">
       <div class="grid gap-x-14 gap-y-10 border-t border-border/40 pt-10 lg:grid-cols-[0.8fr_1.2fr]">
-        <h2 class="text-2xl text-foreground sm:text-3xl">Who it is for</h2>
+        <h2 class="text-2xl text-foreground sm:text-3xl">Who it's for</h2>
         <div class="max-w-[68ch] space-y-4 text-base leading-relaxed text-muted-foreground">
           <p>
-            Students, people looking for a first job, and people changing careers. The examples
-            start from a student's life (a part-time job, a club, a class project) and change to
-            working-life examples if you say that is where you are.
+            Students, people applying for a first job, and people changing careers. By default,
+            the examples come from student life like part-time jobs, clubs, and class projects.
+            If you tell the career review that you're already working or switching fields, the
+            examples switch over to match.
           </p>
           <p>
-            It is a set of tools, not a counselor. It works best beside a campus career center, a
-            coach, or a friend who will read your letter. It does not replace any of them.
+            These tools are a starting point, and they work best alongside a campus career center,
+            a mentor, or a friend who will read your cover letter. They don't replace a real
+            person.
           </p>
         </div>
 
         <h2 class="text-2xl text-foreground sm:text-3xl">How it decides things</h2>
         <div class="max-w-[68ch] space-y-4 text-base leading-relaxed text-muted-foreground">
           <p>
-            Every number on the site comes from a rule you can read. A resume line is scored for
-            three things: whether it starts with what you did, whether it says what happened
-            because of it, and whether it gives a measure. The posting match shows the line of
-            your resume it found, or says it found none. There is no hidden score and no claim
-            about how a hiring system will rank you, because no one outside that system can know.
+            Every number you see comes from a rule you can inspect yourself. A resume bullet is
+            checked for three things: whether it starts with what you did, whether it says what
+            happened because of it, and whether it includes a concrete measure. The posting matcher
+            points straight at the line on your resume it matched, or tells you it didn't find one.
+            There's no hidden score and no claim about how an employer's hiring software will rank
+            you, because nobody outside that company can know.
           </p>
           <p>
-            Suggestions are written by rules that run in the page. If your browser has its own
-            built-in model you can choose to use it; anything it adds that you did not write is
-            thrown away or marked.
+            By default, rewrite suggestions come from plain rules running right in the page. If
+            your browser has a built-in AI model, you can opt in to using it. Anything the model
+            invents that you didn't write yourself gets dropped or flagged so fake numbers don't
+            sneak onto your resume.
           </p>
           <p>
-            The advice follows what career centers commonly teach. Where practice differs by
-            country (resume length, pay, work authorization), the site says it is describing the
-            United States.
+            The advice follows what most career centers teach. When norms vary by country, like
+            resume length, pay conventions, or work authorization, the site notes that it's
+            describing the United States.
           </p>
         </div>
 
         <h2 class="text-2xl text-foreground sm:text-3xl">Who made it</h2>
         <div class="max-w-[68ch] space-y-4 text-base leading-relaxed text-muted-foreground">
           <p>
-            Built and maintained by <a
+            I'm <a
               class="font-semibold text-foreground underline underline-offset-4"
               href="https://jonathanrreed.com">Jonathan R. Reed</a
-            >. It is free, <a
+            >, and I built and maintain this site. It's free, <a
               class="font-semibold text-foreground underline underline-offset-4"
               href="https://github.com/JonathanRReed/5whys">open source</a
-            >, and has no accounts, advertising or tracking. It can stay
-            free because it costs almost nothing to run: the pages are plain files, and all the
-            work happens in your own browser, so there are no servers to pay for and nothing to
-            sell. There is no paid version and nothing asks for a card. What you
-            write stays on your device; the <a
+            >, and has no accounts, ads, or tracking. It stays free because it costs almost
+            nothing to host. The pages are static files and everything runs in your own browser, so
+            there are no backend servers to pay for and no reason to sell anything. There's no paid
+            tier and nothing asks for a credit card. Everything you write stays on your device, and
+            the <a
               class="text-foreground underline underline-offset-4"
               href="/privacy/">privacy page</a
-            > says exactly what that means.
+            > lays out the exact details.
           </p>
         </div>
       </div>
@@ -108,8 +112,9 @@ const aboutSchemas = [
           <span class="eyebrow" style="color:hsl(var(--gold))">For advisors and teachers</span>
           <h2 class="text-2xl text-foreground sm:text-3xl">Running a workshop</h2>
           <p class="max-w-md text-base leading-relaxed text-muted-foreground">
-            The tools work on shared and lab computers, with nothing to install and no sign-in.
-            Three tools fit in one class period. The others make good homework.
+            Everything works on shared or lab computers with nothing to install and no logins.
+            Three of the tools fit comfortably in one class period, and the rest work well as
+            homework.
           </p>
         </div>
         <ol class="max-w-[68ch] border-t border-border/40 text-base leading-relaxed">
@@ -117,27 +122,27 @@ const aboutSchemas = [
             [
               [
                 'Open a private window.',
-                'On a shared computer this keeps one student\'s work away from the next. Ask everyone to do it before they start.',
+                'On a shared computer, this keeps one student\'s work from showing up for the next person. Have everyone open one before they start.',
               ],
               [
                 'Start with the career review.',
-                'Two questions at /start/ that suggest a tool. It also sets the examples to a student\'s.',
+                'Two quick questions at /start/ recommend which tool to open first and set the examples to student mode.',
               ],
               [
                 'The Five Whys, guided.',
-                'Five short answers. Students leave with a reason in their own words and one small step to test it.',
+                'Five short answers. Students leave with a clear reason in their own words and one small thing to test it.',
               ],
               [
                 'The Resume Game, guided.',
-                'Paste three to five lines, or build a first resume from nothing, then rewrite one line.',
+                'Paste three to five lines, or build a first resume from scratch, then rewrite one weak line.',
               ],
               [
                 'Networking Practice, guided.',
-                'A thirty-second introduction, said out loud to a neighbor.',
+                'Draft a thirty-second intro and say it out loud to the person next to you.',
               ],
               [
-                'Take the work home, then clear the computer.',
-                'On the dashboard: export the work, send the file to yourself, delete it from Downloads, and press Clear everything on this device.',
+                'Save the work, then wipe the computer.',
+                'On the dashboard, export the backup file, email it to yourself, delete it from Downloads, and click Clear everything on this device.',
               ],
             ].map(([step, detail], index) => (
               <li class="flex gap-5 border-b border-border/40 py-4">

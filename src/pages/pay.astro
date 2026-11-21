@@ -7,17 +7,17 @@ import { hasWages } from '../config/pay';
 import Base from '../layouts/Base.astro';
 
 const noScript = [
-  ...(hasWages ? ['Pay shows what an occupation tends to pay in the United States, using public wage data from the Bureau of Labor Statistics. Figures are shown as percentiles: the 10th, 25th, 50th (the median), 75th, and 90th. A percentile describes everyone in the occupation at every level of experience. The survey does not measure starting pay, so a lower percentile is not an entry-level salary.'] : []),
-  'The offer worksheet puts an offer or a posted rate into one set of terms: an hourly equivalent, a monthly one and a yearly one, with any guaranteed bonus kept separate from pay that is not promised, and a one-time bonus counted in the first year only. It never assumes a 40-hour week or a 52-week year; if hours or weeks are blank, the figure that needs them stays blank.',
-  ...(hasWages ? ['Job titles are matched against the O*NET database on your own device. What you type is not sent anywhere.'] : []),
+  ...(hasWages ? ["Pay shows what an occupation usually pays in the United States using public wage data from the Bureau of Labor Statistics. Numbers show up as percentiles: 10th, 25th, 50th (the median), 75th, and 90th. Those cover everyone in the job across every experience level. The survey doesn't track starting pay separately, so a lower percentile isn't automatically an entry-level wage."] : []),
+  "The offer worksheet converts an offer or posted rate into one set of numbers: hourly, monthly, and yearly. Guaranteed bonuses stay separate from pay that isn't promised, and a one-time bonus only counts in the first year. It never guesses a 40-hour week or 52-week year for you; if hours or weeks are empty, anything depending on them stays blank.",
+  ...(hasWages ? ["Job titles match against the O*NET list right on your device, so nothing you type gets sent anywhere."] : []),
 ];
 ---
 
 <Base
   title="Pay"
   description={hasWages
-    ? 'See what an occupation tends to pay, as dated percentiles from public wage data, and put an offer into plain hourly and yearly terms.'
-    : 'Put an offer into plain hourly and yearly terms, with overtime and bonus counted, and match a job title to its occupation.'}
+    ? 'Look up what a job usually pays using dated public wage data, and convert an offer into hourly and yearly numbers you can compare.'
+    : 'Convert an offer into hourly and yearly numbers you can compare, with overtime and bonuses counted.'}
   breadcrumbs={[
     { label: 'Home', href: '/' },
     { label: 'Pay', href: '/pay/' },
@@ -30,8 +30,8 @@ const noScript = [
       roman="VI"
       title="Pay"
       description={hasWages
-        ? 'Look up what a job tends to pay, with the source and year beside every figure, and put an offer into terms you can compare.'
-        : 'Put an offer into terms you can compare: by the hour, the week, the month and the year.'}
+        ? 'Look up what a job usually pays with the source and year right next to every figure, and convert an offer into numbers you can compare.'
+        : 'Convert an offer into hourly, weekly, monthly, and yearly numbers you can compare.'}
       accent="madder"
     />
     <GuideCoach client:load tool="pay" />

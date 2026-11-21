@@ -6,16 +6,16 @@ import GuideCoach from '../components/shared/GuideCoach';
 import Base from '../layouts/Base.astro';
 
 const noScript = [
-  'The Application Desk works one job application from start to finish. You paste the posting once. The desk sorts it into what is required, what is preferred, and what the work involves, and keeps each requirement next to the sentence it came from so you can check it.',
-  'From there you mark where you stand on each requirement (have it, maybe, or not yet) and write how you will show it or get it. You then work from one real experience to two resume bullets for this role, draft a short cover letter in four parts, turn its opening line into a LinkedIn message, a follow-up email, and an opener for a call, and run a last check before you send.',
-  'Without JavaScript you can follow the same order on paper: list the top four or five requirements, mark each as yes, maybe, or no, choose one experience that answers them, write what happened because of your work, and turn that into two bullets that start with an action verb.',
-  'Everything you write on the desk is saved in your browser on this device. Nothing is sent to a server.',
+  "The Application Desk takes one job application from start to finish. You paste the posting once, and the desk sorts out what's required, what's nice to have, and what the day-to-day work looks like, keeping each item linked to the original sentence so you can verify it.",
+  "Next you mark where you stand on each requirement (have it, maybe, or not yet) and note how you'll show it or build it. From there you turn one real experience into two bullets for this job, draft a short cover letter in four parts, spin the opener into a LinkedIn message, follow-up email, and call intro, and run a final check before sending.",
+  "Without JavaScript you can do the same thing on paper: pull out the top four or five requirements, mark yes, maybe, or no on each one, pick an experience that backs them up, note what happened because of your work, and write two bullets starting with plain action verbs.",
+  "Everything you type stays in your browser on this device. Nothing gets sent to a server.",
 ];
 ---
 
 <Base
   title="The Application Desk"
-  description="Paste a job posting once, then work it through: what it asks for, where you stand, two bullets, a letter, and a last check before you send."
+  description="Paste a job posting once and work through the whole application: what it asks for, where you stand, two tailored bullets, a cover letter, and a quick check before sending."
   breadcrumbs={[
     { label: 'Home', href: '/' },
     { label: 'The Application Desk', href: '/application/' },
@@ -27,7 +27,7 @@ const noScript = [
       tag="Plate V · Apply"
       roman="V"
       title="The Application Desk"
-      description="Paste a posting once. Leave with what it asks for, where you stand, two bullets, a letter, and a last check before you send."
+      description="Paste a posting once, sort out what it asks for, mark where you stand, write two bullets and a cover letter, and check it before you send."
       accent="lichen"
     />
     <GuideCoach client:load tool="application" />

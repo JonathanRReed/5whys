@@ -4,14 +4,14 @@ import Base from '../layouts/Base.astro';
 import OnboardingWizard from '../components/OnboardingWizard';
 
 const noScriptContext = [
-  'The career review on this page is a short two-question wizard that requires JavaScript. It asks where you are in your career, from student through senior and transitioning, and what you are working on right now: direction, resume, interviews, or networking. It then recommends one of the four studio tools and a concrete first step. Your answers stay in this browser.',
-  'Without JavaScript you can still go straight to any tool: the five whys reflection for direction, the resume game for bullet scoring, networking practice for timed reps, or the interview workspace for proof-based stories.',
+  "The career review is a quick two-question picker that needs JavaScript. It asks where you are right now, from student through senior or switching fields, and what you're stuck on: direction, resume, applying, interviews, networking, or an offer. Then it suggests which tool to open first. Your answers stay in this browser.",
+  "Without JavaScript you can jump straight to any tool: The Five Whys for direction, The Resume Game for bullets, Networking Practice for intros, Interview Glow Up for interview prep, The Application Desk for a posting, or Pay for comparing offers.",
 ];
 ---
 
 <Base
   title="Career Review · 5 Whys Career Studio"
-  description="Take a quick career review to choose the right 5 Whys tool for your current goal, from reflection to resume polish, networking practice, or interview prep."
+  description="Answer two quick questions to see which 5 Whys tool fits what you're working on right now."
   noScriptContext={noScriptContext}
 >
   <div class="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-4 sm:pt-6">
@@ -19,7 +19,7 @@ const noScriptContext = [
       tag="The studio · Start here"
       roman=""
       title="Career review"
-      description="Two questions about where you are and what is in the way, then one tool to begin with. Your answers stay in this browser."
+      description="Two quick questions about where you are and what you're working on, then one tool to start with. Everything stays in this browser."
       accent="gold"
     />
     <OnboardingWizard client:load />

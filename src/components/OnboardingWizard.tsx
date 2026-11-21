@@ -131,14 +131,14 @@ function getRecommendation(level: string, challenge: string): Recommendation {
       return {
         title: 'Start with the Five Whys, on the Interest Path',
         description: student
-          ? 'You do not need a job title yet. Trace what already holds your attention until a direction shows up.'
-          : 'Before optimizing the job you have, check what actually pulls you. The Interest Path digs into that.',
+          ? "You don't need a target job title yet. Follow something that already holds your attention until a real direction shows up."
+          : 'Before tweaking the job you have, check what pulls you in. The Interest Path helps you trace that.',
         url: '/career/?guide=1',
         accent: 'foam',
         steps: [
-          'Choose the Interest Path track and name something you keep coming back to.',
-          'Answer the five "why" prompts to find the thread underneath it.',
-          'Save a snapshot so you can compare it against options later.',
+          'Pick the Interest Path and type something you keep coming back to.',
+          'Answer the five "why" prompts to see what sits underneath it.',
+          'Save a snapshot so you can compare it against roles later.',
         ],
         stats: [
           { label: 'You answer', value: 'Five questions, in order' },
@@ -151,16 +151,16 @@ function getRecommendation(level: string, challenge: string): Recommendation {
       title: 'Start with the Five Whys',
       description:
         level === 'transition'
-          ? 'Test whether the reason behind your pivot survives five rounds of "why" before you rebuild everything else around it.'
+          ? 'Test whether your reason for switching fields holds up through five rounds of "why" before you rebuild everything around it.'
           : level === 'senior'
-            ? 'Name what the next move is actually for. Five rounds of "why" separate a real reason from a restless one.'
-            : 'Clarify your core motivation before polishing anything else.',
+            ? 'Pin down what the next move is for. Five rounds of "why" tell a real reason apart from a restless week.'
+            : 'Figure out what you want out of your next move before polishing anything else.',
       url: '/career/?guide=1',
       accent: 'foam',
       steps: [
-        'Answer the five "why" prompts to surface your root motivation.',
-        'Read the statement it builds from your own words.',
-        'Save a snapshot so the dashboard can hold you to it.',
+        'Answer the five "why" prompts to get past your first surface answer.',
+        'Read the statement it puts together from your own words.',
+        'Save a snapshot so you can come back to it on the dashboard.',
       ],
       stats: [
         { label: 'You answer', value: 'Five questions, in order' },
@@ -173,13 +173,13 @@ function getRecommendation(level: string, challenge: string): Recommendation {
     return {
       title: 'Start a resume from nothing',
       description:
-        'You do not need a resume to start one. A few short questions about school, a job, or something you do outside class become your first lines. Babysitting, sports, caring for family and volunteering all count.',
+        "You don't need an old resume to make one. Answer a few quick questions about school, a job, or things you do outside class to get your first lines. Babysitting, sports, caring for family, and volunteering all count.",
       url: '/resume-game/?start=blank&guide=1',
       accent: 'love',
       steps: [
-        'Open the Resume Game on its start-from-nothing form.',
-        'Answer in your own words: where you study, one job or activity, and what you did there.',
-        'When you find a posting, bring it to the Application Desk to fit your lines to it.',
+        'Open the Resume Game on the start-from-nothing form.',
+        'Fill in where you study, one job or activity, and what you did there in plain words.',
+        'When you find a job posting, bring it to the Application Desk to fit your lines to it.',
       ],
       stats: [
         { label: 'You need', value: 'Nothing written yet' },
@@ -192,18 +192,18 @@ function getRecommendation(level: string, challenge: string): Recommendation {
     return {
       title: 'Take the posting to the Application Desk',
       description: exploring
-        ? 'You do not need a finished resume to start. Paste the posting and the desk shows what it asks for and where you stand.'
+        ? "You don't need a finished resume first. Paste the posting and see what it asks for and where you stand."
         : level === 'transition'
-          ? 'Paste the posting and see which requirements your experience already answers, in your words or theirs.'
-          : 'Paste the posting once and work it through: what it asks for, where you stand, the resume, the letter.',
+          ? 'Paste the posting and see which requirements your past work already covers, whether you use the same wording or not.'
+          : 'Paste the posting once and work through the whole thing: what it asks for, where you stand, your resume, and a cover letter.',
       url: '/application/?guide=1',
       accent: 'lichen',
       steps: [
         'Name the role and paste the whole posting.',
-        'Confirm what it really asks for and mark where you stand on each one.',
+        'Check what it asks for and mark where you stand on each item.',
         exploring
-          ? 'Turn one experience, a class project or a part-time job counts, into two bullets and a short letter.'
-          : 'Tailor your resume to it, write the letter, and run the check before you send.',
+          ? 'Turn one experience, like a class project or part-time job, into two bullets and a short letter.'
+          : 'Tailor your resume to it, draft the letter, and run the final check before sending.',
       ],
       stats: [
         { label: 'You paste', value: 'The posting, once' },
@@ -216,20 +216,20 @@ function getRecommendation(level: string, challenge: string): Recommendation {
     return {
       title: 'Jump into the Resume Game',
       description: exploring
-        ? 'Class projects, internships, and part-time work all count. Score what you have and make each line carry proof.'
+        ? 'Class projects, internships, and part-time jobs all count. Score what you have and rewrite each line so it shows what you did.'
         : level === 'transition'
-          ? 'Translate your old-domain bullets into evidence the new field can read. Score them, then rewrite the weak ones.'
-          : 'Score your bullets, pull out the skills they already show, and rewrite the weak ones.',
+          ? 'Rewrite bullets from your old field so someone in the new one can follow what you did. Score them, then fix the weak ones.'
+          : 'Score your bullets, pull out the skills they already show, and fix the weak ones.',
       url: '/resume-game/?guide=1',
       accent: 'love',
       steps: [
         exploring
-          ? 'Paste what you have, even a few lines about a class project, a campus job, or a club.'
+          ? 'Paste what you have, even a few rough lines about a class project, campus job, or club.'
           : 'Paste or upload your current resume.',
-        'Run the analysis to score each bullet for action, result, and measure.',
+        'Run the scan to score each bullet on action, outcome, and numbers.',
         exploring
-          ? 'Rewrite the weakest lines so a project reads as evidence, not a task list.'
-          : 'Use the structured rewrite to strengthen weak bullets.',
+          ? 'Rewrite your weakest lines so a project shows what changed instead of reading like a chore list.'
+          : 'Use the rewrite editor to tighten up the weakest bullets.',
       ],
       stats: [
         { label: 'You paste', value: 'What you have' },
@@ -243,44 +243,44 @@ function getRecommendation(level: string, challenge: string): Recommendation {
       title: 'Prepare with Interview Glow Up',
       description:
         level === 'senior'
-          ? 'At your level the risk is vague authority. Paste the posting, then back every leadership claim with a specific story.'
+          ? 'At a senior level, vague leadership answers fall flat fast. Paste the posting and back up each skill with a specific story.'
           : level === 'transition'
-            ? 'Paste a posting from the new field, then build stories that show your past work does what it asks.'
+            ? 'Paste a posting from the new field and write stories showing how your past work lines up with what it asks for.'
             : exploring
-              ? 'First interviews reward preparation over experience. Paste the posting and build stories from projects and jobs you already have.'
-              : 'Paste the posting and build a story with proof for each thing it asks for.',
+              ? 'First interviews usually come down to being prepared. Paste the posting and line up stories from classes and jobs you already have.'
+              : 'Paste the posting and write one real story for each skill it asks for.',
       url: '/interview-glow-up/workspace/?guide=1',
       accent: 'iris',
       steps: [
-        'Paste the job posting to see the skills it asks for.',
+        'Paste the job posting to see which skills it asks for.',
         level === 'senior'
-          ? 'Build proof-based stories that show scope you owned, not just teams you sat near.'
-          : 'Build 3 to 5 proof-based stories from your experience.',
-        'Gather your best stories on one page to read before the call.',
+          ? 'Write specific stories showing decisions you owned and what happened afterward.'
+          : 'Write 3 to 5 short stories from your own experience with clear outcomes.',
+        'Pull your best stories onto one screen to glance at before the call.',
       ],
       stats: [
         { label: 'You paste', value: 'The job posting' },
-        { label: 'You leave with', value: 'Stories with proof, on one page' },
+        { label: 'You leave with', value: 'Stories you can back up, on one page' },
       ],
       icon: 'M13 10V3L4 14h7v7l9-11h-7z',
     };
   }
   if (challenge === 'offer') {
     return {
-      title: 'Put the offer into plain terms on Pay',
+      title: 'Put the offer into plain numbers on Pay',
       description: exploring
-        ? 'An hourly rate, a salary and a bonus are hard to compare in your head. Enter what the offer says and see it by the hour, the week and the year.'
-        : 'Enter base pay, bonus and hours as written, and see the offer by the hour, the week and the year, beside any other offer you hold.',
+        ? 'Hourly rates, salaries, and bonuses are tough to compare in your head. Type in what the offer says and see it by the hour, week, and year.'
+        : 'Enter base pay, bonuses, and hours as written to see the offer by the hour, week, and year alongside any other offer you have.',
       url: '/pay/?guide=1',
       accent: 'gold',
       steps: [
-        'Enter the pay and how often it is paid, then the hours a week.',
-        'Add another offer, or the job you have now, to see them side by side.',
-        'Write down what you still need to ask before you answer.',
+        'Enter the pay, how often it is paid, and the hours per week.',
+        'Add another offer, or your current job, to compare them side by side.',
+        'Jot down anything you still need to ask before giving an answer.',
       ],
       stats: [
         { label: 'You bring', value: 'The offer, as written' },
-        { label: 'You leave with', value: 'The same pay in plain terms' },
+        { label: 'You leave with', value: 'The same pay in plain numbers' },
       ],
       icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 9v1',
     };
@@ -288,20 +288,20 @@ function getRecommendation(level: string, challenge: string): Recommendation {
   return {
     title: 'Start with Networking Practice',
     description: student
-      ? 'Career fairs and cold intros get easier with reps. Practice a short introduction before you need it live.'
+      ? 'Career fairs and cold intros feel way less awkward after a few practice runs. Say your intro out loud before you need it.'
       : level === 'senior'
-        ? 'Peer intros and panels need a sharper opener than your title. Rehearse it against the clock.'
-        : 'Timed scenarios and honest self-ratings, one rep at a time.',
+        ? 'Peer intros and panels need something better than reciting your title. Practice a tight opener against the clock.'
+        : 'Real scenarios, a timer, and honest self-ratings, one round at a time.',
     url: '/networking-practice/?guide=1',
     accent: 'gold',
     steps: [
-      'Pick a situation that matches your next event.',
-      'Say your introduction out loud against the timer.',
-      'Rate how it went, then try one more round.',
+      'Pick the scenario closest to your next event.',
+      'Say your intro out loud against the timer.',
+      'Rate how it felt, tweak one thing, and run it once more.',
     ],
     stats: [
       { label: 'You bring', value: 'Your next event' },
-      { label: 'You leave with', value: 'An introduction you have said out loud' },
+      { label: 'You leave with', value: 'An intro you have said out loud' },
     ],
     icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
   };

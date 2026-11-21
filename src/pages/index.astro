@@ -5,7 +5,7 @@ import Base from '../layouts/Base.astro';
 import { hasWages } from '../config/pay';
 import { siteConfig } from '../config/site';
 
-const privacyChips = ['No account', 'Local-only', 'Open source', 'Free'];
+const privacyChips = ['No account', 'Local only', 'Open source', 'Free'];
 
 // Examples show how to use each tool without promising a score or outcome.
 const plates = [
@@ -15,8 +15,8 @@ const plates = [
     accent: 'foam',
     name: 'The Five Whys',
     href: '/career/',
-    desc: 'Explore what matters in your next step. Treat the answers as a working hypothesis you can test.',
-    caption: 'Example · a reason to explore',
+    desc: 'Dig past your first answer on a career decision so you can see what really matters to you, then test it with one small step.',
+    caption: 'Example · a reason to test',
   },
   {
     roman: 'II',
@@ -24,7 +24,7 @@ const plates = [
     accent: 'gold',
     name: 'The Resume Game',
     href: '/resume-game/',
-    desc: 'Review unclear lines, missing context, and evidence you can strengthen. Keep what is already working.',
+    desc: 'Spot vague lines, missing details, and evidence you can support in your resume while keeping what already works.',
     caption: 'Example · one line to review',
   },
   {
@@ -33,8 +33,8 @@ const plates = [
     accent: 'iris',
     name: 'Networking Practice',
     href: '/networking-practice/',
-    desc: 'Rehearse real introductions against a timer, then debrief each rep so the next conversation feels lighter.',
-    caption: 'Example · a practice introduction',
+    desc: 'Practice introducing yourself against a timer, rate how it went, and fix the parts that felt awkward before the real thing.',
+    caption: 'Example · a practice intro',
   },
   {
     roman: 'IV',
@@ -42,8 +42,8 @@ const plates = [
     accent: 'love',
     name: 'Interview Glow Up',
     href: '/interview-glow-up/',
-    desc: 'Find likely interview themes in a job description, then connect them to stories you can support.',
-    caption: 'Example · a theme to prepare',
+    desc: 'Pull the likely interview topics out of a job posting and line up real stories from your own work to answer them.',
+    caption: 'Example · a topic to prep',
   },
   {
     roman: 'V',
@@ -51,7 +51,7 @@ const plates = [
     accent: 'lichen',
     name: 'The Application Desk',
     href: '/application/',
-    desc: 'Paste a posting once. Sort what it asks for, mark where you stand, write two bullets and a letter, and check it before you send.',
+    desc: 'Paste a job posting once, sort out what it asks for, mark where you stand, write two bullets and a cover letter, and check everything before you send it.',
     caption: 'Example · a requirement, sorted',
   },
   {
@@ -62,9 +62,9 @@ const plates = [
     href: '/pay/',
     // Wage figures ship only once the public wage files have been built in.
     desc: hasWages
-      ? 'See what an occupation tends to pay, as dated percentiles from public wage data, and put an offer into terms you can compare.'
-      : 'Put an offer into terms you can compare: by the hour, the week and the year, with overtime and bonus counted.',
-    caption: 'Example · an offer, in plain terms',
+      ? 'Look up what a job usually pays using dated public wage data, and convert an offer into hourly, weekly, and yearly numbers you can compare.'
+      : 'Convert an offer into hourly, weekly, and yearly numbers you can compare, including overtime and bonuses.',
+    caption: 'Example · an offer in plain numbers',
   },
 ];
 
@@ -72,50 +72,50 @@ const plates = [
 // so a first visit starts with a hand on the shoulder.
 const situations = [
   {
-    say: 'I have never had a job and need a first resume.',
-    get: 'Answer a few short questions. Babysitting, a team and school all count.',
+    say: 'I\'ve never had a job and need a first resume.',
+    get: 'Answer a few short questions to build one. Babysitting, sports, and school projects all count.',
     tool: 'The Resume Game',
     href: '/resume-game/?start=blank&guide=1&path=starting',
     accent: 'gold',
   },
   {
     say: 'I found a job I want to apply for.',
-    get: 'Leave with what it asks for, a resume for it, and a letter.',
+    get: 'Get what the posting asks for, a resume tailored to it, and a cover letter.',
     tool: 'The Application Desk',
     href: '/application/?guide=1&path=applying',
     accent: 'lichen',
   },
   {
-    say: 'My resume is not getting replies.',
-    get: 'See it the way a hiring system reads it, and fix the weak lines.',
+    say: 'My resume isn\'t getting replies.',
+    get: 'See how hiring software reads your file, then fix the weak lines one at a time.',
     tool: 'The Resume Game',
     href: '/resume-game/?guide=1&path=resume',
     accent: 'gold',
   },
   {
     say: 'I have an interview coming up.',
-    get: 'See what it will test, then answer the likely questions.',
+    get: 'See what the role is likely to ask about and practice real answers for those topics.',
     tool: 'Interview Glow Up',
     href: '/interview-glow-up/workspace/?guide=1&path=interview',
     accent: 'love',
   },
   {
     say: 'I freeze when I have to introduce myself.',
-    get: 'Practice a thirty-second introduction until it sounds like you.',
+    get: 'Practice a short introduction out loud until it sounds like you.',
     tool: 'Networking Practice',
     href: '/networking-practice/?guide=1&path=networking',
     accent: 'iris',
   },
   {
-    say: 'I got an offer and cannot tell if it is good.',
-    get: 'Put it into plain hourly, weekly and yearly terms.',
+    say: 'I got an offer and can\'t tell if it\'s good.',
+    get: 'Break it down into plain hourly, weekly, and yearly numbers you can compare.',
     tool: 'Pay',
     href: '/pay/?guide=1&path=offer',
     accent: 'madder',
   },
   {
-    say: 'I do not know what I want next.',
-    get: 'Ask why five times and find the reason under the first answer.',
+    say: 'I don\'t know what I want to do next.',
+    get: 'Ask why five times to get underneath your first answer.',
     tool: 'The Five Whys',
     href: '/career/?guide=1&path=direction',
     accent: 'foam',
@@ -124,18 +124,18 @@ const situations = [
 
 const fieldNotes = [
   {
-    k: 'It talks to no one else',
-    v: 'Open your browser\'s network panel and use any tool. Every request goes to this site and nowhere else: no analytics, no trackers, no AI service.',
+    k: 'Nothing leaves your browser',
+    v: 'Open your browser\'s network tab while you use any tool here. Every request goes to this site and nowhere else, with no trackers, no analytics, and no outside AI servers.',
     c: 'foam',
   },
   {
-    k: 'No account, no cookies',
-    v: 'There is nothing to sign up for. What you write is saved on this device, and one file from the dashboard moves it to another.',
+    k: 'No accounts or cookies',
+    v: 'You don\'t have to sign up for anything. Your work saves right on this device, and you can export one file from the dashboard if you want to move it to another computer.',
     c: 'gold',
   },
   {
-    k: 'Gone when you say so',
-    v: 'The dashboard shows what is stored and deletes all of it in one press, which matters on a shared or library computer.',
+    k: 'Easy to wipe clean',
+    v: 'The dashboard shows everything stored on your device and lets you delete all of it in one click, which helps if you\'re on a school or library computer.',
     c: 'iris',
   },
 ];
@@ -153,12 +153,12 @@ const homeStructuredData = [
     name: '5 Whys Career Studio',
     url: siteConfig.siteUrl,
     description:
-      'Private browser tools for career reflection, resume polish, networking practice, and interview prep by Jonathan R. Reed.',
+      'Free, browser-based career tools for figuring out what you want, fixing your resume, practicing intros, and prepping for interviews, built by Jonathan R. Reed.',
   },
   {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    name: 'Career field guide plates',
+    name: '5 Whys Career Studio tools',
     itemListElement: toolkitItems.map((item, index) => ({
       '@type': 'ListItem',
       position: index + 1,
@@ -171,8 +171,8 @@ const homeStructuredData = [
 ---
 
 <Base
-  title="5 Whys Career Studio | A field guide to professional life"
-  description="Private browser tools for career reflection, resume polish, networking practice, and interview prep by Jonathan R. Reed."
+  title="5 Whys Career Studio | Free, private career tools"
+  description="Free, browser-based career tools for figuring out what you want, fixing your resume, practicing intros, and prepping for interviews, built by Jonathan R. Reed."
   structuredData={homeStructuredData}
 >
   <div class="relative space-y-24 overflow-hidden px-4 pb-24 pt-8 sm:space-y-28 sm:pt-10">
@@ -184,7 +184,7 @@ const homeStructuredData = [
       >
         <span class="eyebrow">5 Whys Career Studio</span>
         <span class="eyebrow hidden text-gold sm:block"
-          >A Field Guide to Professional Life</span
+          >Practical Career Tools</span
         >
         <span class="eyebrow">Vol. 01</span>
       </div>
@@ -205,17 +205,17 @@ const homeStructuredData = [
           class="fg-rise text-[2.65rem] leading-none tracking-[-0.02em] text-foreground sm:text-6xl lg:text-[4.1rem]"
           style="animation-delay:0.2s"
         >
-          Find the <span class="display-italic text-foam">real reason</span>.<br />
-          Then build the <span class="display-italic text-gold">proof</span>.
+          Figure out what you <span class="display-italic text-foam">want</span>.<br />
+          Then <span class="display-italic text-gold">back it up</span>.
         </h1>
 
         <p
           class="fg-rise max-w-xl text-pretty text-lg leading-relaxed text-muted-foreground"
           style="animation-delay:0.28s"
         >
-          Six free career tools for students and people changing careers. Work out what you
-          want, then turn it into a resume, an application, an introduction and interview answers
-          you can stand behind. Everything you write stays on your device.
+          Six free career tools for students and anyone switching fields. Work out what you
+          want, then turn it into a resume, an application, a short intro, and interview
+          answers you can stand behind. Everything you write stays on your device.
         </p>
 
         <div class="fg-rise flex flex-wrap items-center gap-3" style="animation-delay:0.36s">
@@ -511,18 +511,18 @@ const homeStructuredData = [
             What brought you <span class="display-italic text-foam">here</span>?
           </h2>
           <p class="max-w-md text-pretty text-base leading-relaxed text-muted-foreground">
-            Pick the line that sounds like you. The tool opens with a guide that walks you through
-            it one step at a time, and you can close the guide whenever you like.
+            Pick the line that sounds closest to where you are. The tool opens with a step-by-step
+            guide turned on, and you can close it whenever you want.
           </p>
           <p class="max-w-md text-sm leading-relaxed text-muted-foreground">
             Not sure? <a href="/start/" class="text-foreground underline underline-offset-4"
-              >Answer two questions</a
-            > and the studio will suggest one.
+              >Answer two quick questions</a
+            > and it'll point you to one.
           </p>
           <p class="max-w-md text-sm leading-relaxed text-muted-foreground">
             Teaching a class? <a
               href="/about/#workshops"
-              class="text-foreground underline underline-offset-4">There is a plan for one period</a
+              class="text-foreground underline underline-offset-4">Here's a plan that fits in one period</a
             >.
           </p>
         </div>
@@ -574,14 +574,15 @@ const homeStructuredData = [
     <section id="plates" class="reveal mx-auto w-full max-w-6xl scroll-mt-24 space-y-10">
       <div class="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div class="max-w-xl space-y-3">
-          <span class="eyebrow" style="color:hsl(var(--gold))">The instruments · Plates I–VI</span>
+          <span class="eyebrow" style="color:hsl(var(--gold))">The six tools · Plates I–VI</span>
           <h2 class="text-3xl text-foreground sm:text-[2.6rem] sm:leading-[1.05]">
-            Six plates, <span class="display-italic text-foam">one throughline</span
+            Six tools, <span class="display-italic text-foam">one place</span
             >.
           </h2>
           <p class="text-pretty text-base text-muted-foreground">
-            Each tool works on its own. Run them in order and they cover the whole arc: understand
-            the why, prove it, rehearse it, prepare for the interview, apply, and weigh the offer.
+            Each tool works on its own, so you can jump straight to whatever you need. Use them in
+            order and they walk through the whole process: figure out what you want, put it on a
+            resume, practice talking about it, prep for interviews, apply, and weigh the offer.
           </p>
         </div>
         <div class="eyebrow flex shrink-0 flex-wrap items-center gap-2 text-muted-foreground">
@@ -733,14 +734,14 @@ const homeStructuredData = [
     <section class="reveal mx-auto w-full max-w-6xl">
       <div class="grid gap-x-14 gap-y-10 md:grid-cols-[0.85fr_1.15fr]">
         <div class="space-y-4">
-          <span class="eyebrow" style="color:hsl(var(--gold))">From the field notes</span>
+          <span class="eyebrow" style="color:hsl(var(--gold))">How your data is handled</span>
           <h2 class="text-3xl text-foreground sm:text-[2.4rem] sm:leading-[1.08]">
-            Private, and you can <span class="display-italic text-foam">check</span
+            Private, and you can <span class="display-italic text-foam">check it yourself</span
             >.
           </h2>
           <p class="dropcap max-w-md text-pretty text-base leading-relaxed text-muted-foreground">
-            Open one exercise before an application, come back for interview prep, and pick up saved
-            work in your <a href="/dashboard/" class="underline underline-offset-4">dashboard</a>.
+            Use one tool before you send an application, come back when an interview gets scheduled,
+            and pick up your saved work on your <a href="/dashboard/" class="underline underline-offset-4">dashboard</a>.
           </p>
         </div>
         <ul class="self-start bg-ledger">
@@ -775,9 +776,9 @@ const homeStructuredData = [
       <div
         class="flex flex-col items-start gap-7 py-12 text-left sm:items-center sm:py-16 sm:text-center"
       >
-        <span class="eyebrow" style="color:hsl(var(--gold))">Begin the guide</span>
+        <span class="eyebrow" style="color:hsl(var(--gold))">Start here</span>
         <h2 class="max-w-3xl text-4xl leading-[1.02] text-foreground sm:text-5xl">
-          Start where every good decision starts: <span
+          Not sure what you want yet? Start by asking <span
             class="display-italic text-foam">why</span
           >.
         </h2>
@@ -785,7 +786,7 @@ const homeStructuredData = [
           href="/career/"
           class="group inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-22px_hsl(var(--primary))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
-          Ask the first why
+          Open The Five Whys
           <svg
             class="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
             fill="none"

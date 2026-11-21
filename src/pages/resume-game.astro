@@ -15,7 +15,7 @@ const resumeSchemas = [
         name: 'How does the resume scoring work?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'The Resume Game scores each line out of 100 for four parts it shows you: what you did, what the work was, what happened because of it, and a number that says what it counts. It then asks questions about the parts that are missing.',
+          text: 'The Resume Game scores each bullet out of 100 based on four things it shows you: what you did, what the work was, what happened because of it, and a number or measure if you have one. Then it asks questions to help you fill in whatever is missing.',
         },
       },
       {
@@ -23,7 +23,7 @@ const resumeSchemas = [
         name: 'Can I upload my existing resume?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Yes. You can upload .txt, .md, .docx, or .pdf files, or simply paste your resume text directly into the editor.',
+          text: 'Yes. You can upload .txt, .md, .docx, or .pdf files, or paste your resume text straight into the box.',
         },
       },
       {
@@ -31,7 +31,7 @@ const resumeSchemas = [
         name: 'Is my resume data private?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Yes. All text is processed in your browser. No data is sent to any server.',
+          text: 'Yes. Everything runs in your browser and nothing gets sent to a server.',
         },
       },
     ],
@@ -39,16 +39,16 @@ const resumeSchemas = [
 ];
 
 const resumeNoScriptContext = [
-  'Resume Bullet Game is the proof-building tool in 5 Whys Career Studio. It focuses on one practical problem: many resume bullets describe responsibility without showing evidence. The interactive version scores each line for four parts: what you did, what the work was, what happened because of it, and a number that says what it counts. The point is to make the useful work easy for a hiring manager or interviewer to understand. A loud bullet does not help if nobody can tell what you did.',
-  'Without JavaScript, you can still use the same review pattern manually. Take one bullet at a time and check whether it names the action, the object of the work, the constraint or audience, and the result. Stronger bullets usually include a specific verb, a system or process, a scale marker, and an outcome. Weak bullets often hide behind words like helped, worked on, responsible for, supported, assisted, or managed without explaining what changed.',
-  'A practical rewrite flow is simple: paste or write the existing bullet, underline the real contribution, say where or for whom, start with the word for what you actually did, and make the outcome visible if it is known. If a number would be fake, say what changed instead: shorter waits, fewer mistakes, a schedule that held, or a process other people started using.',
-  'Resume text can include employers, clients, systems, metrics, and personal history. That is why the tool keeps everything in the browser during normal use. Exported files are controlled by whatever software you open them in after leaving the page. Review every generated or rewritten bullet before sending it anywhere, and keep the final voice direct, specific, and honest.',
+  "The Resume Game tackles one common resume problem: bullets that list duties without showing what changed because you did them. The interactive tool scores each line on four visible parts: what you did, what you worked on, what happened afterward, and any real number that gives scale. The goal is making your work easy for a hiring manager to understand quickly.",
+  "Without JavaScript, you can check your resume the same way by hand. Go one bullet at a time and ask whether it names the action, what you worked on, who it helped or what constraint you had, and what changed. Weak bullets usually hide behind words like helped, worked on, responsible for, supported, or assisted without explaining what you did.",
+  "A plain way to rewrite a line is to underline what you personally handled, start with a clear verb for that action, and add what changed if you know it. If you don't have a real number, skip making one up and say what improved instead, like shorter wait times, fewer mistakes, or a process people kept using.",
+  "Because resumes hold employers, personal contact info, and work history, everything stays in your browser during normal use. Look over every rewritten line before you export or send it anywhere so it still sounds like you.",
 ];
 ---
 
 <Base
   title="The Resume Game"
-  description="Score each resume line for what you did and what happened because of it, then rewrite the weak ones in your own words."
+  description="Score each resume bullet on what you did and what came of it, then rewrite weak lines in your own words."
   breadcrumbs={[
     { label: 'Home', href: '/' },
     { label: 'The Resume Game', href: '/resume-game/' },
@@ -61,7 +61,7 @@ const resumeNoScriptContext = [
       tag="Plate II · Prove"
       roman="II"
       title="The Resume Game"
-      description="Each line of a resume gets a score for what you did and what came of it. Rewrite the weak ones and watch the score move. No resume yet? Build one from a few short questions."
+      description="Score each resume line on what you did and what happened because of it, then rewrite the weak ones and see the score update. Don't have a resume yet? Build your first one from a few short questions."
       accent="gold"
     />
     <GuideCoach client:load tool="resume-game" />
@@ -78,7 +78,7 @@ const resumeNoScriptContext = [
     <section class="mx-auto w-full max-w-6xl" aria-labelledby="ats-heading">
       <div class="grid gap-x-14 gap-y-6 border-t border-border/40 pt-8 lg:grid-cols-[0.8fr_1.2fr]">
         <div class="space-y-3">
-          <span class="eyebrow" style="color: hsl(var(--gold))">A question everyone asks</span>
+          <span class="eyebrow" style="color: hsl(var(--gold))">Common question</span>
           <h2
             id="ats-heading"
             class="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
@@ -86,33 +86,33 @@ const resumeNoScriptContext = [
             What an applicant tracking system reads
           </h2>
           <p class="max-w-md text-sm leading-relaxed text-muted-foreground">
-            Most employers file applications in software before a person reads them. There is no
-            universal score, and no site can tell you how a given employer's system will rank you.
-            These are the things that are true of nearly all of them.
+            Most companies run applications through software before a person opens them. There's no
+            universal ATS score, and no website can tell you how a specific company's setup will
+            rank you, but a few basics hold true for almost all of them.
           </p>
         </div>
         <ul class="max-w-[68ch] border-t border-border/40 text-sm leading-relaxed">
           {
             [
               [
-                'It reads text, in the order the file stores it.',
-                'Two columns, tables and text boxes can come out scrambled or not at all. One column is safest. Upload your file above to see the order yours is read in.',
+                'It reads text in the order your file stores it.',
+                'Two-column layouts, tables, and text boxes often scramble when parsed or get skipped. A single column is the safest setup, and you can upload your file above to see how yours reads.',
               ],
               [
-                'It looks for ordinary headings.',
-                'Education, Experience, Skills, Projects. A clever heading may not be recognized as a section.',
+                'It looks for normal section headings.',
+                'Stick to Education, Experience, Skills, and Projects. Clever headings can confuse the parser.',
               ],
               [
-                'It may miss what is in the header or footer.',
-                'Keep your name, email and phone in the body of the page.',
+                'It can miss text inside headers and footers.',
+                'Put your name, email, and phone number in the main body of the page.',
               ],
               [
-                'A person searches it with the posting\'s words.',
-                'Where the posting\'s wording is true of you, use it. Do not paste in words that are not.',
+                'Recruiters search it using words from the posting.',
+                'If the posting uses a phrase that honestly describes your work, use that phrasing. Never stuff in words that aren\'t true.',
               ],
               [
-                'Send a Word file or a text-based PDF.',
-                'A scan or a photo of a resume has no text to read.',
+                'Send a Word document or a normal text PDF.',
+                'A scanned image or photo of a resume has no readable text for the software to pull.',
               ],
             ].map(([point, detail]) => (
               <li class="border-b border-border/40 py-3">
@@ -135,7 +135,7 @@ const resumeNoScriptContext = [
           id="resume-guide-heading"
           class="mt-3 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
         >
-          From what you did to what it shows
+          Turn vague duties into clear bullets
         </h2>
       </div>
 
@@ -163,16 +163,18 @@ const resumeNoScriptContext = [
           </div>
           <h3 class="text-xl font-semibold text-foreground">When to use it</h3>
           <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Use the Resume Game when a line says you were busy but not what came of it. Paste your
-            resume, or a few lines, and rewrite one at a time until a reader can see what you did.
-            It works for a first draft, a last look, and a quick check before you apply.
+            Open the Resume Game when a bullet says you were busy without explaining what
+            happened. Paste your whole resume or a few lines, then tighten them one at a time
+            until a reader can tell what you did. It works whether you're writing a first draft or
+            doing a final check before applying.
           </p>
           <div
             class="mt-4 rounded-lg border border-gold/20 bg-gold/6 p-3"
           >
             <p class="eyebrow" style="color: hsl(var(--gold))">Tip</p>
             <p class="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-              Start with the line you are least sure of. That is usually where a small change shows most.
+              Start with whichever line you're least happy with. Fixing that one usually shows the
+              biggest jump.
             </p>
           </div>
         </article>
@@ -203,18 +205,18 @@ const resumeNoScriptContext = [
           </div>
           <h3 class="text-xl font-semibold text-foreground">What the score means</h3>
           <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-            The score tells you which line to rewrite next. It does not predict whether you get the
-            job. Strong bullets usually name the work, show scale, explain the result, and avoid
-            vague verbs, so a lower score points at the part that is still missing instead of
-            leaving you to guess.
+            The score only tells you which bullet to fix next. It doesn't predict whether you'll
+            get hired. Good bullets usually name what you did, give some sense of scale, show the
+            outcome, and skip vague verbs, so a lower score just points at whichever piece is
+            missing.
           </p>
           <div
             class="mt-4 rounded-lg border border-gold/20 bg-gold/6 p-3"
           >
             <p class="eyebrow" style="color: hsl(var(--gold))">Tip</p>
             <p class="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-              A line with no number can still score strong if it says what happened because of
-              the work.
+              A bullet with no numbers can still score well as long as it clearly says what changed
+              because of your work.
             </p>
           </div>
         </article>
@@ -242,24 +244,25 @@ const resumeNoScriptContext = [
           </div>
           <h3 class="text-xl font-semibold text-foreground">How to revise</h3>
           <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Rewrite one part at a time. Start with what you did, say what the work was, then what
-            happened because of it, and add a number only if you have a true one. The rewrite
-            should still sound like your work. It should just be easier to check.
+            Fix one piece at a time. Start with what you did, explain what the work was,
+            add what happened afterward, and only include a number if you have a real one. The
+            finished line should still sound like your real work, just easier to read.
           </p>
           <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-            No number? Say what changed instead: what got faster or easier, what stopped going
-            wrong, or who used what you made. Plain, specific words read better than big ones.
+            If you don't have a number, say what changed instead: what got faster or easier, what
+            problem stopped happening, or who ended up using what you built. Plain words read
+            better than corporate jargon.
           </p>
           <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Save the strongest rewrite, then compare it against the role before sending.
+            Keep your strongest version and check it against the job posting before you submit.
           </p>
           <div
             class="mt-4 rounded-lg border border-gold/20 bg-gold/6 p-3"
           >
             <p class="eyebrow" style="color: hsl(var(--gold))">Tip</p>
             <p class="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-              Read the bullet out loud. If it sounds like a job description, it is probably too
-              vague.
+              Read the bullet out loud. If it sounds like a generic job description instead of
+              something you did, it's probably too vague.
             </p>
           </div>
         </article>

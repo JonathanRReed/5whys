@@ -190,7 +190,7 @@ export const GET: APIRoute = async ({ params }) => {
               },
               {
                 type: 'span',
-                props: { children: '5whys.jonathanrreed.com · private by design' },
+                props: { children: '5whys.jonathanrreed.com · local only' },
               },
             ],
           },

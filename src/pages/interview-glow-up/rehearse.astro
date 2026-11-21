@@ -6,16 +6,16 @@ import GuideCoach from '../../components/shared/GuideCoach';
 import Base from '../../layouts/Base.astro';
 
 const noScript = [
-  'The rehearsal room asks one interview question at a time. You answer out loud or in writing, then review the answer before moving on. Questions come from the job posting you decoded, and each one shows which requirement it is testing.',
-  'A spoken answer is recorded on your device so you can listen back. The page shows what can be counted: how long you spoke, how many words, your pace, pauses longer than two seconds, and filler words. These are counts, not grades. There is no proven right pace or number of pauses.',
-  'Without JavaScript you can rehearse the same way with a phone timer: read a question aloud, answer for one to two minutes, then ask yourself whether you answered the question that was asked, said what you did yourself, and said what happened because of it.',
-  'Recordings stay on this device. Nothing you say or write is sent to a server.',
+  'The rehearsal room asks one interview question at a time. You answer out loud or in writing, then review how it went before moving on. Questions come from the job posting you decoded, and each one shows which requirement it came from.',
+  'Spoken answers record locally on your device so you can play them back. The page shows basic counts: how long you talked, word count, pace, pauses longer than two seconds, and filler words. Those are just counts, not grades, since there isn\'t one right speed for everyone.',
+  'Without JavaScript you can run the same practice with a phone timer: read a question out loud, answer for one to two minutes, and check whether you actually answered what was asked, explained what you personally did, and mentioned what happened because of it.',
+  'Recordings stay on your device. Nothing you say or type gets sent to a server.',
 ];
 ---
 
 <Base
   title="Interview Glow Up · Rehearsal Room"
-  description="Practice interview questions out loud or in writing, one at a time. Listen back and see what can be counted. Nothing leaves your device."
+  description="Practice interview questions out loud or in writing, one at a time. Play your answer back and check the pacing. Nothing leaves your device."
   breadcrumbs={[
     { label: 'Home', href: '/' },
     { label: 'Interview Glow Up', href: '/interview-glow-up/' },
@@ -28,7 +28,7 @@ const noScript = [
       tag="Plate IV · Prepare"
       roman="IV"
       title="The Rehearsal Room"
-      description="One question at a time, answered out loud or in writing. Listen back, see what can be counted, and try again."
+      description="One question at a time, out loud or in writing. Listen back, see the counts, and try another take if you want."
       accent="love"
     />
     <GuideCoach client:load tool="rehearsal" />

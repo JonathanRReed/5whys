@@ -34,7 +34,7 @@ const careerSchemas = [
         name: 'What is the five whys exercise?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'The five whys is a root-cause technique where you ask "why" five times in succession, each question building on your previous answer, to trace a career decision from its surface reason to its root reason.',
+          text: 'The five whys is a simple way to dig past a surface answer. You ask "why" five times in a row, with each question building on what you just wrote, until you hit the actual reason behind your career decision.',
         },
       },
       {
@@ -42,7 +42,7 @@ const careerSchemas = [
         name: 'Is my data stored securely?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'All data is stored locally in your browser. Nothing is sent to any server.',
+          text: 'Everything saves locally in your browser. Nothing gets sent to a server.',
         },
       },
       {
@@ -50,7 +50,7 @@ const careerSchemas = [
         name: 'Can I export my reflection?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Yes. You can export your complete reflection as a JSON file at any time.',
+          text: 'Yes. You can download your answers as a JSON file whenever you want.',
         },
       },
     ],
@@ -58,17 +58,17 @@ const careerSchemas = [
 ];
 
 const careerNoScriptContext = [
-  'Career Reflection is the five-layer decision tool inside 5 Whys Career Studio. It is meant for moments when a career question is too vague to act on, such as whether to change teams, apply for a role, leave a project, pursue a different specialty, or explain what kind of work actually fits. The exercise asks for the visible reason first, then keeps pressing for the deeper constraint, value, tradeoff, and evidence behind that reason.',
-  'The interactive version gives you guided prompts, local saving, summary generation, and export controls. Without JavaScript, the same workflow can be followed manually: write the surface problem, ask why that answer is true, repeat that question four more times, then rewrite the final answer as a testable career signal. A useful final signal names what matters, what constraint is real, what evidence supports it, and what next step would reduce uncertainty.',
-  'Good answers tend to be specific rather than dramatic. Instead of stopping at “I want a better job,” the reflection should move toward statements like “I want work where I explain things to people one at a time, the way I do when I tutor,” or “I am avoiding this major because the classes I like in it are the writing ones, not the lab ones.” What you want at the end is a clearer reason, specific enough to guide a resume, networking pitch, interview story, or next experiment.',
-  'A useful way to review the final answer is to ask whether it changes a decision. If the answer only restates frustration, keep going. If it helps you choose which job description to ignore, which project to highlight, which person to ask for advice, or which constraint to negotiate, it is probably specific enough. The best reflection output is small but actionable: one sentence of direction, one sentence of evidence, and one next move that can be tested this week.',
-  'Privacy matters because career reflection can include names, employers, worries, and sensitive drafts. The public tool is designed for browser-local work. Treat the export as your own career note, review it before sharing, and remove private details about other people or organizations. If the reflection starts producing interview material, carry the strongest proof into the resume game or interview workspace instead of keeping it as a vague journal entry.',
+  "The Five Whys helps when a career question feels too fuzzy to act on, like whether to switch majors, apply for a different kind of job, leave a team, or figure out what kind of work fits you. You write down the first reason that comes to mind, then keep asking why until you hit the real constraint or tradeoff underneath it.",
+  "The interactive tool gives you prompts, local saving, a summary built from your own words, and JSON export. Without JavaScript, you can do the exact same thing on paper: write down the surface reason, ask why that's true, repeat four more times, and turn the final answer into something concrete you can test.",
+  'Specific answers are much more useful than dramatic ones. Stopping at "I want a better job" doesn\'t tell you what to apply for. Pushing down to "I want work where I explain things to people one on one, like I do when I tutor" or "I\'m avoiding this major because I like the writing classes, not the lab ones" gives you something you can use for your resume, intros, and interviews.',
+  "A good test for your final answer is whether it changes what you do next. If it just repeats that you're frustrated, keep going. If it helps you rule out certain postings, pick a project to highlight, or decide who to talk to next, it's specific enough to act on.",
+  "Because career notes often include real employers, coworkers, and personal worries, everything stays local in your browser. Look over any exported file before sharing it, and if your answers bring up a strong example from past work, carry that over to the Resume Game or Interview Workspace.",
 ];
 ---
 
 <Base
   title="The Five Whys"
-  description="Work through five guided layers of why to uncover the values, constraints, and impact signals that should guide your next career move."
+  description="Ask why five times on a career decision to get past the first obvious answer and figure out what really matters to you."
   breadcrumbs={[
     { label: 'Home', href: '/' },
     { label: 'Career Reflection', href: '/career/' },
@@ -81,7 +81,7 @@ const careerNoScriptContext = [
       tag="Plate I · Reflect"
       roman="I"
       title="The Five Whys"
-      description="Ask why five times until the answer stops moving. You leave with the reason underneath the obvious one, in your own words, and one step that tests it."
+      description="Ask why five times until your answer stops changing. You end up with the real reason behind your first answer, in your own words, plus one way to test it."
       accent="foam"
     />
     <GuideCoach client:load tool="career" />
@@ -101,7 +101,7 @@ const careerNoScriptContext = [
           id="career-guide-heading"
           class="mt-3 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
         >
-          Get clarity in five layers
+          Dig past the first answer
         </h2>
       </div>
 
@@ -127,19 +127,19 @@ const careerNoScriptContext = [
               ></path>
             </svg>
           </div>
-          <h3 class="text-xl font-semibold text-foreground">Name the real reason</h3>
+          <h3 class="text-xl font-semibold text-foreground">Get to the actual reason</h3>
           <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-            The five whys format is useful when a career answer sounds true but still feels too
-            broad. Keep asking why until the reason names a value, constraint, skill, environment,
-            or tradeoff you can act on.
+            Five whys works well when your first answer sounds true, but it's still too vague to
+            do anything with. Keep asking why until you land on a real constraint, skill, work
+            setting, or tradeoff you can look for.
           </p>
           <div
             class="mt-4 rounded-lg border border-foam/20 bg-foam/6 p-3"
           >
             <p class="eyebrow" style="color: hsl(var(--foam))">Tip</p>
             <p class="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-              If your answer is "more money," ask what the money enables. That deeper reason usually
-              reveals the real criteria.
+              If your first answer is "more money," ask what that money lets you do. That next
+              answer is usually what you're really after.
             </p>
           </div>
         </article>
@@ -165,18 +165,18 @@ const careerNoScriptContext = [
               ></path>
             </svg>
           </div>
-          <h3 class="text-xl font-semibold text-foreground">Turn notes into criteria</h3>
+          <h3 class="text-xl font-semibold text-foreground">Turn answers into a checklist</h3>
           <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-            When the chain is complete, press the phrases that sound most like you to build your
-            statement. Then write two short lists: what a role must offer, and what you can give up.
-            Those lists are what you leave with.
+            Once you finish all five, click the phrases that sound most like you to pull your
+            statement together. Then jot down two short lists: what a job has to offer, and what
+            you're okay giving up.
           </p>
           <div
             class="mt-4 rounded-lg border border-foam/20 bg-foam/6 p-3"
           >
             <p class="eyebrow" style="color: hsl(var(--foam))">Tip</p>
             <p class="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-              Copy the lists and keep them beside every posting or offer you read.
+              Keep those two lists open when you read job postings or weigh an offer.
             </p>
           </div>
         </article>
@@ -202,18 +202,19 @@ const careerNoScriptContext = [
               ></path>
             </svg>
           </div>
-          <h3 class="text-xl font-semibold text-foreground">Reuse the outcome</h3>
+          <h3 class="text-xl font-semibold text-foreground">Carry it into the other tools</h3>
           <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Networking Practice offers your statement beside the intro draft. Copy it into an
-            interview story in the workspace, or read a posting against your lists on the
-            Application Desk. Start from one experience when you want a story more than a reason.
+            Networking Practice shows your statement right next to your intro draft. You can also
+            copy it into an interview story or compare a job posting against your lists on the
+            Application Desk.
           </p>
           <div
             class="mt-4 rounded-lg border border-foam/20 bg-foam/6 p-3"
           >
             <p class="eyebrow" style="color: hsl(var(--foam))">Tip</p>
             <p class="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-              Revisit your summary every three months. Your priorities shift more than you think.
+              Check back on your saved snapshot in a few months to see if what you care about has
+              changed.
             </p>
           </div>
         </article>

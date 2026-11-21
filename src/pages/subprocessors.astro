@@ -36,7 +36,7 @@ const processors = [
 
 <Base
   title="Subprocessors"
-  description="Review the 5 Whys Career Studio subprocessor disclosure for static hosting, security, request handling, and local-first career tool boundaries."
+  description="Hosting and infrastructure disclosure for 5 Whys Career Studio. Cloudflare serves the static files and the site loads no analytics."
   breadcrumbs={[
     { label: 'Home', href: '/' },
     { label: 'Privacy', href: '/privacy/' },
@@ -48,8 +48,8 @@ const processors = [
     <section class="mx-auto w-full max-w-6xl">
       <PageHero
         eyebrow="Subprocessors"
-        title="The studio stays small on purpose."
-        description="5 Whys Career Studio is a static browser-first site. The core career tools run locally in your browser, and the current infrastructure list is intentionally short."
+        title="One hosting provider."
+        description="5 Whys Career Studio is a static site. The tools run in your browser, so Cloudflare is the only outside service involved."
       />
     </section>
 
@@ -91,27 +91,25 @@ const processors = [
       </p>
       <div class="space-y-4 text-base leading-relaxed text-muted-foreground">
         <p>
-          The career drafts, resume bullets, interview notes, and networking practice text you enter
-          in the tools are handled in the browser during normal use. The project does not use a
-          production account system, payment processor, or server-side career-document database for
-          the public tools.
+          Everything you type into the tools, like career drafts, resume bullets, interview notes,
+          and networking scripts, stays inside your browser during normal use. There's no account
+          system, no payment processor, and no server-side database storing your documents.
         </p>
         <p>
-          Cloudflare processes request metadata to deliver the pages, block abuse, and apply
-          security controls. The site loads no analytics script, and its security policy lets a
-          page talk only to this site's own address. If a request to this site fails, your browser
-          may send Cloudflare a short error report (the address, the time, and the kind of
-          failure). That is Cloudflare's network error logging, and it carries nothing you wrote. That infrastructure processing is separate
-          from the career content you draft locally inside the browser.
+          Cloudflare sees standard request metadata so it can deliver the pages, block abuse, and
+          apply security headers. The site doesn't load any analytics scripts, and its content
+          security policy only lets pages talk to this site's own address. If a request to the site
+          fails, your browser may send Cloudflare a short network error report with the URL, time,
+          and error type. That's part of Cloudflare's network error logging and never includes
+          anything you wrote in a tool.
         </p>
         <p>
-          If you contact Jonathan directly from outside the tool, that message is handled through
-          the channel you choose. It is separate from the static site and should be treated like
-          normal email or contact-form correspondence.
+          If you email me directly outside the site, that message travels through your normal email
+          provider like any other email and isn't connected to the static site.
         </p>
         <p>
-          If the hosting setup changes, this page should be updated before the new
-          provider is used for production traffic.
+          If I ever change hosts or add another provider, I'll update this page before sending live
+          traffic there.
         </p>
       </div>
     </section>

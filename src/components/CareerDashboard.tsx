@@ -16,7 +16,7 @@ const TOOL_LINKS = [
   {
     name: 'The Five Whys',
     url: '/career/',
-    desc: 'Clarify your core motivation',
+    desc: 'Dig past your first answer',
     color: 'text-foam',
     bg: 'bg-foam/12',
     icon: 'M7 8h10M7 12h4',
@@ -32,7 +32,7 @@ const TOOL_LINKS = [
   {
     name: 'Interview Glow Up',
     url: '/interview-glow-up/',
-    desc: 'Build proof-based stories',
+    desc: 'Write real interview stories',
     color: 'text-iris',
     bg: 'bg-iris/12',
     icon: 'M13 10V3L4 14h7v7l9-11h-7z',
@@ -40,7 +40,7 @@ const TOOL_LINKS = [
   {
     name: 'Networking Practice',
     url: '/networking-practice/',
-    desc: 'Time and rate your introduction',
+    desc: 'Time and rate your intro',
     color: 'text-gold',
     bg: 'bg-gold/12',
     icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
@@ -56,7 +56,7 @@ const TOOL_LINKS = [
   {
     name: 'Pay',
     url: '/pay/',
-    desc: 'Put an offer in plain terms',
+    desc: 'Compare offers in plain numbers',
     color: 'text-madder',
     bg: 'bg-madder/12',
     icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 9v1m9-5a9 9 0 11-18 0 9 9 0 0118 0z',
@@ -556,8 +556,8 @@ function EmptyState({ onRestored, revision }: { onRestored: () => void; revision
           Nothing saved yet
         </h2>
         <p className="text-muted-foreground">
-          This page summarizes work you save in the tools, and it all stays in this browser. Take
-          the short career review to pick a starting point.
+          This page pulls together everything you save across the tools, and it all stays in your
+          browser. Take the quick career review if you aren't sure where to start.
         </p>
       </div>
 

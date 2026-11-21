@@ -21,24 +21,24 @@ export interface OgPage {
 
 export const OG_PAGES: Record<string, OgPage> = {
   home: {
-    eyebrow: 'A field guide to professional life',
-    title: 'Find the real reason. Then build the proof.',
+    eyebrow: 'Practical career tools',
+    title: 'Figure out what you want. Then back it up.',
     description:
-      'Six career tools that stay in your browser: reflect, score a resume, rehearse an intro, prepare interview stories, work an application, weigh the pay.',
+      'Six free browser tools that stay on your device: reflect, fix resume bullets, practice intros, prep interview stories, apply, and check pay.',
     accent: 'foam',
   },
   start: {
     eyebrow: 'Career review',
-    title: 'Two questions, one starting point.',
+    title: 'Two questions, one place to start.',
     description:
-      'Say where you are and what you are working on. The studio picks the tool to open first.',
+      'Pick where you are right now and what you are stuck on, and the site points you to the right tool.',
     accent: 'foam',
   },
   career: {
     eyebrow: 'Plate I · Reflect',
     plate: 'I',
-    title: 'Ask why five times until the answer stops moving.',
-    description: 'Name the motivation underneath the obvious one, then keep it as a snapshot.',
+    title: 'Ask why five times until your answer stops changing.',
+    description: 'Dig past your first obvious reason and save what actually matters as a snapshot.',
     accent: 'foam',
   },
   'resume-game': {
@@ -46,22 +46,22 @@ export const OG_PAGES: Record<string, OgPage> = {
     plate: 'II',
     title: 'Score every bullet. Rewrite the weak ones.',
     description:
-      'Action, result, and measure, one line at a time, until each bullet carries proof.',
+      'Action, outcome, and real numbers, one line at a time, until your resume shows what you actually did.',
     accent: 'gold',
   },
   'networking-practice': {
     eyebrow: 'Plate III · Rehearse',
     plate: 'III',
-    title: 'Practice the conversation before it matters.',
-    description: 'Real scenarios, a timer, and honest self-ratings after every rep.',
+    title: 'Practice your intro before you need it.',
+    description: 'Real scenarios, a timer, and honest self-ratings after every round.',
     accent: 'iris',
   },
   'interview-glow-up': {
     eyebrow: 'Plate IV · Prepare',
     plate: 'IV',
-    title: 'Decode the job. Build the stories. Pack the proof.',
+    title: 'Break down the job. Line up real stories.',
     description:
-      'Turn a job description into the skills it tests and a packet of stories that answer them.',
+      'Turn a job posting into the skills it tests and a short packet of real stories to answer them.',
     accent: 'love',
   },
   application: {
@@ -69,37 +69,37 @@ export const OG_PAGES: Record<string, OgPage> = {
     plate: 'V',
     title: 'Paste the posting once. Work it through.',
     description:
-      'What it asks for, where you stand, two bullets, a letter, and a last check before you send.',
+      'Sort what it asks for, mark where you stand, write two bullets and a cover letter, and check it before sending.',
     accent: 'lichen',
   },
   pay: {
     eyebrow: 'Plate VI · Weigh',
     plate: 'VI',
     title: hasWages
-      ? 'What the job tends to pay, and what the offer comes to.'
-      : 'What the offer comes to.',
+      ? 'What the job usually pays, and what the offer comes out to.'
+      : 'What the offer actually comes out to.',
     description: hasWages
-      ? 'Dated percentiles from public wage data, and an offer put into plain hourly and yearly terms.'
-      : 'An offer put into plain hourly, weekly and yearly terms.',
+      ? 'Dated percentiles from public wage data, plus an offer broken into hourly and yearly numbers.'
+      : 'An offer broken down into plain hourly, weekly, and yearly numbers.',
     accent: 'madder',
   },
   dashboard: {
-    eyebrow: 'Your studio',
+    eyebrow: 'Your work',
     title: 'Everything you saved, in one place.',
-    description: 'Scores, snapshots, practice rounds, and stories, all read from your own browser.',
+    description:
+      'Scores, snapshots, practice rounds, and stories, all read straight from your browser.',
     accent: 'foam',
   },
   about: {
     eyebrow: 'About',
-    title: 'Why this studio exists.',
-    description:
-      'Made by Jonathan R. Reed for students and early-career people finding their path.',
+    title: 'Why I built this site.',
+    description: 'Built by Jonathan R. Reed for students and anyone figuring out their next step.',
     accent: 'gold',
   },
   privacy: {
     eyebrow: 'Privacy',
     title: 'Everything you write stays in your browser.',
-    description: 'No accounts, no cookies, and nothing you type is sent to a server.',
+    description: 'No accounts, no cookies, and nothing you type gets sent to a server.',
     accent: 'foam',
   },
 };
